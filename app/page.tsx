@@ -1,4 +1,5 @@
 import { createServerSupabaseClient } from '@/lib/supabase-client'
+import { createAdminClient } from '@/lib/supabase-server'
 import { format } from 'date-fns'
 import JournalForm from '@/components/journal/JournalForm'
 import TodayEntry from '@/components/journal/TodayEntry'
@@ -22,7 +23,8 @@ export default async function HomePage() {
       .single()
     todayEntry = data
 
-    const { data: profile } = await supabase
+    const adminSupabase = createAdminClient()
+    const { data: profile } = await adminSupabase
       .from('profiles')
       .select('role')
       .eq('id', session.user.id)

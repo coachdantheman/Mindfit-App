@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/supabase-client'
+import { createAdminClient } from '@/lib/supabase-server'
 import PublicNav from '@/components/layout/PublicNav'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -8,7 +9,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   if (!session) redirect('/')
 
-  const { data: profile } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: profile } = await adminSupabase
     .from('profiles')
     .select('role')
     .eq('id', session.user.id)
