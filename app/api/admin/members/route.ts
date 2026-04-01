@@ -7,7 +7,8 @@ export async function GET() {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: profile } = await supabase
+  const adminCheck = createAdminClient()
+  const { data: profile } = await adminCheck
     .from('profiles').select('role').eq('id', session.user.id).single()
   if (profile?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 

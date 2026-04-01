@@ -43,14 +43,14 @@ export default function AddEmailForm({ onAdded }: Props) {
           value={email}
           onChange={e => setEmail(e.target.value)}
           placeholder="member@example.com"
-          className="flex-1 border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="flex-1 border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 text-gray-900 placeholder:text-gray-400"
         />
         <input
           type="text"
           value={notes}
           onChange={e => setNotes(e.target.value)}
           placeholder="Notes (optional)"
-          className="w-40 border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 hidden sm:block"
+          className="w-40 border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 hidden sm:block text-gray-900 placeholder:text-gray-400"
         />
         <button
           type="submit"

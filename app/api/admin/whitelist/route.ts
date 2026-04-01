@@ -6,7 +6,8 @@ async function verifyAdmin() {
   const supabase = await createServerSupabaseClient()
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) return null
-  const { data: profile } = await supabase
+  const admin = createAdminClient()
+  const { data: profile } = await admin
     .from('profiles').select('role').eq('id', session.user.id).single()
   if (profile?.role !== 'admin') return null
   return session
