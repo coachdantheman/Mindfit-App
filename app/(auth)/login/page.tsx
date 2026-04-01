@@ -105,7 +105,8 @@ export default function LoginPage() {
           </form>
 
           <p className="text-center text-sm text-gray-500 mt-6">
-            Need access? Contact your coach.
+            New member?{' '}
+            <a href="/signup" className="text-cta hover:underline">Create an account</a>
           </p>
         </div>
       </div>
