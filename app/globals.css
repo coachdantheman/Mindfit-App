@@ -7,3 +7,9 @@
     -webkit-tap-highlight-color: transparent;
   }
 }
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

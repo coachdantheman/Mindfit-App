@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/supabase-client'
-import PublicNav from '@/components/layout/PublicNav'
+import { createAdminClient } from '@/lib/supabase-server'
+import Navbar from '@/components/layout/Navbar'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createServerSupabaseClient()
@@ -8,7 +9,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   if (!session) redirect('/')
 
-  const { data: profile } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: profile } = await adminSupabase
     .from('profiles')
     .select('role')
     .eq('id', session.user.id)
@@ -18,8 +20,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen flex flex-col">
-      <PublicNav email={session.user.email ?? ''} isAdmin={isAdmin} />
-      <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 py-8">
+      <Navbar email={session.user.email ?? ''} isAdmin={isAdmin} />
+      <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 py-8 pb-24 sm:pb-8">
         {children}
       </main>
     </div>
