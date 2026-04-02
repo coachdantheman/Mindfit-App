@@ -1,4 +1,5 @@
 import { createServerSupabaseClient } from '@/lib/supabase-client'
+import { createAdminClient } from '@/lib/supabase-server'
 import { JournalEntry } from '@/types'
 import RatingChart from '@/components/dashboard/RatingChart'
 import EntryList from '@/components/dashboard/EntryList'
@@ -7,7 +8,8 @@ export default async function DashboardPage() {
   const supabase = await createServerSupabaseClient()
   const { data: { session } } = await supabase.auth.getSession()
 
-  const { data: entries } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: entries } = await adminSupabase
     .from('journal_entries')
     .select('*')
     .eq('user_id', session!.user.id)

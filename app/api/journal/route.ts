@@ -8,7 +8,8 @@ export async function GET() {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data, error } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data, error } = await adminSupabase
     .from('journal_entries')
     .select('*')
     .eq('user_id', session.user.id)
