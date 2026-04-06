@@ -7,13 +7,14 @@ import TodayEntry from '@/components/journal/TodayEntry'
 
 export default async function EntryPage({ params }: { params: { id: string } }) {
   const supabase = await createServerSupabaseClient()
-  const { data: { session } } = await supabase.auth.getSession()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) notFound()
 
   const { data: entry } = await supabase
     .from('journal_entries')
     .select('*')
     .eq('id', params.id)
-    .eq('user_id', session!.user.id)
+    .eq('user_id', user.id)
     .single()
 
   if (!entry) notFound()

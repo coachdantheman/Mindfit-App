@@ -128,7 +128,11 @@ export default function NutritionPage() {
         </div>
         <button
           onClick={() => setShowGoalForm(!showGoalForm)}
-          className="text-xs text-cta font-medium hover:underline"
+          className={`px-4 py-2 rounded-xl text-sm font-medium transition-all border ${
+            showGoalForm
+              ? 'text-gray-400 border-white/10 hover:text-gray-200'
+              : 'bg-cta/20 text-cta border-cta/30 hover:bg-cta/30'
+          }`}
         >
           {showGoalForm ? 'Cancel' : 'Set Goals'}
         </button>
