@@ -64,6 +64,25 @@ export async function PUT(req: Request) {
   return NextResponse.json({ ok: true })
 }
 
+export async function PATCH(req: Request) {
+  const auth = await verifyApiUser()
+  if (auth instanceof NextResponse) return auth
+
+  const { items } = await req.json()
+  if (!Array.isArray(items)) return NextResponse.json({ error: 'items array required' }, { status: 400 })
+
+  const admin = createAdminClient()
+  for (const item of items) {
+    await admin
+      .from('affirmations')
+      .update({ sort_order: item.sort_order })
+      .eq('id', item.id)
+      .eq('user_id', auth.userId)
+  }
+
+  return NextResponse.json({ ok: true })
+}
+
 export async function DELETE(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth

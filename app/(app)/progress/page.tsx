@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { JournalEntry, SleepEntry, WorkoutLog } from '@/types'
+import { JournalEntry, SleepEntry, WorkoutLog, FoodEntry, NutritionGoal } from '@/types'
 import dynamic from 'next/dynamic'
 
 const RatingChart = dynamic(() => import('@/components/dashboard/RatingChart'), { ssr: false })
@@ -16,6 +16,8 @@ export default function ProgressPage() {
   const [vizCount, setVizCount] = useState(0)
   const [medCount, setMedCount] = useState(0)
   const [goalCount, setGoalCount] = useState({ total: 0, completed: 0 })
+  const [foodEntries, setFoodEntries] = useState<FoodEntry[]>([])
+  const [nutritionGoal, setNutritionGoal] = useState<NutritionGoal | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -26,13 +28,17 @@ export default function ProgressPage() {
       fetch('/api/mindset/visualization').then(r => r.json()),
       fetch('/api/mindset/meditation').then(r => r.json()),
       fetch('/api/mindset/goals').then(r => r.json()),
-    ]).then(([journal, sleep, workouts, viz, med, goals]) => {
+      fetch('/api/nutrition/entries?date=' + new Date().toISOString().split('T')[0]).then(r => r.json()),
+      fetch('/api/nutrition/goals').then(r => r.json()),
+    ]).then(([journal, sleep, workouts, viz, med, goals, food, nutGoal]) => {
       setJournalEntries(journal)
       setSleepEntries(sleep)
       setWorkoutLogs(workouts)
       setVizCount(viz.filter((v: any) => v.completed).length)
       setMedCount(med.filter((m: any) => m.completed).length)
       setGoalCount({ total: goals.length, completed: goals.filter((g: any) => g.is_completed).length })
+      setFoodEntries(food)
+      setNutritionGoal(nutGoal)
       setLoading(false)
     })
   }, [])
@@ -87,7 +93,7 @@ export default function ProgressPage() {
 
       {/* Section tabs */}
       <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
-        {(['mindset', 'exercise', 'sleep'] as Section[]).map(s => (
+        {(['mindset', 'nutrition', 'exercise', 'sleep'] as Section[]).map(s => (
           <button
             key={s}
             onClick={() => setSection(s)}
@@ -141,6 +147,77 @@ export default function ProgressPage() {
 
               <RatingChart entries={journalEntries} />
               <EntryList entries={journalEntries} />
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Nutrition Section */}
+      {section === 'nutrition' && (
+        <div className="space-y-4">
+          {foodEntries.length === 0 && !nutritionGoal ? (
+            <div className="text-center py-12 text-gray-400">
+              <p className="font-medium">No nutrition data yet</p>
+              <p className="text-sm mt-1">Log food in the Nutrition tab to see your progress.</p>
+            </div>
+          ) : (
+            <>
+              {nutritionGoal && (() => {
+                const totals = foodEntries.reduce(
+                  (acc, e) => ({
+                    calories: acc.calories + e.calories,
+                    protein: acc.protein + Number(e.protein_g),
+                    carbs: acc.carbs + Number(e.carbs_g),
+                    fat: acc.fat + Number(e.fat_g),
+                  }),
+                  { calories: 0, protein: 0, carbs: 0, fat: 0 }
+                )
+                const pct = (c: number, g: number) => Math.min(100, Math.round((c / g) * 100))
+                return (
+                  <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
+                    <h3 className="font-semibold text-gray-100 mb-3 text-sm">Today&apos;s Macros</h3>
+                    <div className="space-y-3">
+                      {[
+                        { label: 'Calories', current: totals.calories, goal: nutritionGoal.calories, unit: 'kcal', color: 'bg-cta' },
+                        { label: 'Protein', current: totals.protein, goal: nutritionGoal.protein_g, unit: 'g', color: 'bg-blue-500' },
+                        { label: 'Carbs', current: totals.carbs, goal: nutritionGoal.carbs_g, unit: 'g', color: 'bg-green-500' },
+                        { label: 'Fat', current: totals.fat, goal: nutritionGoal.fat_g, unit: 'g', color: 'bg-orange-500' },
+                      ].map(m => (
+                        <div key={m.label}>
+                          <div className="flex justify-between text-xs mb-1">
+                            <span className="text-gray-400">{m.label}</span>
+                            <span className="text-gray-300 font-medium">{Math.round(m.current)} / {m.goal} {m.unit}</span>
+                          </div>
+                          <div className="bg-gray-700 rounded-full h-2.5 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all ${m.color}`}
+                              style={{ width: `${pct(m.current, m.goal)}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {foodEntries.length > 0 && (
+                <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
+                  <h3 className="font-semibold text-gray-100 mb-3 text-sm">Today&apos;s Food Log</h3>
+                  <div className="space-y-2">
+                    {foodEntries.map(entry => (
+                      <div key={entry.id} className="flex items-center justify-between p-2 rounded-lg bg-gray-800/30">
+                        <div>
+                          <p className="text-sm text-gray-200">{entry.food_name}</p>
+                          <p className="text-xs text-gray-500">
+                            {entry.meal_name} · {entry.calories} cal · {Number(entry.protein_g)}p · {Number(entry.carbs_g)}c · {Number(entry.fat_g)}f
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>

@@ -77,7 +77,11 @@ export default function GoalsSection() {
           <h3 className="font-semibold text-gray-100">Goals</h3>
           <button
             onClick={() => setShowForm(!showForm)}
-            className="text-sm text-cta font-medium hover:underline"
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              showForm
+                ? 'text-gray-400 border border-white/10 hover:text-gray-200'
+                : 'bg-cta/20 text-cta border border-cta/30 hover:bg-cta/30'
+            }`}
           >
             {showForm ? 'Cancel' : '+ New Goal'}
           </button>

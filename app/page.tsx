@@ -30,6 +30,22 @@ export default async function HomePage() {
               Sign in to get started
             </a>
           </div>
+
+          <div className="bg-gray-900 border border-white/10 rounded-2xl p-5 text-center">
+            <p className="text-gray-300 font-medium">Don&apos;t have access yet?</p>
+            <p className="text-gray-500 text-sm mt-1">
+              Join the MindFit community to unlock the full athlete development platform.
+            </p>
+            <a
+              href="https://www.skool.com/mindfit"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-3 border border-cta/40 text-cta hover:bg-cta/10 font-semibold px-6 py-2.5 rounded-xl text-sm transition-colors"
+            >
+              Request Access
+            </a>
+          </div>
+
           <JournalForm previewMode />
         </div>
       </main>

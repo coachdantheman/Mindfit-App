@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
+import Link from 'next/link'
 import JournalForm from '@/components/journal/JournalForm'
 import TodayEntry from '@/components/journal/TodayEntry'
 import { JournalEntry } from '@/types'
@@ -36,6 +37,13 @@ export default function JournalTab() {
       ) : (
         <JournalForm />
       )}
+
+      <Link
+        href="/progress"
+        className="inline-block mt-4 text-sm text-cta font-medium hover:underline"
+      >
+        View past entries →
+      </Link>
     </div>
   )
 }

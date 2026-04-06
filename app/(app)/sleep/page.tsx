@@ -202,7 +202,7 @@ export default function SleepPage() {
                 disabled={saving || sleepSaved}
                 className="bg-cta hover:bg-brand-600 text-gray-900 font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors disabled:opacity-50"
               >
-                {saving ? 'Saving…' : sleepSaved ? 'Saved' : 'Save Sleep Log'}
+                {saving ? 'Saving…' : sleepSaved ? 'Success ✓' : 'Save Sleep Log'}
               </button>
             </div>
           </div>
@@ -265,7 +265,7 @@ export default function SleepPage() {
                 disabled={saving || recoverySaved}
                 className="bg-cta hover:bg-brand-600 text-gray-900 font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors disabled:opacity-50"
               >
-                {saving ? 'Saving…' : recoverySaved ? 'Saved' : 'Save Recovery'}
+                {saving ? 'Saving…' : recoverySaved ? 'Success ✓' : 'Save Recovery'}
               </button>
             </div>
           </div>

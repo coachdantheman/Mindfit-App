@@ -12,6 +12,8 @@ export default function NutritionPage() {
   const [loading, setLoading] = useState(true)
   const [showGoalForm, setShowGoalForm] = useState(false)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [goalSuccess, setGoalSuccess] = useState(false)
+  const [foodSuccess, setFoodSuccess] = useState(false)
 
   // Goal form state
   const [gCalories, setGCalories] = useState(2000)
@@ -66,7 +68,8 @@ export default function NutritionPage() {
       body: JSON.stringify({ calories: gCalories, protein_g: gProtein, carbs_g: gCarbs, fat_g: gFat }),
     })
     setGoals({ ...goals!, calories: gCalories, protein_g: gProtein, carbs_g: gCarbs, fat_g: gFat })
-    setShowGoalForm(false)
+    setGoalSuccess(true)
+    setTimeout(() => { setGoalSuccess(false); setShowGoalForm(false) }, 1500)
   }
 
   const addFood = async (e: React.FormEvent) => {
@@ -94,7 +97,8 @@ export default function NutritionPage() {
       setFProtein('')
       setFCarbs('')
       setFFat('')
-      setShowAddForm(false)
+      setFoodSuccess(true)
+      setTimeout(() => { setFoodSuccess(false); setShowAddForm(false) }, 1500)
     }
     setSaving(false)
   }
@@ -151,8 +155,8 @@ export default function NutritionPage() {
               </div>
             ))}
           </div>
-          <button onClick={saveGoals} className="bg-cta hover:bg-brand-600 text-gray-900 font-semibold px-4 py-2 rounded-xl text-sm transition-colors">
-            Save Goals
+          <button onClick={saveGoals} disabled={goalSuccess} className="bg-cta hover:bg-brand-600 text-gray-900 font-semibold px-4 py-2 rounded-xl text-sm transition-colors disabled:opacity-70">
+            {goalSuccess ? 'Success ✓' : 'Save Goals'}
           </button>
         </div>
       )}
@@ -240,7 +244,7 @@ export default function NutritionPage() {
               disabled={saving || !fFood.trim()}
               className="bg-cta hover:bg-brand-600 text-gray-900 font-semibold px-4 py-2 rounded-xl text-sm transition-colors disabled:opacity-50"
             >
-              {saving ? 'Adding…' : 'Add'}
+              {saving ? 'Adding…' : foodSuccess ? 'Success ✓' : 'Add'}
             </button>
           </form>
         )}
