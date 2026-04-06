@@ -43,25 +43,25 @@ export default function AddEmailForm({ onAdded }: Props) {
           value={email}
           onChange={e => setEmail(e.target.value)}
           placeholder="member@example.com"
-          className="flex-1 border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 text-gray-900 placeholder:text-gray-400"
+          className="flex-1 bg-gray-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cta/50 text-gray-100 placeholder:text-gray-500"
         />
         <input
           type="text"
           value={notes}
           onChange={e => setNotes(e.target.value)}
           placeholder="Notes (optional)"
-          className="w-40 border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 hidden sm:block text-gray-900 placeholder:text-gray-400"
+          className="w-40 bg-gray-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cta/50 hidden sm:block text-gray-100 placeholder:text-gray-500"
         />
         <button
           type="submit"
           disabled={loading}
-          className="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors disabled:opacity-60 whitespace-nowrap"
+          className="bg-cta hover:bg-brand-600 text-gray-900 font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors disabled:opacity-60 whitespace-nowrap"
         >
           {loading ? 'Adding…' : 'Add Email'}
         </button>
       </div>
-      {error && <p className="text-red-600 text-sm">{error}</p>}
-      {success && <p className="text-green-600 text-sm">{success}</p>}
+      {error && <p className="text-red-400 text-sm">{error}</p>}
+      {success && <p className="text-green-400 text-sm">{success}</p>}
     </form>
   )
 }

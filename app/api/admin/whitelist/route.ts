@@ -1,21 +1,23 @@
 import { NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-client'
 import { createAdminClient } from '@/lib/supabase-server'
-
-async function verifyAdmin() {
-  const supabase = await createServerSupabaseClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return null
-  const admin = createAdminClient()
-  const { data: profile } = await admin
-    .from('profiles').select('role').eq('id', session.user.id).single()
-  if (profile?.role !== 'admin') return null
-  return session
-}
+import { verifyApiUser } from '@/lib/api-auth'
 
 export async function GET() {
-  if (!await verifyAdmin()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const auth = await verifyApiUser('admin', 'coach')
+  if (auth instanceof NextResponse) return auth
+
   const admin = createAdminClient()
+
+  if (auth.role === 'coach') {
+    const { data, error } = await admin
+      .from('approved_emails')
+      .select('*')
+      .eq('added_by', auth.userId)
+      .order('added_at', { ascending: false })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json(data)
+  }
+
   const { data, error } = await admin
     .from('approved_emails')
     .select('*')
@@ -25,14 +27,20 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  if (!await verifyAdmin()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const auth = await verifyApiUser('admin', 'coach')
+  if (auth instanceof NextResponse) return auth
+
   const { email, notes } = await req.json()
   if (!email) return NextResponse.json({ error: 'Email required' }, { status: 400 })
 
   const admin = createAdminClient()
   const { data, error } = await admin
     .from('approved_emails')
-    .insert({ email: email.toLowerCase().trim(), notes: notes || null })
+    .insert({
+      email: email.toLowerCase().trim(),
+      notes: notes || null,
+      added_by: auth.userId,
+    })
     .select()
     .single()
 
@@ -46,9 +54,23 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  if (!await verifyAdmin()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const auth = await verifyApiUser('admin', 'coach')
+  if (auth instanceof NextResponse) return auth
+
   const { id } = await req.json()
   const admin = createAdminClient()
+
+  if (auth.role === 'coach') {
+    const { data: email } = await admin
+      .from('approved_emails')
+      .select('added_by')
+      .eq('id', id)
+      .single()
+    if (email?.added_by !== auth.userId) {
+      return NextResponse.json({ error: 'You can only remove emails you added' }, { status: 403 })
+    }
+  }
+
   const { error } = await admin.from('approved_emails').delete().eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })

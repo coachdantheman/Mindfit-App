@@ -2,19 +2,25 @@ import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-client'
 import { createAdminClient } from '@/lib/supabase-server'
 
-// GET /api/journal — return all entries for the current user
-export async function GET() {
+// GET /api/journal — return all entries for the current user (optionally filter by ?date=)
+export async function GET(req: Request) {
   const supabase = await createServerSupabaseClient()
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { searchParams } = new URL(req.url)
+  const date = searchParams.get('date')
+
   const adminSupabase = createAdminClient()
-  const { data, error } = await adminSupabase
+  let query = adminSupabase
     .from('journal_entries')
     .select('*')
     .eq('user_id', session.user.id)
     .order('entry_date', { ascending: false })
 
+  if (date) query = query.eq('entry_date', date)
+
+  const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)
 }

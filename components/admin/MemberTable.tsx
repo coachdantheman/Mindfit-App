@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { format, parseISO } from 'date-fns'
 import { MemberWithCount } from '@/types'
+import Link from 'next/link'
 
 export default function MemberTable() {
   const [members, setMembers] = useState<MemberWithCount[]>([])
@@ -13,17 +14,17 @@ export default function MemberTable() {
       .then(data => { setMembers(data); setLoading(false) })
   }, [])
 
-  if (loading) return <p className="text-sm text-gray-400">Loading…</p>
+  if (loading) return <p className="text-sm text-gray-500">Loading…</p>
 
   if (members.length === 0) {
-    return <p className="text-sm text-gray-400">No members have registered yet.</p>
+    return <p className="text-sm text-gray-500">No members have registered yet.</p>
   }
 
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
+          <tr className="text-left text-xs text-gray-500 border-b border-white/10">
             <th className="pb-2 font-medium">Name</th>
             <th className="pb-2 font-medium">Email</th>
             <th className="pb-2 font-medium">Joined</th>
@@ -31,20 +32,29 @@ export default function MemberTable() {
             <th className="pb-2 font-medium">Role</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-50">
+        <tbody className="divide-y divide-white/5">
           {members.map(m => (
-            <tr key={m.id}>
-              <td className="py-2.5 pr-4 font-medium text-gray-800">{m.full_name || '—'}</td>
-              <td className="py-2.5 pr-4 text-gray-600">{m.email}</td>
+            <tr key={m.id} className="group">
+              <td className="py-2.5 pr-4">
+                <Link
+                  href={`/admin/athlete/${m.id}`}
+                  className="font-medium text-gray-300 hover:text-cta transition-colors"
+                >
+                  {m.full_name || '—'}
+                </Link>
+              </td>
+              <td className="py-2.5 pr-4 text-gray-400">{m.email}</td>
               <td className="py-2.5 pr-4 text-gray-500">{format(parseISO(m.created_at), 'MMM d, yyyy')}</td>
               <td className="py-2.5 pr-4">
-                <span className="font-semibold text-brand-600">{m.entry_count}</span>
+                <span className="font-semibold text-cta">{m.entry_count}</span>
               </td>
               <td className="py-2.5">
                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                   m.role === 'admin'
-                    ? 'bg-brand-100 text-brand-700'
-                    : 'bg-gray-100 text-gray-600'
+                    ? 'bg-cta/20 text-cta'
+                    : m.role === 'coach'
+                    ? 'bg-purple-900/40 text-purple-400'
+                    : 'bg-white/10 text-gray-400'
                 }`}>
                   {m.role}
                 </span>
