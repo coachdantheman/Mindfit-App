@@ -1,6 +1,5 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { format, parseISO } from 'date-fns'
 import { Profile, JournalEntry, FoodEntry, NutritionGoal, WorkoutLog, SleepEntry } from '@/types'
 import dynamic from 'next/dynamic'
@@ -25,7 +24,6 @@ export default function AthleteDetail({ athleteId, backHref }: { athleteId: stri
   const [data, setData] = useState<AthleteData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const router = useRouter()
   const [section, setSection] = useState<Section>('mindset')
 
   useEffect(() => {
@@ -60,9 +58,9 @@ export default function AthleteDetail({ athleteId, backHref }: { athleteId: stri
 
   return (
     <div>
-      <button onClick={() => router.back()} className="text-brand-500 text-sm hover:underline mb-4 inline-block">
+      <a href={backHref} className="text-brand-500 text-sm hover:underline mb-4 inline-block">
         ← Back
-      </button>
+      </a>
 
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-100">{profile.full_name || profile.email}</h1>

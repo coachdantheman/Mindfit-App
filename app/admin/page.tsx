@@ -1,5 +1,6 @@
 'use client'
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import WhitelistTable from '@/components/admin/WhitelistTable'
 import MemberTable from '@/components/admin/MemberTable'
 import CoachManager from '@/components/admin/CoachManager'
@@ -8,7 +9,17 @@ const tabs = ['Manage Access', 'Members', 'Coaches'] as const
 type Tab = typeof tabs[number]
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('Manage Access')
+  return (
+    <Suspense fallback={<p className="text-sm text-gray-500">Loading…</p>}>
+      <AdminContent />
+    </Suspense>
+  )
+}
+
+function AdminContent() {
+  const searchParams = useSearchParams()
+  const initialTab = (searchParams.get('tab') as Tab | null) ?? 'Manage Access'
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab)
 
   return (
     <div>
