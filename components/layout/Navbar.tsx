@@ -165,10 +165,7 @@ function NutritionIcon({ className }: { className?: string }) {
 function ExerciseIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M7 20l1-4c.3-1.2.5-2 .5-3 0-1.5-.5-2.5-1-3.5S6 7 6 5.5C6 3.5 7.5 2 9.5 2c1.5 0 2.5.8 3 2" />
-      <path d="M12.5 4c.5-.7 1.2-1.5 2.5-1.5 2 0 3 1.5 3 3.5 0 1.5-1 3-2.5 4.5-1 1-1.5 2-2 3.5l-.5 2" />
-      <path d="M8.5 10.5c1.5.5 3 1 5 .5" />
-      <path d="M7 20h6" />
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
     </svg>
   )
 }
