@@ -139,27 +139,36 @@ export default function Navbar({ email, role }: NavbarProps) {
 
 function BrainIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 2a7 7 0 00-4.6 12.3c.3.3.6.7.8 1.1l.3.6h7l.3-.6c.2-.4.5-.8.8-1.1A7 7 0 0012 2z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 22h6M10 19h4" />
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9.5 2A5.5 5.5 0 004 7.5c0 .88.21 1.71.58 2.45A4.5 4.5 0 003 13.5 4.5 4.5 0 007 18h1l1 4h6l1-4h1a4.5 4.5 0 004-4.5c0-1.37-.62-2.6-1.58-3.45A5.5 5.5 0 0014.5 2" />
+      <path d="M12 2v20" />
+      <path d="M8 8c1.33.67 2.67.67 4 0" />
+      <path d="M12 8c1.33.67 2.67.67 4 0" />
+      <path d="M7.5 13H12" />
+      <path d="M12 13h4.5" />
     </svg>
   )
 }
 
 function NutritionIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8 2 4 6 4 10c0 3 2 5 4 6v4a2 2 0 002 2h4a2 2 0 002-2v-4c2-1 4-3 4-6 0-4-4-8-8-8z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v8" />
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <ellipse cx="12" cy="13" rx="8" ry="5" />
+      <path d="M7 11c1.5-2 3-3 5-3s3.5 1 5 3" />
+      <path d="M9 13.5c1 .5 2 .8 3.5.5s2-.8 3-1.5" />
+      <path d="M14 5c-.5-1.5-1-2.5-1-3" />
+      <path d="M14 5c1-1 2-1.5 3-1" />
     </svg>
   )
 }
 
 function ExerciseIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6.5 6.5l-3 3M17.5 6.5l3 3M6.5 17.5l-3-3M17.5 17.5l3-3M4 12h16M12 4v16" />
-      <rect x="8" y="8" width="8" height="8" rx="1" strokeLinecap="round" strokeLinejoin="round" />
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 20l1-4c.3-1.2.5-2 .5-3 0-1.5-.5-2.5-1-3.5S6 7 6 5.5C6 3.5 7.5 2 9.5 2c1.5 0 2.5.8 3 2" />
+      <path d="M12.5 4c.5-.7 1.2-1.5 2.5-1.5 2 0 3 1.5 3 3.5 0 1.5-1 3-2.5 4.5-1 1-1.5 2-2 3.5l-.5 2" />
+      <path d="M8.5 10.5c1.5.5 3 1 5 .5" />
+      <path d="M7 20h6" />
     </svg>
   )
 }
