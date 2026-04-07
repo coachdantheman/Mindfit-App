@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { sendWelcomeEmail } from '@/lib/email'
 
 export async function GET() {
   const auth = await verifyApiUser('admin', 'coach')
@@ -50,6 +51,9 @@ export async function POST(req: Request) {
     }
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
+
+  sendWelcomeEmail(email.toLowerCase().trim())
+
   return NextResponse.json(data, { status: 201 })
 }
 

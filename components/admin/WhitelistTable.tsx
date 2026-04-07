@@ -48,9 +48,9 @@ export default function WhitelistTable() {
               <thead>
                 <tr className="text-left text-xs text-gray-500 border-b border-white/10">
                   <th className="pb-2 font-medium">Email</th>
-                  <th className="pb-2 font-medium">Added</th>
+                  <th className="pb-2 font-medium hidden sm:table-cell">Added</th>
                   <th className="pb-2 font-medium">Status</th>
-                  <th className="pb-2 font-medium">Notes</th>
+                  <th className="pb-2 font-medium hidden sm:table-cell">Notes</th>
                   <th className="pb-2"></th>
                 </tr>
               </thead>
@@ -58,7 +58,7 @@ export default function WhitelistTable() {
                 {emails.map(e => (
                   <tr key={e.id} className="py-2">
                     <td className="py-2.5 pr-4 font-medium text-gray-300">{e.email}</td>
-                    <td className="py-2.5 pr-4 text-gray-500">{format(parseISO(e.added_at), 'MMM d, yyyy')}</td>
+                    <td className="py-2.5 pr-4 text-gray-500 hidden sm:table-cell">{format(parseISO(e.added_at), 'MMM d, yyyy')}</td>
                     <td className="py-2.5 pr-4">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                         e.registered
@@ -68,7 +68,7 @@ export default function WhitelistTable() {
                         {e.registered ? 'Registered' : 'Pending'}
                       </span>
                     </td>
-                    <td className="py-2.5 pr-4 text-gray-500">{e.notes || '—'}</td>
+                    <td className="py-2.5 pr-4 text-gray-500 hidden sm:table-cell">{e.notes || '—'}</td>
                     <td className="py-2.5">
                       <button
                         onClick={() => removeEmail(e.id)}

@@ -63,9 +63,17 @@ export default function Navbar({ email, role }: NavbarProps) {
                   {role === 'admin' ? 'Admin' : 'Coach'}
                 </Link>
               )}
+              <Link
+                href="/settings"
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  isActive('/settings') ? 'text-cta' : 'text-gray-400 hover:text-gray-100'
+                }`}
+              >
+                Settings
+              </Link>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {/* Mobile: admin/coach icon */}
               {(role === 'admin' || role === 'coach') && (
                 <Link
@@ -80,10 +88,22 @@ export default function Navbar({ email, role }: NavbarProps) {
                   </svg>
                 </Link>
               )}
+              {/* Settings icon — all users */}
+              <Link
+                href="/settings"
+                className={`p-1.5 rounded-md transition-colors ${
+                  isActive('/settings') ? 'text-cta' : 'text-gray-400 hover:text-gray-200'
+                }`}
+                title="Settings"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                </svg>
+              </Link>
               <span className="text-gray-500 text-xs hidden sm:block truncate max-w-[160px]">{email}</span>
               <button
                 onClick={signOut}
-                className="text-gray-400 hover:text-gray-100 text-sm font-medium transition-colors"
+                className="text-gray-400 hover:text-gray-100 text-sm font-medium transition-colors hidden sm:block"
               >
                 Sign out
               </button>

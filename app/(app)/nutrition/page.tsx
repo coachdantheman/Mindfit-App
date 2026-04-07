@@ -5,10 +5,21 @@ import { FoodEntry, NutritionGoal } from '@/types'
 
 const MEALS = ['Breakfast', 'Lunch', 'Dinner', 'Snack'] as const
 
+interface FrequentFood {
+  food_name: string
+  meal_name: string
+  calories: number
+  protein_g: number
+  carbs_g: number
+  fat_g: number
+  count: number
+}
+
 export default function NutritionPage() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [entries, setEntries] = useState<FoodEntry[]>([])
   const [goals, setGoals] = useState<NutritionGoal | null>(null)
+  const [frequentFoods, setFrequentFoods] = useState<FrequentFood[]>([])
   const [loading, setLoading] = useState(true)
   const [showGoalForm, setShowGoalForm] = useState(false)
   const [showAddForm, setShowAddForm] = useState(false)
@@ -51,6 +62,12 @@ export default function NutritionPage() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
+  useEffect(() => {
+    fetch('/api/nutrition/frequent-foods')
+      .then(r => r.json())
+      .then(data => { if (Array.isArray(data)) setFrequentFoods(data) })
+  }, [])
+
   const totals = entries.reduce(
     (acc, e) => ({
       calories: acc.calories + e.calories,
@@ -72,35 +89,49 @@ export default function NutritionPage() {
     setTimeout(() => { setGoalSuccess(false); setShowGoalForm(false) }, 1500)
   }
 
-  const addFood = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!fFood.trim()) return
-    setSaving(true)
+  const postFood = async (payload: { meal_name: string; food_name: string; calories: number; protein_g: number; carbs_g: number; fat_g: number }) => {
     const res = await fetch('/api/nutrition/entries', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        entry_date: date,
-        meal_name: fMeal,
-        food_name: fFood,
-        calories: parseInt(fCalories) || 0,
-        protein_g: parseFloat(fProtein) || 0,
-        carbs_g: parseFloat(fCarbs) || 0,
-        fat_g: parseFloat(fFat) || 0,
-      }),
+      body: JSON.stringify({ entry_date: date, ...payload }),
     })
     if (res.ok) {
       const data = await res.json()
       setEntries(prev => [...prev, data])
-      setFFood('')
-      setFCalories('')
-      setFProtein('')
-      setFCarbs('')
-      setFFat('')
-      setFoodSuccess(true)
-      setTimeout(() => { setFoodSuccess(false); setShowAddForm(false) }, 1500)
     }
+  }
+
+  const addFood = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!fFood.trim()) return
+    setSaving(true)
+    await postFood({
+      meal_name: fMeal,
+      food_name: fFood,
+      calories: parseInt(fCalories) || 0,
+      protein_g: parseFloat(fProtein) || 0,
+      carbs_g: parseFloat(fCarbs) || 0,
+      fat_g: parseFloat(fFat) || 0,
+    })
+    setFFood('')
+    setFCalories('')
+    setFProtein('')
+    setFCarbs('')
+    setFFat('')
+    setFoodSuccess(true)
+    setTimeout(() => { setFoodSuccess(false); setShowAddForm(false) }, 1500)
     setSaving(false)
+  }
+
+  const quickAdd = async (food: FrequentFood) => {
+    await postFood({
+      meal_name: food.meal_name,
+      food_name: food.food_name,
+      calories: food.calories,
+      protein_g: food.protein_g,
+      carbs_g: food.carbs_g,
+      fat_g: food.fat_g,
+    })
   }
 
   const removeEntry = async (id: string) => {
@@ -167,9 +198,9 @@ export default function NutritionPage() {
 
       {/* Date picker */}
       <div className="flex items-center gap-3 mb-5">
-        <button onClick={() => setDate(subDays(new Date(date + 'T12:00:00'), 1).toISOString().split('T')[0])} className="text-gray-400 hover:text-gray-200 text-lg">←</button>
+        <button onClick={() => setDate(subDays(new Date(date + 'T12:00:00'), 1).toISOString().split('T')[0])} className="text-gray-400 hover:text-gray-200 text-lg px-1 py-1">←</button>
         <span className="text-sm font-medium text-gray-200">{format(new Date(date + 'T12:00:00'), 'EEEE, MMM d')}</span>
-        <button onClick={() => setDate(addDays(new Date(date + 'T12:00:00'), 1).toISOString().split('T')[0])} className="text-gray-400 hover:text-gray-200 text-lg">→</button>
+        <button onClick={() => setDate(addDays(new Date(date + 'T12:00:00'), 1).toISOString().split('T')[0])} className="text-gray-400 hover:text-gray-200 text-lg px-1 py-1">→</button>
       </div>
 
       {/* Macro progress bars */}
@@ -188,7 +219,7 @@ export default function NutritionPage() {
               </div>
               <div className="bg-gray-700 rounded-full h-2.5 overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all ${m.color} ${pct(m.current, m.goal) > 100 ? 'opacity-80' : ''}`}
+                  className={`h-full rounded-full transition-all ${m.color}`}
                   style={{ width: `${Math.min(pct(m.current, m.goal), 100)}%` }}
                 />
               </div>
@@ -196,6 +227,25 @@ export default function NutritionPage() {
           ))}
         </div>
       </div>
+
+      {/* Quick Add — frequent foods */}
+      {frequentFoods.length > 0 && (
+        <div className="bg-gray-900 rounded-2xl border border-white/10 p-5 mb-5">
+          <h3 className="font-semibold text-gray-100 text-sm mb-3">Quick Add</h3>
+          <div className="flex flex-wrap gap-2">
+            {frequentFoods.map(food => (
+              <button
+                key={food.food_name}
+                onClick={() => quickAdd(food)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-800 border border-white/10 hover:border-cta/40 hover:bg-cta/10 transition-all text-left"
+              >
+                <span className="text-sm text-gray-200">{food.food_name}</span>
+                <span className="text-xs text-gray-500">{food.calories} cal</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Food entries by meal */}
       <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
@@ -226,12 +276,12 @@ export default function NutritionPage() {
                 className="flex-1 bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50"
               />
             </div>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
                 { label: 'Cal', value: fCalories, set: setFCalories },
-                { label: 'Protein', value: fProtein, set: setFProtein },
-                { label: 'Carbs', value: fCarbs, set: setFCarbs },
-                { label: 'Fat', value: fFat, set: setFFat },
+                { label: 'Protein g', value: fProtein, set: setFProtein },
+                { label: 'Carbs g', value: fCarbs, set: setFCarbs },
+                { label: 'Fat g', value: fFat, set: setFFat },
               ].map(f => (
                 <input
                   key={f.label}
@@ -267,7 +317,7 @@ export default function NutritionPage() {
                   <h4 className="text-xs uppercase tracking-wider text-gray-500 font-medium mb-2">{meal}</h4>
                   <div className="space-y-1">
                     {mealEntries.map(e => (
-                      <div key={e.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-800/50 group">
+                      <div key={e.id} className="flex items-center justify-between p-2 rounded-lg bg-gray-800/30">
                         <div>
                           <p className="text-sm text-gray-200">{e.food_name}</p>
                           <p className="text-xs text-gray-500">
@@ -276,7 +326,7 @@ export default function NutritionPage() {
                         </div>
                         <button
                           onClick={() => removeEntry(e.id)}
-                          className="text-xs text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="text-xs text-red-400 hover:text-red-300 ml-3 shrink-0 py-1 px-2"
                         >
                           Remove
                         </button>
