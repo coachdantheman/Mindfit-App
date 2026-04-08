@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { JournalEntry, SleepEntry, WorkoutLog, FoodEntry, NutritionGoal } from '@/types'
+import { JournalEntry, SleepEntry, WorkoutLog, FoodEntry, NutritionGoal, WeeklyAssessment } from '@/types'
 import dynamic from 'next/dynamic'
 
 const RatingChart = dynamic(() => import('@/components/dashboard/RatingChart'), { ssr: false })
@@ -18,6 +18,7 @@ export default function ProgressPage() {
   const [goalCount, setGoalCount] = useState({ total: 0, completed: 0 })
   const [foodEntries, setFoodEntries] = useState<FoodEntry[]>([])
   const [nutritionGoal, setNutritionGoal] = useState<NutritionGoal | null>(null)
+  const [assessments, setAssessments] = useState<WeeklyAssessment[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -30,7 +31,8 @@ export default function ProgressPage() {
       fetch('/api/mindset/goals').then(r => r.json()),
       fetch('/api/nutrition/entries?date=' + new Date().toISOString().split('T')[0]).then(r => r.json()),
       fetch('/api/nutrition/goals').then(r => r.json()),
-    ]).then(([journal, sleep, workouts, viz, med, goals, food, nutGoal]) => {
+      fetch('/api/mindset/weekly-assessment').then(r => r.json()),
+    ]).then(([journal, sleep, workouts, viz, med, goals, food, nutGoal, weeklyAssessments]) => {
       setJournalEntries(journal)
       setSleepEntries(sleep)
       setWorkoutLogs(workouts)
@@ -39,6 +41,7 @@ export default function ProgressPage() {
       setGoalCount({ total: goals.length, completed: goals.filter((g: any) => g.is_completed).length })
       setFoodEntries(food)
       setNutritionGoal(nutGoal)
+      setAssessments(Array.isArray(weeklyAssessments) ? weeklyAssessments : [])
       setLoading(false)
     })
   }, [])
@@ -149,6 +152,98 @@ export default function ProgressPage() {
               <EntryList entries={journalEntries} />
             </>
           )}
+
+          {/* Weekly Assessment Trends */}
+          {assessments.length > 0 && (() => {
+            const ASSESSMENT_CATEGORIES = [
+              { key: 'self_identity_clarity', label: 'Identity Clarity' },
+              { key: 'confidence', label: 'Confidence' },
+              { key: 'focus_quality', label: 'Focus' },
+              { key: 'anxiety_management', label: 'Anxiety Mgmt' },
+              { key: 'resilience', label: 'Resilience' },
+              { key: 'motivation', label: 'Motivation' },
+              { key: 'mental_imagery', label: 'Mental Imagery' },
+              { key: 'routine_consistency', label: 'Routine' },
+              { key: 'team_relationships', label: 'Team' },
+              { key: 'vision_clarity', label: 'Vision' },
+            ] as const
+
+            const latest = assessments[0]
+            const previous = assessments[1] || null
+            const latestAvg = Math.round(
+              (ASSESSMENT_CATEGORIES.reduce((sum, c) => sum + (latest[c.key as keyof WeeklyAssessment] as number), 0) / ASSESSMENT_CATEGORIES.length) * 10
+            ) / 10
+
+            return (
+              <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-gray-100 text-sm">Weekly Assessment</h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500">{assessments.length} week{assessments.length !== 1 ? 's' : ''} tracked</span>
+                    <span className="text-lg font-bold text-cta">{latestAvg}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2.5">
+                  {ASSESSMENT_CATEGORIES.map(({ key, label }) => {
+                    const current = latest[key as keyof WeeklyAssessment] as number
+                    const prev = previous ? (previous[key as keyof WeeklyAssessment] as number) : null
+                    const diff = prev !== null ? current - prev : null
+                    return (
+                      <div key={key} className="flex items-center gap-3">
+                        <span className="text-xs text-gray-400 w-24 shrink-0">{label}</span>
+                        <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${
+                              current <= 3 ? 'bg-red-500/80' : current <= 5 ? 'bg-yellow-500/80' : current <= 7 ? 'bg-cta/60' : 'bg-green-500/80'
+                            }`}
+                            style={{ width: `${(current / 10) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium text-gray-200 w-5 text-right tabular-nums">{current}</span>
+                        {diff !== null && diff !== 0 && (
+                          <span className={`text-xs font-medium w-6 ${diff > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {diff > 0 ? '+' : ''}{diff}
+                          </span>
+                        )}
+                        {diff !== null && diff === 0 && (
+                          <span className="text-xs text-gray-600 w-6">=</span>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {assessments.length > 1 && (
+                  <div className="mt-4 pt-4 border-t border-white/5">
+                    <h4 className="text-xs text-gray-500 mb-2">Weekly Averages</h4>
+                    <div className="flex gap-1.5 items-end h-16">
+                      {assessments.slice(0, 12).reverse().map(entry => {
+                        const avg = ASSESSMENT_CATEGORIES.reduce((sum, c) => sum + (entry[c.key as keyof WeeklyAssessment] as number), 0) / ASSESSMENT_CATEGORIES.length
+                        return (
+                          <div key={entry.id} className="flex-1 flex flex-col items-center gap-1">
+                            <div
+                              className={`w-full rounded-sm ${avg <= 3 ? 'bg-red-500/60' : avg <= 5 ? 'bg-yellow-500/60' : avg <= 7 ? 'bg-cta/50' : 'bg-green-500/60'}`}
+                              style={{ height: `${(avg / 10) * 100}%` }}
+                              title={`Week of ${entry.week_date}: ${avg.toFixed(1)}`}
+                            />
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-[10px] text-gray-600">
+                        {assessments.length > 1 ? new Date(assessments[Math.min(assessments.length - 1, 11)].week_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}
+                      </span>
+                      <span className="text-[10px] text-gray-600">
+                        {new Date(assessments[0].week_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
         </div>
       )}
 
