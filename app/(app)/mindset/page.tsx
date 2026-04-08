@@ -7,8 +7,9 @@ const VisualizationForm = dynamic(() => import('@/components/mindset/Visualizati
 const MeditationForm = dynamic(() => import('@/components/mindset/MeditationForm'))
 const AffirmationsList = dynamic(() => import('@/components/mindset/AffirmationsList'))
 const GoalsSection = dynamic(() => import('@/components/mindset/GoalsSection'))
+const WeeklyAssessment = dynamic(() => import('@/components/mindset/WeeklyAssessment'))
 
-const tabs = ['Journal', 'Visualization', 'Meditation', 'Affirmations', 'Goals'] as const
+const tabs = ['Journal', 'Weekly Assessment', 'Visualization', 'Meditation', 'Affirmations', 'Goals'] as const
 type Tab = typeof tabs[number]
 
 export default function MindsetPage() {
@@ -38,6 +39,7 @@ export default function MindsetPage() {
       </div>
 
       {activeTab === 'Journal' && <JournalTab />}
+      {activeTab === 'Weekly Assessment' && <WeeklyAssessment />}
       {activeTab === 'Visualization' && <VisualizationForm />}
       {activeTab === 'Meditation' && <MeditationForm />}
       {activeTab === 'Affirmations' && <AffirmationsList />}

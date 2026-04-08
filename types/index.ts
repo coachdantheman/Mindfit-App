@@ -169,6 +169,25 @@ export interface Goal {
   created_at: string
 }
 
+// Weekly Assessment
+export interface WeeklyAssessment {
+  id: string
+  user_id: string
+  week_date: string
+  self_identity_clarity: number
+  confidence: number
+  focus_quality: number
+  anxiety_management: number
+  resilience: number
+  motivation: number
+  mental_imagery: number
+  routine_consistency: number
+  team_relationships: number
+  vision_clarity: number
+  notes: string | null
+  created_at: string
+}
+
 // Sleep & Recovery
 export interface SleepEntry {
   id: string
