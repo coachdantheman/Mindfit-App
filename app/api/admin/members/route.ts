@@ -1,16 +1,10 @@
 import { NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-client'
 import { createAdminClient } from '@/lib/supabase-server'
+import { verifyApiUser } from '@/lib/api-auth'
 
 export async function GET() {
-  const supabase = await createServerSupabaseClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const adminCheck = createAdminClient()
-  const { data: profile } = await adminCheck
-    .from('profiles').select('role').eq('id', session.user.id).single()
-  if (profile?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const auth = await verifyApiUser('admin')
+  if (auth instanceof NextResponse) return auth
 
   const admin = createAdminClient()
   const { data: profiles, error } = await admin
@@ -20,7 +14,7 @@ export async function GET() {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const members = profiles.map((p: any) => ({
+  const members = profiles.map((p: { journal_entries?: { count: number }[]; [key: string]: unknown }) => ({
     ...p,
     entry_count: p.journal_entries?.[0]?.count ?? 0,
     journal_entries: undefined,

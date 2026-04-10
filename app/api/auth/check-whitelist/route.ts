@@ -15,17 +15,10 @@ export async function POST(req: Request) {
     .eq('email', email.toLowerCase().trim())
     .single()
 
-  if (error || !data) {
+  if (error || !data || data.registered) {
     return NextResponse.json(
-      { error: "Your email hasn't been approved yet. Contact your coach to get access." },
+      { error: "This email isn't available for signup. Contact your coach if you need access." },
       { status: 403 }
-    )
-  }
-
-  if (data.registered) {
-    return NextResponse.json(
-      { error: 'An account with this email already exists. Please sign in instead.' },
-      { status: 409 }
     )
   }
 

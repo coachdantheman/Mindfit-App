@@ -46,16 +46,13 @@ export default function WeeklyAssessment() {
   const weekDate = getMonday(new Date())
 
   useEffect(() => {
-    Promise.all([
-      fetch(`/api/mindset/weekly-assessment?date=${weekDate}`).then(r => r.json()),
-      fetch('/api/mindset/weekly-assessment').then(r => r.json()),
-    ]).then(([current, all]) => {
-      if (current.length > 0) {
-        const entry = current[0]
+    fetch('/api/mindset/weekly-assessment').then(r => r.json()).then(all => {
+      const current = all.find((e: WeeklyAssessmentType) => e.week_date === weekDate)
+      if (current) {
         const loaded: Record<string, number> = {}
-        CATEGORIES.forEach(c => { loaded[c.key] = entry[c.key] })
+        CATEGORIES.forEach(c => { loaded[c.key] = current[c.key] })
         setScores(loaded as Record<CategoryKey, number>)
-        setNotes(entry.notes || '')
+        setNotes(current.notes || '')
         setSaved(true)
       }
       setHistory(all)
@@ -72,8 +69,12 @@ export default function WeeklyAssessment() {
     })
     if (res.ok) {
       setSaved(true)
-      const updated = await fetch('/api/mindset/weekly-assessment').then(r => r.json())
-      setHistory(updated)
+      const saved = await res.json()
+      setHistory(prev => {
+        const idx = prev.findIndex(e => e.week_date === weekDate)
+        if (idx >= 0) return prev.map((e, i) => i === idx ? saved : e)
+        return [saved, ...prev]
+      })
     }
     setSaving(false)
   }
@@ -144,7 +145,7 @@ export default function WeeklyAssessment() {
             onChange={e => { setNotes(e.target.value); setSaved(false) }}
             placeholder="Any reflections on your week?"
             rows={3}
-            className="w-full bg-gray-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50 resize-none"
+            className="textarea-field"
           />
         </div>
 
@@ -152,7 +153,7 @@ export default function WeeklyAssessment() {
           <button
             onClick={handleSave}
             disabled={saving || saved}
-            className="bg-cta hover:bg-brand-600 text-gray-900 font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors disabled:opacity-50"
+            className="btn-primary"
           >
             {saving ? 'Saving…' : saved ? 'Success ✓' : 'Save Assessment'}
           </button>

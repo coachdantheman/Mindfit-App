@@ -1,7 +1,9 @@
 export async function sendWelcomeEmail(to: string) {
   if (!process.env.RESEND_API_KEY) return
 
-  await fetch('https://api.resend.com/emails', {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://mindfit.academy'
+
+  const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
@@ -18,7 +20,7 @@ export async function sendWelcomeEmail(to: string) {
           <p style="color:#9ca3af;font-size:15px;line-height:1.6;margin:0 0 24px;">
             Your coach has added you to the MindFit athlete development platform. Create your account to start training your mind.
           </p>
-          <a href="https://mindfit.academy/signup" style="display:inline-block;background:#C4B400;color:#0A0F1A;font-weight:700;padding:14px 28px;border-radius:12px;text-decoration:none;font-size:15px;margin-bottom:32px;">
+          <a href="${appUrl}/signup" style="display:inline-block;background:#C4B400;color:#0A0F1A;font-weight:700;padding:14px 28px;border-radius:12px;text-decoration:none;font-size:15px;margin-bottom:32px;">
             Create My Account →
           </a>
           <hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:32px 0;" />
@@ -28,4 +30,8 @@ export async function sendWelcomeEmail(to: string) {
       `,
     }),
   })
+
+  if (!res.ok) {
+    console.error('Failed to send welcome email:', res.status, await res.text().catch(() => ''))
+  }
 }

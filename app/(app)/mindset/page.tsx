@@ -27,11 +27,7 @@ export default function MindsetPage() {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
-              activeTab === tab
-                ? 'bg-cta/20 text-cta border border-cta/30'
-                : 'text-gray-500 border border-white/10 hover:text-gray-300'
-            }`}
+            className={activeTab === tab ? 'tab-btn-active' : 'tab-btn'}
           >
             {tab}
           </button>

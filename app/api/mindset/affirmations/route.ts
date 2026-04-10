@@ -72,13 +72,15 @@ export async function PATCH(req: Request) {
   if (!Array.isArray(items)) return NextResponse.json({ error: 'items array required' }, { status: 400 })
 
   const admin = createAdminClient()
-  for (const item of items) {
-    await admin
-      .from('affirmations')
-      .update({ sort_order: item.sort_order })
-      .eq('id', item.id)
-      .eq('user_id', auth.userId)
-  }
+  await Promise.all(
+    items.map((item: { id: string; sort_order: number }) =>
+      admin
+        .from('affirmations')
+        .update({ sort_order: item.sort_order })
+        .eq('id', item.id)
+        .eq('user_id', auth.userId)
+    )
+  )
 
   return NextResponse.json({ ok: true })
 }

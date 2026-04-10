@@ -212,12 +212,12 @@ export default function AffirmationsList() {
             value={newText}
             onChange={e => setNewText(e.target.value)}
             placeholder="I am confident under pressure…"
-            className="flex-1 bg-gray-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50"
+            className="input-field flex-1"
           />
           <button
             type="submit"
             disabled={adding || !newText.trim()}
-            className="bg-cta hover:bg-brand-600 text-gray-900 font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors disabled:opacity-50 whitespace-nowrap"
+            className="btn-primary whitespace-nowrap"
           >
             {adding ? 'Adding…' : 'Add'}
           </button>

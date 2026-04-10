@@ -96,9 +96,7 @@ export default function GoalsSection() {
                   key={t}
                   type="button"
                   onClick={() => setFormType(t)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    formType === t ? 'bg-cta/20 text-cta border border-cta/30' : 'text-gray-500 border border-white/10'
-                  }`}
+                  className={formType === t ? 'tab-btn-active text-xs' : 'tab-btn text-xs'}
                 >
                   {t.charAt(0).toUpperCase() + t.slice(1)}
                 </button>
@@ -108,19 +106,19 @@ export default function GoalsSection() {
               value={formTitle}
               onChange={e => setFormTitle(e.target.value)}
               placeholder="Goal title"
-              className="w-full bg-gray-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50"
+              className="input-field"
             />
             <textarea
               value={formDesc}
               onChange={e => setFormDesc(e.target.value)}
               placeholder="Description (optional)"
               rows={2}
-              className="w-full bg-gray-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50 resize-none"
+              className="textarea-field"
             />
             <button
               type="submit"
               disabled={saving || !formTitle.trim()}
-              className="bg-cta hover:bg-brand-600 text-gray-900 font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors disabled:opacity-50"
+              className="btn-primary"
             >
               {saving ? 'Saving…' : 'Add Goal'}
             </button>

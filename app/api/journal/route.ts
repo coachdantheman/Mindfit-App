@@ -20,6 +20,8 @@ export async function GET(req: Request) {
 
   if (date) query = query.eq('entry_date', date)
 
+  if (!date) query = query.limit(90)
+
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)

@@ -5,7 +5,7 @@ interface Props {
   onAdded: () => void
 }
 
-const SIGNUP_URL = 'https://mindfit.academy/signup'
+const SIGNUP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://mindfit.academy') + '/signup'
 
 export default function AddEmailForm({ onAdded }: Props) {
   const [email, setEmail] = useState('')
