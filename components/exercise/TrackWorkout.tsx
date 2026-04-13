@@ -20,11 +20,12 @@ interface TrackingExercise {
 type WorkoutSource = 'custom' | 'prebuilt' | 'coach'
 
 interface Props {
-  initialWorkout?: { exercises: WorkoutExercise[]; name: string; categoryName: string; workoutId?: string; coachWorkoutId?: string; source: WorkoutSource }
+  initialWorkout?: { exercises: WorkoutExercise[]; name: string; categoryName: string; workoutId?: string; coachWorkoutId?: string; programWorkoutId?: string; source: WorkoutSource }
   onDone?: () => void
+  showSuccess?: (msg: string) => void
 }
 
-export default function TrackWorkout({ initialWorkout, onDone }: Props) {
+export default function TrackWorkout({ initialWorkout, onDone, showSuccess }: Props) {
   const [mode, setMode] = useState<'select' | 'track' | 'history'>('history')
   const [logs, setLogs] = useState<WorkoutLog[]>([])
   const [expandedLog, setExpandedLog] = useState<string | null>(null)
@@ -36,6 +37,7 @@ export default function TrackWorkout({ initialWorkout, onDone }: Props) {
   const [categoryName, setCategoryName] = useState('')
   const [workoutId, setWorkoutId] = useState<string | null>(null)
   const [coachWorkoutId, setCoachWorkoutId] = useState<string | null>(null)
+  const [programWorkoutId, setProgramWorkoutId] = useState<string | null>(null)
   const [exercises, setExercises] = useState<TrackingExercise[]>([])
   const [duration, setDuration] = useState('')
   const [workoutNotes, setWorkoutNotes] = useState('')
@@ -65,16 +67,18 @@ export default function TrackWorkout({ initialWorkout, onDone }: Props) {
         initialWorkout.name,
         initialWorkout.categoryName,
         initialWorkout.workoutId || null,
-        initialWorkout.coachWorkoutId || null
+        initialWorkout.coachWorkoutId || null,
+        initialWorkout.programWorkoutId || null
       )
     }
   }, [initialWorkout])
 
-  const startTracking = (exList: WorkoutExercise[], name: string, catName: string, wId: string | null, cwId: string | null) => {
+  const startTracking = (exList: WorkoutExercise[], name: string, catName: string, wId: string | null, cwId: string | null, pwId: string | null = null) => {
     setWorkoutName(name)
     setCategoryName(catName)
     setWorkoutId(wId)
     setCoachWorkoutId(cwId)
+    setProgramWorkoutId(pwId)
     setExercises(exList.map(ex => ({
       name: ex.name,
       sets: Array.from({ length: ex.sets || 3 }, (_, i) => ({
@@ -145,6 +149,7 @@ export default function TrackWorkout({ initialWorkout, onDone }: Props) {
       body: JSON.stringify({
         workout_id: workoutId,
         coach_workout_id: coachWorkoutId,
+        program_workout_id: programWorkoutId,
         category_name: categoryName,
         workout_name: workoutName,
         duration_min: duration ? parseInt(duration) : null,
@@ -189,6 +194,7 @@ export default function TrackWorkout({ initialWorkout, onDone }: Props) {
 
       setMode('history')
       fetchHistory()
+      showSuccess?.('Workout logged successfully!')
       onDone?.()
     }
 

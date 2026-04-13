@@ -4,12 +4,13 @@ import { format, parseISO } from 'date-fns'
 import { MemberWithCount } from '@/types'
 import AddEmailForm from '@/components/admin/AddEmailForm'
 import CreateWorkout from '@/components/coach/CreateWorkout'
+import CreateProgram from '@/components/coach/CreateProgram'
 import Link from 'next/link'
 
 export default function CoachPage() {
   const [athletes, setAthletes] = useState<MemberWithCount[]>([])
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<'athletes' | 'add' | 'workouts'>('athletes')
+  const [tab, setTab] = useState<'athletes' | 'add' | 'workouts' | 'programs'>('athletes')
 
   const fetchAthletes = useCallback(async () => {
     const res = await fetch('/api/coach/athletes')
@@ -26,16 +27,17 @@ export default function CoachPage() {
         <p className="text-gray-500 text-sm mt-1">Manage and monitor your athletes.</p>
       </div>
 
-      <div className="flex gap-1 bg-white/5 p-1 rounded-xl mb-6 w-fit">
+      <div className="flex gap-1 bg-white/5 p-1 rounded-xl mb-6 overflow-x-auto">
         {([
           { key: 'athletes' as const, label: 'My Athletes' },
           { key: 'add' as const, label: 'Add Athlete' },
-          { key: 'workouts' as const, label: 'Create Workouts' },
+          { key: 'workouts' as const, label: 'Workouts' },
+          { key: 'programs' as const, label: 'Programs' },
         ]).map(t => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
               tab === t.key ? 'bg-gray-800 text-gray-100 shadow-sm' : 'text-gray-500 hover:text-gray-300'
             }`}
           >
@@ -45,7 +47,9 @@ export default function CoachPage() {
       </div>
 
       <div className="bg-gray-900 rounded-2xl border border-white/10 p-6">
-        {tab === 'add' ? (
+        {tab === 'programs' ? (
+          <CreateProgram />
+        ) : tab === 'add' ? (
           <div>
             <h3 className="font-semibold text-gray-100 mb-1">Add New Athlete</h3>
             <p className="text-sm text-gray-500 mb-3">Enter their email to grant app access. They'll be linked to you automatically when they sign up.</p>

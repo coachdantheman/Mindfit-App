@@ -182,6 +182,15 @@ export interface CoachWorkout {
   created_at: string
 }
 
+export interface CoachProgramAssignment {
+  id: string
+  program_id: string
+  athlete_id: string
+  coach_id: string
+  label: string
+  assigned_at: string
+}
+
 export interface ExerciseLog {
   id: string
   user_id: string

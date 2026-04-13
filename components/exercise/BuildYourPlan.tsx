@@ -1,8 +1,7 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { TrainingProgram, WorkoutExercise } from '@/types'
+import { useState } from 'react'
+import { WorkoutExercise } from '@/types'
 import { generatePlanTemplate } from '@/lib/workout-templates'
-import ProgramView from './ProgramView'
 
 const SPORTS = [
   'Football', 'Basketball', 'Baseball', 'Soccer', 'Hockey',
@@ -45,11 +44,15 @@ interface EditablePlan {
   blocks: EditableBlock[]
 }
 
+interface Props {
+  onPlanSaved?: () => void
+  showSuccess?: (msg: string) => void
+}
+
 let keyCounter = 0
 function nextKey() { return `ex-${++keyCounter}` }
 
 function toEditable(plan: ReturnType<typeof generatePlanTemplate>, durationWeeks: number): EditablePlan {
-  let weekNum = 1
   return {
     title: plan.title,
     description: plan.description,
@@ -77,11 +80,7 @@ function toEditable(plan: ReturnType<typeof generatePlanTemplate>, durationWeeks
 
 const DAY_NAMES = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-export default function BuildYourPlan() {
-  const [activeProgram, setActiveProgram] = useState<TrainingProgram | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [showBuilder, setShowBuilder] = useState(false)
-
+export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
   const [sport, setSport] = useState('')
   const [selectedGoals, setSelectedGoals] = useState<string[]>([])
   const [experience, setExperience] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate')
@@ -93,18 +92,6 @@ export default function BuildYourPlan() {
   const [editingWorkout, setEditingWorkout] = useState<{ bi: number; wi: number } | null>(null)
   const [savingPlan, setSavingPlan] = useState(false)
   const [enhancing, setEnhancing] = useState(false)
-
-  useEffect(() => { fetchActiveProgram() }, [])
-
-  const fetchActiveProgram = async () => {
-    setLoading(true)
-    const res = await fetch('/api/exercise/programs?active=true')
-    if (res.ok) {
-      const data = await res.json()
-      setActiveProgram(data.length > 0 ? data[0] : null)
-    }
-    setLoading(false)
-  }
 
   const toggleGoal = (key: string) => {
     setSelectedGoals(prev =>
@@ -120,31 +107,42 @@ export default function BuildYourPlan() {
     setError('')
     const template = generatePlanTemplate(sport, selectedGoals, experience, daysPerWeek, durationWeeks)
     setEditablePlan(toEditable(template, durationWeeks))
+    showSuccess?.('Plan generated! Customize and save below.')
   }
 
   const enhanceWithAI = async () => {
-    if (!sport.trim() || selectedGoals.length === 0) return
+    if (!sport.trim() || selectedGoals.length === 0) {
+      setError('Please select a sport and at least one goal.')
+      return
+    }
     setEnhancing(true)
     setError('')
-    const res = await fetch('/api/exercise/programs/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sport,
-        goals: selectedGoals,
-        experience_level: experience,
-        days_per_week: daysPerWeek,
-        duration_weeks: durationWeeks,
-      }),
-    })
-    if (res.ok) {
+    try {
+      const res = await fetch('/api/exercise/programs/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sport,
+          goals: selectedGoals,
+          experience_level: experience,
+          days_per_week: daysPerWeek,
+          duration_weeks: durationWeeks,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        setError(err.error || 'AI generation failed. Try "Generate My Plan" instead.')
+        setEnhancing(false)
+        return
+      }
       const data = await res.json()
-      const blocks = (data.blocks || []).map((block: any, bi: number) => ({
-        name: block.name || `Phase ${bi + 1}`,
-        focus: block.focus || '',
-        week_start: block.week_start || bi * 4 + 1,
-        week_end: block.week_end || Math.min((bi + 1) * 4, durationWeeks),
-        workouts: (block.workouts || []).map((w: any) => ({
+      if (!data.blocks || data.blocks.length === 0) {
+        setError('AI returned an incomplete plan. Try "Generate My Plan" instead.')
+        setEnhancing(false)
+        return
+      }
+      const blocks = data.blocks.map((block: any, bi: number) => {
+        const workouts = (block.workouts || []).map((w: any) => ({
           name: w.name || 'Workout',
           description: w.description || '',
           day_of_week: w.day_of_week || 1,
@@ -152,20 +150,36 @@ export default function BuildYourPlan() {
           exercises: (w.exercises || []).map((ex: any) => ({
             name: ex.name || '',
             sets: ex.sets || 3,
-            reps: ex.reps || '10',
+            reps: String(ex.reps || '10'),
             notes: ex.notes || '',
             _key: nextKey(),
           })),
-        })),
-      }))
+        }))
+        if (workouts.length === 0 || workouts.every((w: any) => w.exercises.length === 0)) {
+          return null
+        }
+        return {
+          name: block.name || `Phase ${bi + 1}`,
+          focus: block.focus || '',
+          week_start: block.week_start || bi * 4 + 1,
+          week_end: block.week_end || Math.min((bi + 1) * 4, durationWeeks),
+          workouts,
+        }
+      }).filter(Boolean)
+
+      if (blocks.length === 0) {
+        setError('AI returned an incomplete plan. Try "Generate My Plan" instead.')
+        setEnhancing(false)
+        return
+      }
       setEditablePlan({ title: data.title || `${sport} AI Plan`, description: data.description || '', blocks })
-    } else {
-      setError('AI enhancement failed. You can still edit the plan manually.')
+      showSuccess?.('AI plan generated! Customize and save below.')
+    } catch {
+      setError('AI generation failed. Try "Generate My Plan" instead.')
     }
     setEnhancing(false)
   }
 
-  // Inline editing helpers
   const updateExercise = (bi: number, wi: number, ei: number, field: keyof WorkoutExercise, value: any) => {
     setEditablePlan(prev => {
       if (!prev) return prev
@@ -205,6 +219,7 @@ export default function BuildYourPlan() {
   const savePlan = async () => {
     if (!editablePlan) return
     setSavingPlan(true)
+    setError('')
     const payload = {
       title: editablePlan.title,
       description: editablePlan.description,
@@ -235,25 +250,13 @@ export default function BuildYourPlan() {
 
     if (res.ok) {
       setEditablePlan(null)
-      setShowBuilder(false)
-      await fetchActiveProgram()
+      showSuccess?.('Plan saved successfully!')
+      onPlanSaved?.()
     } else {
       setError('Failed to save plan. Please try again.')
     }
     setSavingPlan(false)
   }
-
-  const deleteProgram = async () => {
-    if (!activeProgram) return
-    await fetch('/api/exercise/programs', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: activeProgram.id }),
-    })
-    setActiveProgram(null)
-  }
-
-  if (loading) return <p className="text-sm text-gray-500">Loading...</p>
 
   // Editable plan preview
   if (editablePlan) {
@@ -283,10 +286,9 @@ export default function BuildYourPlan() {
               </p>
             </div>
 
-            {/* Group by week */}
             {Array.from(new Set(block.workouts.map(w => w.week_number)))
               .sort((a, b) => a - b)
-              .slice(0, 1) // Show first week per block in preview (expand to see all)
+              .slice(0, 1)
               .map(weekNum => (
                 <div key={weekNum}>
                   <p className="text-xs uppercase tracking-wider text-gray-500 font-medium mb-2">
@@ -301,7 +303,7 @@ export default function BuildYourPlan() {
                       return (
                         <div key={wi} className="bg-gray-800/50 rounded-xl p-3 mb-2">
                           <div className="flex items-center justify-between mb-2">
-                            <div className="flex-1">
+                            <div className="flex-1 min-w-0">
                               {isEditing ? (
                                 <input
                                   value={workout.name}
@@ -309,60 +311,63 @@ export default function BuildYourPlan() {
                                   className="bg-gray-700 border border-white/10 rounded px-2 py-1 text-sm text-gray-100 w-full"
                                 />
                               ) : (
-                                <p className="text-sm font-medium text-gray-200">
+                                <p className="text-sm font-medium text-gray-200 truncate">
                                   {DAY_NAMES[workout.day_of_week]} — {workout.name}
                                 </p>
                               )}
-                              <p className="text-xs text-gray-500">{workout.description}</p>
+                              <p className="text-xs text-gray-500 truncate">{workout.description}</p>
                             </div>
                             <button
                               onClick={() => setEditingWorkout(isEditing ? null : { bi, wi: actualWi })}
-                              className="text-xs text-cta hover:underline ml-2"
+                              className="text-xs text-cta hover:underline ml-2 shrink-0"
                             >
                               {isEditing ? 'Done' : 'Edit'}
                             </button>
                           </div>
 
-                          {/* Exercise list */}
                           <div className="space-y-1">
                             {workout.exercises.map((ex, ei) => (
-                              <div key={ex._key} className="flex items-center gap-2 p-1.5 rounded bg-gray-700/30">
+                              <div key={ex._key} className={`rounded bg-gray-700/30 ${isEditing ? 'p-2 space-y-1.5' : 'flex items-center gap-2 p-1.5'}`}>
                                 {isEditing ? (
                                   <>
                                     <input
                                       value={ex.name}
                                       onChange={e => updateExercise(bi, actualWi, ei, 'name', e.target.value)}
-                                      className="bg-gray-700 border border-white/10 rounded px-1.5 py-0.5 text-xs text-gray-100 flex-1 min-w-0"
+                                      className="bg-gray-700 border border-white/10 rounded px-2 py-1 text-xs text-gray-100 w-full"
                                     />
-                                    <input
-                                      type="number"
-                                      value={ex.sets}
-                                      onChange={e => updateExercise(bi, actualWi, ei, 'sets', parseInt(e.target.value) || 1)}
-                                      className="bg-gray-700 border border-white/10 rounded px-1.5 py-0.5 text-xs text-gray-100 w-12 text-center"
-                                    />
-                                    <span className="text-xs text-gray-500">x</span>
-                                    <input
-                                      value={ex.reps}
-                                      onChange={e => updateExercise(bi, actualWi, ei, 'reps', e.target.value)}
-                                      className="bg-gray-700 border border-white/10 rounded px-1.5 py-0.5 text-xs text-gray-100 w-16"
-                                    />
+                                    <div className="flex items-center gap-2">
+                                      <input
+                                        type="number"
+                                        value={ex.sets}
+                                        onChange={e => updateExercise(bi, actualWi, ei, 'sets', parseInt(e.target.value) || 1)}
+                                        className="bg-gray-700 border border-white/10 rounded px-1.5 py-1 text-xs text-gray-100 w-14 text-center"
+                                        placeholder="Sets"
+                                      />
+                                      <span className="text-xs text-gray-500">x</span>
+                                      <input
+                                        value={ex.reps}
+                                        onChange={e => updateExercise(bi, actualWi, ei, 'reps', e.target.value)}
+                                        className="bg-gray-700 border border-white/10 rounded px-1.5 py-1 text-xs text-gray-100 w-20"
+                                        placeholder="Reps"
+                                      />
+                                      <button
+                                        onClick={() => removeExercise(bi, actualWi, ei)}
+                                        className="text-red-400 hover:text-red-300 text-xs px-1 shrink-0"
+                                      >
+                                        x
+                                      </button>
+                                    </div>
                                     <input
                                       value={ex.notes || ''}
                                       onChange={e => updateExercise(bi, actualWi, ei, 'notes', e.target.value)}
                                       placeholder="Notes"
-                                      className="bg-gray-700 border border-white/10 rounded px-1.5 py-0.5 text-xs text-gray-100 flex-1 min-w-0 placeholder:text-gray-600"
+                                      className="bg-gray-700 border border-white/10 rounded px-2 py-1 text-xs text-gray-100 w-full placeholder:text-gray-600"
                                     />
-                                    <button
-                                      onClick={() => removeExercise(bi, actualWi, ei)}
-                                      className="text-red-400 hover:text-red-300 text-xs px-1"
-                                    >
-                                      x
-                                    </button>
                                   </>
                                 ) : (
                                   <>
-                                    <p className="text-xs text-gray-300 flex-1">{ex.name}</p>
-                                    <p className="text-[10px] text-gray-500">
+                                    <p className="text-xs text-gray-300 flex-1 truncate">{ex.name}</p>
+                                    <p className="text-[10px] text-gray-500 shrink-0">
                                       {ex.sets} x {ex.reps}
                                       {ex.notes ? ` · ${ex.notes}` : ''}
                                     </p>
@@ -386,7 +391,7 @@ export default function BuildYourPlan() {
               ))}
             {block.workouts.length > block.workouts.filter(w => w.week_number === block.week_start).length && (
               <p className="text-xs text-gray-500 italic">
-                Weeks {block.week_start + 1}-{block.week_end} follow the same structure. Edits to Week {block.week_start} apply to all weeks in this block.
+                Weeks {block.week_start + 1}-{block.week_end} follow the same structure.
               </p>
             )}
           </div>
@@ -405,47 +410,22 @@ export default function BuildYourPlan() {
     )
   }
 
-  // Active program view
-  if (activeProgram && !showBuilder) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-100">Your Active Plan</h3>
-          <button
-            onClick={() => setShowBuilder(true)}
-            className="text-xs text-cta hover:underline"
-          >
-            Build New Plan
-          </button>
-        </div>
-        <ProgramView program={activeProgram} onDelete={deleteProgram} />
-      </div>
-    )
-  }
-
   // Builder form
   return (
     <div className="space-y-5">
-      {activeProgram && (
-        <button onClick={() => setShowBuilder(false)} className="text-xs text-gray-500 hover:text-gray-300">
-          ← Back to Active Plan
-        </button>
-      )}
-
       <div className="bg-gray-900 rounded-2xl border border-white/10 p-5 space-y-5">
         <div>
-          <h3 className="text-sm font-semibold text-gray-100 mb-1">Personalized Plan</h3>
-          <p className="text-xs text-gray-500">Enter your sport and goals to instantly generate a periodized training program. Edit any workout before saving.</p>
+          <h3 className="text-sm font-semibold text-gray-100 mb-1">Create a Plan</h3>
+          <p className="text-xs text-gray-500">Enter your sport and goals to generate a periodized training program. Edit any workout before saving.</p>
         </div>
 
-        {/* Sport */}
         <div>
           <label className="text-xs text-gray-500 block mb-1">Sport</label>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <select
               value={SPORTS.includes(sport) ? sport : ''}
               onChange={e => setSport(e.target.value)}
-              className="flex-1 bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-cta/50"
+              className="flex-1 bg-gray-800 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-cta/50"
             >
               <option value="">Select sport...</option>
               {SPORTS.map(s => <option key={s} value={s}>{s}</option>)}
@@ -454,12 +434,11 @@ export default function BuildYourPlan() {
               value={!SPORTS.includes(sport) ? sport : ''}
               onChange={e => setSport(e.target.value)}
               placeholder="Or type your sport"
-              className="flex-1 bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50"
+              className="flex-1 bg-gray-800 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50"
             />
           </div>
         </div>
 
-        {/* Goals */}
         <div>
           <label className="text-xs text-gray-500 block mb-2">Goals</label>
           <div className="flex flex-wrap gap-2">
@@ -467,7 +446,7 @@ export default function BuildYourPlan() {
               <button
                 key={g.key}
                 onClick={() => toggleGoal(g.key)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                className={`px-3 py-2 rounded-full text-xs font-medium border transition-all ${
                   selectedGoals.includes(g.key)
                     ? 'bg-cta/20 text-cta border-cta/30'
                     : 'bg-gray-800 text-gray-400 border-white/10 hover:border-white/20'
@@ -479,7 +458,6 @@ export default function BuildYourPlan() {
           </div>
         </div>
 
-        {/* Experience */}
         <div>
           <label className="text-xs text-gray-500 block mb-2">Experience Level</label>
           <div className="flex gap-2">
@@ -487,7 +465,7 @@ export default function BuildYourPlan() {
               <button
                 key={level}
                 onClick={() => setExperience(level)}
-                className={`flex-1 py-2 rounded-lg text-xs font-medium border transition-all ${
+                className={`flex-1 py-2.5 rounded-lg text-xs font-medium border transition-all ${
                   experience === level
                     ? 'bg-cta/20 text-cta border-cta/30'
                     : 'bg-gray-800 text-gray-400 border-white/10 hover:border-white/20'
@@ -499,7 +477,6 @@ export default function BuildYourPlan() {
           </div>
         </div>
 
-        {/* Days per week */}
         <div>
           <label className="text-xs text-gray-500 block mb-1">Days Per Week: {daysPerWeek}</label>
           <input
@@ -515,7 +492,6 @@ export default function BuildYourPlan() {
           </div>
         </div>
 
-        {/* Duration */}
         <div>
           <label className="text-xs text-gray-500 block mb-2">Program Duration</label>
           <div className="flex gap-2">
@@ -523,7 +499,7 @@ export default function BuildYourPlan() {
               <button
                 key={w}
                 onClick={() => setDurationWeeks(w)}
-                className={`flex-1 py-2 rounded-lg text-xs font-medium border transition-all ${
+                className={`flex-1 py-2.5 rounded-lg text-xs font-medium border transition-all ${
                   durationWeeks === w
                     ? 'bg-cta/20 text-cta border-cta/30'
                     : 'bg-gray-800 text-gray-400 border-white/10 hover:border-white/20'
