@@ -28,6 +28,20 @@ export async function POST(req: Request) {
   const body = await req.json()
   if (!body.food_name?.trim()) return NextResponse.json({ error: 'Food name required' }, { status: 400 })
 
+  const protein_g = body.protein_g || 0
+  const carbs_g = body.carbs_g || 0
+  const fat_g = body.fat_g || 0
+  const calculatedCal = Math.round(protein_g * 4 + carbs_g * 4 + fat_g * 9)
+  const calories = body.calories || calculatedCal || 0
+
+  let warning: string | undefined
+  if (body.calories && calculatedCal > 0) {
+    const diff = Math.abs(body.calories - calculatedCal) / calculatedCal
+    if (diff > 0.1) {
+      warning = `Entered ${body.calories} cal but macros add up to ${calculatedCal} cal`
+    }
+  }
+
   const admin = createAdminClient()
   const { data, error } = await admin
     .from('food_entries')
@@ -36,16 +50,16 @@ export async function POST(req: Request) {
       entry_date: body.entry_date || new Date().toISOString().split('T')[0],
       meal_name: body.meal_name || 'Snack',
       food_name: body.food_name.trim(),
-      calories: body.calories || 0,
-      protein_g: body.protein_g || 0,
-      carbs_g: body.carbs_g || 0,
-      fat_g: body.fat_g || 0,
+      calories,
+      protein_g,
+      carbs_g,
+      fat_g,
     })
     .select()
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data, { status: 201 })
+  return NextResponse.json({ ...data, warning }, { status: 201 })
 }
 
 export async function DELETE(req: Request) {

@@ -30,6 +30,8 @@ export async function POST(req: Request) {
     .insert({
       user_id: auth.userId,
       workout_id: body.workout_id || null,
+      program_workout_id: body.program_workout_id || null,
+      coach_workout_id: body.coach_workout_id || null,
       log_date: body.log_date || new Date().toISOString().split('T')[0],
       category_name: body.category_name,
       workout_name: body.workout_name,

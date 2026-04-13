@@ -72,6 +72,10 @@ export interface NutritionGoal {
   protein_g: number
   carbs_g: number
   fat_g: number
+  mode: 'absolute' | 'percentage'
+  protein_pct: number
+  carbs_pct: number
+  fat_pct: number
   updated_at: string
 }
 
@@ -116,10 +120,77 @@ export interface WorkoutLog {
   id: string
   user_id: string
   workout_id: string | null
+  program_workout_id: string | null
+  coach_workout_id: string | null
   log_date: string
   category_name: string
   workout_name: string
   duration_min: number | null
+  notes: string | null
+  created_at: string
+  exercise_logs?: ExerciseLog[]
+}
+
+// Training Programs
+export interface TrainingProgram {
+  id: string
+  user_id: string
+  created_by: string
+  title: string
+  sport: string | null
+  goals: string[]
+  description: string | null
+  duration_weeks: number
+  is_active: boolean
+  source: 'ai' | 'coach' | 'self'
+  created_at: string
+  blocks?: ProgramBlock[]
+}
+
+export interface ProgramBlock {
+  id: string
+  program_id: string
+  name: string
+  week_start: number
+  week_end: number
+  focus: string | null
+  sort_order: number
+  workouts?: ProgramWorkout[]
+}
+
+export interface ProgramWorkout {
+  id: string
+  block_id: string
+  program_id: string
+  day_of_week: number
+  week_number: number
+  name: string
+  description: string | null
+  exercises: WorkoutExercise[]
+  sort_order: number
+}
+
+export interface CoachWorkout {
+  id: string
+  coach_id: string
+  athlete_id: string
+  name: string
+  description: string | null
+  exercises: WorkoutExercise[]
+  assigned_date: string | null
+  is_completed: boolean
+  created_at: string
+}
+
+export interface ExerciseLog {
+  id: string
+  user_id: string
+  workout_log_id: string | null
+  exercise_name: string
+  set_number: number
+  reps: number | null
+  weight: number | null
+  rpe: number | null
   notes: string | null
   created_at: string
 }

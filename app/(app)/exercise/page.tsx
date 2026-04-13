@@ -1,230 +1,75 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { format, parseISO } from 'date-fns'
-import { WorkoutCategory, Workout, WorkoutExercise, WorkoutLog } from '@/types'
+import { useState, useCallback } from 'react'
+import { Workout, WorkoutExercise } from '@/types'
+import PreBuiltWorkouts from '@/components/exercise/PreBuiltWorkouts'
+import TrackWorkout from '@/components/exercise/TrackWorkout'
+import BuildYourPlan from '@/components/exercise/BuildYourPlan'
 
-const CATEGORY_ICONS: Record<string, string> = {
-  Speed: '⚡',
-  Explosiveness: '💥',
-  Strength: '🏋️',
-  Flexibility: '🧘',
-  Calisthenics: '🤸',
-  Balance: '⚖️',
-}
+type Tab = 'build' | 'prebuilt' | 'track'
 
-type View = 'categories' | 'workouts' | 'history'
+const TABS: { key: Tab; label: string }[] = [
+  { key: 'build', label: 'Build Your Plan' },
+  { key: 'prebuilt', label: 'Pre-Built Workouts' },
+  { key: 'track', label: 'Track Workouts' },
+]
 
 export default function ExercisePage() {
-  const [view, setView] = useState<View>('categories')
-  const [categories, setCategories] = useState<(WorkoutCategory & { workout_count: number })[]>([])
-  const [workouts, setWorkouts] = useState<Workout[]>([])
-  const [logs, setLogs] = useState<WorkoutLog[]>([])
-  const [selectedCategory, setSelectedCategory] = useState<WorkoutCategory | null>(null)
-  const [expandedWorkout, setExpandedWorkout] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [logForm, setLogForm] = useState<{ workoutId: string; categoryName: string; workoutName: string } | null>(null)
-  const [logDuration, setLogDuration] = useState('')
-  const [logNotes, setLogNotes] = useState('')
-  const [saving, setSaving] = useState(false)
+  const [tab, setTab] = useState<Tab>('build')
+  const [trackingWorkout, setTrackingWorkout] = useState<{
+    exercises: WorkoutExercise[]
+    name: string
+    categoryName: string
+    workoutId?: string
+    source: 'prebuilt' | 'custom' | 'coach'
+  } | null>(null)
 
-  useEffect(() => {
-    fetch('/api/exercise/categories')
-      .then(r => r.json())
-      .then(data => { setCategories(data); setLoading(false) })
+  const handleStartWorkout = useCallback((workout: Workout, categoryName: string) => {
+    setTrackingWorkout({
+      exercises: workout.exercises,
+      name: workout.name,
+      categoryName,
+      workoutId: workout.id,
+      source: 'prebuilt',
+    })
+    setTab('track')
   }, [])
 
-  const openCategory = async (cat: WorkoutCategory) => {
-    setSelectedCategory(cat)
-    setView('workouts')
-    const res = await fetch(`/api/exercise/workouts?categoryId=${cat.id}`)
-    setWorkouts(await res.json())
-  }
-
-  const openHistory = async () => {
-    setView('history')
-    const res = await fetch('/api/exercise/logs')
-    setLogs(await res.json())
-  }
-
-  const logWorkout = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!logForm) return
-    setSaving(true)
-    const res = await fetch('/api/exercise/logs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        workout_id: logForm.workoutId,
-        category_name: logForm.categoryName,
-        workout_name: logForm.workoutName,
-        duration_min: logDuration ? parseInt(logDuration) : null,
-        notes: logNotes || null,
-      }),
-    })
-    if (res.ok) {
-      setLogForm(null)
-      setLogDuration('')
-      setLogNotes('')
-    }
-    setSaving(false)
-  }
-
-  if (loading) return (
-    <div>
-      <h1 className="text-2xl font-bold text-gray-100 mb-2">Exercise</h1>
-      <p className="text-sm text-gray-500">Loading…</p>
-    </div>
-  )
+  const handleTrackDone = useCallback(() => {
+    setTrackingWorkout(null)
+  }, [])
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-100">Exercise</h1>
-          <p className="text-gray-500 text-sm mt-1">Browse workouts and log your training.</p>
-        </div>
-        <button
-          onClick={() => view === 'history' ? setView('categories') : openHistory()}
-          className="text-sm text-cta font-medium hover:underline"
-        >
-          {view === 'history' ? '← Categories' : 'History'}
-        </button>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-100">Exercise</h1>
+        <p className="text-gray-500 text-sm mt-1">Build plans, browse workouts, and track your training.</p>
       </div>
 
-      {/* Category Grid */}
-      {view === 'categories' && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {categories.length === 0 ? (
-            <div className="col-span-full text-center py-12 text-gray-400">
-              <p className="font-medium">No workout categories yet</p>
-              <p className="text-sm mt-1">Categories will appear here once added to the database.</p>
-            </div>
-          ) : categories.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => openCategory(cat)}
-              className="bg-gray-900 rounded-2xl border border-white/10 p-5 text-left hover:border-cta/30 transition-colors group"
-            >
-              <p className="text-2xl mb-2">{CATEGORY_ICONS[cat.name] || '💪'}</p>
-              <p className="font-semibold text-gray-100 group-hover:text-cta transition-colors">{cat.name}</p>
-              {cat.description && <p className="text-xs text-gray-500 mt-1">{cat.description}</p>}
-              <p className="text-xs text-gray-500 mt-2">{cat.workout_count} workouts</p>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Workouts in Category */}
-      {view === 'workouts' && selectedCategory && (
-        <div>
-          <button onClick={() => setView('categories')} className="text-sm text-brand-500 hover:underline mb-4 inline-block">
-            ← All Categories
+      {/* Tab bar */}
+      <div className="flex gap-1 bg-gray-900 rounded-xl p-1 border border-white/10 mb-6">
+        {TABS.map(t => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+              tab === t.key
+                ? 'bg-cta/20 text-cta'
+                : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800'
+            }`}
+          >
+            {t.label}
           </button>
-          <h2 className="text-lg font-bold text-gray-100 mb-4">
-            {CATEGORY_ICONS[selectedCategory.name] || '💪'} {selectedCategory.name}
-          </h2>
+        ))}
+      </div>
 
-          {workouts.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-8">No workouts in this category yet.</p>
-          ) : (
-            <div className="space-y-3">
-              {workouts.map(w => (
-                <div key={w.id} className="bg-gray-900 rounded-2xl border border-white/10 overflow-hidden">
-                  <button
-                    onClick={() => setExpandedWorkout(expandedWorkout === w.id ? null : w.id)}
-                    className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-800/50 transition-colors"
-                  >
-                    <div>
-                      <p className="font-semibold text-gray-100">{w.name}</p>
-                      {w.description && <p className="text-xs text-gray-500 mt-0.5">{w.description}</p>}
-                    </div>
-                    <span className="text-gray-500 text-sm">{expandedWorkout === w.id ? '▲' : '▼'}</span>
-                  </button>
-
-                  {expandedWorkout === w.id && (
-                    <div className="px-4 pb-4 border-t border-white/5">
-                      {(w.exercises as WorkoutExercise[]).length > 0 ? (
-                        <div className="space-y-2 mt-3">
-                          {(w.exercises as WorkoutExercise[]).map((ex, i) => (
-                            <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-gray-800/50">
-                              <p className="text-sm text-gray-200">{ex.name}</p>
-                              <p className="text-xs text-gray-500">
-                                {ex.sets && ex.reps ? `${ex.sets} × ${ex.reps}` : ''}
-                                {ex.notes ? ` · ${ex.notes}` : ''}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-gray-500 mt-3">Exercise details coming soon.</p>
-                      )}
-
-                      {logForm?.workoutId === w.id ? (
-                        <form onSubmit={logWorkout} className="mt-4 space-y-2">
-                          <div className="flex gap-2">
-                            <input
-                              type="number"
-                              value={logDuration}
-                              onChange={e => setLogDuration(e.target.value)}
-                              placeholder="Duration (min)"
-                              className="w-32 bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50"
-                            />
-                            <input
-                              value={logNotes}
-                              onChange={e => setLogNotes(e.target.value)}
-                              placeholder="Notes (optional)"
-                              className="flex-1 bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50"
-                            />
-                          </div>
-                          <div className="flex gap-2">
-                            <button type="submit" disabled={saving} className="bg-cta hover:bg-brand-600 text-gray-900 font-semibold px-4 py-2 rounded-xl text-sm transition-colors disabled:opacity-50">
-                              {saving ? 'Logging…' : 'Log It'}
-                            </button>
-                            <button type="button" onClick={() => setLogForm(null)} className="text-sm text-gray-500 hover:text-gray-300">Cancel</button>
-                          </div>
-                        </form>
-                      ) : (
-                        <button
-                          onClick={() => setLogForm({ workoutId: w.id, categoryName: selectedCategory.name, workoutName: w.name })}
-                          className="mt-4 bg-cta/20 text-cta font-medium px-4 py-2 rounded-xl text-sm hover:bg-cta/30 transition-colors"
-                        >
-                          Complete Workout
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Workout History */}
-      {view === 'history' && (
-        <div>
-          {logs.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-8">No workouts logged yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {logs.map(log => (
-                <div key={log.id} className="p-3 rounded-xl bg-gray-900 border border-white/10">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-200">{log.workout_name}</p>
-                      <p className="text-xs text-gray-500">
-                        {log.category_name}
-                        {log.duration_min ? ` · ${log.duration_min} min` : ''}
-                      </p>
-                    </div>
-                    <span className="text-xs text-gray-500">{format(parseISO(log.log_date), 'MMM d')}</span>
-                  </div>
-                  {log.notes && <p className="text-xs text-gray-400 mt-1">{log.notes}</p>}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+      {/* Tab content */}
+      {tab === 'build' && <BuildYourPlan />}
+      {tab === 'prebuilt' && <PreBuiltWorkouts onStartWorkout={handleStartWorkout} />}
+      {tab === 'track' && (
+        <TrackWorkout
+          initialWorkout={trackingWorkout || undefined}
+          onDone={handleTrackDone}
+        />
       )}
     </div>
   )

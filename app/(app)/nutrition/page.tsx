@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { format, addDays, subDays } from 'date-fns'
 import { FoodEntry, NutritionGoal } from '@/types'
+import MacroPercentageSlider from '@/components/nutrition/MacroPercentageSlider'
 
 const MEALS = ['Breakfast', 'Lunch', 'Dinner', 'Snack'] as const
 
@@ -27,10 +28,14 @@ export default function NutritionPage() {
   const [foodSuccess, setFoodSuccess] = useState(false)
 
   // Goal form state
+  const [goalMode, setGoalMode] = useState<'absolute' | 'percentage'>('absolute')
   const [gCalories, setGCalories] = useState(2000)
   const [gProtein, setGProtein] = useState(150)
   const [gCarbs, setGCarbs] = useState(250)
   const [gFat, setGFat] = useState(65)
+  const [gProteinPct, setGProteinPct] = useState(30)
+  const [gCarbsPct, setGCarbsPct] = useState(40)
+  const [gFatPct, setGFatPct] = useState(30)
 
   // Add food form state
   const [fMeal, setFMeal] = useState<string>('Breakfast')
@@ -39,6 +44,7 @@ export default function NutritionPage() {
   const [fProtein, setFProtein] = useState('')
   const [fCarbs, setFCarbs] = useState('')
   const [fFat, setFFat] = useState('')
+  const [caloriesManual, setCaloriesManual] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const fetchData = useCallback(async () => {
@@ -56,6 +62,10 @@ export default function NutritionPage() {
       setGProtein(goalsData.protein_g)
       setGCarbs(goalsData.carbs_g)
       setGFat(goalsData.fat_g)
+      setGoalMode(goalsData.mode || 'absolute')
+      setGProteinPct(goalsData.protein_pct ?? 30)
+      setGCarbsPct(goalsData.carbs_pct ?? 40)
+      setGFatPct(goalsData.fat_pct ?? 30)
     }
     setLoading(false)
   }, [date])
@@ -68,6 +78,23 @@ export default function NutritionPage() {
       .then(data => { if (Array.isArray(data)) setFrequentFoods(data) })
   }, [])
 
+  // Auto-calculate calories from macros when entering food
+  const autoCalories = Math.round(
+    (parseFloat(fProtein) || 0) * 4 +
+    (parseFloat(fCarbs) || 0) * 4 +
+    (parseFloat(fFat) || 0) * 9
+  )
+
+  useEffect(() => {
+    if (!caloriesManual && (fProtein || fCarbs || fFat)) {
+      setFCalories(autoCalories > 0 ? String(autoCalories) : '')
+    }
+  }, [fProtein, fCarbs, fFat, caloriesManual, autoCalories])
+
+  const calorieMismatch = caloriesManual && autoCalories > 0 && fCalories
+    ? Math.abs(parseInt(fCalories) - autoCalories) / autoCalories > 0.1
+    : false
+
   const totals = entries.reduce(
     (acc, e) => ({
       calories: acc.calories + e.calories,
@@ -79,14 +106,30 @@ export default function NutritionPage() {
   )
 
   const saveGoals = async () => {
-    await fetch('/api/nutrition/goals', {
+    const payload: Record<string, unknown> = { mode: goalMode, calories: gCalories }
+    if (goalMode === 'absolute') {
+      payload.protein_g = gProtein
+      payload.carbs_g = gCarbs
+      payload.fat_g = gFat
+    } else {
+      payload.protein_pct = gProteinPct
+      payload.carbs_pct = gCarbsPct
+      payload.fat_pct = gFatPct
+    }
+    const res = await fetch('/api/nutrition/goals', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ calories: gCalories, protein_g: gProtein, carbs_g: gCarbs, fat_g: gFat }),
+      body: JSON.stringify(payload),
     })
-    setGoals({ ...goals!, calories: gCalories, protein_g: gProtein, carbs_g: gCarbs, fat_g: gFat })
-    setGoalSuccess(true)
-    setTimeout(() => { setGoalSuccess(false); setShowGoalForm(false) }, 1500)
+    if (res.ok) {
+      const data = await res.json()
+      setGoals(data)
+      setGProtein(data.protein_g)
+      setGCarbs(data.carbs_g)
+      setGFat(data.fat_g)
+      setGoalSuccess(true)
+      setTimeout(() => { setGoalSuccess(false); setShowGoalForm(false) }, 1500)
+    }
   }
 
   const postFood = async (payload: { meal_name: string; food_name: string; calories: number; protein_g: number; carbs_g: number; fat_g: number }) => {
@@ -118,6 +161,7 @@ export default function NutritionPage() {
     setFProtein('')
     setFCarbs('')
     setFFat('')
+    setCaloriesManual(false)
     setFoodSuccess(true)
     setTimeout(() => { setFoodSuccess(false); setShowAddForm(false) }, 1500)
     setSaving(false)
@@ -143,12 +187,16 @@ export default function NutritionPage() {
     setEntries(prev => prev.filter(e => e.id !== id))
   }
 
-  const pct = (current: number, goal: number) => Math.min(100, Math.round((current / goal) * 100))
+  const pct = (current: number, goal: number) => goal > 0 ? Math.min(100, Math.round((current / goal) * 100)) : 0
 
   const goalCalories = goals?.calories || 2000
   const goalProtein = goals?.protein_g || 150
   const goalCarbs = goals?.carbs_g || 250
   const goalFat = goals?.fat_g || 65
+
+  // Sanity check for absolute mode
+  const absoluteCalcCal = gProtein * 4 + gCarbs * 4 + gFat * 9
+  const absoluteMismatch = goalMode === 'absolute' && Math.abs(gCalories - absoluteCalcCal) / (absoluteCalcCal || 1) > 0.1
 
   return (
     <div>
@@ -170,28 +218,72 @@ export default function NutritionPage() {
       </div>
 
       {showGoalForm && (
-        <div className="bg-gray-900 rounded-2xl border border-white/10 p-5 mb-5 space-y-3">
-          <h3 className="text-sm font-semibold text-gray-100">Daily Goals</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[
-              { label: 'Calories', value: gCalories, set: setGCalories },
-              { label: 'Protein (g)', value: gProtein, set: setGProtein },
-              { label: 'Carbs (g)', value: gCarbs, set: setGCarbs },
-              { label: 'Fat (g)', value: gFat, set: setGFat },
-            ].map(f => (
-              <div key={f.label}>
-                <label className="text-xs text-gray-500 block mb-1">{f.label}</label>
-                <input
-                  type="number"
-                  value={f.value}
-                  onChange={e => f.set(parseInt(e.target.value) || 0)}
-                  className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-cta/50"
-                />
-              </div>
-            ))}
+        <div className="bg-gray-900 rounded-2xl border border-white/10 p-5 mb-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-100">Daily Goals</h3>
+            <div className="flex bg-gray-800 rounded-lg p-0.5 border border-white/10">
+              <button
+                onClick={() => setGoalMode('absolute')}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                  goalMode === 'absolute' ? 'bg-cta/20 text-cta' : 'text-gray-400 hover:text-gray-200'
+                }`}
+              >
+                Grams
+              </button>
+              <button
+                onClick={() => setGoalMode('percentage')}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                  goalMode === 'percentage' ? 'bg-cta/20 text-cta' : 'text-gray-400 hover:text-gray-200'
+                }`}
+              >
+                Percentage
+              </button>
+            </div>
           </div>
+
+          {goalMode === 'absolute' ? (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: 'Calories', value: gCalories, set: setGCalories },
+                  { label: 'Protein (g)', value: gProtein, set: setGProtein },
+                  { label: 'Carbs (g)', value: gCarbs, set: setGCarbs },
+                  { label: 'Fat (g)', value: gFat, set: setGFat },
+                ].map(f => (
+                  <div key={f.label}>
+                    <label className="text-xs text-gray-500 block mb-1">{f.label}</label>
+                    <input
+                      type="number"
+                      value={f.value}
+                      onChange={e => f.set(parseInt(e.target.value) || 0)}
+                      className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-cta/50"
+                    />
+                  </div>
+                ))}
+              </div>
+              {absoluteMismatch && (
+                <p className="text-xs text-amber-400">
+                  Macros add up to {absoluteCalcCal} cal (your target is {gCalories} cal)
+                </p>
+              )}
+            </>
+          ) : (
+            <MacroPercentageSlider
+              totalCalories={gCalories}
+              proteinPct={gProteinPct}
+              carbsPct={gCarbsPct}
+              fatPct={gFatPct}
+              onCaloriesChange={setGCalories}
+              onChange={({ proteinPct, carbsPct, fatPct }) => {
+                setGProteinPct(proteinPct)
+                setGCarbsPct(carbsPct)
+                setGFatPct(fatPct)
+              }}
+            />
+          )}
+
           <button onClick={saveGoals} disabled={goalSuccess} className="bg-cta hover:bg-brand-600 text-gray-900 font-semibold px-4 py-2 rounded-xl text-sm transition-colors disabled:opacity-70">
-            {goalSuccess ? 'Success ✓' : 'Save Goals'}
+            {goalSuccess ? 'Success' : 'Save Goals'}
           </button>
         </div>
       )}
@@ -228,7 +320,7 @@ export default function NutritionPage() {
         </div>
       </div>
 
-      {/* Quick Add — frequent foods */}
+      {/* Quick Add */}
       {frequentFoods.length > 0 && (
         <div className="bg-gray-900 rounded-2xl border border-white/10 p-5 mb-5">
           <h3 className="font-semibold text-gray-100 text-sm mb-3">Quick Add</h3>
@@ -277,8 +369,21 @@ export default function NutritionPage() {
               />
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="relative">
+                <input
+                  type="number"
+                  value={fCalories}
+                  onChange={e => { setFCalories(e.target.value); setCaloriesManual(true) }}
+                  placeholder="Cal"
+                  className={`w-full bg-gray-800 border rounded-lg px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50 ${
+                    calorieMismatch ? 'border-amber-500/50' : 'border-white/10'
+                  }`}
+                />
+                {!caloriesManual && fCalories && (
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-500">auto</span>
+                )}
+              </div>
               {[
-                { label: 'Cal', value: fCalories, set: setFCalories },
                 { label: 'Protein g', value: fProtein, set: setFProtein },
                 { label: 'Carbs g', value: fCarbs, set: setFCarbs },
                 { label: 'Fat g', value: fFat, set: setFFat },
@@ -293,18 +398,23 @@ export default function NutritionPage() {
                 />
               ))}
             </div>
+            {calorieMismatch && (
+              <p className="text-xs text-amber-400">
+                Macros add up to {autoCalories} cal (you entered {fCalories})
+              </p>
+            )}
             <button
               type="submit"
               disabled={saving || !fFood.trim()}
               className="bg-cta hover:bg-brand-600 text-gray-900 font-semibold px-4 py-2 rounded-xl text-sm transition-colors disabled:opacity-50"
             >
-              {saving ? 'Adding…' : foodSuccess ? 'Success ✓' : 'Add'}
+              {saving ? 'Adding...' : foodSuccess ? 'Success' : 'Add'}
             </button>
           </form>
         )}
 
         {loading ? (
-          <p className="text-sm text-gray-500">Loading…</p>
+          <p className="text-sm text-gray-500">Loading...</p>
         ) : entries.length === 0 ? (
           <p className="text-sm text-gray-500 text-center py-6">No food logged for this day.</p>
         ) : (

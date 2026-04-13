@@ -165,7 +165,33 @@ export default function AthleteDetail({ athleteId, backHref }: { athleteId: stri
         </div>
       )}
 
-      {section === 'exercise' && <WorkoutLogList logs={workoutLogs} />}
+      {section === 'exercise' && (
+        <div className="space-y-4">
+          <WorkoutLogList logs={workoutLogs} />
+          {workoutLogs.some(l => l.exercise_logs && l.exercise_logs.length > 0) && (
+            <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
+              <h3 className="font-semibold text-gray-100 mb-3 text-sm">Per-Exercise Data</h3>
+              <div className="space-y-2">
+                {workoutLogs
+                  .filter(l => l.exercise_logs && l.exercise_logs.length > 0)
+                  .slice(0, 10)
+                  .map(l => (
+                    <div key={l.id} className="p-2 rounded-lg bg-gray-800/30">
+                      <p className="text-xs text-gray-400 mb-1">{l.workout_name} — {l.log_date}</p>
+                      <div className="flex flex-wrap gap-1">
+                        {l.exercise_logs!.map(el => (
+                          <span key={el.id} className="text-[10px] text-gray-500 bg-gray-700/50 px-1.5 py-0.5 rounded">
+                            {el.exercise_name} S{el.set_number}: {el.reps ?? '-'}r{el.weight ? ` @${el.weight}lbs` : ''}{el.rpe ? ` RPE${el.rpe}` : ''}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {section === 'sleep' && (
         <SleepEntriesList entries={sleepEntries} avgSleep={avgSleep} avgSleepQuality={avgSleepQuality} />

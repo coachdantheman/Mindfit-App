@@ -3,12 +3,13 @@ import { useState, useEffect, useCallback } from 'react'
 import { format, parseISO } from 'date-fns'
 import { MemberWithCount } from '@/types'
 import AddEmailForm from '@/components/admin/AddEmailForm'
+import CreateWorkout from '@/components/coach/CreateWorkout'
 import Link from 'next/link'
 
 export default function CoachPage() {
   const [athletes, setAthletes] = useState<MemberWithCount[]>([])
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<'athletes' | 'add'>('athletes')
+  const [tab, setTab] = useState<'athletes' | 'add' | 'workouts'>('athletes')
 
   const fetchAthletes = useCallback(async () => {
     const res = await fetch('/api/coach/athletes')
@@ -26,15 +27,19 @@ export default function CoachPage() {
       </div>
 
       <div className="flex gap-1 bg-white/5 p-1 rounded-xl mb-6 w-fit">
-        {(['athletes', 'add'] as const).map(t => (
+        {([
+          { key: 'athletes' as const, label: 'My Athletes' },
+          { key: 'add' as const, label: 'Add Athlete' },
+          { key: 'workouts' as const, label: 'Create Workouts' },
+        ]).map(t => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={t.key}
+            onClick={() => setTab(t.key)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              tab === t ? 'bg-gray-800 text-gray-100 shadow-sm' : 'text-gray-500 hover:text-gray-300'
+              tab === t.key ? 'bg-gray-800 text-gray-100 shadow-sm' : 'text-gray-500 hover:text-gray-300'
             }`}
           >
-            {t === 'athletes' ? 'My Athletes' : 'Add Athlete'}
+            {t.label}
           </button>
         ))}
       </div>
@@ -46,8 +51,10 @@ export default function CoachPage() {
             <p className="text-sm text-gray-500 mb-3">Enter their email to grant app access. They'll be linked to you automatically when they sign up.</p>
             <AddEmailForm onAdded={() => { fetchAthletes(); setTab('athletes') }} />
           </div>
+        ) : tab === 'workouts' ? (
+          <CreateWorkout />
         ) : loading ? (
-          <p className="text-sm text-gray-500">Loading…</p>
+          <p className="text-sm text-gray-500">Loading...</p>
         ) : athletes.length === 0 ? (
           <div className="text-center py-12 text-gray-400">
             <p className="font-medium">No athletes yet</p>
