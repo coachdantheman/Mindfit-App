@@ -8,7 +8,7 @@ import BuildYourPlan from '@/components/exercise/BuildYourPlan'
 type Tab = 'build' | 'prebuilt' | 'track'
 
 const TABS: { key: Tab; label: string }[] = [
-  { key: 'build', label: 'Build Your Plan' },
+  { key: 'build', label: 'Personalized Plan' },
   { key: 'prebuilt', label: 'Pre-Built Workouts' },
   { key: 'track', label: 'Track Workouts' },
 ]

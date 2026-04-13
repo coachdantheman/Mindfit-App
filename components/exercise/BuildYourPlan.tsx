@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { TrainingProgram } from '@/types'
+import { TrainingProgram, WorkoutExercise } from '@/types'
+import { generatePlanTemplate } from '@/lib/workout-templates'
 import ProgramView from './ProgramView'
 
 const SPORTS = [
@@ -18,25 +19,82 @@ const GOALS = [
   { key: 'sport-specific', label: 'Sport-Specific Skills' },
 ]
 
+interface EditableExercise extends WorkoutExercise {
+  _key: string
+}
+
+interface EditableWorkout {
+  name: string
+  description: string
+  day_of_week: number
+  week_number: number
+  exercises: EditableExercise[]
+}
+
+interface EditableBlock {
+  name: string
+  focus: string
+  week_start: number
+  week_end: number
+  workouts: EditableWorkout[]
+}
+
+interface EditablePlan {
+  title: string
+  description: string
+  blocks: EditableBlock[]
+}
+
+let keyCounter = 0
+function nextKey() { return `ex-${++keyCounter}` }
+
+function toEditable(plan: ReturnType<typeof generatePlanTemplate>, durationWeeks: number): EditablePlan {
+  let weekNum = 1
+  return {
+    title: plan.title,
+    description: plan.description,
+    blocks: plan.blocks.map((block, bi) => {
+      const weekStart = bi * 4 + 1
+      const weekEnd = Math.min((bi + 1) * 4, durationWeeks)
+      const workouts: EditableWorkout[] = []
+      for (let week = weekStart; week <= weekEnd; week++) {
+        const seen = new Set<number>()
+        block.workouts
+          .filter(w => !seen.has(w.day_of_week) && (seen.add(w.day_of_week), true))
+          .map(w => ({
+            name: w.name,
+            description: w.description,
+            day_of_week: w.day_of_week,
+            week_number: week,
+            exercises: w.exercises.map(ex => ({ ...ex, _key: nextKey() })),
+          }))
+          .forEach(w => workouts.push(w))
+      }
+      return { name: block.name, focus: block.focus, week_start: weekStart, week_end: weekEnd, workouts }
+    }),
+  }
+}
+
+const DAY_NAMES = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
 export default function BuildYourPlan() {
   const [activeProgram, setActiveProgram] = useState<TrainingProgram | null>(null)
   const [loading, setLoading] = useState(true)
   const [showBuilder, setShowBuilder] = useState(false)
 
-  // Builder form
   const [sport, setSport] = useState('')
   const [selectedGoals, setSelectedGoals] = useState<string[]>([])
   const [experience, setExperience] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate')
   const [daysPerWeek, setDaysPerWeek] = useState(4)
   const [durationWeeks, setDurationWeeks] = useState(8)
-  const [generating, setGenerating] = useState(false)
-  const [preview, setPreview] = useState<any>(null)
-  const [savingPlan, setSavingPlan] = useState(false)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    fetchActiveProgram()
-  }, [])
+  const [editablePlan, setEditablePlan] = useState<EditablePlan | null>(null)
+  const [editingWorkout, setEditingWorkout] = useState<{ bi: number; wi: number } | null>(null)
+  const [savingPlan, setSavingPlan] = useState(false)
+  const [enhancing, setEnhancing] = useState(false)
+
+  useEffect(() => { fetchActiveProgram() }, [])
 
   const fetchActiveProgram = async () => {
     setLoading(true)
@@ -54,15 +112,20 @@ export default function BuildYourPlan() {
     )
   }
 
-  const generate = async () => {
+  const generateInstant = () => {
     if (!sport.trim() || selectedGoals.length === 0) {
       setError('Please select a sport and at least one goal.')
       return
     }
     setError('')
-    setGenerating(true)
-    setPreview(null)
+    const template = generatePlanTemplate(sport, selectedGoals, experience, daysPerWeek, durationWeeks)
+    setEditablePlan(toEditable(template, durationWeeks))
+  }
 
+  const enhanceWithAI = async () => {
+    if (!sport.trim() || selectedGoals.length === 0) return
+    setEnhancing(true)
+    setError('')
     const res = await fetch('/api/exercise/programs/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -74,37 +137,108 @@ export default function BuildYourPlan() {
         duration_weeks: durationWeeks,
       }),
     })
-
     if (res.ok) {
       const data = await res.json()
-      setPreview(data)
+      const blocks = (data.blocks || []).map((block: any, bi: number) => ({
+        name: block.name || `Phase ${bi + 1}`,
+        focus: block.focus || '',
+        week_start: block.week_start || bi * 4 + 1,
+        week_end: block.week_end || Math.min((bi + 1) * 4, durationWeeks),
+        workouts: (block.workouts || []).map((w: any) => ({
+          name: w.name || 'Workout',
+          description: w.description || '',
+          day_of_week: w.day_of_week || 1,
+          week_number: w.week_number || 1,
+          exercises: (w.exercises || []).map((ex: any) => ({
+            name: ex.name || '',
+            sets: ex.sets || 3,
+            reps: ex.reps || '10',
+            notes: ex.notes || '',
+            _key: nextKey(),
+          })),
+        })),
+      }))
+      setEditablePlan({ title: data.title || `${sport} AI Plan`, description: data.description || '', blocks })
     } else {
-      const err = await res.json()
-      setError(err.error || 'Failed to generate. Please try again.')
+      setError('AI enhancement failed. You can still edit the plan manually.')
     }
-    setGenerating(false)
+    setEnhancing(false)
+  }
+
+  // Inline editing helpers
+  const updateExercise = (bi: number, wi: number, ei: number, field: keyof WorkoutExercise, value: any) => {
+    setEditablePlan(prev => {
+      if (!prev) return prev
+      const plan = { ...prev, blocks: prev.blocks.map(b => ({ ...b, workouts: b.workouts.map(w => ({ ...w, exercises: [...w.exercises] })) })) }
+      plan.blocks[bi].workouts[wi].exercises[ei] = { ...plan.blocks[bi].workouts[wi].exercises[ei], [field]: value }
+      return plan
+    })
+  }
+
+  const removeExercise = (bi: number, wi: number, ei: number) => {
+    setEditablePlan(prev => {
+      if (!prev) return prev
+      const plan = { ...prev, blocks: prev.blocks.map(b => ({ ...b, workouts: b.workouts.map(w => ({ ...w, exercises: [...w.exercises] })) })) }
+      plan.blocks[bi].workouts[wi].exercises.splice(ei, 1)
+      return plan
+    })
+  }
+
+  const addExercise = (bi: number, wi: number) => {
+    setEditablePlan(prev => {
+      if (!prev) return prev
+      const plan = { ...prev, blocks: prev.blocks.map(b => ({ ...b, workouts: b.workouts.map(w => ({ ...w, exercises: [...w.exercises] })) })) }
+      plan.blocks[bi].workouts[wi].exercises.push({ name: 'New Exercise', sets: 3, reps: '10', notes: '', _key: nextKey() })
+      return plan
+    })
+  }
+
+  const updateWorkoutField = (bi: number, wi: number, field: 'name' | 'description', value: string) => {
+    setEditablePlan(prev => {
+      if (!prev) return prev
+      const plan = { ...prev, blocks: prev.blocks.map(b => ({ ...b, workouts: [...b.workouts] })) }
+      plan.blocks[bi].workouts[wi] = { ...plan.blocks[bi].workouts[wi], [field]: value }
+      return plan
+    })
   }
 
   const savePlan = async () => {
-    if (!preview) return
+    if (!editablePlan) return
     setSavingPlan(true)
+    const payload = {
+      title: editablePlan.title,
+      description: editablePlan.description,
+      sport,
+      goals: selectedGoals,
+      duration_weeks: durationWeeks,
+      source: 'self' as const,
+      blocks: editablePlan.blocks.map(block => ({
+        name: block.name,
+        focus: block.focus,
+        week_start: block.week_start,
+        week_end: block.week_end,
+        workouts: block.workouts.map(w => ({
+          name: w.name,
+          description: w.description,
+          day_of_week: w.day_of_week,
+          week_number: w.week_number,
+          exercises: w.exercises.map(({ _key, ...ex }) => ex),
+        })),
+      })),
+    }
 
     const res = await fetch('/api/exercise/programs', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...preview,
-        sport,
-        goals: selectedGoals,
-        duration_weeks: durationWeeks,
-        source: 'ai',
-      }),
+      body: JSON.stringify(payload),
     })
 
     if (res.ok) {
-      setPreview(null)
+      setEditablePlan(null)
       setShowBuilder(false)
       await fetchActiveProgram()
+    } else {
+      setError('Failed to save plan. Please try again.')
     }
     setSavingPlan(false)
   }
@@ -121,48 +255,144 @@ export default function BuildYourPlan() {
 
   if (loading) return <p className="text-sm text-gray-500">Loading...</p>
 
-  // Show preview if generated
-  if (preview) {
+  // Editable plan preview
+  if (editablePlan) {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-100">Preview Your Plan</h3>
+          <h3 className="text-sm font-semibold text-gray-100">Customize Your Plan</h3>
           <div className="flex gap-2">
-            <button onClick={() => setPreview(null)} className="text-xs text-gray-500 hover:text-gray-300">Cancel</button>
-            <button onClick={generate} className="text-xs text-cta hover:underline">Regenerate</button>
+            <button onClick={() => setEditablePlan(null)} className="text-xs text-gray-500 hover:text-gray-300">Cancel</button>
+            <button onClick={enhanceWithAI} disabled={enhancing} className="text-xs text-purple-400 hover:text-purple-300 disabled:opacity-50">
+              {enhancing ? 'Enhancing...' : 'Enhance with AI'}
+            </button>
           </div>
         </div>
 
-        {/* Render preview as pseudo-program */}
-        <div className="space-y-3">
-          <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
-            <h3 className="font-bold text-gray-100">{preview.title}</h3>
-            {preview.description && <p className="text-xs text-gray-500 mt-1">{preview.description}</p>}
-          </div>
+        <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
+          <h3 className="font-bold text-gray-100">{editablePlan.title}</h3>
+          <p className="text-xs text-gray-500 mt-1">{editablePlan.description}</p>
+        </div>
 
-          {preview.blocks?.map((block: any, bi: number) => (
-            <div key={bi} className="bg-gray-900 rounded-2xl border border-white/10 p-4 space-y-3">
-              <div>
-                <p className="font-semibold text-gray-100">{block.name}</p>
-                <p className="text-xs text-gray-500">
-                  Weeks {block.week_start}-{block.week_end}
-                  {block.focus ? ` · ${block.focus}` : ''}
-                </p>
-              </div>
-              {block.workouts?.slice(0, 6).map((w: any, wi: number) => (
-                <div key={wi} className="bg-gray-800/50 rounded-xl p-3">
-                  <p className="text-sm font-medium text-gray-200">{w.name}</p>
-                  <p className="text-xs text-gray-500">
-                    Day {w.day_of_week} · Week {w.week_number} · {w.exercises?.length || 0} exercises
+        {editablePlan.blocks.map((block, bi) => (
+          <div key={bi} className="bg-gray-900 rounded-2xl border border-white/10 p-4 space-y-3">
+            <div>
+              <p className="font-semibold text-gray-100">{block.name}</p>
+              <p className="text-xs text-gray-500">
+                Weeks {block.week_start}-{block.week_end} · {block.focus}
+              </p>
+            </div>
+
+            {/* Group by week */}
+            {Array.from(new Set(block.workouts.map(w => w.week_number)))
+              .sort((a, b) => a - b)
+              .slice(0, 1) // Show first week per block in preview (expand to see all)
+              .map(weekNum => (
+                <div key={weekNum}>
+                  <p className="text-xs uppercase tracking-wider text-gray-500 font-medium mb-2">
+                    Week {weekNum}
                   </p>
+                  {block.workouts
+                    .filter(w => w.week_number === weekNum)
+                    .sort((a, b) => a.day_of_week - b.day_of_week)
+                    .map((workout, wi) => {
+                      const actualWi = block.workouts.indexOf(workout)
+                      const isEditing = editingWorkout?.bi === bi && editingWorkout?.wi === actualWi
+                      return (
+                        <div key={wi} className="bg-gray-800/50 rounded-xl p-3 mb-2">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex-1">
+                              {isEditing ? (
+                                <input
+                                  value={workout.name}
+                                  onChange={e => updateWorkoutField(bi, actualWi, 'name', e.target.value)}
+                                  className="bg-gray-700 border border-white/10 rounded px-2 py-1 text-sm text-gray-100 w-full"
+                                />
+                              ) : (
+                                <p className="text-sm font-medium text-gray-200">
+                                  {DAY_NAMES[workout.day_of_week]} — {workout.name}
+                                </p>
+                              )}
+                              <p className="text-xs text-gray-500">{workout.description}</p>
+                            </div>
+                            <button
+                              onClick={() => setEditingWorkout(isEditing ? null : { bi, wi: actualWi })}
+                              className="text-xs text-cta hover:underline ml-2"
+                            >
+                              {isEditing ? 'Done' : 'Edit'}
+                            </button>
+                          </div>
+
+                          {/* Exercise list */}
+                          <div className="space-y-1">
+                            {workout.exercises.map((ex, ei) => (
+                              <div key={ex._key} className="flex items-center gap-2 p-1.5 rounded bg-gray-700/30">
+                                {isEditing ? (
+                                  <>
+                                    <input
+                                      value={ex.name}
+                                      onChange={e => updateExercise(bi, actualWi, ei, 'name', e.target.value)}
+                                      className="bg-gray-700 border border-white/10 rounded px-1.5 py-0.5 text-xs text-gray-100 flex-1 min-w-0"
+                                    />
+                                    <input
+                                      type="number"
+                                      value={ex.sets}
+                                      onChange={e => updateExercise(bi, actualWi, ei, 'sets', parseInt(e.target.value) || 1)}
+                                      className="bg-gray-700 border border-white/10 rounded px-1.5 py-0.5 text-xs text-gray-100 w-12 text-center"
+                                    />
+                                    <span className="text-xs text-gray-500">x</span>
+                                    <input
+                                      value={ex.reps}
+                                      onChange={e => updateExercise(bi, actualWi, ei, 'reps', e.target.value)}
+                                      className="bg-gray-700 border border-white/10 rounded px-1.5 py-0.5 text-xs text-gray-100 w-16"
+                                    />
+                                    <input
+                                      value={ex.notes || ''}
+                                      onChange={e => updateExercise(bi, actualWi, ei, 'notes', e.target.value)}
+                                      placeholder="Notes"
+                                      className="bg-gray-700 border border-white/10 rounded px-1.5 py-0.5 text-xs text-gray-100 flex-1 min-w-0 placeholder:text-gray-600"
+                                    />
+                                    <button
+                                      onClick={() => removeExercise(bi, actualWi, ei)}
+                                      className="text-red-400 hover:text-red-300 text-xs px-1"
+                                    >
+                                      x
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <p className="text-xs text-gray-300 flex-1">{ex.name}</p>
+                                    <p className="text-[10px] text-gray-500">
+                                      {ex.sets} x {ex.reps}
+                                      {ex.notes ? ` · ${ex.notes}` : ''}
+                                    </p>
+                                  </>
+                                )}
+                              </div>
+                            ))}
+                            {isEditing && (
+                              <button
+                                onClick={() => addExercise(bi, actualWi)}
+                                className="text-xs text-cta hover:underline mt-1"
+                              >
+                                + Add Exercise
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
                 </div>
               ))}
-              {(block.workouts?.length || 0) > 6 && (
-                <p className="text-xs text-gray-500">+ {block.workouts.length - 6} more workouts...</p>
-              )}
-            </div>
-          ))}
-        </div>
+            {block.workouts.length > block.workouts.filter(w => w.week_number === block.week_start).length && (
+              <p className="text-xs text-gray-500 italic">
+                Weeks {block.week_start + 1}-{block.week_end} follow the same structure. Edits to Week {block.week_start} apply to all weeks in this block.
+              </p>
+            )}
+          </div>
+        ))}
+
+        {error && <p className="text-xs text-red-400">{error}</p>}
 
         <button
           onClick={savePlan}
@@ -175,7 +405,7 @@ export default function BuildYourPlan() {
     )
   }
 
-  // Show active program
+  // Active program view
   if (activeProgram && !showBuilder) {
     return (
       <div className="space-y-4">
@@ -188,15 +418,12 @@ export default function BuildYourPlan() {
             Build New Plan
           </button>
         </div>
-        <ProgramView
-          program={activeProgram}
-          onDelete={deleteProgram}
-        />
+        <ProgramView program={activeProgram} onDelete={deleteProgram} />
       </div>
     )
   }
 
-  // Show builder form
+  // Builder form
   return (
     <div className="space-y-5">
       {activeProgram && (
@@ -207,8 +434,8 @@ export default function BuildYourPlan() {
 
       <div className="bg-gray-900 rounded-2xl border border-white/10 p-5 space-y-5">
         <div>
-          <h3 className="text-sm font-semibold text-gray-100 mb-1">Build Your Plan</h3>
-          <p className="text-xs text-gray-500">AI will create a personalized, periodized training program based on your sport and goals.</p>
+          <h3 className="text-sm font-semibold text-gray-100 mb-1">Personalized Plan</h3>
+          <p className="text-xs text-gray-500">Enter your sport and goals to instantly generate a periodized training program. Edit any workout before saving.</p>
         </div>
 
         {/* Sport */}
@@ -311,18 +538,19 @@ export default function BuildYourPlan() {
         {error && <p className="text-xs text-red-400">{error}</p>}
 
         <button
-          onClick={generate}
-          disabled={generating}
-          className="w-full bg-cta hover:bg-brand-600 text-gray-900 font-bold px-4 py-3 rounded-xl text-sm transition-colors disabled:opacity-50"
+          onClick={generateInstant}
+          className="w-full bg-cta hover:bg-brand-600 text-gray-900 font-bold px-4 py-3 rounded-xl text-sm transition-colors"
         >
-          {generating ? 'Generating Your Plan...' : 'Generate My Plan'}
+          Generate My Plan
         </button>
 
-        {generating && (
-          <p className="text-xs text-gray-500 text-center">
-            Building your personalized training program with periodization, sport-specific exercises, and progressive overload...
-          </p>
-        )}
+        <button
+          onClick={enhanceWithAI}
+          disabled={enhancing || !sport.trim() || selectedGoals.length === 0}
+          className="w-full bg-purple-900/30 hover:bg-purple-900/50 text-purple-300 font-medium px-4 py-2.5 rounded-xl text-xs transition-colors disabled:opacity-40 border border-purple-500/20"
+        >
+          {enhancing ? 'Generating with AI...' : 'Or Generate with AI (more detailed)'}
+        </button>
       </div>
     </div>
   )
