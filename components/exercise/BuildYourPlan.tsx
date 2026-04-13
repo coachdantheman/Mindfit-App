@@ -130,11 +130,22 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
       })
     }, 800)
 
-    const cleanup = () => {
+    const stopProgress = () => {
       progressDone = true
       clearInterval(progressInterval)
+    }
+
+    const finishSuccess = () => {
+      stopProgress()
       setEnhanceProgress(100)
-      setTimeout(() => { setEnhancing(false); setEnhanceProgress(0) }, 400)
+      setTimeout(() => { setEnhancing(false); setEnhanceProgress(0) }, 500)
+    }
+
+    const finishError = (msg: string) => {
+      stopProgress()
+      setEnhancing(false)
+      setEnhanceProgress(0)
+      setError(msg)
     }
 
     try {
@@ -151,53 +162,60 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
-        setError(err.error || 'AI generation failed. Try "Generate My Plan" instead.')
-        cleanup()
+        finishError(err.error || 'AI generation failed. Try "Generate My Plan" instead.')
         return
       }
       const data = await res.json()
       if (!data.blocks || data.blocks.length === 0) {
-        setError('AI returned an incomplete plan. Try "Generate My Plan" instead.')
-        cleanup()
+        finishError('AI returned an incomplete plan. Try "Generate My Plan" instead.')
         return
       }
+      // AI returns 1 week of workouts per block — expand to fill all weeks
       const blocks = data.blocks.map((block: any, bi: number) => {
-        const workouts = (block.workouts || []).map((w: any) => ({
-          name: w.name || 'Workout',
-          description: w.description || '',
-          day_of_week: w.day_of_week || 1,
-          week_number: w.week_number || 1,
-          exercises: (w.exercises || []).map((ex: any) => ({
-            name: ex.name || '',
-            sets: ex.sets || 3,
-            reps: String(ex.reps || '10'),
-            notes: ex.notes || '',
-            _key: nextKey(),
-          })),
-        }))
-        if (workouts.length === 0 || workouts.every((w: any) => w.exercises.length === 0)) {
-          return null
+        const weekStart = block.week_start || bi * 4 + 1
+        const weekEnd = block.week_end || Math.min((bi + 1) * 4, durationWeeks)
+        const templateWorkouts = (block.workouts || []).filter((w: any) =>
+          (w.exercises || []).length > 0
+        )
+        if (templateWorkouts.length === 0) return null
+
+        const allWorkouts: EditableWorkout[] = []
+        for (let week = weekStart; week <= weekEnd; week++) {
+          templateWorkouts.forEach((w: any) => {
+            allWorkouts.push({
+              name: w.name || 'Workout',
+              description: w.description || '',
+              day_of_week: w.day_of_week || 1,
+              week_number: week,
+              exercises: (w.exercises || []).map((ex: any) => ({
+                name: ex.name || '',
+                sets: ex.sets || 3,
+                reps: String(ex.reps || '10'),
+                notes: ex.notes || '',
+                _key: nextKey(),
+              })),
+            })
+          })
         }
         return {
           name: block.name || `Phase ${bi + 1}`,
           focus: block.focus || '',
-          week_start: block.week_start || bi * 4 + 1,
-          week_end: block.week_end || Math.min((bi + 1) * 4, durationWeeks),
-          workouts,
+          week_start: weekStart,
+          week_end: weekEnd,
+          workouts: allWorkouts,
         }
       }).filter(Boolean)
 
       if (blocks.length === 0) {
-        setError('AI returned an incomplete plan. Try "Generate My Plan" instead.')
-        cleanup()
+        finishError('AI returned an incomplete plan. Try "Generate My Plan" instead.')
         return
       }
       setEditablePlan({ title: data.title || `${sport} AI Plan`, description: data.description || '', blocks })
+      finishSuccess()
       showSuccess?.('AI plan generated! Customize and save below.')
     } catch {
-      setError('AI generation failed. Try "Generate My Plan" instead.')
+      finishError('AI generation failed. Try "Generate My Plan" instead.')
     }
-    cleanup()
   }
 
   const updateExercise = (bi: number, wi: number, ei: number, field: keyof WorkoutExercise, value: any) => {
