@@ -76,7 +76,7 @@ Vary the focus across training days (e.g., upper/lower split, push/pull, or spor
   try {
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 8000,
+      max_tokens: 16000,
       messages: [
         { role: 'user', content: userPrompt },
       ],
@@ -84,16 +84,31 @@ Vary the focus across training days (e.g., upper/lower split, push/pull, or spor
     })
 
     const text = message.content[0].type === 'text' ? message.content[0].text : ''
-    // Strip any potential markdown code fences
-    const jsonStr = text.replace(/^```json?\n?/, '').replace(/\n?```$/, '').trim()
-    const program = JSON.parse(jsonStr)
+
+    // Extract JSON — handle code fences, leading text, etc.
+    let jsonStr = text
+    const fenceMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/)
+    if (fenceMatch) {
+      jsonStr = fenceMatch[1]
+    } else {
+      // Try to find JSON object directly
+      const braceStart = text.indexOf('{')
+      const braceEnd = text.lastIndexOf('}')
+      if (braceStart !== -1 && braceEnd > braceStart) {
+        jsonStr = text.slice(braceStart, braceEnd + 1)
+      }
+    }
+
+    const program = JSON.parse(jsonStr.trim())
 
     return NextResponse.json(program)
   } catch (err: any) {
-    console.error('AI generation error:', err)
-    return NextResponse.json(
-      { error: 'Failed to generate training program. Please try again.' },
-      { status: 500 }
-    )
+    console.error('AI generation error:', err?.message || err)
+    const detail = err?.status
+      ? `API error (${err.status}): ${err?.error?.message || 'Unknown'}`
+      : err instanceof SyntaxError
+        ? 'AI returned invalid JSON. Please try again.'
+        : 'Failed to generate training program. Please try again.'
+    return NextResponse.json({ error: detail }, { status: 500 })
   }
 }
