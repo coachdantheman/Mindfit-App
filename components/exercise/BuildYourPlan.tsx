@@ -92,6 +92,7 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
   const [editingWorkout, setEditingWorkout] = useState<{ bi: number; wi: number } | null>(null)
   const [savingPlan, setSavingPlan] = useState(false)
   const [enhancing, setEnhancing] = useState(false)
+  const [enhanceProgress, setEnhanceProgress] = useState(0)
 
   const toggleGoal = (key: string) => {
     setSelectedGoals(prev =>
@@ -116,7 +117,26 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
       return
     }
     setEnhancing(true)
+    setEnhanceProgress(0)
     setError('')
+
+    // Simulate progress while AI works
+    let progressDone = false
+    const progressInterval = setInterval(() => {
+      if (progressDone) return
+      setEnhanceProgress(prev => {
+        if (prev >= 90) return 90
+        return prev + Math.random() * 8 + 2
+      })
+    }, 800)
+
+    const cleanup = () => {
+      progressDone = true
+      clearInterval(progressInterval)
+      setEnhanceProgress(100)
+      setTimeout(() => { setEnhancing(false); setEnhanceProgress(0) }, 400)
+    }
+
     try {
       const res = await fetch('/api/exercise/programs/generate', {
         method: 'POST',
@@ -132,13 +152,13 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
         setError(err.error || 'AI generation failed. Try "Generate My Plan" instead.')
-        setEnhancing(false)
+        cleanup()
         return
       }
       const data = await res.json()
       if (!data.blocks || data.blocks.length === 0) {
         setError('AI returned an incomplete plan. Try "Generate My Plan" instead.')
-        setEnhancing(false)
+        cleanup()
         return
       }
       const blocks = data.blocks.map((block: any, bi: number) => {
@@ -169,7 +189,7 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
 
       if (blocks.length === 0) {
         setError('AI returned an incomplete plan. Try "Generate My Plan" instead.')
-        setEnhancing(false)
+        cleanup()
         return
       }
       setEditablePlan({ title: data.title || `${sport} AI Plan`, description: data.description || '', blocks })
@@ -177,7 +197,7 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
     } catch {
       setError('AI generation failed. Try "Generate My Plan" instead.')
     }
-    setEnhancing(false)
+    cleanup()
   }
 
   const updateExercise = (bi: number, wi: number, ei: number, field: keyof WorkoutExercise, value: any) => {
@@ -272,10 +292,36 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
           </div>
         </div>
 
+        {/* Progress bar when AI is enhancing */}
+        {enhancing && (
+          <div className="bg-gray-900 rounded-2xl border border-purple-500/30 p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-purple-400 animate-pulse" />
+              <p className="text-sm font-medium text-purple-300">AI is building your personalized plan...</p>
+            </div>
+            <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+              <div
+                className="bg-purple-400 h-2 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${enhanceProgress}%` }}
+              />
+            </div>
+            <p className="text-[10px] text-gray-500">This may take 15-30 seconds</p>
+          </div>
+        )}
+
         <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
           <h3 className="font-bold text-gray-100">{editablePlan.title}</h3>
           <p className="text-xs text-gray-500 mt-1">{editablePlan.description}</p>
         </div>
+
+        {/* Save button at top for easy access */}
+        <button
+          onClick={savePlan}
+          disabled={savingPlan || enhancing}
+          className="w-full bg-cta hover:bg-brand-600 text-gray-900 font-bold px-4 py-3 rounded-xl text-sm transition-colors disabled:opacity-50"
+        >
+          {savingPlan ? 'Saving...' : 'Save This Plan'}
+        </button>
 
         {editablePlan.blocks.map((block, bi) => (
           <div key={bi} className="bg-gray-900 rounded-2xl border border-white/10 p-4 space-y-3">
@@ -527,6 +573,22 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
         >
           {enhancing ? 'Generating with AI...' : 'Or Generate with AI (more detailed)'}
         </button>
+
+        {enhancing && (
+          <div className="space-y-2 pt-1">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-purple-400 animate-pulse" />
+              <p className="text-sm font-medium text-purple-300">AI is building your personalized plan...</p>
+            </div>
+            <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+              <div
+                className="bg-purple-400 h-2 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${enhanceProgress}%` }}
+              />
+            </div>
+            <p className="text-[10px] text-gray-500">This may take 15-30 seconds</p>
+          </div>
+        )}
       </div>
     </div>
   )
