@@ -10,6 +10,9 @@ import MacroBars from '@/components/shared/MacroBars'
 import WorkoutLogList from '@/components/shared/WorkoutLogList'
 import SleepEntriesList from '@/components/shared/SleepEntriesList'
 
+import StatCard from '@/components/dashboard/StatCard'
+import ReadinessHero from '@/components/dashboard/ReadinessHero'
+
 const RatingChart = dynamic(() => import('@/components/dashboard/RatingChart'), { ssr: false })
 const EntryList = dynamic(() => import('@/components/dashboard/EntryList'), { ssr: false })
 
@@ -128,6 +131,82 @@ export default function ProgressPage() {
                   <p className="text-xs text-gray-500">Goals Hit</p>
                 </div>
               </div>
+
+              {(() => {
+                const latest = journalEntries[0]
+                const prev = journalEntries[1]
+                const readinessOf = (e: JournalEntry) =>
+                  Math.round(((e.rating_motivation + e.rating_focus + e.rating_confidence + (11 - e.rating_anxiety)) / 4) * 10)
+                const score = readinessOf(latest)
+                const prevScore = prev ? readinessOf(prev) : null
+                const delta = prevScore !== null ? score - prevScore : null
+                const verdict =
+                  score >= 80 ? 'Locked in — peak window.' :
+                  score >= 65 ? 'Solid. Execute with intent.' :
+                  score >= 50 ? 'Steady. Protect your focus.' :
+                  'Recover first. Identity over output.'
+                const entryDate = new Date(latest.entry_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                const spark = (pick: (e: JournalEntry) => number) =>
+                  [...journalEntries].slice(0, 7).reverse().map(e => pick(e) / 10)
+                const diff = (pick: (e: JournalEntry) => number) => {
+                  if (!prev) return undefined
+                  const d = pick(latest) - pick(prev)
+                  return {
+                    value: `${d > 0 ? '+' : ''}${d}`,
+                    direction: d > 0 ? 'up' as const : d < 0 ? 'down' as const : 'flat' as const,
+                  }
+                }
+                return (
+                  <>
+                    <ReadinessHero
+                      score={score}
+                      verdict={verdict}
+                      subtitle={avgSleep !== '—' ? `Sleep avg ${avgSleep}h · ${workoutLogs.length} workouts logged` : `${workoutLogs.length} workouts logged`}
+                      date={`Today · ${entryDate}`}
+                      pills={[
+                        ...(delta !== null ? [{ label: 'Δ', value: `${delta > 0 ? '+' : ''}${delta}`, delta: delta > 0 ? `+${delta}` : delta < 0 ? `${delta}` : undefined }] : []),
+                        { label: 'Entries', value: String(journalEntries.length) },
+                        { label: 'Goals', value: `${goalCount.completed}/${goalCount.total}` },
+                      ]}
+                    />
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                      <StatCard
+                        label="Motivation"
+                        value={latest.rating_motivation}
+                        unit="/10"
+                        delta={diff(e => e.rating_motivation)}
+                        sparkline={spark(e => e.rating_motivation)}
+                        color="#3b82f6"
+                      />
+                      <StatCard
+                        label="Focus"
+                        value={latest.rating_focus}
+                        unit="/10"
+                        delta={diff(e => e.rating_focus)}
+                        sparkline={spark(e => e.rating_focus)}
+                        color="#a855f7"
+                      />
+                      <StatCard
+                        label="Confidence"
+                        value={latest.rating_confidence}
+                        unit="/10"
+                        delta={diff(e => e.rating_confidence)}
+                        sparkline={spark(e => e.rating_confidence)}
+                        color="#22c55e"
+                      />
+                      <StatCard
+                        label="Anxiety"
+                        value={latest.rating_anxiety}
+                        unit="/10"
+                        delta={diff(e => e.rating_anxiety)}
+                        sparkline={spark(e => e.rating_anxiety)}
+                        color="#f97316"
+                        context="Lower is better"
+                      />
+                    </div>
+                  </>
+                )
+              })()}
 
               <RatingChart entries={journalEntries} />
               <EntryList entries={journalEntries} />
