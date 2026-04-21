@@ -9,7 +9,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar email={user.email} role={user.role} />
+      <Navbar email={user.email} role={user.role} fullName={user.fullName} />
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-8 pb-24 sm:pb-8">
         {children}
       </main>
