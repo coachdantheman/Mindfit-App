@@ -8,6 +8,20 @@ import { UserRole } from '@/types'
 interface NavbarProps {
   email: string
   role: UserRole
+  fullName?: string | null
+}
+
+function computeInitials(fullName: string | null | undefined, email: string): string {
+  const name = fullName?.trim()
+  if (name) {
+    const parts = name.split(/\s+/).filter(Boolean)
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    }
+    return parts[0].slice(0, 2).toUpperCase()
+  }
+  const prefix = email?.split('@')[0]
+  return prefix ? prefix.slice(0, 2).toUpperCase() : 'MF'
 }
 
 const tabs = [
@@ -18,7 +32,7 @@ const tabs = [
   { href: '/progress', label: 'Progress', icon: ProgressIcon },
 ]
 
-export default function Navbar({ email, role }: NavbarProps) {
+export default function Navbar({ email, role, fullName }: NavbarProps) {
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
@@ -32,7 +46,7 @@ export default function Navbar({ email, role }: NavbarProps) {
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + '/')
 
-  const initials = email?.split('@')[0]?.slice(0, 2).toUpperCase() || 'MF'
+  const initials = computeInitials(fullName, email)
 
   return (
     <>
@@ -103,12 +117,14 @@ export default function Navbar({ email, role }: NavbarProps) {
               >
                 <SettingsIcon className="w-5 h-5" />
               </Link>
-              <span
-                className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-mindfit-bg bg-gradient-to-br from-[#e8dc70] to-mindfit-gold hidden sm:flex"
-                title={email}
+              <Link
+                href="/settings"
+                className="w-8 h-8 rounded-full items-center justify-center text-[11px] font-bold text-mindfit-bg bg-gradient-to-br from-[#e8dc70] to-mindfit-gold hidden sm:flex ring-1 ring-transparent hover:ring-cta/50 transition-shadow"
+                title={fullName || email}
+                aria-label="Profile settings"
               >
                 {initials}
-              </span>
+              </Link>
               <button
                 onClick={signOut}
                 className="text-gray-400 hover:text-gray-100 text-xs font-medium transition-colors hidden sm:block"
