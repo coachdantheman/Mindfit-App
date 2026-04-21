@@ -2,6 +2,96 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================================
+   Design system tokens (mirrors handoff colors_and_type.css).
+   Font families are loaded via next/font in app/layout.tsx and exposed as
+   --font-sans / --font-display / --font-mono.
+   ========================================================================== */
+:root {
+  --brand-50:   #f9f7e8;
+  --brand-100:  #f0ebcc;
+  --brand-500:  #9A8B00;
+  --brand-600:  #9A8B00;
+  --brand-700:  #7a6e00;
+  --brand-900:  #3d3700;
+
+  --cta:        #C4B400;
+  --cta-hover:  #9A8B00;
+
+  --accent-1:   #a49508;
+  --accent-2:   #c1b647;
+  --accent-3:   #ded886;
+  --gold-deep:  #aa8113;
+  --gold-soft:  #dfcf8b;
+
+  --ink-900:    #0A0F1A;
+  --ink-800:    #111827;
+  --ink-700:    #1f2937;
+  --ink-600:    #374151;
+  --ink-500:    #6b7280;
+  --ink-400:    #9ca3af;
+  --ink-300:    #d1d5db;
+  --ink-200:    #e5e7eb;
+  --ink-100:    #f3f4f6;
+
+  --stone-50:   #f5f5f4;
+  --stone-100:  #e7e5e4;
+  --stone-300:  #a8a29e;
+  --stone-500:  #78716c;
+  --stone-600:  #57534e;
+  --stone-700:  #44403c;
+  --stone-800:  #292524;
+  --stone-900:  #1c1917;
+
+  --rating-motivation: #3b82f6;
+  --rating-focus:      #a855f7;
+  --rating-confidence: #22c55e;
+  --rating-anxiety:    #f97316;
+
+  --success: #22c55e;
+  --warn:    #eab308;
+  --danger:  #ef4444;
+  --info:    #3b82f6;
+
+  --bg:           var(--ink-900);
+  --surface:      var(--ink-800);
+  --surface-2:    var(--ink-700);
+  --border:       rgba(255,255,255,0.10);
+  --border-muted: rgba(255,255,255,0.05);
+  --fg-1:         var(--ink-100);
+  --fg-2:         var(--ink-300);
+  --fg-3:         var(--ink-400);
+  --fg-4:         var(--ink-500);
+  --link:         var(--cta);
+
+  --radius-sm:   0.5rem;
+  --radius-md:   0.75rem;
+  --radius-lg:   1rem;
+  --radius-xl:   1rem;
+  --radius-2xl:  1rem;
+  --radius-pill: 9999px;
+
+  --shadow-card:     0 1px 3px rgba(0,0,0,0.06);
+  --shadow-lift:     0 8px 24px rgba(0,0,0,0.35);
+  --shadow-ring-cta: 0 0 0 2px rgba(196,180,0,0.50);
+
+  --tracking-widest: 0.24em;
+  --tracking-wide:   0.08em;
+  --tracking-tight: -0.01em;
+}
+
+html.light {
+  --bg:           var(--stone-50);
+  --surface:      #ffffff;
+  --surface-2:    var(--stone-50);
+  --border:       rgba(0,0,0,0.10);
+  --border-muted: rgba(0,0,0,0.06);
+  --fg-1:         var(--stone-900);
+  --fg-2:         var(--stone-700);
+  --fg-3:         var(--stone-600);
+  --fg-4:         var(--stone-500);
+}
+
 @layer components {
   .btn-primary {
     @apply bg-cta hover:bg-brand-600 text-gray-900 font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors disabled:opacity-50;
