@@ -1,3 +1,4 @@
+import { User } from '@supabase/supabase-js'
 import { createServerSupabaseClient } from '@/lib/supabase-client'
 import { createAdminClient } from '@/lib/supabase-server'
 import { UserRole } from '@/types'
@@ -7,6 +8,17 @@ interface AuthResult {
   email: string
   role: UserRole
   fullName: string | null
+}
+
+function nameFromMetadata(user: User): string | null {
+  const meta = (user.user_metadata ?? {}) as Record<string, unknown>
+  const pickString = (k: string) => (typeof meta[k] === 'string' ? (meta[k] as string).trim() : '')
+  const full = pickString('full_name') || pickString('name')
+  if (full) return full
+  const first = pickString('given_name') || pickString('first_name')
+  const last = pickString('family_name') || pickString('last_name')
+  const joined = [first, last].filter(Boolean).join(' ').trim()
+  return joined || null
 }
 
 export async function getAuthUser(): Promise<AuthResult | null> {
@@ -25,7 +37,7 @@ export async function getAuthUser(): Promise<AuthResult | null> {
     userId: session.user.id,
     email: session.user.email ?? '',
     role: (profile?.role as UserRole) ?? 'member',
-    fullName: profile?.full_name ?? null,
+    fullName: profile?.full_name ?? nameFromMetadata(session.user),
   }
 }
 
@@ -55,7 +67,7 @@ export async function getAuthUserCached(): Promise<AuthResult | null> {
     .maybeSingle()
 
   const role = (profile?.role as UserRole) ?? 'member'
-  const fullName = profile?.full_name ?? null
+  const fullName = profile?.full_name ?? nameFromMetadata(session.user)
   profileCache.set(session.user.id, { role, fullName, ts: Date.now() })
 
   return {

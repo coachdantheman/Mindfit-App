@@ -106,6 +106,20 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
 
             {/* Right cluster */}
             <div className="flex items-center gap-2">
+              {(role === 'admin' || role === 'coach') && (
+                <Link
+                  href={role === 'admin' ? '/admin' : '/coach'}
+                  className={`sm:hidden p-1.5 rounded-md transition-colors ${
+                    isActive('/admin') || isActive('/coach')
+                      ? 'text-cta bg-cta/10'
+                      : 'text-gray-400 hover:text-gray-100 hover:bg-white/5'
+                  }`}
+                  title={role === 'admin' ? 'Admin' : 'Coach'}
+                  aria-label={role === 'admin' ? 'Admin' : 'Coach'}
+                >
+                  <ShieldIcon className="w-5 h-5" />
+                </Link>
+              )}
               <Link
                 href="/settings"
                 className={`p-1.5 rounded-md transition-colors ${
@@ -204,6 +218,14 @@ function SettingsIcon({ className }: { className?: string }) {
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3h.1a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8v.1a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" />
+    </svg>
+  )
+}
+function ShieldIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3l8 3v6c0 4.5-3.2 8.4-8 9-4.8-.6-8-4.5-8-9V6l8-3z" />
+      <path d="M9 12l2 2 4-4" />
     </svg>
   )
 }
