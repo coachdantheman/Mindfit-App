@@ -8,8 +8,9 @@ const MeditationForm = dynamic(() => import('@/components/mindset/MeditationForm
 const AffirmationsList = dynamic(() => import('@/components/mindset/AffirmationsList'))
 const GoalsSection = dynamic(() => import('@/components/mindset/GoalsSection'))
 const WeeklyAssessment = dynamic(() => import('@/components/mindset/WeeklyAssessment'))
+const FlowStateTab = dynamic(() => import('@/components/mindset/flow/FlowStateTab'))
 
-const tabs = ['Journal', 'Weekly Assessment', 'Visualization', 'Meditation', 'Affirmations', 'Goals'] as const
+const tabs = ['Journal', 'Weekly Assessment', 'Flow State', 'Visualization', 'Meditation', 'Affirmations', 'Goals'] as const
 type Tab = typeof tabs[number]
 
 export default function MindsetPage() {
@@ -36,6 +37,7 @@ export default function MindsetPage() {
 
       {activeTab === 'Journal' && <JournalTab />}
       {activeTab === 'Weekly Assessment' && <WeeklyAssessment />}
+      {activeTab === 'Flow State' && <FlowStateTab />}
       {activeTab === 'Visualization' && <VisualizationForm />}
       {activeTab === 'Meditation' && <MeditationForm />}
       {activeTab === 'Affirmations' && <AffirmationsList />}

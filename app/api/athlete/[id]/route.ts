@@ -27,6 +27,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
   if (!profile) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
+  const since14 = new Date(); since14.setDate(since14.getDate() - 14)
+
   const [
     { data: journalEntries },
     { data: foodEntries },
@@ -36,6 +38,9 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     { data: vizEntries },
     { data: medEntries },
     { data: goals },
+    { data: flowSessions },
+    { data: flowLogs },
+    { data: coachNote },
   ] = await Promise.all([
     admin.from('journal_entries').select('*').eq('user_id', athleteId).order('entry_date', { ascending: false }).limit(30),
     admin.from('food_entries').select('*').eq('user_id', athleteId).order('entry_date', { ascending: false }).limit(50),
@@ -45,6 +50,9 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     admin.from('visualization_entries').select('*').eq('user_id', athleteId).eq('completed', true),
     admin.from('meditation_entries').select('*').eq('user_id', athleteId).eq('completed', true),
     admin.from('goals').select('*').eq('user_id', athleteId),
+    admin.from('flow_sessions').select('*').eq('user_id', athleteId).gte('started_at', since14.toISOString()).order('started_at', { ascending: false }),
+    admin.from('flow_logs').select('*').eq('user_id', athleteId).gte('logged_at', since14.toISOString()).order('logged_at', { ascending: false }),
+    admin.from('flow_coach_notes').select('*').eq('athlete_id', athleteId).eq('coach_id', auth.userId).maybeSingle(),
   ])
 
   return NextResponse.json({
@@ -61,5 +69,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     vizCount: (vizEntries ?? []).length,
     medCount: (medEntries ?? []).length,
     goalCount: { total: (goals ?? []).length, completed: (goals ?? []).filter((g: any) => g.is_completed).length },
+    flowSessions: flowSessions ?? [],
+    flowLogs: flowLogs ?? [],
+    flowCoachNote: coachNote?.note ?? null,
   })
 }

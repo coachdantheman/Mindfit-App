@@ -1,6 +1,6 @@
-export type Section = 'mindset' | 'nutrition' | 'exercise' | 'sleep'
+export type Section = 'mindset' | 'flow' | 'nutrition' | 'exercise' | 'sleep'
 
-const SECTIONS: Section[] = ['mindset', 'nutrition', 'exercise', 'sleep']
+const SECTIONS: Section[] = ['mindset', 'flow', 'nutrition', 'exercise', 'sleep']
 
 export default function SectionTabs({ active, onSelect }: { active: Section; onSelect: (s: Section) => void }) {
   return (

@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { format, parseISO } from 'date-fns'
-import { Profile, JournalEntry, FoodEntry, NutritionGoal, WorkoutLog, SleepEntry } from '@/types'
+import { Profile, JournalEntry, FoodEntry, NutritionGoal, WorkoutLog, SleepEntry, FlowSession, FlowLog } from '@/types'
 import { calcSleepAverages } from '@/lib/stats'
 import dynamic from 'next/dynamic'
 import SectionTabs, { Section } from '@/components/shared/SectionTabs'
@@ -10,8 +10,12 @@ import JournalRatingsGrid from '@/components/shared/JournalRatingsGrid'
 import MacroBars from '@/components/shared/MacroBars'
 import WorkoutLogList from '@/components/shared/WorkoutLogList'
 import SleepEntriesList from '@/components/shared/SleepEntriesList'
+import {
+  calcStreak, localDateISO, avgFlowScore, needsAttention,
+} from '@/components/mindset/flow-logic'
 
 const RatingChart = dynamic(() => import('@/components/dashboard/RatingChart'), { ssr: false })
+const FlowBarChart = dynamic(() => import('@/components/mindset/flow/FlowBarChart'), { ssr: false })
 
 interface AthleteData {
   profile: Profile
@@ -23,6 +27,9 @@ interface AthleteData {
   vizCount: number
   medCount: number
   goalCount: { total: number; completed: number }
+  flowSessions: FlowSession[]
+  flowLogs: FlowLog[]
+  flowCoachNote: string | null
 }
 
 export default function AthleteDetail({ athleteId, backHref }: { athleteId: string; backHref: string }) {
@@ -45,7 +52,10 @@ export default function AthleteDetail({ athleteId, backHref }: { athleteId: stri
   if (error) return <p className="text-sm text-red-400">{error}</p>
   if (!data) return null
 
-  const { profile, journalEntries, foodEntries, nutritionGoal, workoutLogs, sleepEntries, vizCount, medCount, goalCount } = data
+  const {
+    profile, journalEntries, foodEntries, nutritionGoal, workoutLogs, sleepEntries,
+    vizCount, medCount, goalCount, flowSessions, flowLogs, flowCoachNote,
+  } = data
   const { avgSleep, avgSleepQuality } = calcSleepAverages(sleepEntries)
 
   const todayStr = new Date().toISOString().split('T')[0]
@@ -135,6 +145,15 @@ export default function AthleteDetail({ athleteId, backHref }: { athleteId: stri
         </div>
       )}
 
+      {section === 'flow' && (
+        <FlowSectionPanel
+          athleteId={profile.id}
+          sessions={flowSessions}
+          logs={flowLogs}
+          initialNote={flowCoachNote}
+        />
+      )}
+
       {section === 'nutrition' && (
         <div className="space-y-4">
           {foodEntries.length === 0 ? (
@@ -196,6 +215,98 @@ export default function AthleteDetail({ athleteId, backHref }: { athleteId: stri
       {section === 'sleep' && (
         <SleepEntriesList entries={sleepEntries} avgSleep={avgSleep} avgSleepQuality={avgSleepQuality} />
       )}
+    </div>
+  )
+}
+
+function FlowSectionPanel({
+  athleteId, sessions, logs, initialNote,
+}: {
+  athleteId: string
+  sessions: FlowSession[]
+  logs: FlowLog[]
+  initialNote: string | null
+}) {
+  const [note, setNote] = useState(initialNote ?? '')
+  const [saving, setSaving] = useState(false)
+  const [savedAt, setSavedAt] = useState<string | null>(null)
+
+  const sessionDates = Array.from(new Set(sessions.map(s => localDateISO(new Date(s.started_at)))))
+  const streak = calcStreak(sessionDates)
+  const avg7 = (() => {
+    const since = new Date(); since.setDate(since.getDate() - 7)
+    const recent = logs.filter(l => new Date(l.logged_at) >= since)
+    return avgFlowScore(recent)
+  })()
+  const attention = needsAttention(logs, sessions)
+
+  async function saveNote() {
+    setSaving(true)
+    const res = await fetch('/api/mindset/flow-state/coach-notes', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ athlete_id: athleteId, note }),
+    })
+    if (res.ok) setSavedAt(new Date().toLocaleTimeString())
+    setSaving(false)
+  }
+
+  if (sessions.length === 0 && logs.length === 0) {
+    return (
+      <div className="text-center py-12 text-gray-400">
+        <p className="font-medium">No flow data yet</p>
+        <p className="text-xs text-gray-500 mt-1">Athlete hasn't started the Flow State tracker.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-5">
+      {attention.length > 0 && (
+        <div className="bg-cta/10 border border-cta/40 rounded-xl px-4 py-3">
+          <p className="text-sm font-semibold text-cta mb-1">Needs attention</p>
+          <ul className="list-disc list-inside text-sm text-gray-300 space-y-0.5">
+            {attention.map((r, i) => <li key={i}>{r}</li>)}
+          </ul>
+        </div>
+      )}
+
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-gray-900 rounded-xl border border-white/10 p-3 text-center">
+          <p className="text-lg font-bold text-cta">{streak}</p>
+          <p className="text-xs text-gray-500">Day streak</p>
+        </div>
+        <div className="bg-gray-900 rounded-xl border border-white/10 p-3 text-center">
+          <p className="text-lg font-bold text-gray-200">{avg7 != null ? avg7.toFixed(1) : '—'}</p>
+          <p className="text-xs text-gray-500">Avg flow (7d)</p>
+        </div>
+        <div className="bg-gray-900 rounded-xl border border-white/10 p-3 text-center">
+          <p className="text-lg font-bold text-gray-200">{sessions.length}</p>
+          <p className="text-xs text-gray-500">Sessions (14d)</p>
+        </div>
+      </div>
+
+      <FlowBarChart logs={logs} days={14} />
+
+      <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs uppercase tracking-wide text-gray-500">Coach note (visible to athlete)</p>
+          {savedAt && <span className="text-xs text-gray-500">Saved at {savedAt}</span>}
+        </div>
+        <textarea
+          value={note}
+          onChange={e => setNote(e.target.value)}
+          onBlur={saveNote}
+          rows={3}
+          placeholder="What should this athlete focus on this week?"
+          className="textarea-field"
+        />
+        <div className="mt-2 text-right">
+          <button onClick={saveNote} disabled={saving} className="text-xs text-cta hover:underline disabled:opacity-50">
+            {saving ? 'Saving…' : 'Save now'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

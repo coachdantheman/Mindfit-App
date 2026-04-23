@@ -5,6 +5,8 @@ export interface Profile {
   email: string
   full_name: string | null
   role: UserRole
+  primary_sport: string | null
+  next_competition_at: string | null
   created_at: string
 }
 
@@ -289,4 +291,73 @@ export interface RecoveryEntry {
   activities: { type: string; duration_min: number }[]
   notes: string | null
   created_at: string
+}
+
+// Flow State
+export type FlowStage = 'struggle' | 'release' | 'flow' | 'recovery'
+export type FlowTrigger =
+  | 'clear_goals'
+  | 'immediate_feedback'
+  | 'challenge_skill_balance'
+  | 'deep_focus'
+  | 'risk_consequence'
+  | 'novelty_complexity'
+  | 'music_rhythm'
+export type FiveAStep = 'A1' | 'A2' | 'A3' | 'A4' | 'A5'
+
+export interface FlowSession {
+  id: string
+  user_id: string
+  started_at: string
+  completed_at: string | null
+  identity_statement: string | null
+  aim: string | null
+  cue_word: string | null
+  external_target: string | null
+  sport: string | null
+  skipped_steps: FiveAStep[]
+  created_at: string
+}
+
+export interface FlowLog {
+  id: string
+  user_id: string
+  flow_session_id: string | null
+  logged_at: string
+  sport: string | null
+  challenge_level: number
+  skill_level: number
+  flow_score: number
+  ending_stage: FlowStage
+  triggers_fired: FlowTrigger[]
+  journal_note: string | null
+  created_at: string
+}
+
+export interface FlowCueWord {
+  id: string
+  user_id: string
+  cue_word: string
+  is_active: boolean
+  created_at: string
+}
+
+export interface FlowCoachNote {
+  id: string
+  athlete_id: string
+  coach_id: string
+  note: string
+  created_at: string
+  updated_at: string
+}
+
+export interface FlowInsights {
+  avg_flow_score: number | null
+  flow_pct: number | null
+  most_common_stage: FlowStage | null
+  top_trigger: FlowTrigger | null
+  recommendation: string
+  coach_note: string | null
+  sessions_7d: number
+  logs_7d: number
 }
