@@ -6,6 +6,7 @@ export interface Profile {
   full_name: string | null
   role: UserRole
   primary_sport: string | null
+  secondary_sport: string | null
   next_competition_at: string | null
   created_at: string
 }

@@ -36,8 +36,8 @@ export default function FiveAStackSession() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/mindset/flow-state/cue-words').then(r => r.json()),
-      fetch('/api/mindset/flow-state/profile').then(r => r.json()),
+      fetch('/api/mindset/flow-state/cue-words').then(r => r.ok ? r.json() : []),
+      fetch('/api/profile').then(r => r.ok ? r.json() : null),
     ]).then(([cw, prof]) => {
       setCueWords(Array.isArray(cw) ? cw : [])
       if (prof?.primary_sport) setPayload(p => ({ ...p, sport: prof.primary_sport }))

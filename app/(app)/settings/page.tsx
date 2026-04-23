@@ -8,6 +8,11 @@ export default function SettingsPage() {
   const supabase = createClient()
   const [email, setEmail] = useState('')
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const [primarySport, setPrimarySport] = useState('')
+  const [secondarySport, setSecondarySport] = useState('')
+  const [sportsLoaded, setSportsLoaded] = useState(false)
+  const [sportsSaving, setSportsSaving] = useState(false)
+  const [sportsStatus, setSportsStatus] = useState<{ ok: boolean; msg: string } | null>(null)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -15,7 +20,40 @@ export default function SettingsPage() {
     })
     const saved = localStorage.getItem('theme')
     if (saved === 'light') setTheme('light')
+    fetch('/api/profile')
+      .then(r => r.ok ? r.json() : null)
+      .then(p => {
+        if (p) {
+          setPrimarySport(p.primary_sport ?? '')
+          setSecondarySport(p.secondary_sport ?? '')
+        }
+        setSportsLoaded(true)
+      })
   }, [])
+
+  const saveSports = async () => {
+    setSportsSaving(true)
+    setSportsStatus(null)
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          primary_sport: primarySport,
+          secondary_sport: secondarySport,
+        }),
+      })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j.error || `Save failed (${res.status})`)
+      }
+      setSportsStatus({ ok: true, msg: 'Saved' })
+    } catch (e: any) {
+      setSportsStatus({ ok: false, msg: e?.message || 'Could not save. Try again.' })
+    } finally {
+      setSportsSaving(false)
+    }
+  }
 
   const toggleTheme = () => {
     const next = theme === 'dark' ? 'light' : 'dark'
@@ -43,6 +81,54 @@ export default function SettingsPage() {
         <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
           <h3 className="font-semibold text-gray-100 mb-3 text-sm">Account</h3>
           <p className="text-sm text-gray-400">{email}</p>
+        </div>
+
+        {/* Sports */}
+        <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
+          <h3 className="font-semibold text-gray-100 mb-1 text-sm">Sports</h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Used to autofill your Flow State sessions and logs.
+          </p>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Primary sport</label>
+              <input
+                type="text"
+                value={primarySport}
+                onChange={e => setPrimarySport(e.target.value)}
+                placeholder="e.g. Football"
+                className="input-field"
+                disabled={!sportsLoaded}
+              />
+            </div>
+            <div>
+              <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">
+                Secondary sport <span className="text-gray-600">(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={secondarySport}
+                onChange={e => setSecondarySport(e.target.value)}
+                placeholder="e.g. Track"
+                className="input-field"
+                disabled={!sportsLoaded}
+              />
+            </div>
+            <div className="flex items-center gap-3 pt-1">
+              <button
+                onClick={saveSports}
+                disabled={!sportsLoaded || sportsSaving}
+                className="btn-primary"
+              >
+                {sportsSaving ? 'Saving…' : 'Save'}
+              </button>
+              {sportsStatus && (
+                <p className={`text-sm ${sportsStatus.ok ? 'text-green-400' : 'text-red-400'}`}>
+                  {sportsStatus.msg}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Appearance */}

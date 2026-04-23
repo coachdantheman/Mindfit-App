@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 
+const FIELDS = ['full_name', 'primary_sport', 'secondary_sport', 'next_competition_at'] as const
+
 export async function GET() {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
@@ -9,11 +11,11 @@ export async function GET() {
   const admin = createAdminClient()
   const { data } = await admin
     .from('profiles')
-    .select('primary_sport, next_competition_at')
+    .select('id, email, full_name, role, primary_sport, secondary_sport, next_competition_at, created_at')
     .eq('id', auth.userId)
     .single()
 
-  return NextResponse.json(data || { primary_sport: null, next_competition_at: null })
+  return NextResponse.json(data)
 }
 
 export async function PATCH(req: Request) {
@@ -22,8 +24,11 @@ export async function PATCH(req: Request) {
 
   const body = await req.json()
   const update: Record<string, unknown> = {}
-  if (typeof body.primary_sport === 'string') update.primary_sport = body.primary_sport.trim() || null
-  if (body.next_competition_at !== undefined) update.next_competition_at = body.next_competition_at || null
+  for (const key of FIELDS) {
+    if (body[key] !== undefined) {
+      update[key] = typeof body[key] === 'string' ? (body[key].trim() || null) : body[key]
+    }
+  }
 
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: 'no fields to update' }, { status: 400 })
@@ -34,7 +39,7 @@ export async function PATCH(req: Request) {
     .from('profiles')
     .update(update)
     .eq('id', auth.userId)
-    .select('primary_sport, next_competition_at')
+    .select('id, email, full_name, role, primary_sport, secondary_sport, next_competition_at, created_at')
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

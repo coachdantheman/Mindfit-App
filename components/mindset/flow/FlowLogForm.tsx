@@ -11,6 +11,8 @@ export default function FlowLogForm() {
   const sessionId = search.get('session')
 
   const [sport, setSport] = useState('')
+  const [primarySport, setPrimarySport] = useState<string | null>(null)
+  const [secondarySport, setSecondarySport] = useState<string | null>(null)
   const [challenge, setChallenge] = useState(6)
   const [skill, setSkill] = useState(6)
   const [flow, setFlow] = useState(6)
@@ -21,9 +23,14 @@ export default function FlowLogForm() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch('/api/mindset/flow-state/profile').then(r => r.json()).then(p => {
-      if (p?.primary_sport) setSport(p.primary_sport)
-    })
+    fetch('/api/profile')
+      .then(r => r.ok ? r.json() : null)
+      .then(p => {
+        if (!p) return
+        setPrimarySport(p.primary_sport ?? null)
+        setSecondarySport(p.secondary_sport ?? null)
+        if (p.primary_sport) setSport(p.primary_sport)
+      })
   }, [])
 
   const zone = is4PctZone(challenge, skill)
@@ -71,6 +78,24 @@ export default function FlowLogForm() {
       <div className="bg-gray-900 rounded-2xl border border-white/10 p-6 space-y-6">
         <div>
           <label className="text-sm text-gray-400 block mb-1">Sport</label>
+          {primarySport && secondarySport && (
+            <div className="flex gap-2 mb-2">
+              {[primarySport, secondarySport].map(opt => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => setSport(opt)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                    sport === opt
+                      ? 'bg-cta/20 border-cta text-cta'
+                      : 'border-white/10 text-gray-400 hover:text-gray-200'
+                  }`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          )}
           <input
             type="text"
             value={sport}

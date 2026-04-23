@@ -11,21 +11,24 @@ import { format, parseISO, differenceInCalendarDays } from 'date-fns'
 
 const FlowBarChart = dynamic(() => import('@/components/mindset/flow/FlowBarChart'), { ssr: false })
 
+interface FlowProfile {
+  primary_sport: string | null
+  secondary_sport: string | null
+  next_competition_at: string | null
+}
+
 export default function FlowStateTab() {
   const router = useRouter()
   const [sessions, setSessions] = useState<FlowSession[]>([])
   const [logs, setLogs] = useState<FlowLog[]>([])
-  const [profile, setProfile] = useState<{ primary_sport: string | null; next_competition_at: string | null } | null>(null)
+  const [profile, setProfile] = useState<FlowProfile | null>(null)
   const [loading, setLoading] = useState(true)
-  const [sportPrompt, setSportPrompt] = useState('')
-  const [savingSport, setSavingSport] = useState(false)
-  const [sportError, setSportError] = useState<string | null>(null)
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/mindset/flow-state/sessions?days=14').then(r => r.json()),
-      fetch('/api/mindset/flow-state/logs?days=14').then(r => r.json()),
-      fetch('/api/mindset/flow-state/profile').then(r => r.json()),
+      fetch('/api/mindset/flow-state/sessions?days=14').then(r => r.ok ? r.json() : []),
+      fetch('/api/mindset/flow-state/logs?days=14').then(r => r.ok ? r.json() : []),
+      fetch('/api/profile').then(r => r.ok ? r.json() : null),
     ]).then(([s, l, p]) => {
       setSessions(Array.isArray(s) ? s : [])
       setLogs(Array.isArray(l) ? l : [])
@@ -34,58 +37,7 @@ export default function FlowStateTab() {
     })
   }, [])
 
-  const saveSport = async () => {
-    const trimmed = sportPrompt.trim()
-    if (!trimmed) return
-    setSavingSport(true)
-    setSportError(null)
-    try {
-      const res = await fetch('/api/mindset/flow-state/profile', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ primary_sport: trimmed }),
-      })
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}))
-        throw new Error(j.error || `Save failed (${res.status})`)
-      }
-      const data = await res.json().catch(() => null)
-      setProfile({
-        primary_sport: data?.primary_sport ?? trimmed,
-        next_competition_at: data?.next_competition_at ?? profile?.next_competition_at ?? null,
-      })
-    } catch (e: any) {
-      setSportError(e?.message || 'Could not save. Try again.')
-    } finally {
-      setSavingSport(false)
-    }
-  }
-
   if (loading) return <p className="text-sm text-gray-500">Loading…</p>
-
-  if (profile && !profile.primary_sport) {
-    return (
-      <div className="bg-gray-900 rounded-2xl border border-white/10 p-6 max-w-md">
-        <h3 className="font-semibold text-gray-100 mb-1">What sport do you play?</h3>
-        <p className="text-sm text-gray-500 mb-4">
-          We'll autofill this for every 5A session and flow log. You can change it later.
-        </p>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={sportPrompt}
-            onChange={e => setSportPrompt(e.target.value)}
-            placeholder="e.g. Basketball"
-            className="input-field flex-1"
-          />
-          <button onClick={saveSport} disabled={savingSport || !sportPrompt.trim()} className="btn-primary">
-            {savingSport ? 'Saving…' : 'Save'}
-          </button>
-        </div>
-        {sportError && <p className="text-sm text-red-400 mt-3">{sportError}</p>}
-      </div>
-    )
-  }
 
   const sessionDates = Array.from(
     new Set(sessions.map(s => localDateISO(new Date(s.started_at)))),
@@ -101,11 +53,25 @@ export default function FlowStateTab() {
     else if (days === 0) compBanner = 'Competition today — run your stack.'
   }
 
+  const showSportHint = profile && !profile.primary_sport
+
   return (
     <div className="space-y-5">
       {compBanner && (
         <div className="bg-cta/10 border border-cta/30 rounded-xl px-4 py-3 text-sm text-cta font-medium">
           {compBanner}
+        </div>
+      )}
+
+      {showSportHint && (
+        <div className="bg-gray-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-400 flex items-center justify-between gap-3">
+          <span>Set your sport in Settings so sessions autofill it.</span>
+          <button
+            onClick={() => router.push('/settings')}
+            className="text-cta text-sm font-medium hover:underline whitespace-nowrap"
+          >
+            Go to Settings →
+          </button>
         </div>
       )}
 
