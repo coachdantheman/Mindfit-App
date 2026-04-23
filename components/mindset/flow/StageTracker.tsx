@@ -10,9 +10,16 @@ export default function StageTracker() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const [unavailable, setUnavailable] = useState(false)
+
   useEffect(() => {
     fetch('/api/mindset/flow-state/stage-checkins?limit=1')
-      .then(r => r.ok ? r.json() : [])
+      .then(async r => {
+        if (r.ok) return r.json()
+        const body = await r.json().catch(() => ({}))
+        if (/schema cache/i.test(body?.error || '')) setUnavailable(true)
+        return []
+      })
       .then(rows => {
         setLatest(Array.isArray(rows) && rows.length > 0 ? rows[0] : null)
         setLoading(false)
@@ -30,7 +37,9 @@ export default function StageTracker() {
       })
       if (!res.ok) {
         const j = await res.json().catch(() => ({}))
-        throw new Error(j.error || `Save failed (${res.status})`)
+        const msg = j?.error || `Save failed (${res.status})`
+        if (/schema cache/i.test(msg)) setUnavailable(true)
+        throw new Error(msg)
       }
       setLatest(await res.json())
     } catch (e: any) {
@@ -41,6 +50,21 @@ export default function StageTracker() {
   }
 
   const suggest = latest ? nextStage(latest.stage) : null
+
+  if (unavailable) {
+    return (
+      <div className="bg-gray-900 rounded-2xl border border-yellow-500/40 p-5">
+        <p className="text-sm font-semibold text-yellow-300 mb-1">Stage tracker temporarily unavailable</p>
+        <p className="text-xs text-gray-400">
+          Supabase's API server is serving a stale schema cache. To fix:
+          in <span className="text-gray-200">Supabase Dashboard → Project Settings → API</span> click
+          <span className="text-gray-200"> Restart server</span>, or run
+          <code className="mx-1 text-cta"> NOTIFY pgrst, 'reload schema';</code>
+          in the SQL editor.
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="bg-gray-900 rounded-2xl border border-white/10 p-6">

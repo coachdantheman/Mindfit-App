@@ -21,7 +21,13 @@ export async function GET(req: Request) {
     .order('logged_at', { ascending: false })
     .limit(1000)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    const stale = error.code === 'PGRST204' || error.code === 'PGRST202' || /schema cache/i.test(error.message)
+    return NextResponse.json(
+      { error: error.message, stale_schema_cache: stale },
+      { status: stale ? 503 : 500 },
+    )
+  }
   return NextResponse.json(data)
 }
 
@@ -49,6 +55,17 @@ export async function POST(req: Request) {
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  if (error) {
+    const stale = error.code === 'PGRST204' || error.code === 'PGRST202' || /schema cache/i.test(error.message)
+    return NextResponse.json(
+      {
+        error: stale
+          ? "Supabase's schema cache is stale. In Supabase Dashboard → Project Settings → API click 'Restart server', or run `NOTIFY pgrst, 'reload schema';` in the SQL editor. " + `(Raw: ${error.message})`
+          : error.message,
+        stale_schema_cache: stale,
+      },
+      { status: stale ? 503 : 400 },
+    )
+  }
   return NextResponse.json(data)
 }

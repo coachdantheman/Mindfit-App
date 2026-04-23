@@ -24,11 +24,18 @@ export default function FlowStateTab() {
   const [logs, setLogs] = useState<FlowLog[]>([])
   const [profile, setProfile] = useState<FlowProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [staleCache, setStaleCache] = useState(false)
 
   useEffect(() => {
+    const readJsonOrArray = async (r: Response): Promise<any> => {
+      if (r.ok) return r.json()
+      const body = await r.json().catch(() => ({}))
+      if (body?.stale_schema_cache) setStaleCache(true)
+      return []
+    }
     Promise.all([
-      fetch('/api/mindset/flow-state/sessions?all=1').then(r => r.ok ? r.json() : []),
-      fetch('/api/mindset/flow-state/logs?all=1').then(r => r.ok ? r.json() : []),
+      fetch('/api/mindset/flow-state/sessions?all=1').then(readJsonOrArray),
+      fetch('/api/mindset/flow-state/logs?all=1').then(readJsonOrArray),
       fetch('/api/profile').then(r => r.ok ? r.json() : null),
     ]).then(([s, l, p]) => {
       setSessions(Array.isArray(s) ? s : [])
@@ -55,6 +62,22 @@ export default function FlowStateTab() {
 
   return (
     <div className="space-y-5">
+      {staleCache && (
+        <div className="bg-yellow-500/10 border border-yellow-500/40 rounded-xl px-4 py-3 text-sm">
+          <p className="font-semibold text-yellow-300 mb-1">Supabase schema cache is stale</p>
+          <p className="text-xs text-gray-300">
+            Your Flow State data is there, but Supabase's API server hasn't picked up the latest
+            migration yet. Fix:
+            <br />
+            1. Open <span className="text-gray-100">Supabase Dashboard → Project Settings → API</span> and click
+            <span className="text-gray-100"> Restart server</span>, <em>or</em>
+            <br />
+            2. Run <code className="text-cta">NOTIFY pgrst, 'reload schema';</code> in the SQL Editor.
+            <br />
+            Then reload this page.
+          </p>
+        </div>
+      )}
       {compBanner && (
         <div className="bg-cta/10 border border-cta/30 rounded-xl px-4 py-3 text-sm text-cta font-medium">
           {compBanner}
