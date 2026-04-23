@@ -10,6 +10,7 @@ import { STAGE_META, TRIGGER_LABEL } from '@/components/mindset/flow/flow-consta
 import { format, parseISO, differenceInCalendarDays } from 'date-fns'
 
 const FlowBarChart = dynamic(() => import('@/components/mindset/flow/FlowBarChart'), { ssr: false })
+const StageTracker = dynamic(() => import('@/components/mindset/flow/StageTracker'), { ssr: false })
 
 interface FlowProfile {
   primary_sport: string | null
@@ -101,6 +102,8 @@ export default function FlowStateTab() {
 
       <FlowBarChart logs={logs} />
 
+      <StageTracker />
+
       <div className="bg-gray-900 rounded-2xl border border-white/10 p-6">
         <h3 className="font-semibold text-gray-100 mb-3">Last flow session</h3>
         {!lastLog ? (
@@ -116,7 +119,7 @@ export default function FlowStateTab() {
                 <span className="text-cta font-semibold">{lastLog.flow_score}/10</span>
               </p>
             </div>
-            <StageBadge stage={lastLog.ending_stage} />
+            {lastLog.ending_stage && <StageBadge stage={lastLog.ending_stage} />}
           </div>
         )}
       </div>
@@ -147,7 +150,7 @@ function StatCard({
   )
 }
 
-function StageBadge({ stage }: { stage: FlowLog['ending_stage'] }) {
+function StageBadge({ stage }: { stage: NonNullable<FlowLog['ending_stage']> }) {
   const meta = STAGE_META[stage]
   return (
     <span

@@ -14,6 +14,7 @@ import {
   needsAttention, generateRecommendation,
   avgFlowScore, flowPct, topTrigger, mostCommonStage,
 } from '../components/mindset/flow-logic'
+import { nextStage } from '../components/mindset/flow/flow-constants'
 import type { FlowLog, FlowSession } from '../types'
 
 function log(partial: Partial<FlowLog>): FlowLog {
@@ -69,6 +70,18 @@ test('is4PctZone — above 8% is too_hard', () => {
 
 test('is4PctZone — skill 0 is handled', () => {
   assert.equal(is4PctZone(5, 0), 'too_easy')
+})
+
+test('is4PctZone — decimals (8.0 challenge / 7.6 skill) lands in zone', () => {
+  // delta ≈ 5.26% → in the 1–8% target band
+  assert.equal(is4PctZone(8.0, 7.6), 'in_zone')
+})
+
+test('nextStage — follows the 4-stage cycle and loops back', () => {
+  assert.equal(nextStage('struggle'), 'release')
+  assert.equal(nextStage('release'), 'flow')
+  assert.equal(nextStage('flow'), 'recovery')
+  assert.equal(nextStage('recovery'), 'struggle')
 })
 
 test('calcStreak — empty array returns 0', () => {

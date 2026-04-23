@@ -41,6 +41,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     { data: goals },
     { data: flowSessions },
     { data: flowLogs },
+    { data: flowStageCheckins },
     { data: coachNote },
   ] = await Promise.all([
     admin.from('journal_entries').select('*').eq('user_id', athleteId).order('entry_date', { ascending: false }).limit(30),
@@ -53,6 +54,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     admin.from('goals').select('*').eq('user_id', athleteId),
     admin.from('flow_sessions').select('*').eq('user_id', athleteId).order('started_at', { ascending: false }).limit(1000),
     admin.from('flow_logs').select('*').eq('user_id', athleteId).order('logged_at', { ascending: false }).limit(1000),
+    admin.from('flow_stage_checkins').select('*').eq('user_id', athleteId).order('checked_at', { ascending: false }).limit(500),
     admin.from('flow_coach_notes').select('*').eq('athlete_id', athleteId).eq('coach_id', auth.userId).maybeSingle(),
   ])
 
@@ -72,6 +74,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     goalCount: { total: (goals ?? []).length, completed: (goals ?? []).filter((g: any) => g.is_completed).length },
     flowSessions: flowSessions ?? [],
     flowLogs: flowLogs ?? [],
+    flowStageCheckins: flowStageCheckins ?? [],
     flowCoachNote: coachNote?.note ?? null,
   })
 }

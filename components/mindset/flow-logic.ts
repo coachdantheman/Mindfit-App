@@ -1,4 +1,4 @@
-import { FlowLog, FlowSession, FlowStage, FlowTrigger } from '@/types'
+import { FlowLog, FlowSession, FlowStage, FlowStageCheckin, FlowTrigger } from '@/types'
 
 export type ZoneResult = 'too_easy' | 'in_zone' | 'too_hard'
 
@@ -88,7 +88,21 @@ export function topTrigger(logs: FlowLog[]): FlowTrigger | null {
 
 export function mostCommonStage(logs: FlowLog[]): FlowStage | null {
   const counts = new Map<FlowStage, number>()
-  for (const l of logs) counts.set(l.ending_stage, (counts.get(l.ending_stage) ?? 0) + 1)
+  for (const l of logs) {
+    if (!l.ending_stage) continue
+    counts.set(l.ending_stage, (counts.get(l.ending_stage) ?? 0) + 1)
+  }
+  let best: FlowStage | null = null
+  let bestN = 0
+  for (const [s, n] of counts) {
+    if (n > bestN) { best = s; bestN = n }
+  }
+  return best
+}
+
+export function mostCommonCheckinStage(checkins: FlowStageCheckin[]): FlowStage | null {
+  const counts = new Map<FlowStage, number>()
+  for (const c of checkins) counts.set(c.stage, (counts.get(c.stage) ?? 0) + 1)
   let best: FlowStage | null = null
   let bestN = 0
   for (const [s, n] of counts) {
@@ -104,9 +118,16 @@ export function avgFlowScore(logs: FlowLog[]): number | null {
 }
 
 export function flowPct(logs: FlowLog[]): number | null {
-  if (logs.length === 0) return null
-  const n = logs.filter(l => l.ending_stage === 'flow').length
-  return Math.round((n / logs.length) * 100)
+  const scored = logs.filter(l => l.ending_stage != null)
+  if (scored.length === 0) return null
+  const n = scored.filter(l => l.ending_stage === 'flow').length
+  return Math.round((n / scored.length) * 100)
+}
+
+export function flowPctFromCheckins(checkins: FlowStageCheckin[]): number | null {
+  if (checkins.length === 0) return null
+  const n = checkins.filter(c => c.stage === 'flow').length
+  return Math.round((n / checkins.length) * 100)
 }
 
 /**
@@ -119,17 +140,31 @@ export function needsAttention(
   logs: FlowLog[],
   sessions: FlowSession[],
   today = localDateISO(new Date()),
+  checkins: FlowStageCheckin[] = [],
 ): string[] {
   const reasons: string[] = []
 
-  const orderedByLogged = [...logs].sort(
-    (a, b) => new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime(),
+  // Stage-stuck check: prefer check-ins (that's where stages live now).
+  // Fall back to legacy ending_stage on logs for older data.
+  const orderedCheckins = [...checkins].sort(
+    (a, b) => new Date(b.checked_at).getTime() - new Date(a.checked_at).getTime(),
   )
   if (
-    orderedByLogged.length >= 3 &&
-    orderedByLogged.slice(0, 3).every(l => l.ending_stage === 'struggle')
+    orderedCheckins.length >= 3 &&
+    orderedCheckins.slice(0, 3).every(c => c.stage === 'struggle')
   ) {
-    reasons.push('3+ recent sessions ended in Struggle')
+    reasons.push('Stuck in Struggle — 3+ recent check-ins')
+  } else {
+    const orderedByLogged = [...logs].sort(
+      (a, b) => new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime(),
+    )
+    const withStage = orderedByLogged.filter(l => l.ending_stage != null)
+    if (
+      withStage.length >= 3 &&
+      withStage.slice(0, 3).every(l => l.ending_stage === 'struggle')
+    ) {
+      reasons.push('3+ recent sessions ended in Struggle')
+    }
   }
 
   const todayDate = new Date(today)
@@ -177,9 +212,10 @@ export function generateRecommendation(logs: FlowLog[], sessions: FlowSession[])
   const orderedByLogged = [...logs].sort(
     (a, b) => new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime(),
   )
+  const stagedLogs = orderedByLogged.filter(l => l.ending_stage != null)
   if (
-    orderedByLogged.length >= 3 &&
-    orderedByLogged.slice(0, 3).every(l => l.ending_stage === 'struggle')
+    stagedLogs.length >= 3 &&
+    stagedLogs.slice(0, 3).every(l => l.ending_stage === 'struggle')
   ) {
     return "You're not completing the cycle. Build in a Release step — 90 seconds of deliberate walk-away before the next rep."
   }

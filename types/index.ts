@@ -303,7 +303,7 @@ export type FlowTrigger =
   | 'deep_focus'
   | 'risk_consequence'
   | 'novelty_complexity'
-  | 'music_rhythm'
+  | 'deep_embodiment'
 export type FiveAStep = 'A1' | 'A2' | 'A3' | 'A4' | 'A5'
 
 export interface FlowSession {
@@ -329,9 +329,18 @@ export interface FlowLog {
   challenge_level: number
   skill_level: number
   flow_score: number
-  ending_stage: FlowStage
+  ending_stage: FlowStage | null
   triggers_fired: FlowTrigger[]
   journal_note: string | null
+  created_at: string
+}
+
+export interface FlowStageCheckin {
+  id: string
+  user_id: string
+  stage: FlowStage
+  note: string | null
+  checked_at: string
   created_at: string
 }
 

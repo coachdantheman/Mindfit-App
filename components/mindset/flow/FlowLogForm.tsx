@@ -1,8 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { FlowStage, FlowTrigger } from '@/types'
-import { FLOW_STAGES, STAGE_META, TRIGGERS } from '@/components/mindset/flow/flow-constants'
+import { FlowTrigger } from '@/types'
+import { TRIGGERS } from '@/components/mindset/flow/flow-constants'
 import { is4PctZone, ZONE_COLOR } from '@/components/mindset/flow-logic'
 
 export default function FlowLogForm() {
@@ -16,7 +16,6 @@ export default function FlowLogForm() {
   const [challenge, setChallenge] = useState(6)
   const [skill, setSkill] = useState(6)
   const [flow, setFlow] = useState(6)
-  const [stage, setStage] = useState<FlowStage | null>(null)
   const [triggers, setTriggers] = useState<FlowTrigger[]>([])
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
@@ -34,14 +33,14 @@ export default function FlowLogForm() {
   }, [])
 
   const zone = is4PctZone(challenge, skill)
-  const delta = skill > 0 ? Math.round(((challenge - skill) / skill) * 100) : 0
+  const delta = skill > 0 ? ((challenge - skill) / skill) * 100 : 0
+  const deltaLabel = `${delta > 0 ? '+' : ''}${delta.toFixed(1)}%`
 
   const toggleTrigger = (t: FlowTrigger) => {
     setTriggers(cur => cur.includes(t) ? cur.filter(x => x !== t) : [...cur, t])
   }
 
   async function save() {
-    if (!stage) { setError('Pick an ending stage before saving.'); return }
     setSaving(true)
     setError(null)
     const res = await fetch('/api/mindset/flow-state/logs', {
@@ -53,7 +52,6 @@ export default function FlowLogForm() {
         challenge_level: challenge,
         skill_level: skill,
         flow_score: flow,
-        ending_stage: stage,
         triggers_fired: triggers,
         journal_note: note || null,
       }),
@@ -105,37 +103,17 @@ export default function FlowLogForm() {
           />
         </div>
 
-        <Slider label="Challenge level" value={challenge} onChange={setChallenge} />
-        <Slider label="Skill level today" value={skill} onChange={setSkill} />
+        <DecimalSlider label="Challenge level" value={challenge} onChange={setChallenge} />
+        <DecimalSlider label="Skill level today" value={skill} onChange={setSkill} />
 
         <div className={`flex items-center justify-between rounded-xl border px-4 py-3 ${ZONE_COLOR[zone].tw}`}>
           <span className="text-sm font-semibold">{ZONE_COLOR[zone].label}</span>
           <span className="text-xs">
-            {delta > 0 ? '+' : ''}{delta}% vs skill · 4% Rule target: +1–8%
+            {deltaLabel} vs skill · 4% Rule target: +1–8%
           </span>
         </div>
 
-        <Slider label="Flow score — how in the zone were you?" value={flow} onChange={setFlow} />
-
-        <div>
-          <p className="text-sm text-gray-400 mb-2">Which stage did you end in?</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {FLOW_STAGES.map(s => (
-              <button
-                key={s}
-                onClick={() => setStage(s)}
-                style={stage === s ? { backgroundColor: STAGE_META[s].hex, borderColor: STAGE_META[s].hex } : undefined}
-                className={`px-3 py-2.5 rounded-xl text-sm font-semibold border transition-colors ${
-                  stage === s
-                    ? 'text-white'
-                    : 'border-white/10 text-gray-300 hover:border-white/30'
-                }`}
-              >
-                <span className="mr-1">{STAGE_META[s].emoji}</span>{STAGE_META[s].label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <IntSlider label="Flow score — how in the zone were you?" value={flow} onChange={setFlow} />
 
         <div>
           <p className="text-sm text-gray-400 mb-2">Which triggers fired today?</p>
@@ -144,6 +122,7 @@ export default function FlowLogForm() {
               <button
                 key={t.code}
                 onClick={() => toggleTrigger(t.code)}
+                title={t.hint}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                   triggers.includes(t.code)
                     ? 'bg-cta/20 border-cta text-cta'
@@ -177,7 +156,27 @@ export default function FlowLogForm() {
   )
 }
 
-function Slider({ label, value, onChange }: { label: string; value: number; onChange: (n: number) => void }) {
+function DecimalSlider({ label, value, onChange }: { label: string; value: number; onChange: (n: number) => void }) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <label className="text-sm text-gray-400">{label}</label>
+        <span className="text-cta font-bold tabular-nums">{value.toFixed(1)}/10</span>
+      </div>
+      <input
+        type="range"
+        min={1}
+        max={10}
+        step={0.1}
+        value={value}
+        onChange={e => onChange(parseFloat(e.target.value))}
+        className="w-full accent-cta"
+      />
+    </div>
+  )
+}
+
+function IntSlider({ label, value, onChange }: { label: string; value: number; onChange: (n: number) => void }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
@@ -188,6 +187,7 @@ function Slider({ label, value, onChange }: { label: string; value: number; onCh
         type="range"
         min={1}
         max={10}
+        step={1}
         value={value}
         onChange={e => onChange(parseInt(e.target.value))}
         className="w-full accent-cta"

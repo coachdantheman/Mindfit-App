@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { format, parseISO } from 'date-fns'
-import { Profile, JournalEntry, FoodEntry, NutritionGoal, WorkoutLog, SleepEntry, FlowSession, FlowLog } from '@/types'
+import { Profile, JournalEntry, FoodEntry, NutritionGoal, WorkoutLog, SleepEntry, FlowSession, FlowLog, FlowStageCheckin } from '@/types'
 import { calcSleepAverages } from '@/lib/stats'
 import dynamic from 'next/dynamic'
 import SectionTabs, { Section } from '@/components/shared/SectionTabs'
@@ -13,6 +13,8 @@ import SleepEntriesList from '@/components/shared/SleepEntriesList'
 import {
   calcCompetitionStreak, avgFlowScore, needsAttention,
 } from '@/components/mindset/flow-logic'
+import { STAGE_META } from '@/components/mindset/flow/flow-constants'
+import { formatDistanceToNow } from 'date-fns'
 
 const RatingChart = dynamic(() => import('@/components/dashboard/RatingChart'), { ssr: false })
 const FlowBarChart = dynamic(() => import('@/components/mindset/flow/FlowBarChart'), { ssr: false })
@@ -29,6 +31,7 @@ interface AthleteData {
   goalCount: { total: number; completed: number }
   flowSessions: FlowSession[]
   flowLogs: FlowLog[]
+  flowStageCheckins: FlowStageCheckin[]
   flowCoachNote: string | null
 }
 
@@ -54,7 +57,7 @@ export default function AthleteDetail({ athleteId, backHref }: { athleteId: stri
 
   const {
     profile, journalEntries, foodEntries, nutritionGoal, workoutLogs, sleepEntries,
-    vizCount, medCount, goalCount, flowSessions, flowLogs, flowCoachNote,
+    vizCount, medCount, goalCount, flowSessions, flowLogs, flowStageCheckins, flowCoachNote,
   } = data
   const { avgSleep, avgSleepQuality } = calcSleepAverages(sleepEntries)
 
@@ -150,6 +153,7 @@ export default function AthleteDetail({ athleteId, backHref }: { athleteId: stri
           athleteId={profile.id}
           sessions={flowSessions}
           logs={flowLogs}
+          checkins={flowStageCheckins}
           initialNote={flowCoachNote}
         />
       )}
@@ -220,11 +224,12 @@ export default function AthleteDetail({ athleteId, backHref }: { athleteId: stri
 }
 
 function FlowSectionPanel({
-  athleteId, sessions, logs, initialNote,
+  athleteId, sessions, logs, checkins, initialNote,
 }: {
   athleteId: string
   sessions: FlowSession[]
   logs: FlowLog[]
+  checkins: FlowStageCheckin[]
   initialNote: string | null
 }) {
   const [note, setNote] = useState(initialNote ?? '')
@@ -237,7 +242,9 @@ function FlowSectionPanel({
     const recent = logs.filter(l => new Date(l.logged_at) >= since)
     return avgFlowScore(recent)
   })()
-  const attention = needsAttention(logs, sessions)
+  const today = new Date().toISOString().split('T')[0]
+  const attention = needsAttention(logs, sessions, today, checkins)
+  const latestCheckin = checkins[0] ?? null
 
   async function saveNote() {
     setSaving(true)
@@ -250,7 +257,7 @@ function FlowSectionPanel({
     setSaving(false)
   }
 
-  if (sessions.length === 0 && logs.length === 0) {
+  if (sessions.length === 0 && logs.length === 0 && checkins.length === 0) {
     return (
       <div className="text-center py-12 text-gray-400">
         <p className="font-medium">No flow data yet</p>
@@ -286,6 +293,23 @@ function FlowSectionPanel({
       </div>
 
       <FlowBarChart logs={logs} />
+
+      {latestCheckin && (
+        <div className="bg-gray-900 rounded-2xl border border-white/10 p-4 flex items-center justify-between flex-wrap gap-2">
+          <div className="text-sm">
+            <span className="text-gray-500">Current stage: </span>
+            <span
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-white"
+              style={{ backgroundColor: STAGE_META[latestCheckin.stage].hex }}
+            >
+              {STAGE_META[latestCheckin.stage].emoji} {STAGE_META[latestCheckin.stage].label}
+            </span>
+          </div>
+          <span className="text-xs text-gray-500">
+            {formatDistanceToNow(parseISO(latestCheckin.checked_at), { addSuffix: true })}
+          </span>
+        </div>
+      )}
 
       <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
         <div className="flex items-center justify-between mb-2">

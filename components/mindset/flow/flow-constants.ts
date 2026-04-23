@@ -64,16 +64,27 @@ export const STAGE_META: Record<FlowStage, { label: string; hex: string; tw: str
 
 export const FLOW_STAGES: FlowStage[] = ['struggle', 'release', 'flow', 'recovery']
 
-export const TRIGGERS: { code: FlowTrigger; label: string }[] = [
+export const TRIGGERS: { code: FlowTrigger; label: string; hint?: string }[] = [
   { code: 'clear_goals',              label: 'Clear goals' },
   { code: 'immediate_feedback',       label: 'Immediate feedback' },
   { code: 'challenge_skill_balance',  label: 'Challenge–skill balance' },
   { code: 'deep_focus',               label: 'Deep focus / no distractions' },
   { code: 'risk_consequence',         label: 'Risk / consequence' },
   { code: 'novelty_complexity',       label: 'Novelty / complexity' },
-  { code: 'music_rhythm',             label: 'Music / rhythm' },
+  { code: 'deep_embodiment',          label: 'Deep embodiment', hint: 'Did you feel it in your body?' },
 ]
 
 export const TRIGGER_LABEL: Record<FlowTrigger, string> = Object.fromEntries(
   TRIGGERS.map(t => [t.code, t.label]),
 ) as Record<FlowTrigger, string>
+
+/**
+ * The 4-stage flow cycle: Struggle → Release → Flow → Recovery → Struggle (loop).
+ * After Flow, athletes always transition to Recovery — never skip it.
+ */
+export const STAGE_CYCLE: FlowStage[] = ['struggle', 'release', 'flow', 'recovery']
+
+export function nextStage(current: FlowStage): FlowStage {
+  const idx = STAGE_CYCLE.indexOf(current)
+  return STAGE_CYCLE[(idx + 1) % STAGE_CYCLE.length]
+}

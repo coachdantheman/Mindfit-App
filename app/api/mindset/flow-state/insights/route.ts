@@ -2,10 +2,11 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import {
-  avgFlowScore, flowPct, mostCommonStage, topTrigger,
+  avgFlowScore, flowPct, flowPctFromCheckins,
+  mostCommonStage, mostCommonCheckinStage, topTrigger,
   generateRecommendation, needsAttention,
 } from '@/components/mindset/flow-logic'
-import { FlowInsights, FlowLog, FlowSession } from '@/types'
+import { FlowInsights, FlowLog, FlowSession, FlowStageCheckin } from '@/types'
 
 export async function GET(req: Request) {
   const auth = await verifyApiUser()
@@ -35,15 +36,20 @@ export async function GET(req: Request) {
   const since7 = new Date(); since7.setDate(since7.getDate() - 7)
   const since14 = new Date(); since14.setDate(since14.getDate() - 14)
 
-  const [{ data: logs7 }, { data: logs14 }, { data: sessions14 }] = await Promise.all([
+  const [
+    { data: logs7 }, { data: logs14 }, { data: sessions14 }, { data: checkins14 },
+  ] = await Promise.all([
     admin.from('flow_logs').select('*').eq('user_id', targetId).gte('logged_at', since7.toISOString()),
     admin.from('flow_logs').select('*').eq('user_id', targetId).gte('logged_at', since14.toISOString()),
     admin.from('flow_sessions').select('*').eq('user_id', targetId).gte('started_at', since14.toISOString()),
+    admin.from('flow_stage_checkins').select('*').eq('user_id', targetId).gte('checked_at', since14.toISOString()),
   ])
 
   const logs7Arr = (logs7 ?? []) as FlowLog[]
   const logs14Arr = (logs14 ?? []) as FlowLog[]
   const sessions14Arr = (sessions14 ?? []) as FlowSession[]
+  const checkins14Arr = (checkins14 ?? []) as FlowStageCheckin[]
+  const checkins7Arr = checkins14Arr.filter(c => new Date(c.checked_at) >= since7)
 
   let coachNote: string | null = null
   if (!athleteId || athleteId === auth.userId) {
@@ -65,10 +71,15 @@ export async function GET(req: Request) {
     coachNote = note?.note ?? null
   }
 
+  // Stage metrics prefer check-ins (the new stage-tracker source of truth);
+  // fall back to legacy ending_stage on logs for pre-v6 data.
+  const stageFromCheckins = mostCommonCheckinStage(checkins7Arr)
+  const flowPctFromLogs = flowPct(logs7Arr)
+
   const insights: FlowInsights = {
     avg_flow_score: avgFlowScore(logs7Arr),
-    flow_pct: flowPct(logs7Arr),
-    most_common_stage: mostCommonStage(logs7Arr),
+    flow_pct: flowPctFromCheckins(checkins7Arr) ?? flowPctFromLogs,
+    most_common_stage: stageFromCheckins ?? mostCommonStage(logs7Arr),
     top_trigger: topTrigger(logs7Arr),
     recommendation: generateRecommendation(logs14Arr, sessions14Arr),
     coach_note: coachNote,
@@ -76,7 +87,8 @@ export async function GET(req: Request) {
     logs_7d: logs7Arr.length,
   }
 
-  const attention = needsAttention(logs14Arr, sessions14Arr)
+  const today = new Date().toISOString().split('T')[0]
+  const attention = needsAttention(logs14Arr, sessions14Arr, today, checkins14Arr)
 
   return NextResponse.json({ insights, needs_attention: attention })
 }
