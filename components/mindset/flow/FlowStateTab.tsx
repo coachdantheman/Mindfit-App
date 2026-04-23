@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { FlowLog, FlowSession } from '@/types'
 import {
-  calcStreak, localDateISO, topTrigger,
+  calcCompetitionStreak, topTrigger,
 } from '@/components/mindset/flow-logic'
 import { STAGE_META, TRIGGER_LABEL } from '@/components/mindset/flow/flow-constants'
 import { format, parseISO, differenceInCalendarDays } from 'date-fns'
@@ -26,8 +26,8 @@ export default function FlowStateTab() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/mindset/flow-state/sessions?days=14').then(r => r.ok ? r.json() : []),
-      fetch('/api/mindset/flow-state/logs?days=14').then(r => r.ok ? r.json() : []),
+      fetch('/api/mindset/flow-state/sessions?all=1').then(r => r.ok ? r.json() : []),
+      fetch('/api/mindset/flow-state/logs?all=1').then(r => r.ok ? r.json() : []),
       fetch('/api/profile').then(r => r.ok ? r.json() : null),
     ]).then(([s, l, p]) => {
       setSessions(Array.isArray(s) ? s : [])
@@ -39,10 +39,7 @@ export default function FlowStateTab() {
 
   if (loading) return <p className="text-sm text-gray-500">Loading…</p>
 
-  const sessionDates = Array.from(
-    new Set(sessions.map(s => localDateISO(new Date(s.started_at)))),
-  )
-  const streak = calcStreak(sessionDates)
+  const streak = calcCompetitionStreak(logs, sessions)
   const lastLog = logs[0] ?? null
   const top = topTrigger(logs)
 
@@ -91,13 +88,18 @@ export default function FlowStateTab() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard label="Streak" value={streak > 0 ? `${streak}` : '—'} suffix={streak > 0 ? (streak === 1 ? 'day' : 'days') : 'start today'} gold />
-        <StatCard label="Sessions (14d)" value={sessions.length.toString()} />
-        <StatCard label="Logs (14d)" value={logs.length.toString()} />
+        <StatCard
+          label="Competition streak"
+          value={streak > 0 ? `${streak}` : '—'}
+          suffix={streak > 0 ? (streak === 1 ? 'competition' : 'competitions') : 'run stack next comp'}
+          gold
+        />
+        <StatCard label="Competitions" value={logs.length.toString()} />
+        <StatCard label="5A sessions" value={sessions.length.toString()} />
         <StatCard label="Top trigger" value={top ? TRIGGER_LABEL[top] : '—'} small />
       </div>
 
-      <FlowBarChart logs={logs} days={14} />
+      <FlowBarChart logs={logs} />
 
       <div className="bg-gray-900 rounded-2xl border border-white/10 p-6">
         <h3 className="font-semibold text-gray-100 mb-3">Last flow session</h3>

@@ -7,7 +7,8 @@ export async function GET(req: Request) {
   if (auth instanceof NextResponse) return auth
 
   const { searchParams } = new URL(req.url)
-  const days = parseInt(searchParams.get('days') || '14')
+  const all = searchParams.get('all') === '1'
+  const days = parseInt(searchParams.get('days') || (all ? '3650' : '14'))
   const since = new Date()
   since.setDate(since.getDate() - days)
 
@@ -18,7 +19,7 @@ export async function GET(req: Request) {
     .eq('user_id', auth.userId)
     .gte('logged_at', since.toISOString())
     .order('logged_at', { ascending: false })
-    .limit(100)
+    .limit(1000)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)

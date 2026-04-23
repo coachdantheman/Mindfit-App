@@ -10,7 +10,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  is4PctZone, calcStreak, needsAttention, generateRecommendation,
+  is4PctZone, calcStreak, calcCompetitionStreak,
+  needsAttention, generateRecommendation,
   avgFlowScore, flowPct, topTrigger, mostCommonStage,
 } from '../components/mindset/flow-logic'
 import type { FlowLog, FlowSession } from '../types'
@@ -92,6 +93,42 @@ test('calcStreak — streak of 0 when last session >1 day ago', () => {
 
 test('calcStreak — dedupes multiple sessions on same day', () => {
   assert.equal(calcStreak(['2026-04-23', '2026-04-23', '2026-04-22'], '2026-04-23'), 2)
+})
+
+test('calcCompetitionStreak — empty returns 0', () => {
+  assert.equal(calcCompetitionStreak([], []), 0)
+})
+
+test('calcCompetitionStreak — counts consecutive competitions with linked 5A session', () => {
+  const logs = [
+    log({ flow_session_id: 'a', logged_at: '2026-04-23T18:00:00Z' }),
+    log({ flow_session_id: 'b', logged_at: '2026-04-20T18:00:00Z' }),
+    log({ flow_session_id: 'c', logged_at: '2026-04-15T18:00:00Z' }),
+  ]
+  assert.equal(calcCompetitionStreak(logs, []), 3)
+})
+
+test('calcCompetitionStreak — counts via same-day session when FK missing', () => {
+  const logs = [log({ flow_session_id: null, logged_at: '2026-04-23T18:00:00Z' })]
+  const sessions = [session({ started_at: '2026-04-23T08:00:00Z' })]
+  assert.equal(calcCompetitionStreak(logs, sessions), 1)
+})
+
+test('calcCompetitionStreak — unlinked competition breaks the streak', () => {
+  const logs = [
+    log({ flow_session_id: 'a', logged_at: '2026-04-23T18:00:00Z' }),
+    log({ flow_session_id: null, logged_at: '2026-04-20T18:00:00Z' }),  // breaks here
+    log({ flow_session_id: 'c', logged_at: '2026-04-15T18:00:00Z' }),
+  ]
+  assert.equal(calcCompetitionStreak(logs, []), 1)
+})
+
+test('calcCompetitionStreak — most recent unlinked log means streak of 0', () => {
+  const logs = [
+    log({ flow_session_id: null, logged_at: '2026-04-23T18:00:00Z' }),
+    log({ flow_session_id: 'b', logged_at: '2026-04-20T18:00:00Z' }),
+  ]
+  assert.equal(calcCompetitionStreak(logs, []), 0)
 })
 
 test('avgFlowScore — null when empty', () => {

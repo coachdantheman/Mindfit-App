@@ -3,55 +3,41 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import { FlowLog } from '@/types'
-import { format } from 'date-fns'
-import { localDateISO } from '@/components/mindset/flow-logic'
+import { format, parseISO } from 'date-fns'
 
 interface Props {
   logs: FlowLog[]
-  days?: number
+  title?: string
 }
 
-export default function FlowBarChart({ logs, days = 14 }: Props) {
-  const today = new Date()
-  const bins: { date: string; label: string; score: number | null }[] = []
-
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(today)
-    d.setDate(d.getDate() - i)
-    const iso = localDateISO(d)
-    bins.push({ date: iso, label: format(d, 'M/d'), score: null })
-  }
-
-  const byDate = new Map<string, { sum: number; n: number }>()
-  for (const l of logs) {
-    const iso = localDateISO(new Date(l.logged_at))
-    const cur = byDate.get(iso) ?? { sum: 0, n: 0 }
-    cur.sum += l.flow_score
-    cur.n += 1
-    byDate.set(iso, cur)
-  }
-  for (const bin of bins) {
-    const agg = byDate.get(bin.date)
-    if (agg) bin.score = Math.round((agg.sum / agg.n) * 10) / 10
-  }
-
-  const hasData = bins.some(b => b.score !== null)
+export default function FlowBarChart({ logs, title = 'Flow Log' }: Props) {
+  // Oldest on the left → most recent on the right; one bar per competition.
+  const data = [...logs]
+    .sort((a, b) => new Date(a.logged_at).getTime() - new Date(b.logged_at).getTime())
+    .map(l => ({
+      label: format(parseISO(l.logged_at), 'M/d'),
+      score: l.flow_score,
+      stage: l.ending_stage,
+      sport: l.sport || '—',
+    }))
 
   return (
     <div className="bg-gray-900 rounded-2xl border border-white/10 p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-gray-100">{days}-Day Flow Log</h3>
-        <span className="text-xs text-gray-500">avg flow score / day</span>
+        <h3 className="font-semibold text-gray-100">{title}</h3>
+        <span className="text-xs text-gray-500">
+          {data.length > 0 ? `${data.length} competition${data.length === 1 ? '' : 's'}` : ''}
+        </span>
       </div>
-      {!hasData ? (
+      {data.length === 0 ? (
         <div className="text-center py-8 text-sm text-gray-500">
-          No flow sessions logged yet. Run your first 5A Flow Stack.
+          No flow sessions logged yet. Run your first 5A Flow Stack on your next competition.
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={bins} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+        <ResponsiveContainer width="100%" height={240}>
+          <BarChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-            <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#9ca3af' }} />
+            <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#9ca3af' }} interval="preserveStartEnd" />
             <YAxis domain={[0, 10]} tick={{ fontSize: 11, fill: '#9ca3af' }} tickCount={6} />
             <Tooltip
               contentStyle={{

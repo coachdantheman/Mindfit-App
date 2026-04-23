@@ -48,6 +48,31 @@ export function calcStreak(sessionDates: string[], today = localDateISO(new Date
   return n
 }
 
+/**
+ * Consecutive competitions (flow logs), most-recent first, where the athlete
+ * also ran a 5A session. A competition "counts" toward the streak if the log
+ * has flow_session_id set OR a session was started on the same local day as
+ * the log. A competition without a preceding 5A session breaks the streak.
+ */
+export function calcCompetitionStreak(logs: FlowLog[], sessions: FlowSession[]): number {
+  if (logs.length === 0) return 0
+  const sessionDays = new Set(
+    sessions.map(s => localDateISO(new Date(s.started_at))),
+  )
+  const orderedLogs = [...logs].sort(
+    (a, b) => new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime(),
+  )
+  let n = 0
+  for (const l of orderedLogs) {
+    const ran5A =
+      l.flow_session_id != null ||
+      sessionDays.has(localDateISO(new Date(l.logged_at)))
+    if (!ran5A) break
+    n++
+  }
+  return n
+}
+
 export function topTrigger(logs: FlowLog[]): FlowTrigger | null {
   const counts = new Map<FlowTrigger, number>()
   for (const l of logs) {

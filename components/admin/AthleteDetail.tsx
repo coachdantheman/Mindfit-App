@@ -11,7 +11,7 @@ import MacroBars from '@/components/shared/MacroBars'
 import WorkoutLogList from '@/components/shared/WorkoutLogList'
 import SleepEntriesList from '@/components/shared/SleepEntriesList'
 import {
-  calcStreak, localDateISO, avgFlowScore, needsAttention,
+  calcCompetitionStreak, avgFlowScore, needsAttention,
 } from '@/components/mindset/flow-logic'
 
 const RatingChart = dynamic(() => import('@/components/dashboard/RatingChart'), { ssr: false })
@@ -231,8 +231,7 @@ function FlowSectionPanel({
   const [saving, setSaving] = useState(false)
   const [savedAt, setSavedAt] = useState<string | null>(null)
 
-  const sessionDates = Array.from(new Set(sessions.map(s => localDateISO(new Date(s.started_at)))))
-  const streak = calcStreak(sessionDates)
+  const streak = calcCompetitionStreak(logs, sessions)
   const avg7 = (() => {
     const since = new Date(); since.setDate(since.getDate() - 7)
     const recent = logs.filter(l => new Date(l.logged_at) >= since)
@@ -274,19 +273,19 @@ function FlowSectionPanel({
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-gray-900 rounded-xl border border-white/10 p-3 text-center">
           <p className="text-lg font-bold text-cta">{streak}</p>
-          <p className="text-xs text-gray-500">Day streak</p>
+          <p className="text-xs text-gray-500">Competition streak</p>
         </div>
         <div className="bg-gray-900 rounded-xl border border-white/10 p-3 text-center">
           <p className="text-lg font-bold text-gray-200">{avg7 != null ? avg7.toFixed(1) : '—'}</p>
           <p className="text-xs text-gray-500">Avg flow (7d)</p>
         </div>
         <div className="bg-gray-900 rounded-xl border border-white/10 p-3 text-center">
-          <p className="text-lg font-bold text-gray-200">{sessions.length}</p>
-          <p className="text-xs text-gray-500">Sessions (14d)</p>
+          <p className="text-lg font-bold text-gray-200">{logs.length}</p>
+          <p className="text-xs text-gray-500">Competitions</p>
         </div>
       </div>
 
-      <FlowBarChart logs={logs} days={14} />
+      <FlowBarChart logs={logs} />
 
       <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
         <div className="flex items-center justify-between mb-2">

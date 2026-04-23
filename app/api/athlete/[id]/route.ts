@@ -27,7 +27,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
   if (!profile) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const since14 = new Date(); since14.setDate(since14.getDate() - 14)
+  // Flow data: fetch all-time (athletes only run the stack on competition
+  // days, so there may be only a handful of entries over many weeks).
 
   const [
     { data: journalEntries },
@@ -50,8 +51,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     admin.from('visualization_entries').select('*').eq('user_id', athleteId).eq('completed', true),
     admin.from('meditation_entries').select('*').eq('user_id', athleteId).eq('completed', true),
     admin.from('goals').select('*').eq('user_id', athleteId),
-    admin.from('flow_sessions').select('*').eq('user_id', athleteId).gte('started_at', since14.toISOString()).order('started_at', { ascending: false }),
-    admin.from('flow_logs').select('*').eq('user_id', athleteId).gte('logged_at', since14.toISOString()).order('logged_at', { ascending: false }),
+    admin.from('flow_sessions').select('*').eq('user_id', athleteId).order('started_at', { ascending: false }).limit(1000),
+    admin.from('flow_logs').select('*').eq('user_id', athleteId).order('logged_at', { ascending: false }).limit(1000),
     admin.from('flow_coach_notes').select('*').eq('athlete_id', athleteId).eq('coach_id', auth.userId).maybeSingle(),
   ])
 
