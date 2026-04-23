@@ -19,6 +19,7 @@ export default function FlowStateTab() {
   const [loading, setLoading] = useState(true)
   const [sportPrompt, setSportPrompt] = useState('')
   const [savingSport, setSavingSport] = useState(false)
+  const [sportError, setSportError] = useState<string | null>(null)
 
   useEffect(() => {
     Promise.all([
@@ -34,15 +35,30 @@ export default function FlowStateTab() {
   }, [])
 
   const saveSport = async () => {
-    if (!sportPrompt.trim()) return
+    const trimmed = sportPrompt.trim()
+    if (!trimmed) return
     setSavingSport(true)
-    const res = await fetch('/api/mindset/flow-state/profile', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ primary_sport: sportPrompt }),
-    })
-    if (res.ok) setProfile(await res.json())
-    setSavingSport(false)
+    setSportError(null)
+    try {
+      const res = await fetch('/api/mindset/flow-state/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ primary_sport: trimmed }),
+      })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j.error || `Save failed (${res.status})`)
+      }
+      const data = await res.json().catch(() => null)
+      setProfile({
+        primary_sport: data?.primary_sport ?? trimmed,
+        next_competition_at: data?.next_competition_at ?? profile?.next_competition_at ?? null,
+      })
+    } catch (e: any) {
+      setSportError(e?.message || 'Could not save. Try again.')
+    } finally {
+      setSavingSport(false)
+    }
   }
 
   if (loading) return <p className="text-sm text-gray-500">Loading…</p>
@@ -66,6 +82,7 @@ export default function FlowStateTab() {
             {savingSport ? 'Saving…' : 'Save'}
           </button>
         </div>
+        {sportError && <p className="text-sm text-red-400 mt-3">{sportError}</p>}
       </div>
     )
   }
