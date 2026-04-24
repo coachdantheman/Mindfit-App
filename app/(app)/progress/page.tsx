@@ -15,6 +15,7 @@ import ReadinessHero from '@/components/dashboard/ReadinessHero'
 
 const RatingChart = dynamic(() => import('@/components/dashboard/RatingChart'), { ssr: false })
 const EntryList = dynamic(() => import('@/components/dashboard/EntryList'), { ssr: false })
+const FlowProgressView = dynamic(() => import('@/components/mindset/flow/FlowProgressView'), { ssr: false })
 
 const ASSESSMENT_CATEGORIES = [
   { key: 'self_identity_clarity', label: 'Identity Clarity' },
@@ -216,6 +217,8 @@ export default function ProgressPage() {
           {assessments.length > 0 && <WeeklyAssessmentTrends assessments={assessments} />}
         </div>
       )}
+
+      {section === 'flow' && <FlowProgressView />}
 
       {section === 'nutrition' && (
         <div className="space-y-4">

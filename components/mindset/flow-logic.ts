@@ -192,6 +192,140 @@ export function needsAttention(
 }
 
 /**
+ * Composite Flow Readiness (0–100) + component breakdown.
+ * Weights reflect what drives on-demand flow access:
+ *   40 — Flow Score avg (how "in the zone" recent competitions went)
+ *   20 — 5A Ritual completion (sessions with zero skipped steps)
+ *   20 — 4% Zone hit rate (challenge-skill balance)
+ *   10 — Stage diversity (have they cycled through Struggle/Release/Flow/Recovery?)
+ *   10 — Competition activity (min 10 comps in last 30 days = full credit)
+ */
+export interface FlowReadinessBreakdown {
+  score: number                // 0-100
+  flow_score_avg: number | null
+  ritual_completion_pct: number | null
+  zone_hit_pct: number | null
+  stage_diversity: number | null    // 0-1 (distinct stages / 4)
+  activity: number | null           // comps last 30d, capped at 10
+  components: {
+    flow: number
+    ritual: number
+    zone: number
+    diversity: number
+    activity: number
+  }
+  verdict: string
+}
+
+export function calcFlowReadiness(
+  logs: FlowLog[],
+  sessions: FlowSession[],
+  checkins: FlowStageCheckin[],
+): FlowReadinessBreakdown {
+  const recentLogs = logs.slice(0, 14)
+  const recentSessions = sessions.slice(0, 14)
+
+  const flowAvg = avgFlowScore(recentLogs)
+  const flowPoints = flowAvg != null ? (flowAvg / 10) * 40 : 0
+
+  const ritualPct = recentSessions.length > 0
+    ? (recentSessions.filter(s => (s.skipped_steps ?? []).length === 0).length /
+       recentSessions.length) * 100
+    : null
+  const ritualPoints = ritualPct != null ? (ritualPct / 100) * 20 : 0
+
+  const zoneHit = recentLogs.length > 0
+    ? (recentLogs.filter(l => is4PctZone(l.challenge_level, l.skill_level) === 'in_zone').length /
+       recentLogs.length) * 100
+    : null
+  const zonePoints = zoneHit != null ? (zoneHit / 100) * 20 : 0
+
+  const since30 = new Date(); since30.setDate(since30.getDate() - 30)
+  const checkins30 = checkins.filter(c => new Date(c.checked_at) >= since30)
+  const stageSet = new Set(checkins30.map(c => c.stage))
+  const diversity = checkins30.length > 0 ? stageSet.size / 4 : null
+  const diversityPoints = diversity != null ? diversity * 10 : 0
+
+  const comps30 = logs.filter(l => new Date(l.logged_at) >= since30).length
+  const activity = Math.min(comps30, 10)
+  const activityPoints = (activity / 10) * 10
+
+  const score = Math.round(
+    flowPoints + ritualPoints + zonePoints + diversityPoints + activityPoints,
+  )
+
+  const verdict =
+    score >= 80 ? 'Locked in — peak flow access.' :
+    score >= 65 ? 'Strong. Keep the rhythm.' :
+    score >= 50 ? 'Building. Refine the ritual.' :
+    score >= 30 ? 'Drifting. Re-ground with a full 5A.' :
+                  'Reset week. Start with one great stack.'
+
+  return {
+    score,
+    flow_score_avg: flowAvg,
+    ritual_completion_pct: ritualPct,
+    zone_hit_pct: zoneHit,
+    stage_diversity: diversity,
+    activity,
+    components: {
+      flow: Math.round(flowPoints * 10) / 10,
+      ritual: Math.round(ritualPoints * 10) / 10,
+      zone: Math.round(zonePoints * 10) / 10,
+      diversity: Math.round(diversityPoints * 10) / 10,
+      activity: Math.round(activityPoints * 10) / 10,
+    },
+    verdict,
+  }
+}
+
+/** Per-step skip rate across 5A sessions. */
+export function ritualStepSkipRate(
+  sessions: FlowSession[],
+): Record<'A1' | 'A2' | 'A3' | 'A4' | 'A5', number> {
+  const steps: ('A1' | 'A2' | 'A3' | 'A4' | 'A5')[] = ['A1', 'A2', 'A3', 'A4', 'A5']
+  const out = { A1: 0, A2: 0, A3: 0, A4: 0, A5: 0 }
+  if (sessions.length === 0) return out
+  for (const step of steps) {
+    const skipped = sessions.filter(s => (s.skipped_steps ?? []).includes(step)).length
+    out[step] = Math.round((skipped / sessions.length) * 100)
+  }
+  return out
+}
+
+/** Avg flow score when a given trigger fires (for effectiveness ranking). */
+export function triggerEffectiveness(logs: FlowLog[]): { trigger: FlowTrigger; firedCount: number; avgFlow: number }[] {
+  const groups = new Map<FlowTrigger, { sum: number; n: number }>()
+  for (const l of logs) {
+    for (const t of l.triggers_fired ?? []) {
+      const cur = groups.get(t) ?? { sum: 0, n: 0 }
+      cur.sum += l.flow_score
+      cur.n += 1
+      groups.set(t, cur)
+    }
+  }
+  const out: { trigger: FlowTrigger; firedCount: number; avgFlow: number }[] = []
+  for (const [trigger, { sum, n }] of groups) {
+    out.push({ trigger, firedCount: n, avgFlow: Math.round((sum / n) * 10) / 10 })
+  }
+  return out.sort((a, b) => b.avgFlow - a.avgFlow)
+}
+
+/** Stage distribution (counts + percentages) over given checkins. */
+export function stageDistribution(checkins: FlowStageCheckin[]): { stage: FlowStage; count: number; pct: number }[] {
+  const counts = new Map<FlowStage, number>()
+  const stages: FlowStage[] = ['struggle', 'release', 'flow', 'recovery']
+  for (const s of stages) counts.set(s, 0)
+  for (const c of checkins) counts.set(c.stage, (counts.get(c.stage) ?? 0) + 1)
+  const total = checkins.length || 1
+  return stages.map(stage => ({
+    stage,
+    count: counts.get(stage) ?? 0,
+    pct: Math.round(((counts.get(stage) ?? 0) / total) * 100),
+  }))
+}
+
+/**
  * Auto-recommendation — first matching rule wins.
  */
 export function generateRecommendation(logs: FlowLog[], sessions: FlowSession[]): string {

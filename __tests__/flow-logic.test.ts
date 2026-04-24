@@ -13,9 +13,10 @@ import {
   is4PctZone, calcStreak, calcCompetitionStreak,
   needsAttention, generateRecommendation,
   avgFlowScore, flowPct, topTrigger, mostCommonStage,
+  calcFlowReadiness, ritualStepSkipRate, triggerEffectiveness, stageDistribution,
 } from '../components/mindset/flow-logic'
 import { nextStage } from '../components/mindset/flow/flow-constants'
-import type { FlowLog, FlowSession } from '../types'
+import type { FlowLog, FlowSession, FlowStageCheckin } from '../types'
 
 function log(partial: Partial<FlowLog>): FlowLog {
   return {
@@ -47,6 +48,18 @@ function session(partial: Partial<FlowSession>): FlowSession {
     external_target: null,
     sport: null,
     skipped_steps: [],
+    created_at: new Date().toISOString(),
+    ...partial,
+  }
+}
+
+function checkin(partial: Partial<FlowStageCheckin>): FlowStageCheckin {
+  return {
+    id: crypto.randomUUID(),
+    user_id: 'u',
+    stage: 'flow',
+    note: null,
+    checked_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
     ...partial,
   }
@@ -256,4 +269,77 @@ test('generateRecommendation — ACTIVATE skips >3 triggers box breathing messag
   ]
   const logs = [log({ ending_stage: 'flow', challenge_level: 103, skill_level: 100 })]
   assert.match(generateRecommendation(logs, sessions), /ACTIVATE|box breathing/i)
+})
+
+test('calcFlowReadiness — empty returns 0 with verdict', () => {
+  const r = calcFlowReadiness([], [], [])
+  assert.equal(r.score, 0)
+  assert.match(r.verdict, /Reset week|Drifting/)
+})
+
+test('calcFlowReadiness — perfect inputs approach 100', () => {
+  const logs = Array.from({ length: 10 }, () => log({
+    flow_score: 10,
+    challenge_level: 103,
+    skill_level: 100,
+  }))
+  const sessions = Array.from({ length: 10 }, () => session({ skipped_steps: [] }))
+  const checkins = [
+    checkin({ stage: 'struggle' }),
+    checkin({ stage: 'release' }),
+    checkin({ stage: 'flow' }),
+    checkin({ stage: 'recovery' }),
+  ]
+  const r = calcFlowReadiness(logs, sessions, checkins)
+  assert.ok(r.score >= 95, `expected >= 95 got ${r.score}`)
+  assert.match(r.verdict, /Locked in/)
+})
+
+test('calcFlowReadiness — flow component caps at 40', () => {
+  const logs = [log({ flow_score: 10 })]
+  const r = calcFlowReadiness(logs, [], [])
+  assert.ok(r.components.flow <= 40)
+  assert.ok(r.components.flow >= 39)
+})
+
+test('ritualStepSkipRate — reports each step independently', () => {
+  const sessions = [
+    session({ skipped_steps: ['A3'] }),
+    session({ skipped_steps: ['A3', 'A5'] }),
+    session({ skipped_steps: [] }),
+    session({ skipped_steps: ['A3'] }),
+  ]
+  const rates = ritualStepSkipRate(sessions)
+  assert.equal(rates.A3, 75)
+  assert.equal(rates.A5, 25)
+  assert.equal(rates.A1, 0)
+})
+
+test('triggerEffectiveness — sorts by avg flow score', () => {
+  const logs = [
+    log({ flow_score: 9, triggers_fired: ['deep_focus'] }),
+    log({ flow_score: 9, triggers_fired: ['deep_focus'] }),
+    log({ flow_score: 4, triggers_fired: ['risk_consequence'] }),
+  ]
+  const stats = triggerEffectiveness(logs)
+  assert.equal(stats[0].trigger, 'deep_focus')
+  assert.equal(stats[0].avgFlow, 9)
+  assert.equal(stats[0].firedCount, 2)
+  assert.equal(stats[1].trigger, 'risk_consequence')
+})
+
+test('stageDistribution — returns all 4 stages with pct summing to 100', () => {
+  const checkins = [
+    checkin({ stage: 'flow' }),
+    checkin({ stage: 'flow' }),
+    checkin({ stage: 'recovery' }),
+    checkin({ stage: 'struggle' }),
+  ]
+  const dist = stageDistribution(checkins)
+  assert.equal(dist.length, 4)
+  const sum = dist.reduce((a, d) => a + d.pct, 0)
+  assert.ok(sum >= 99 && sum <= 101, `pct sum ${sum}`)
+  const flow = dist.find(d => d.stage === 'flow')!
+  assert.equal(flow.count, 2)
+  assert.equal(flow.pct, 50)
 })
