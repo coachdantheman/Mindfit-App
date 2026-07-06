@@ -1,6 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
+import LessonLinks from '@/components/shared/LessonLinks'
+import Skeleton from '@/components/shared/Skeleton'
 
 const RECOVERY_ACTIVITIES = ['Stretching', 'Foam Rolling', 'Ice Bath', 'Massage', 'Yoga', 'Walking', 'Epsom Salt Bath', 'Compression']
 
@@ -111,7 +113,7 @@ export default function SleepPage() {
   if (loading) return (
     <div>
       <h1 className="text-2xl font-bold text-gray-100 mb-2">Sleep & Recovery</h1>
-      <p className="text-sm text-gray-500">Loading…</p>
+      <Skeleton />
     </div>
   )
 
@@ -324,6 +326,8 @@ export default function SleepPage() {
           </div>
         </div>
       )}
+
+      <LessonLinks section="sleep" />
     </div>
   )
 }

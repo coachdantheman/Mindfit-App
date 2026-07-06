@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { clampNumber, isISODate } from '@/lib/validate'
 
 export async function GET(req: Request) {
   const auth = await verifyApiUser()
@@ -34,11 +35,11 @@ export async function POST(req: Request) {
     .from('sleep_entries')
     .upsert({
       user_id: auth.userId,
-      entry_date: body.entry_date || new Date().toISOString().split('T')[0],
+      entry_date: isISODate(body.entry_date) ? body.entry_date : new Date().toISOString().split('T')[0],
       bedtime: body.bedtime || null,
       wake_time: body.wake_time || null,
-      hours_slept: body.hours_slept || null,
-      sleep_quality: body.sleep_quality || null,
+      hours_slept: body.hours_slept != null ? clampNumber(body.hours_slept, 0, 24) : null,
+      sleep_quality: body.sleep_quality ? clampNumber(body.sleep_quality, 1, 10) : null,
       notes: body.notes || null,
     }, { onConflict: 'user_id,entry_date' })
     .select()

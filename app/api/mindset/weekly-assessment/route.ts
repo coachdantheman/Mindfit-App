@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { clampNumber, isISODate } from '@/lib/validate'
 
 export async function GET(req: Request) {
   const auth = await verifyApiUser()
@@ -30,23 +31,34 @@ export async function POST(req: Request) {
   const body = await req.json()
   const admin = createAdminClient()
 
+  if (!isISODate(body.week_date)) {
+    return NextResponse.json({ error: 'A valid week date is required.' }, { status: 400 })
+  }
+  const dims = [
+    'self_identity_clarity', 'confidence', 'focus_quality', 'anxiety_management',
+    'resilience', 'motivation', 'mental_imagery', 'routine_consistency',
+    'team_relationships', 'vision_clarity',
+  ] as const
+  const scores: Record<string, number> = {}
+  for (const d of dims) {
+    const v = clampNumber(body[d], 1, 10)
+    if (v === null) {
+      return NextResponse.json({ error: 'All ten scores must be numbers between 1 and 10.' }, { status: 400 })
+    }
+    scores[d] = v
+  }
+
+  const assessment_type = body.assessment_type === 'baseline' ? 'baseline' : 'weekly'
+
   const { data, error } = await admin
     .from('weekly_assessments')
     .upsert({
       user_id: auth.userId,
       week_date: body.week_date,
-      self_identity_clarity: body.self_identity_clarity,
-      confidence: body.confidence,
-      focus_quality: body.focus_quality,
-      anxiety_management: body.anxiety_management,
-      resilience: body.resilience,
-      motivation: body.motivation,
-      mental_imagery: body.mental_imagery,
-      routine_consistency: body.routine_consistency,
-      team_relationships: body.team_relationships,
-      vision_clarity: body.vision_clarity,
+      ...scores,
       notes: body.notes || null,
-    }, { onConflict: 'user_id,week_date' })
+      assessment_type,
+    }, { onConflict: 'user_id,week_date,assessment_type' })
     .select()
     .single()
 

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import JournalForm from '@/components/journal/JournalForm'
 import TodayEntry from '@/components/journal/TodayEntry'
 import { JournalEntry } from '@/types'
+import Skeleton from '@/components/shared/Skeleton'
 
 export default function JournalTab() {
   const [todayEntry, setTodayEntry] = useState<JournalEntry | null>(null)
@@ -25,7 +26,7 @@ export default function JournalTab() {
       .catch(() => setLoading(false))
   }, [])
 
-  if (loading) return <p className="text-sm text-gray-500">Loading…</p>
+  if (loading) return <Skeleton />
 
   return (
     <div>

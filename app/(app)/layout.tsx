@@ -5,6 +5,7 @@ import Navbar from '@/components/layout/Navbar'
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await getAuthUserCached()
   if (!user) redirect('/')
+  if (user.role === 'member' && !user.onboardedAt) redirect('/onboarding')
 
   return (
     <div className="min-h-screen flex flex-col">

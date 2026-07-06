@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-client'
 import { createAdminClient } from '@/lib/supabase-server'
+import { clampNumber, isISODate } from '@/lib/validate'
 
 // GET /api/journal — return all entries for the current user (optionally filter by ?date=)
 export async function GET(req: Request) {
@@ -42,6 +43,19 @@ export async function POST(req: Request) {
     rating_motivation, rating_focus, rating_confidence, rating_anxiety,
   } = body
 
+  if (!isISODate(entry_date)) {
+    return NextResponse.json({ error: 'A valid entry date is required.' }, { status: 400 })
+  }
+  const ratings = {
+    rating_motivation: clampNumber(rating_motivation, 1, 10),
+    rating_focus: clampNumber(rating_focus, 1, 10),
+    rating_confidence: clampNumber(rating_confidence, 1, 10),
+    rating_anxiety: clampNumber(rating_anxiety, 1, 10),
+  }
+  if (Object.values(ratings).some((r) => r === null)) {
+    return NextResponse.json({ error: 'All ratings must be numbers between 1 and 10.' }, { status: 400 })
+  }
+
   const adminSupabase = createAdminClient()
   const { data, error } = await adminSupabase
     .from('journal_entries')
@@ -53,10 +67,7 @@ export async function POST(req: Request) {
       strength_1, strength_2, strength_3,
       weakness,
       extra_notes: extra_notes || null,
-      rating_motivation: Number(rating_motivation),
-      rating_focus: Number(rating_focus),
-      rating_confidence: Number(rating_confidence),
-      rating_anxiety: Number(rating_anxiety),
+      ...ratings,
     })
     .select()
     .single()
@@ -70,12 +81,6 @@ export async function POST(req: Request) {
     }
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
-
-  // Mark email as registered
-  await adminSupabase
-    .from('approved_emails')
-    .update({ registered: true })
-    .eq('email', session.user.email)
 
   return NextResponse.json(data, { status: 201 })
 }

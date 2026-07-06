@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic'
 import SectionTabs, { Section } from '@/components/shared/SectionTabs'
 import OverviewCards from '@/components/shared/OverviewCards'
 import JournalRatingsGrid from '@/components/shared/JournalRatingsGrid'
-import MacroBars from '@/components/shared/MacroBars'
+import LessonLinks from '@/components/shared/LessonLinks'
 import WorkoutLogList from '@/components/shared/WorkoutLogList'
 import SleepEntriesList from '@/components/shared/SleepEntriesList'
 
@@ -16,6 +16,7 @@ import ReadinessHero from '@/components/dashboard/ReadinessHero'
 const RatingChart = dynamic(() => import('@/components/dashboard/RatingChart'), { ssr: false })
 const EntryList = dynamic(() => import('@/components/dashboard/EntryList'), { ssr: false })
 const FlowProgressView = dynamic(() => import('@/components/mindset/flow/FlowProgressView'), { ssr: false })
+const NutritionProgressView = dynamic(() => import('@/components/dashboard/NutritionProgressView'), { ssr: false })
 
 const ASSESSMENT_CATEGORIES = [
   { key: 'self_identity_clarity', label: 'Identity Clarity' },
@@ -45,6 +46,7 @@ export default function ProgressPage() {
   const [foodEntries, setFoodEntries] = useState<FoodEntry[]>([])
   const [nutritionGoal, setNutritionGoal] = useState<NutritionGoal | null>(null)
   const [assessments, setAssessments] = useState<WeeklyAssessment[]>([])
+  const [overview, setOverview] = useState<{ streak: number; latestMpi: number | null; baselineMpi: number | null } | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -55,10 +57,11 @@ export default function ProgressPage() {
       fetch('/api/mindset/visualization').then(r => r.json()),
       fetch('/api/mindset/meditation').then(r => r.json()),
       fetch('/api/mindset/goals').then(r => r.json()),
-      fetch('/api/nutrition/entries?date=' + new Date().toISOString().split('T')[0]).then(r => r.json()),
+      fetch('/api/nutrition/entries?days=30').then(r => r.json()),
       fetch('/api/nutrition/goals').then(r => r.json()),
       fetch('/api/mindset/weekly-assessment').then(r => r.json()),
-    ]).then(([journal, sleep, workouts, viz, med, goals, food, nutGoal, weeklyAssessments]) => {
+      fetch('/api/stats/overview').then(r => r.json()),
+    ]).then(([journal, sleep, workouts, viz, med, goals, food, nutGoal, weeklyAssessments, stats]) => {
       setJournalEntries(journal)
       setSleepEntries(sleep)
       setWorkoutLogs(workouts)
@@ -68,21 +71,12 @@ export default function ProgressPage() {
       setFoodEntries(food)
       setNutritionGoal(nutGoal)
       setAssessments(Array.isArray(weeklyAssessments) ? weeklyAssessments : [])
+      if (stats && typeof stats.streak === 'number') setOverview(stats)
       setLoading(false)
     }).catch(() => setLoading(false))
   }, [])
 
   const { avgSleep, avgSleepQuality } = calcSleepAverages(sleepEntries)
-
-  const foodTotals = foodEntries.reduce(
-    (acc, e) => ({
-      calories: acc.calories + e.calories,
-      protein: acc.protein + Number(e.protein_g),
-      carbs: acc.carbs + Number(e.carbs_g),
-      fat: acc.fat + Number(e.fat_g),
-    }),
-    { calories: 0, protein: 0, carbs: 0, fat: 0 }
-  )
 
   if (loading) return (
     <div>
@@ -97,6 +91,39 @@ export default function ProgressPage() {
         <h1 className="text-2xl font-bold text-gray-100">Progress</h1>
         <p className="text-gray-500 text-sm mt-1">Your performance at a glance.</p>
       </div>
+
+      {overview && (
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <StatCard
+            label="MPI Score"
+            value={overview.latestMpi ?? '—'}
+            unit={overview.latestMpi != null ? '/ 100' : undefined}
+            delta={
+              overview.latestMpi != null && overview.baselineMpi != null
+                ? {
+                    value: `${overview.latestMpi - overview.baselineMpi > 0 ? '+' : ''}${overview.latestMpi - overview.baselineMpi} vs baseline`,
+                    direction:
+                      overview.latestMpi > overview.baselineMpi ? 'up'
+                      : overview.latestMpi < overview.baselineMpi ? 'down' : 'flat',
+                  }
+                : undefined
+            }
+            context="Mental Performance Index"
+            sparkline={
+              assessments.length > 1
+                ? [...assessments].slice(0, 8).reverse().map(a => getAssessmentAvg(a) / 10)
+                : undefined
+            }
+          />
+          <StatCard
+            label="Streak"
+            value={overview.streak}
+            unit={overview.streak === 1 ? 'day' : 'days'}
+            context={overview.streak > 0 ? 'Consecutive days of training. Keep it alive.' : 'Log anything today to start a streak.'}
+            icon={<span>🔥</span>}
+          />
+        </div>
+      )}
 
       <OverviewCards
         journalCount={journalEntries.length}
@@ -221,35 +248,7 @@ export default function ProgressPage() {
       {section === 'flow' && <FlowProgressView />}
 
       {section === 'nutrition' && (
-        <div className="space-y-4">
-          {foodEntries.length === 0 && !nutritionGoal ? (
-            <div className="text-center py-12 text-gray-400">
-              <p className="font-medium">No nutrition data yet</p>
-              <p className="text-sm mt-1">Log food in the Nutrition tab to see your progress.</p>
-            </div>
-          ) : (
-            <>
-              {nutritionGoal && <MacroBars totals={foodTotals} goal={nutritionGoal} title="Today&apos;s Macros" />}
-              {foodEntries.length > 0 && (
-                <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
-                  <h3 className="font-semibold text-gray-100 mb-3 text-sm">Today&apos;s Food Log</h3>
-                  <div className="space-y-2">
-                    {foodEntries.map(entry => (
-                      <div key={entry.id} className="flex items-center justify-between p-2 rounded-lg bg-gray-800/30">
-                        <div>
-                          <p className="text-sm text-gray-200">{entry.food_name}</p>
-                          <p className="text-xs text-gray-500">
-                            {entry.meal_name} · {entry.calories} cal · {Number(entry.protein_g)}p · {Number(entry.carbs_g)}c · {Number(entry.fat_g)}f
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+        <NutritionProgressView entries={foodEntries} goal={nutritionGoal} />
       )}
 
       {section === 'exercise' && <WorkoutLogList logs={workoutLogs} />}
@@ -333,6 +332,8 @@ function WeeklyAssessmentTrends({ assessments }: { assessments: WeeklyAssessment
           </div>
         </div>
       )}
+
+      <LessonLinks section="progress" />
     </div>
   )
 }

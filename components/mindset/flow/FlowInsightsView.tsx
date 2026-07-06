@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { FlowInsights } from '@/types'
 import { STAGE_META, TRIGGER_LABEL } from '@/components/mindset/flow/flow-constants'
+import Skeleton from '@/components/shared/Skeleton'
 
 export default function FlowInsightsView() {
   const router = useRouter()
@@ -16,7 +17,7 @@ export default function FlowInsightsView() {
     })
   }, [])
 
-  if (loading) return <p className="text-sm text-gray-500 p-6">Loading…</p>
+  if (loading) return <Skeleton />
   if (!data) return null
 
   const { insights, needs_attention } = data

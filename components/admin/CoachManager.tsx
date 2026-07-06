@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { MemberWithCount } from '@/types'
+import Skeleton from '@/components/shared/Skeleton'
 
 export default function CoachManager() {
   const [members, setMembers] = useState<MemberWithCount[]>([])
@@ -32,7 +33,7 @@ export default function CoachManager() {
     setUpdating(null)
   }
 
-  if (loading) return <p className="text-sm text-gray-500">Loading…</p>
+  if (loading) return <Skeleton />
 
   const nonAdmins = members.filter(m => m.role !== 'admin')
 

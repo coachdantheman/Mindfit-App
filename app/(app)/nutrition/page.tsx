@@ -3,6 +3,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { format, addDays, subDays } from 'date-fns'
 import { FoodEntry, NutritionGoal } from '@/types'
 import MacroPercentageSlider from '@/components/nutrition/MacroPercentageSlider'
+import LessonLinks from '@/components/shared/LessonLinks'
+import Skeleton from '@/components/shared/Skeleton'
 
 const MEALS = ['Breakfast', 'Lunch', 'Dinner', 'Snack'] as const
 
@@ -414,7 +416,7 @@ export default function NutritionPage() {
         )}
 
         {loading ? (
-          <p className="text-sm text-gray-500">Loading...</p>
+          <Skeleton />
         ) : entries.length === 0 ? (
           <p className="text-sm text-gray-500 text-center py-6">No food logged for this day.</p>
         ) : (
@@ -449,6 +451,8 @@ export default function NutritionPage() {
           </div>
         )}
       </div>
+
+      <LessonLinks section="nutrition" />
     </div>
   )
 }

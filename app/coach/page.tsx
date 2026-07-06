@@ -6,6 +6,125 @@ import AddEmailForm from '@/components/admin/AddEmailForm'
 import CreateWorkout from '@/components/coach/CreateWorkout'
 import CreateProgram from '@/components/coach/CreateProgram'
 import Link from 'next/link'
+import Skeleton from '@/components/shared/Skeleton'
+
+const FLAG_LABELS: Record<string, { label: string; className: string }> = {
+  inactive_7d: { label: 'Inactive 7d', className: 'bg-red-500/10 text-red-400' },
+  low_confidence: { label: 'Low confidence', className: 'bg-orange-500/10 text-orange-400' },
+  high_anxiety: { label: 'High anxiety', className: 'bg-orange-500/10 text-orange-400' },
+  mpi_drop: { label: 'MPI dropping', className: 'bg-red-500/10 text-red-400' },
+}
+
+function lastActive(a: MemberWithCount): string {
+  const dates = [a.overview?.last_journal_date, a.overview?.last_flow_at].filter(Boolean) as string[]
+  if (dates.length === 0) return '—'
+  const latest = dates.map(d => new Date(d).getTime()).sort((x, y) => y - x)[0]
+  const days = Math.floor((Date.now() - latest) / 86400000)
+  if (days <= 0) return 'Today'
+  if (days === 1) return 'Yesterday'
+  return `${days}d ago`
+}
+
+function exportCSV(athletes: MemberWithCount[]) {
+  const header = ['Name', 'Email', 'Joined', 'Journal Entries', 'Streak', 'MPI', 'Baseline MPI', 'Avg Confidence (3)', 'Avg Anxiety (3)', 'Flags']
+  const rows = athletes.map(a => [
+    a.full_name ?? '', a.email, a.created_at.split('T')[0], a.entry_count,
+    a.overview?.streak ?? '', a.overview?.latest_mpi ?? '', a.overview?.baseline_mpi ?? '',
+    a.overview?.avg_confidence_3 ?? '', a.overview?.avg_anxiety_3 ?? '',
+    (a.overview?.flags ?? []).map(f => FLAG_LABELS[f]?.label ?? f).join('; '),
+  ])
+  const csv = [header, ...rows]
+    .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    .join('\n')
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `mindfit-athletes-${new Date().toISOString().split('T')[0]}.csv`
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
+function AthleteTable({ athletes }: { athletes: MemberWithCount[] }) {
+  const flagged = athletes.filter(a => (a.overview?.flags?.length ?? 0) > 0)
+  const ordered = [
+    ...flagged,
+    ...athletes.filter(a => (a.overview?.flags?.length ?? 0) === 0),
+  ]
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        {flagged.length > 0 ? (
+          <p className="text-sm text-orange-300 bg-orange-500/10 rounded-lg px-3 py-1.5">
+            {flagged.length} athlete{flagged.length > 1 ? 's need' : ' needs'} attention
+          </p>
+        ) : (
+          <p className="text-sm text-gray-500">All athletes on track.</p>
+        )}
+        <button
+          onClick={() => exportCSV(ordered)}
+          className="text-xs font-medium text-gray-400 hover:text-gray-200 border border-gray-700 rounded-lg px-3 py-1.5 transition-colors"
+        >
+          Export CSV
+        </button>
+      </div>
+
+      <div className="overflow-x-auto -mx-2">
+        <table className="w-full text-sm min-w-[560px]">
+          <thead>
+            <tr className="text-left text-xs text-gray-500 uppercase tracking-wider">
+              <th className="px-2 py-2 font-semibold">Athlete</th>
+              <th className="px-2 py-2 font-semibold">Last active</th>
+              <th className="px-2 py-2 font-semibold text-right">Streak</th>
+              <th className="px-2 py-2 font-semibold text-right">MPI</th>
+              <th className="px-2 py-2 font-semibold">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ordered.map(a => (
+              <tr key={a.id} className="border-t border-white/5 hover:bg-gray-800/60 transition-colors">
+                <td className="px-2 py-3">
+                  <Link href={`/coach/athlete/${a.id}`} className="block group">
+                    <p className="font-medium text-gray-200 group-hover:text-cta transition-colors">
+                      {a.full_name || a.email}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Joined {format(parseISO(a.created_at), 'MMM d, yyyy')} · {a.entry_count} entries
+                    </p>
+                  </Link>
+                </td>
+                <td className="px-2 py-3 text-gray-400">{lastActive(a)}</td>
+                <td className="px-2 py-3 text-right tabular-nums text-gray-300">
+                  {a.overview?.streak ? `🔥 ${a.overview.streak}` : '—'}
+                </td>
+                <td className="px-2 py-3 text-right tabular-nums">
+                  {a.overview?.latest_mpi != null ? (
+                    <span className="font-semibold text-cta">{a.overview.latest_mpi}</span>
+                  ) : (
+                    <span className="text-gray-600">—</span>
+                  )}
+                </td>
+                <td className="px-2 py-3">
+                  <div className="flex flex-wrap gap-1">
+                    {(a.overview?.flags ?? []).length === 0 ? (
+                      <span className="text-xs text-green-400/80">On track</span>
+                    ) : (
+                      (a.overview?.flags ?? []).map(f => (
+                        <span key={f} className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${FLAG_LABELS[f]?.className ?? 'bg-white/5 text-gray-400'}`}>
+                          {FLAG_LABELS[f]?.label ?? f}
+                        </span>
+                      ))
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
 
 export default function CoachPage() {
   const [athletes, setAthletes] = useState<MemberWithCount[]>([])
@@ -58,7 +177,7 @@ export default function CoachPage() {
         ) : tab === 'workouts' ? (
           <CreateWorkout />
         ) : loading ? (
-          <p className="text-sm text-gray-500">Loading...</p>
+          <Skeleton />
         ) : athletes.length === 0 ? (
           <div className="text-center py-12 text-gray-400">
             <p className="font-medium">No athletes yet</p>
@@ -71,30 +190,7 @@ export default function CoachPage() {
             </button>
           </div>
         ) : (
-          <div className="space-y-2">
-            {athletes.map(a => (
-              <Link
-                key={a.id}
-                href={`/coach/athlete/${a.id}`}
-                className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-800 transition-colors group"
-              >
-                <div>
-                  <p className="text-sm font-medium text-gray-200 group-hover:text-cta transition-colors">
-                    {a.full_name || a.email}
-                  </p>
-                  {a.full_name && <p className="text-xs text-gray-500">{a.email}</p>}
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-gray-500">
-                    Joined {format(parseISO(a.created_at), 'MMM d, yyyy')}
-                  </span>
-                  <span className="text-xs font-semibold text-cta bg-cta/10 px-2 py-1 rounded-full">
-                    {a.entry_count} entries
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <AthleteTable athletes={athletes} />
         )}
       </div>
     </div>

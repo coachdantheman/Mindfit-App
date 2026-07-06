@@ -8,6 +8,7 @@ import {
 } from '@/components/mindset/flow-logic'
 import { STAGE_META, TRIGGER_LABEL } from '@/components/mindset/flow/flow-constants'
 import { format, parseISO, differenceInCalendarDays } from 'date-fns'
+import Skeleton from '@/components/shared/Skeleton'
 
 const FlowBarChart = dynamic(() => import('@/components/mindset/flow/FlowBarChart'), { ssr: false })
 const StageTracker = dynamic(() => import('@/components/mindset/flow/StageTracker'), { ssr: false })
@@ -45,7 +46,7 @@ export default function FlowStateTab() {
     })
   }, [])
 
-  if (loading) return <p className="text-sm text-gray-500">Loading…</p>
+  if (loading) return <Skeleton />
 
   const streak = calcCompetitionStreak(logs, sessions)
   const lastLog = logs[0] ?? null

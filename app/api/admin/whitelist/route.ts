@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { sendWelcomeEmail } from '@/lib/email'
+import { isEmail } from '@/lib/validate'
 
 export async function GET() {
   const auth = await verifyApiUser('admin', 'coach')
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
   if (auth instanceof NextResponse) return auth
 
   const { email, notes } = await req.json()
-  if (!email) return NextResponse.json({ error: 'Email required' }, { status: 400 })
+  if (!isEmail(email)) return NextResponse.json({ error: 'A valid email is required' }, { status: 400 })
 
   const admin = createAdminClient()
   const { data, error } = await admin

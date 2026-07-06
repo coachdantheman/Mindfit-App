@@ -8,6 +8,7 @@ interface AuthResult {
   email: string
   role: UserRole
   fullName: string | null
+  onboardedAt: string | null
 }
 
 function nameFromMetadata(user: User): string | null {
@@ -29,7 +30,7 @@ export async function getAuthUser(): Promise<AuthResult | null> {
   const adminSupabase = createAdminClient()
   const { data: profile } = await adminSupabase
     .from('profiles')
-    .select('role, full_name')
+    .select('role, full_name, onboarded_at')
     .eq('id', session.user.id)
     .maybeSingle()
 
@@ -38,10 +39,11 @@ export async function getAuthUser(): Promise<AuthResult | null> {
     email: session.user.email ?? '',
     role: (profile?.role as UserRole) ?? 'member',
     fullName: profile?.full_name ?? nameFromMetadata(session.user),
+    onboardedAt: profile?.onboarded_at ?? null,
   }
 }
 
-const profileCache = new Map<string, { role: UserRole; fullName: string | null; ts: number }>()
+const profileCache = new Map<string, { role: UserRole; fullName: string | null; onboardedAt: string | null; ts: number }>()
 const PROFILE_TTL = 60_000
 
 export async function getAuthUserCached(): Promise<AuthResult | null> {
@@ -50,31 +52,36 @@ export async function getAuthUserCached(): Promise<AuthResult | null> {
   if (!session) return null
 
   const cached = profileCache.get(session.user.id)
-  if (cached && Date.now() - cached.ts < PROFILE_TTL) {
+  // Un-onboarded profiles bypass the cache so finishing onboarding
+  // takes effect immediately instead of after the TTL.
+  if (cached && cached.onboardedAt && Date.now() - cached.ts < PROFILE_TTL) {
     return {
       userId: session.user.id,
       email: session.user.email ?? '',
       role: cached.role,
       fullName: cached.fullName,
+      onboardedAt: cached.onboardedAt,
     }
   }
 
   const adminSupabase = createAdminClient()
   const { data: profile } = await adminSupabase
     .from('profiles')
-    .select('role, full_name')
+    .select('role, full_name, onboarded_at')
     .eq('id', session.user.id)
     .maybeSingle()
 
   const role = (profile?.role as UserRole) ?? 'member'
   const fullName = profile?.full_name ?? nameFromMetadata(session.user)
-  profileCache.set(session.user.id, { role, fullName, ts: Date.now() })
+  const onboardedAt = profile?.onboarded_at ?? null
+  profileCache.set(session.user.id, { role, fullName, onboardedAt, ts: Date.now() })
 
   return {
     userId: session.user.id,
     email: session.user.email ?? '',
     role,
     fullName,
+    onboardedAt,
   }
 }
 

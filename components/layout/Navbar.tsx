@@ -1,9 +1,42 @@
 'use client'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { UserRole } from '@/types'
+
+function StreakChip() {
+  const [streak, setStreak] = useState<number | null>(null)
+
+  useEffect(() => {
+    const cached = sessionStorage.getItem('mf_streak')
+    if (cached !== null) {
+      setStreak(Number(cached))
+      return
+    }
+    fetch('/api/stats/overview')
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => {
+        if (data && typeof data.streak === 'number') {
+          setStreak(data.streak)
+          sessionStorage.setItem('mf_streak', String(data.streak))
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  if (!streak) return null
+  return (
+    <Link
+      href="/progress"
+      className="flex items-center gap-1 px-2 py-1 rounded-full bg-cta/10 text-cta text-xs font-semibold tabular-nums"
+      title={`${streak}-day training streak`}
+    >
+      🔥 {streak}
+    </Link>
+  )
+}
 
 interface NavbarProps {
   email: string
@@ -30,6 +63,7 @@ const tabs = [
   { href: '/exercise', label: 'Exercise', icon: ExerciseIcon },
   { href: '/sleep', label: 'Sleep', icon: SleepIcon },
   { href: '/progress', label: 'Progress', icon: ProgressIcon },
+  { href: '/learn', label: 'Learn', icon: LearnIcon },
 ]
 
 export default function Navbar({ email, role, fullName }: NavbarProps) {
@@ -106,6 +140,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
 
             {/* Right cluster */}
             <div className="flex items-center gap-2">
+              <StreakChip />
               {(role === 'admin' || role === 'coach') && (
                 <Link
                   href={role === 'admin' ? '/admin' : '/coach'}
@@ -218,6 +253,14 @@ function SettingsIcon({ className }: { className?: string }) {
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3h.1a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8v.1a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" />
+    </svg>
+  )
+}
+function LearnIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 19.5A2.5 2.5 0 016.5 17H20V4a2 2 0 00-2-2H6.5A2.5 2.5 0 004 4.5v15z" />
+      <path d="M4 19.5A2.5 2.5 0 006.5 22H20v-5" />
     </svg>
   )
 }

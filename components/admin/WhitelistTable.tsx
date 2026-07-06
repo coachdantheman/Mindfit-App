@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { format, parseISO } from 'date-fns'
 import { ApprovedEmail } from '@/types'
 import AddEmailForm from './AddEmailForm'
+import Skeleton from '@/components/shared/Skeleton'
 
 export default function WhitelistTable() {
   const [emails, setEmails] = useState<ApprovedEmail[]>([])
@@ -39,7 +40,7 @@ export default function WhitelistTable() {
           Approved Emails <span className="text-gray-500 font-normal">({emails.length})</span>
         </h3>
         {loading ? (
-          <p className="text-sm text-gray-500">Loading…</p>
+          <Skeleton />
         ) : emails.length === 0 ? (
           <p className="text-sm text-gray-500">No emails added yet.</p>
         ) : (

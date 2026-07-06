@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { WorkoutCategory, Workout, WorkoutExercise, TrainingProgram, ProgramWorkout } from '@/types'
+import Skeleton from '@/components/shared/Skeleton'
 
 const CATEGORY_ICONS: Record<string, string> = {
   Speed: '⚡',
@@ -70,7 +71,7 @@ export default function PreBuiltWorkouts({ onStartWorkout, showSuccess }: Props)
     setSaving(false)
   }
 
-  if (loading) return <p className="text-sm text-gray-500">Loading...</p>
+  if (loading) return <Skeleton />
 
   if (selectedCategory) {
     return (

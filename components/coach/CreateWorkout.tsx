@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { MemberWithCount, CoachWorkout } from '@/types'
+import Skeleton from '@/components/shared/Skeleton'
 
 interface ExerciseRow {
   name: string
@@ -106,7 +107,7 @@ export default function CreateWorkout() {
     setAssigned(prev => prev.filter(w => w.id !== id))
   }
 
-  if (loading) return <p className="text-sm text-gray-500">Loading...</p>
+  if (loading) return <Skeleton />
 
   return (
     <div className="space-y-6">

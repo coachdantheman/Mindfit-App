@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { format, parseISO } from 'date-fns'
 import { WorkoutExercise, WorkoutLog, ExerciseLog, Workout, CoachWorkout } from '@/types'
 import ExerciseSetRow from './ExerciseSetRow'
+import Skeleton from '@/components/shared/Skeleton'
 
 interface SetData {
   set_number: number
@@ -341,7 +342,7 @@ export default function TrackWorkout({ initialWorkout, onDone, showSuccess }: Pr
       <div>
         <h4 className="text-sm font-semibold text-gray-100 mb-3">Workout History</h4>
         {loading ? (
-          <p className="text-sm text-gray-500">Loading...</p>
+          <Skeleton />
         ) : logs.length === 0 ? (
           <p className="text-sm text-gray-500 text-center py-8">No workouts logged yet. Start tracking!</p>
         ) : (

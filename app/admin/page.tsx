@@ -4,8 +4,9 @@ import { useSearchParams } from 'next/navigation'
 import WhitelistTable from '@/components/admin/WhitelistTable'
 import MemberTable from '@/components/admin/MemberTable'
 import CoachManager from '@/components/admin/CoachManager'
+import LessonManager from '@/components/admin/LessonManager'
 
-const tabs = ['Manage Access', 'Members', 'Coaches'] as const
+const tabs = ['Manage Access', 'Members', 'Coaches', 'Lessons'] as const
 type Tab = typeof tabs[number]
 
 export default function AdminPage() {
@@ -48,6 +49,7 @@ function AdminContent() {
         {activeTab === 'Manage Access' && <WhitelistTable />}
         {activeTab === 'Members' && <MemberTable />}
         {activeTab === 'Coaches' && <CoachManager />}
+        {activeTab === 'Lessons' && <LessonManager />}
       </div>
     </div>
   )

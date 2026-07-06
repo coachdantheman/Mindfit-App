@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { Goal, GoalType } from '@/types'
+import Skeleton from '@/components/shared/Skeleton'
 
 const GOAL_LABELS: Record<GoalType, string> = {
   weekly: 'Weekly Goals',
@@ -62,7 +63,7 @@ export default function GoalsSection() {
     setGoals(prev => prev.filter(g => g.id !== id))
   }
 
-  if (loading) return <p className="text-sm text-gray-500">Loading…</p>
+  if (loading) return <Skeleton />
 
   const grouped = {
     weekly: goals.filter(g => g.goal_type === 'weekly'),

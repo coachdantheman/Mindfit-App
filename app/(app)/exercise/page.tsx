@@ -5,6 +5,7 @@ import PreBuiltWorkouts from '@/components/exercise/PreBuiltWorkouts'
 import TrackWorkout from '@/components/exercise/TrackWorkout'
 import BuildYourPlan from '@/components/exercise/BuildYourPlan'
 import PersonalizedPlan from '@/components/exercise/PersonalizedPlan'
+import LessonLinks from '@/components/shared/LessonLinks'
 
 type Tab = 'create' | 'plan' | 'prebuilt' | 'track'
 
@@ -116,6 +117,8 @@ export default function ExercisePage() {
           {successMsg}
         </div>
       )}
+
+      <LessonLinks section="exercise" />
     </div>
   )
 }

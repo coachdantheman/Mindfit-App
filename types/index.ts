@@ -8,6 +8,7 @@ export interface Profile {
   primary_sport: string | null
   secondary_sport: string | null
   next_competition_at: string | null
+  onboarded_at: string | null
   created_at: string
 }
 
@@ -56,8 +57,21 @@ export interface ApprovedEmail {
   added_at: string
 }
 
+export interface AthleteOverview {
+  last_journal_date: string | null
+  last_flow_at: string | null
+  journal_count_7d: number
+  streak: number
+  avg_confidence_3: number | null
+  avg_anxiety_3: number | null
+  latest_mpi: number | null
+  baseline_mpi: number | null
+  flags: string[]
+}
+
 export interface MemberWithCount extends Profile {
   entry_count: number
+  overview?: AthleteOverview | null
 }
 
 export interface CoachAthlete {
@@ -268,6 +282,7 @@ export interface WeeklyAssessment {
   team_relationships: number
   vision_clarity: number
   notes: string | null
+  assessment_type: 'weekly' | 'baseline'
   created_at: string
 }
 
@@ -370,4 +385,20 @@ export interface FlowInsights {
   coach_note: string | null
   sessions_7d: number
   logs_7d: number
+}
+
+export type LessonSection =
+  | 'journal' | 'weekly_assessment' | 'flow_state' | 'visualization'
+  | 'meditation' | 'affirmations' | 'goals' | 'exercise' | 'nutrition'
+  | 'sleep' | 'progress' | 'general'
+
+export interface Lesson {
+  id: string
+  title: string
+  skool_url: string
+  app_section: LessonSection
+  module_name: string
+  sort_order: number
+  is_published: boolean
+  created_at: string
 }

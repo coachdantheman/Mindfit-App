@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, ReactNode } from 'react'
+import Skeleton from '@/components/shared/Skeleton'
 
 interface Props {
   endpoint: string
@@ -58,7 +59,7 @@ export default function DailyPracticeForm({
     setSaving(false)
   }
 
-  if (loading) return <p className="text-sm text-gray-500">Loading…</p>
+  if (loading) return <Skeleton />
 
   return (
     <div className="space-y-5">

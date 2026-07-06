@@ -7,16 +7,32 @@ export async function GET(req: Request) {
   if (auth instanceof NextResponse) return auth
 
   const { searchParams } = new URL(req.url)
-  const date = searchParams.get('date') || new Date().toISOString().split('T')[0]
+  const date = searchParams.get('date')
+  const days = searchParams.get('days')
 
   const admin = createAdminClient()
-  const { data, error } = await admin
+  let query = admin
     .from('food_entries')
     .select('*')
     .eq('user_id', auth.userId)
-    .eq('entry_date', date)
-    .order('created_at', { ascending: true })
 
+  if (date) {
+    query = query.eq('entry_date', date).order('created_at', { ascending: true })
+  } else if (days) {
+    const since = new Date()
+    since.setDate(since.getDate() - parseInt(days))
+    query = query
+      .gte('entry_date', since.toISOString().split('T')[0])
+      .order('entry_date', { ascending: false })
+      .order('created_at', { ascending: true })
+      .limit(2000)
+  } else {
+    // Default: today only (preserves existing behaviour for the Nutrition tab)
+    const today = new Date().toISOString().split('T')[0]
+    query = query.eq('entry_date', today).order('created_at', { ascending: true })
+  }
+
+  const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)
 }

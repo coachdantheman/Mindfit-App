@@ -1,21 +1,12 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { WeeklyAssessment as WeeklyAssessmentType } from '@/types'
+import { MPI_DIMENSIONS, calcMPI, MpiKey } from '@/lib/mpi'
+import Skeleton from '@/components/shared/Skeleton'
 
-const CATEGORIES = [
-  { key: 'self_identity_clarity', label: 'Self-Identity Clarity', description: 'How clear are you on who you are as an athlete?' },
-  { key: 'confidence', label: 'Confidence', description: 'How confident do you feel in your abilities?' },
-  { key: 'focus_quality', label: 'Focus Quality', description: 'How well can you lock in and stay present?' },
-  { key: 'anxiety_management', label: 'Anxiety Management', description: 'How well are you managing pressure and nerves?' },
-  { key: 'resilience', label: 'Resilience', description: 'How well do you bounce back from setbacks?' },
-  { key: 'motivation', label: 'Motivation', description: 'How driven and motivated do you feel?' },
-  { key: 'mental_imagery', label: 'Mental Imagery', description: 'How vivid and effective is your visualization?' },
-  { key: 'routine_consistency', label: 'Routine Consistency', description: 'How consistent are your pre-performance routines?' },
-  { key: 'team_relationships', label: 'Team Relationships', description: 'How connected do you feel with your teammates?' },
-  { key: 'vision_clarity', label: 'Vision Clarity', description: 'How clear is your long-term vision and purpose?' },
-] as const
+const CATEGORIES = MPI_DIMENSIONS
 
-type CategoryKey = typeof CATEGORIES[number]['key']
+type CategoryKey = MpiKey
 
 function getMonday(d: Date): string {
   const date = new Date(d)
@@ -32,13 +23,19 @@ function getScoreColor(score: number): string {
   return 'bg-green-500/80'
 }
 
-export default function WeeklyAssessment() {
+interface WeeklyAssessmentProps {
+  mode?: 'weekly' | 'baseline'
+  onComplete?: (mpi: number) => void
+}
+
+export default function WeeklyAssessment({ mode = 'weekly', onComplete }: WeeklyAssessmentProps) {
+  const isBaseline = mode === 'baseline'
   const [scores, setScores] = useState<Record<CategoryKey, number>>(
     Object.fromEntries(CATEGORIES.map(c => [c.key, 5])) as Record<CategoryKey, number>
   )
   const [notes, setNotes] = useState('')
   const [saved, setSaved] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!isBaseline)
   const [saving, setSaving] = useState(false)
   const [history, setHistory] = useState<WeeklyAssessmentType[]>([])
   const [showHistory, setShowHistory] = useState(false)
@@ -46,8 +43,12 @@ export default function WeeklyAssessment() {
   const weekDate = getMonday(new Date())
 
   useEffect(() => {
+    if (isBaseline) return
     fetch('/api/mindset/weekly-assessment').then(r => r.json()).then(all => {
-      const current = all.find((e: WeeklyAssessmentType) => e.week_date === weekDate)
+      const weeklies = Array.isArray(all)
+        ? all.filter((e: WeeklyAssessmentType) => e.assessment_type !== 'baseline')
+        : []
+      const current = weeklies.find((e: WeeklyAssessmentType) => e.week_date === weekDate)
       if (current) {
         const loaded: Record<string, number> = {}
         CATEGORIES.forEach(c => { loaded[c.key] = current[c.key] })
@@ -55,42 +56,56 @@ export default function WeeklyAssessment() {
         setNotes(current.notes || '')
         setSaved(true)
       }
-      setHistory(all)
+      setHistory(weeklies)
       setLoading(false)
     })
-  }, [weekDate])
+  }, [weekDate, isBaseline])
 
   const handleSave = async () => {
     setSaving(true)
     const res = await fetch('/api/mindset/weekly-assessment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ week_date: weekDate, ...scores, notes: notes || null }),
+      body: JSON.stringify({
+        week_date: weekDate,
+        ...scores,
+        notes: notes || null,
+        assessment_type: mode,
+      }),
     })
     if (res.ok) {
       setSaved(true)
       const saved = await res.json()
-      setHistory(prev => {
-        const idx = prev.findIndex(e => e.week_date === weekDate)
-        if (idx >= 0) return prev.map((e, i) => i === idx ? saved : e)
-        return [saved, ...prev]
-      })
+      if (!isBaseline) {
+        setHistory(prev => {
+          const idx = prev.findIndex(e => e.week_date === weekDate)
+          if (idx >= 0) return prev.map((e, i) => i === idx ? saved : e)
+          return [saved, ...prev]
+        })
+      }
+      onComplete?.(calcMPI(scores))
     }
     setSaving(false)
   }
 
   const average = Math.round((Object.values(scores).reduce((a, b) => a + b, 0) / CATEGORIES.length) * 10) / 10
 
-  if (loading) return <p className="text-sm text-gray-500">Loading…</p>
+  if (loading) return <Skeleton />
 
   return (
     <div className="space-y-5">
       <div className="bg-gray-900 rounded-2xl border border-white/10 p-6">
         <div className="flex items-center justify-between mb-1">
-          <h3 className="font-semibold text-gray-100">Weekly Assessment</h3>
-          <span className="text-sm text-gray-500">Week of {new Date(weekDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+          <h3 className="font-semibold text-gray-100">{isBaseline ? 'Baseline Assessment' : 'Weekly Assessment'}</h3>
+          {!isBaseline && (
+            <span className="text-sm text-gray-500">Week of {new Date(weekDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+          )}
         </div>
-        <p className="text-sm text-gray-500 mb-6">Rate each area 1–10. Track your mental game weekly.</p>
+        <p className="text-sm text-gray-500 mb-6">
+          {isBaseline
+            ? 'Be honest — this is your starting point, and it’s how we measure your growth.'
+            : 'Rate each area 1–10. Track your mental game weekly.'}
+        </p>
 
         <div className="space-y-4">
           {CATEGORIES.map(({ key, label, description }) => (
@@ -136,6 +151,10 @@ export default function WeeklyAssessment() {
             <span className="text-sm font-medium text-gray-400">Overall Average</span>
             <span className="text-2xl font-bold text-cta">{average}</span>
           </div>
+          <div className="flex items-center justify-between mt-1">
+            <span className="text-xs text-gray-500">Mental Performance Index (MPI)</span>
+            <span className="text-sm font-semibold text-gray-300 tabular-nums">{calcMPI(scores)} / 100</span>
+          </div>
         </div>
 
         <div className="mt-4">
@@ -155,9 +174,9 @@ export default function WeeklyAssessment() {
             disabled={saving || saved}
             className="btn-primary"
           >
-            {saving ? 'Saving…' : saved ? 'Success ✓' : 'Save Assessment'}
+            {saving ? 'Saving…' : saved ? 'Success ✓' : isBaseline ? 'See My MPI Score' : 'Save Assessment'}
           </button>
-          {history.length > 1 && (
+          {!isBaseline && history.length > 1 && (
             <button
               onClick={() => setShowHistory(!showHistory)}
               className="text-sm text-gray-400 hover:text-gray-200 transition-colors"

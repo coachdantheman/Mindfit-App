@@ -18,6 +18,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import Skeleton from '@/components/shared/Skeleton'
 
 function SortableItem({
   a,
@@ -177,7 +178,7 @@ export default function AffirmationsList() {
     })
   }
 
-  if (loading) return <p className="text-sm text-gray-500">Loading…</p>
+  if (loading) return <Skeleton />
 
   return (
     <div className="space-y-5">

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { format, parseISO } from 'date-fns'
 import { MemberWithCount } from '@/types'
 import Link from 'next/link'
+import Skeleton from '@/components/shared/Skeleton'
 
 export default function MemberTable() {
   const [members, setMembers] = useState<MemberWithCount[]>([])
@@ -14,7 +15,7 @@ export default function MemberTable() {
       .then(data => { setMembers(data); setLoading(false) })
   }, [])
 
-  if (loading) return <p className="text-sm text-gray-500">Loading…</p>
+  if (loading) return <Skeleton />
 
   if (members.length === 0) {
     return <p className="text-sm text-gray-500">No members have registered yet.</p>
