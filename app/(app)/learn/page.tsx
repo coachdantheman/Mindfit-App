@@ -21,8 +21,8 @@ export default function LearnPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-100">Learn</h1>
-        <p className="text-gray-500 text-sm mt-1">
+        <h1 className="page-title">Learn</h1>
+        <p className="page-subtitle">
           The full MindFit curriculum lives in the Locker Room. Each lesson opens in the Skool classroom.
         </p>
       </div>
@@ -32,13 +32,13 @@ export default function LearnPage() {
           <div className="w-8 h-8 border-2 border-cta/30 border-t-cta rounded-full animate-spin" />
         </div>
       ) : lessons.length === 0 ? (
-        <div className="bg-gray-900 rounded-2xl border border-white/10 p-10 text-center">
-          <p className="text-gray-400 mb-4">Lessons are coming soon.</p>
+        <div className="card p-10 text-center">
+          <p className="text-fg-3 mb-4">Lessons are coming soon.</p>
           <a
             href="https://www.skool.com/mindfit"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block bg-cta text-gray-900 font-semibold px-6 py-3 rounded-xl text-sm"
+            className="inline-block bg-cta text-fg-inverse font-semibold px-6 py-3 rounded-xl text-sm"
           >
             Visit the Locker Room →
           </a>
@@ -55,9 +55,9 @@ export default function LearnPage() {
                     href={lesson.skool_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-between gap-3 rounded-xl px-4 py-3.5 bg-gray-900 border border-white/10 hover:border-cta/40 transition-colors group"
+                    className="flex items-center justify-between gap-3 rounded-xl px-4 py-3.5 bg-surface border border-edge hover:border-cta/40 transition-colors group"
                   >
-                    <span className="text-sm text-gray-200 group-hover:text-white truncate">{lesson.title}</span>
+                    <span className="text-sm text-fg-2 group-hover:text-fg-1 truncate">{lesson.title}</span>
                     <span className="text-cta shrink-0">→</span>
                   </a>
                 ))}

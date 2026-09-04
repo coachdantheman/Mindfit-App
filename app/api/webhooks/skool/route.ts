@@ -58,11 +58,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, action: 'whitelisted' })
   }
 
-  // member.left — best-effort revocation. Only rows that Skool created
-  // are removed; manually-added emails are the admin's call.
+  // member.left — the app account stays (signup is open); only the Skool
+  // perks are removed: the whitelist row and the auto-created coach link.
+  // Manually-added emails are the admin's call.
   const { data: row } = await admin
     .from('approved_emails')
-    .select('id, source')
+    .select('id, source, added_by')
     .eq('email', email)
     .maybeSingle()
 
@@ -73,17 +74,20 @@ export async function POST(req: Request) {
 
   await admin.from('approved_emails').delete().eq('id', row.id)
 
-  const { data: profile } = await admin
-    .from('profiles')
-    .select('id, role')
-    .eq('email', email)
-    .maybeSingle()
+  if (row.added_by) {
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle()
 
-  if (profile && profile.role === 'member') {
-    const { error: banError } = await admin.auth.admin.updateUserById(profile.id, {
-      ban_duration: '876600h',
-    })
-    if (banError) console.error('skool webhook: ban failed', email, banError.message)
+    if (profile) {
+      await admin
+        .from('coach_athletes')
+        .delete()
+        .eq('coach_id', row.added_by)
+        .eq('athlete_id', profile.id)
+    }
   }
 
   console.log('skool webhook: member.left', email)

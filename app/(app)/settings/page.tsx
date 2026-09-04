@@ -64,6 +64,7 @@ export default function SettingsPage() {
     } else {
       document.documentElement.classList.remove('light')
     }
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', next === 'light' ? '#f5f5f4' : '#0A0F1A')
   }
 
   const signOut = async () => {
@@ -74,24 +75,24 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-lg">
-      <h1 className="text-2xl font-bold text-gray-100 mb-6">Settings</h1>
+      <h1 className="page-title mb-6">Settings</h1>
 
       <div className="space-y-4">
         {/* Account */}
-        <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
-          <h3 className="font-semibold text-gray-100 mb-3 text-sm">Account</h3>
-          <p className="text-sm text-gray-400">{email}</p>
+        <div className="card p-5">
+          <h3 className="font-semibold text-fg-1 mb-3 text-sm">Account</h3>
+          <p className="text-sm text-fg-3">{email}</p>
         </div>
 
         {/* Sports */}
-        <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
-          <h3 className="font-semibold text-gray-100 mb-1 text-sm">Sports</h3>
-          <p className="text-sm text-gray-500 mb-4">
+        <div className="card p-5">
+          <h3 className="font-semibold text-fg-1 mb-1 text-sm">Sports</h3>
+          <p className="text-sm text-fg-4 mb-4">
             Used to autofill your Flow State sessions and logs.
           </p>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Primary sport</label>
+              <label className="block text-xs uppercase tracking-wide text-fg-4 mb-1">Primary sport</label>
               <input
                 type="text"
                 value={primarySport}
@@ -102,8 +103,8 @@ export default function SettingsPage() {
               />
             </div>
             <div>
-              <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">
-                Secondary sport <span className="text-gray-600">(optional)</span>
+              <label className="block text-xs uppercase tracking-wide text-fg-4 mb-1">
+                Secondary sport <span className="text-fg-4">(optional)</span>
               </label>
               <input
                 type="text"
@@ -132,12 +133,12 @@ export default function SettingsPage() {
         </div>
 
         {/* Appearance */}
-        <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
-          <h3 className="font-semibold text-gray-100 mb-1 text-sm">Appearance</h3>
-          <p className="text-sm text-gray-500 mb-4">Switch between dark and light mode.</p>
+        <div className="card p-5">
+          <h3 className="font-semibold text-fg-1 mb-1 text-sm">Appearance</h3>
+          <p className="text-sm text-fg-4 mb-4">Switch between dark and light mode.</p>
           <button
             onClick={toggleTheme}
-            className="flex items-center gap-3 bg-white/5 hover:bg-white/10 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors"
+            className="flex items-center gap-3 bg-surface-2/60 hover:bg-surface-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors"
           >
             {theme === 'dark' ? (
               <svg className="w-5 h-5 text-cta" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -149,14 +150,14 @@ export default function SettingsPage() {
                 <path strokeLinecap="round" d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
               </svg>
             )}
-            <span className="text-gray-200">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
+            <span className="text-fg-2">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
           </button>
         </div>
 
         {/* Community */}
-        <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
-          <h3 className="font-semibold text-gray-100 mb-1 text-sm">MindFit Community</h3>
-          <p className="text-sm text-gray-500 mb-4">Connect with other athletes, access courses, and get coached.</p>
+        <div className="card p-5">
+          <h3 className="font-semibold text-fg-1 mb-1 text-sm">MindFit Community</h3>
+          <p className="text-sm text-fg-4 mb-4">Connect with other athletes, access courses, and get coached.</p>
           <a
             href="https://www.skool.com/mindfit"
             target="_blank"
@@ -168,8 +169,8 @@ export default function SettingsPage() {
         </div>
 
         {/* Sign out */}
-        <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
-          <h3 className="font-semibold text-gray-100 mb-3 text-sm">Session</h3>
+        <div className="card p-5">
+          <h3 className="font-semibold text-fg-1 mb-3 text-sm">Session</h3>
           <button
             onClick={signOut}
             className="text-red-400 hover:text-red-300 text-sm font-medium transition-colors border border-red-400/20 hover:border-red-400/40 px-4 py-2 rounded-xl"

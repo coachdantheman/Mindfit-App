@@ -200,12 +200,12 @@ export default function CreateProgram() {
   return (
     <div className="space-y-5">
       <div>
-        <h3 className="font-semibold text-gray-100 mb-1">Create Training Program</h3>
-        <p className="text-sm text-gray-500">Build a program and push it to all your athletes.</p>
+        <h3 className="font-semibold text-fg-1 mb-1">Create Training Program</h3>
+        <p className="text-sm text-fg-4">Build a program and push it to all your athletes.</p>
       </div>
 
       {success && (
-        <div className="bg-green-900/30 border border-green-500/30 text-green-300 text-sm px-4 py-2.5 rounded-xl">
+        <div className="bg-green-500/10 border border-green-500/30 text-green-300 text-sm px-4 py-2.5 rounded-xl">
           {success}
         </div>
       )}
@@ -216,23 +216,23 @@ export default function CreateProgram() {
           value={title}
           onChange={e => setTitle(e.target.value)}
           placeholder="Program title *"
-          className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50"
+          className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2.5 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50"
         />
         <input
           value={label}
           onChange={e => setLabel(e.target.value)}
           placeholder="Label for athletes (default: title)"
-          className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50"
+          className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2.5 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50"
         />
         <textarea
           value={description}
           onChange={e => setDescription(e.target.value)}
           placeholder="Description (optional)"
           rows={2}
-          className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50 resize-none"
+          className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2.5 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50 resize-none"
         />
         <div>
-          <label className="text-xs text-gray-500 block mb-1">Duration</label>
+          <label className="text-xs text-fg-4 block mb-1">Duration</label>
           <div className="flex gap-2">
             {[4, 8, 12].map(w => (
               <button
@@ -241,7 +241,7 @@ export default function CreateProgram() {
                 className={`flex-1 py-2 rounded-lg text-xs font-medium border transition-all ${
                   durationWeeks === w
                     ? 'bg-cta/20 text-cta border-cta/30'
-                    : 'bg-gray-800 text-gray-400 border-white/10 hover:border-white/20'
+                    : 'bg-surface-2 text-fg-3 border-edge hover:border-fg-4/40'
                 }`}
               >
                 {w} Weeks
@@ -254,54 +254,54 @@ export default function CreateProgram() {
       {/* Blocks */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h4 className="text-sm font-semibold text-gray-100">Program Blocks</h4>
+          <h4 className="text-sm font-semibold text-fg-1">Program Blocks</h4>
           <button onClick={addBlock} className="text-xs text-cta hover:underline">+ Add Block</button>
         </div>
 
         {blocks.map((block, bi) => (
-          <div key={block._key} className="bg-gray-800/50 rounded-xl border border-white/10 overflow-hidden">
+          <div key={block._key} className="bg-surface-2/50 rounded-xl border border-edge overflow-hidden">
             <button
               onClick={() => setExpandedBlock(expandedBlock === block._key ? null : block._key)}
-              className="w-full px-4 py-3 text-left flex items-center justify-between hover:bg-gray-800 transition-colors"
+              className="w-full px-4 py-3 text-left flex items-center justify-between hover:bg-surface-2 transition-colors"
             >
-              <span className="text-sm font-medium text-gray-200">{block.name || `Block ${bi + 1}`}</span>
+              <span className="text-sm font-medium text-fg-2">{block.name || `Block ${bi + 1}`}</span>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">{block.workouts.length} workouts</span>
-                <span className="text-gray-500 text-xs">{expandedBlock === block._key ? '▲' : '▼'}</span>
+                <span className="text-xs text-fg-4">{block.workouts.length} workouts</span>
+                <span className="text-fg-4 text-xs">{expandedBlock === block._key ? '▲' : '▼'}</span>
               </div>
             </button>
 
             {expandedBlock === block._key && (
-              <div className="px-4 pb-4 space-y-3 border-t border-white/5">
+              <div className="px-4 pb-4 space-y-3 border-t border-edge-muted">
                 <div className="flex flex-col sm:flex-row gap-2 mt-3">
                   <input
                     value={block.name}
                     onChange={e => updateBlock(bi, 'name', e.target.value)}
                     placeholder="Block name"
-                    className="flex-1 bg-gray-700 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500"
+                    className="flex-1 bg-surface-3 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 placeholder:text-fg-4"
                   />
                   <input
                     value={block.focus}
                     onChange={e => updateBlock(bi, 'focus', e.target.value)}
                     placeholder="Focus (e.g., Strength, Speed)"
-                    className="flex-1 bg-gray-700 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500"
+                    className="flex-1 bg-surface-3 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 placeholder:text-fg-4"
                   />
                 </div>
 
                 {/* Workouts within block */}
                 {block.workouts.map((workout, wi) => (
-                  <div key={workout._key} className="bg-gray-900/50 rounded-lg p-3 space-y-2">
+                  <div key={workout._key} className="bg-surface/50 rounded-lg p-3 space-y-2">
                     <div className="flex flex-col sm:flex-row gap-2">
                       <input
                         value={workout.name}
                         onChange={e => updateWorkout(bi, wi, 'name', e.target.value)}
                         placeholder="Workout name"
-                        className="flex-1 bg-gray-700 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500"
+                        className="flex-1 bg-surface-3 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 placeholder:text-fg-4"
                       />
                       <select
                         value={workout.day_of_week}
                         onChange={e => updateWorkout(bi, wi, 'day_of_week', parseInt(e.target.value))}
-                        className="bg-gray-700 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100"
+                        className="bg-surface-3 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1"
                       >
                         {DAY_OPTIONS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
                       </select>
@@ -312,33 +312,33 @@ export default function CreateProgram() {
 
                     {/* Exercises */}
                     {workout.exercises.map((ex, ei) => (
-                      <div key={ex._key} className="rounded bg-gray-700/30 p-2 space-y-1.5">
+                      <div key={ex._key} className="rounded bg-surface-3/30 p-2 space-y-1.5">
                         <input
                           value={ex.name}
                           onChange={e => updateExercise(bi, wi, ei, 'name', e.target.value)}
                           placeholder="Exercise name"
-                          className="w-full bg-gray-700 border border-white/10 rounded px-2 py-1.5 text-xs text-gray-100 placeholder:text-gray-500"
+                          className="w-full bg-surface-3 border border-edge rounded px-2 py-1.5 text-xs text-fg-1 placeholder:text-fg-4"
                         />
                         <div className="flex items-center gap-2">
                           <input
                             type="number"
                             value={ex.sets}
                             onChange={e => updateExercise(bi, wi, ei, 'sets', parseInt(e.target.value) || 1)}
-                            className="bg-gray-700 border border-white/10 rounded px-2 py-1.5 text-xs text-gray-100 w-14 text-center"
+                            className="bg-surface-3 border border-edge rounded px-2 py-1.5 text-xs text-fg-1 w-14 text-center"
                             placeholder="Sets"
                           />
-                          <span className="text-xs text-gray-500">x</span>
+                          <span className="text-xs text-fg-4">x</span>
                           <input
                             value={ex.reps}
                             onChange={e => updateExercise(bi, wi, ei, 'reps', e.target.value)}
-                            className="bg-gray-700 border border-white/10 rounded px-2 py-1.5 text-xs text-gray-100 w-20"
+                            className="bg-surface-3 border border-edge rounded px-2 py-1.5 text-xs text-fg-1 w-20"
                             placeholder="Reps"
                           />
                           <input
                             value={ex.notes}
                             onChange={e => updateExercise(bi, wi, ei, 'notes', e.target.value)}
                             placeholder="Notes"
-                            className="flex-1 min-w-0 bg-gray-700 border border-white/10 rounded px-2 py-1.5 text-xs text-gray-100 placeholder:text-gray-500"
+                            className="flex-1 min-w-0 bg-surface-3 border border-edge rounded px-2 py-1.5 text-xs text-fg-1 placeholder:text-fg-4"
                           />
                           <button onClick={() => removeExercise(bi, wi, ei)} className="text-red-400 text-xs shrink-0">x</button>
                         </div>
@@ -365,7 +365,7 @@ export default function CreateProgram() {
       <button
         onClick={submit}
         disabled={saving}
-        className="w-full bg-cta hover:bg-brand-600 text-gray-900 font-bold px-4 py-3 rounded-xl text-sm transition-colors disabled:opacity-50"
+        className="w-full bg-cta hover:bg-brand-600 text-fg-inverse font-bold px-4 py-3 rounded-xl text-sm transition-colors disabled:opacity-50"
       >
         {saving ? 'Creating...' : 'Push to All Athletes'}
       </button>
@@ -373,13 +373,13 @@ export default function CreateProgram() {
       {/* Existing programs */}
       {existingPrograms.length > 0 && (
         <div className="mt-6">
-          <h4 className="text-sm font-semibold text-gray-100 mb-3">Your Programs</h4>
+          <h4 className="text-sm font-semibold text-fg-1 mb-3">Your Programs</h4>
           <div className="space-y-2">
             {existingPrograms.map(p => (
-              <div key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-800/50 border border-white/10">
+              <div key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-surface-2/50 border border-edge">
                 <div>
-                  <p className="text-sm font-medium text-gray-200">{p.title}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-sm font-medium text-fg-2">{p.title}</p>
+                  <p className="text-xs text-fg-4">
                     {p.athlete_count} athletes · {new Date(p.created_at).toLocaleDateString()}
                   </p>
                 </div>

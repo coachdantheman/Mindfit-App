@@ -1,6 +1,7 @@
 import { User } from '@supabase/supabase-js'
 import { createServerSupabaseClient } from '@/lib/supabase-client'
 import { createAdminClient } from '@/lib/supabase-server'
+import { maybeSyncToGhl } from '@/lib/ghl'
 import { UserRole } from '@/types'
 
 interface AuthResult {
@@ -30,9 +31,11 @@ export async function getAuthUser(): Promise<AuthResult | null> {
   const adminSupabase = createAdminClient()
   const { data: profile } = await adminSupabase
     .from('profiles')
-    .select('role, full_name, onboarded_at')
+    .select('role, full_name, onboarded_at, ghl_synced_at')
     .eq('id', session.user.id)
     .maybeSingle()
+
+  if (profile && !profile.ghl_synced_at) void maybeSyncToGhl(session.user.id)
 
   return {
     userId: session.user.id,
@@ -67,9 +70,11 @@ export async function getAuthUserCached(): Promise<AuthResult | null> {
   const adminSupabase = createAdminClient()
   const { data: profile } = await adminSupabase
     .from('profiles')
-    .select('role, full_name, onboarded_at')
+    .select('role, full_name, onboarded_at, ghl_synced_at')
     .eq('id', session.user.id)
     .maybeSingle()
+
+  if (profile && !profile.ghl_synced_at) void maybeSyncToGhl(session.user.id)
 
   const role = (profile?.role as UserRole) ?? 'member'
   const fullName = profile?.full_name ?? nameFromMetadata(session.user)

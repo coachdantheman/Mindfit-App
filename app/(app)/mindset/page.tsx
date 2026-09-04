@@ -49,8 +49,8 @@ function MindsetContent() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-100">Mindset</h1>
-        <p className="text-gray-500 text-sm mt-1">Train your mind. Build your identity.</p>
+        <h1 className="page-title">Mindset</h1>
+        <p className="page-subtitle">Train your mind. Build your identity.</p>
       </div>
 
       <div className="flex gap-2 mb-6 overflow-x-auto pb-1 scrollbar-none snap-x snap-mandatory">

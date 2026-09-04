@@ -18,7 +18,7 @@ export default function MeditationForm() {
       buildPayload={() => ({ meditation_type: type || null })}
       extraFields={({ setSaved }) => (
         <div>
-          <label className="text-sm text-gray-400 block mb-1">Type</label>
+          <label className="text-sm text-fg-3 block mb-1">Type</label>
           <select
             value={type}
             onChange={e => { setType(e.target.value); setSaved(false) }}

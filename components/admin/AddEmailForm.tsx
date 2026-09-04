@@ -53,19 +53,19 @@ export default function AddEmailForm({ onAdded }: Props) {
             value={email}
             onChange={e => setEmail(e.target.value)}
             placeholder="member@example.com"
-            className="flex-1 bg-gray-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cta/50 text-gray-100 placeholder:text-gray-500"
+            className="flex-1 bg-surface-2 border border-edge rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cta/50 text-fg-1 placeholder:text-fg-4"
           />
           <input
             type="text"
             value={notes}
             onChange={e => setNotes(e.target.value)}
             placeholder="Notes (optional)"
-            className="w-40 bg-gray-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cta/50 hidden sm:block text-gray-100 placeholder:text-gray-500"
+            className="w-40 bg-surface-2 border border-edge rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cta/50 hidden sm:block text-fg-1 placeholder:text-fg-4"
           />
           <button
             type="submit"
             disabled={loading}
-            className="bg-cta hover:bg-brand-600 text-gray-900 font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors disabled:opacity-60 whitespace-nowrap"
+            className="bg-cta hover:bg-brand-600 text-fg-inverse font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors disabled:opacity-60 whitespace-nowrap"
           >
             {loading ? 'Adding…' : 'Add Email'}
           </button>
@@ -75,11 +75,11 @@ export default function AddEmailForm({ onAdded }: Props) {
 
       {addedEmail && (
         <div className="bg-cta/10 border border-cta/20 rounded-xl p-4 space-y-3">
-          <p className="text-sm text-gray-200">
+          <p className="text-sm text-fg-2">
             <span className="text-cta font-semibold">{addedEmail}</span> added. Share the signup link:
           </p>
-          <div className="flex items-center gap-2 bg-gray-800 rounded-lg px-3 py-2">
-            <span className="text-xs text-gray-400 flex-1 truncate">{SIGNUP_URL}</span>
+          <div className="flex items-center gap-2 bg-surface-2 rounded-lg px-3 py-2">
+            <span className="text-xs text-fg-3 flex-1 truncate">{SIGNUP_URL}</span>
             <button
               onClick={copyLink}
               className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shrink-0 ${

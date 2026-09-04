@@ -68,21 +68,17 @@ export default function ExercisePage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-100">Exercise</h1>
-        <p className="text-gray-500 text-sm mt-1">Build plans, browse workouts, and track your training.</p>
+        <h1 className="page-title">Exercise</h1>
+        <p className="page-subtitle">Build plans, browse workouts, and track your training.</p>
       </div>
 
       {/* Tab bar — scrollable on mobile */}
-      <div className="flex gap-1 bg-gray-900 rounded-xl p-1 border border-white/10 mb-6 overflow-x-auto">
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-1 scrollbar-none">
         {TABS.map(t => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`flex-1 min-w-fit px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
-              tab === t.key
-                ? 'bg-cta/20 text-cta'
-                : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800'
-            }`}
+            className={`shrink-0 ${tab === t.key ? 'tab-btn-active' : 'tab-btn'}`}
           >
             {t.label}
           </button>

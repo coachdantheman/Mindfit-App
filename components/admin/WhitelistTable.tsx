@@ -30,24 +30,24 @@ export default function WhitelistTable() {
   return (
     <div className="space-y-5">
       <div>
-        <h3 className="font-semibold text-gray-100 mb-1">Add New Member</h3>
-        <p className="text-sm text-gray-500 mb-3">Enter the email of a paying Skool member to grant them access.</p>
+        <h3 className="font-semibold text-fg-1 mb-1">Add New Member</h3>
+        <p className="text-sm text-fg-4 mb-3">Enter the email of a paying Skool member to grant them access.</p>
         <AddEmailForm onAdded={fetchEmails} />
       </div>
 
       <div>
-        <h3 className="font-semibold text-gray-100 mb-3">
-          Approved Emails <span className="text-gray-500 font-normal">({emails.length})</span>
+        <h3 className="font-semibold text-fg-1 mb-3">
+          Approved Emails <span className="text-fg-4 font-normal">({emails.length})</span>
         </h3>
         {loading ? (
           <Skeleton />
         ) : emails.length === 0 ? (
-          <p className="text-sm text-gray-500">No emails added yet.</p>
+          <p className="text-sm text-fg-4">No emails added yet.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs text-gray-500 border-b border-white/10">
+                <tr className="text-left text-xs text-fg-4 border-b border-edge">
                   <th className="pb-2 font-medium">Email</th>
                   <th className="pb-2 font-medium hidden sm:table-cell">Added</th>
                   <th className="pb-2 font-medium">Status</th>
@@ -55,21 +55,21 @@ export default function WhitelistTable() {
                   <th className="pb-2"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-edge-muted">
                 {emails.map(e => (
                   <tr key={e.id} className="py-2">
-                    <td className="py-2.5 pr-4 font-medium text-gray-300">{e.email}</td>
-                    <td className="py-2.5 pr-4 text-gray-500 hidden sm:table-cell">{format(parseISO(e.added_at), 'MMM d, yyyy')}</td>
+                    <td className="py-2.5 pr-4 font-medium text-fg-2">{e.email}</td>
+                    <td className="py-2.5 pr-4 text-fg-4 hidden sm:table-cell">{format(parseISO(e.added_at), 'MMM d, yyyy')}</td>
                     <td className="py-2.5 pr-4">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                         e.registered
-                          ? 'bg-green-900/40 text-green-400'
-                          : 'bg-yellow-900/40 text-yellow-400'
+                          ? 'bg-green-500/15 text-green-400'
+                          : 'bg-yellow-500/15 text-yellow-400'
                       }`}>
                         {e.registered ? 'Registered' : 'Pending'}
                       </span>
                     </td>
-                    <td className="py-2.5 pr-4 text-gray-500 hidden sm:table-cell">{e.notes || '—'}</td>
+                    <td className="py-2.5 pr-4 text-fg-4 hidden sm:table-cell">{e.notes || '—'}</td>
                     <td className="py-2.5">
                       <button
                         onClick={() => removeEmail(e.id)}

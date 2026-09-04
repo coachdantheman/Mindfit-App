@@ -63,30 +63,30 @@ export default function DailyPracticeForm({
 
   return (
     <div className="space-y-5">
-      <div className="bg-gray-900 rounded-2xl border border-white/10 p-6">
-        <h3 className="font-semibold text-gray-100 mb-1">{title}</h3>
-        <p className="text-sm text-gray-500 mb-5">{description}</p>
+      <div className="card p-6">
+        <h3 className="font-semibold text-fg-1 mb-1">{title}</h3>
+        <p className="text-sm text-fg-4 mb-5">{description}</p>
 
         <div className="space-y-4">
           <label className="flex items-center gap-3 cursor-pointer">
             <div
               onClick={() => { setCompleted(!completed); setSaved(false) }}
               className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
-                completed ? 'bg-cta border-cta' : 'border-gray-600 hover:border-gray-400'
+                completed ? 'bg-cta border-cta' : 'border-edge hover:border-fg-3'
               }`}
             >
               {completed && (
-                <svg className="w-4 h-4 text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <svg className="w-4 h-4 text-fg-inverse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               )}
             </div>
-            <span className="text-gray-200 font-medium">{checkboxLabel}</span>
+            <span className="text-fg-2 font-medium">{checkboxLabel}</span>
           </label>
 
           <div className="flex gap-3">
             <div>
-              <label className="text-sm text-gray-400 block mb-1">Duration (minutes)</label>
+              <label className="text-sm text-fg-3 block mb-1">Duration (minutes)</label>
               <input
                 type="number"
                 min="1"
@@ -101,7 +101,7 @@ export default function DailyPracticeForm({
           </div>
 
           <div>
-            <label className="text-sm text-gray-400 block mb-1">Notes</label>
+            <label className="text-sm text-fg-3 block mb-1">Notes</label>
             <textarea
               value={notes}
               onChange={e => { setNotes(e.target.value); setSaved(false) }}

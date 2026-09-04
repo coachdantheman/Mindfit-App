@@ -108,11 +108,11 @@ export default function SleepPage() {
   }
 
   const hoursNum = hours ? parseFloat(hours) : 0
-  const sleepColor = hoursNum >= 7 && hoursNum <= 9 ? 'text-green-400' : hoursNum > 0 ? 'text-orange-400' : 'text-gray-500'
+  const sleepColor = hoursNum >= 7 && hoursNum <= 9 ? 'text-green-400' : hoursNum > 0 ? 'text-orange-400' : 'text-fg-4'
 
   if (loading) return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-100 mb-2">Sleep & Recovery</h1>
+      <h1 className="page-title mb-2">Sleep & Recovery</h1>
       <Skeleton />
     </div>
   )
@@ -120,8 +120,8 @@ export default function SleepPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-100">Sleep & Recovery</h1>
-        <p className="text-gray-500 text-sm mt-1">{format(new Date(), 'EEEE, MMMM d, yyyy')}</p>
+        <h1 className="page-title">Sleep & Recovery</h1>
+        <p className="page-subtitle">{format(new Date(), 'EEEE, MMMM d, yyyy')}</p>
       </div>
 
       <div className="flex gap-2 mb-6">
@@ -139,28 +139,28 @@ export default function SleepPage() {
       {tab === 'track' && (
         <div className="space-y-5">
           {/* Sleep Tracking */}
-          <div className="bg-gray-900 rounded-2xl border border-white/10 p-6">
-            <h3 className="font-semibold text-gray-100 mb-1">Sleep Log</h3>
-            <p className="text-sm text-gray-500 mb-5">Champions are built in recovery. Aim for 7–9 hours every night.</p>
+          <div className="card p-6">
+            <h3 className="font-semibold text-fg-1 mb-1">Sleep Log</h3>
+            <p className="text-sm text-fg-4 mb-5">Champions are built in recovery. Aim for 7–9 hours every night.</p>
 
             <div className="space-y-4">
               <div className="flex gap-4">
                 <div>
-                  <label className="text-sm text-gray-400 block mb-1">Bedtime</label>
+                  <label className="text-sm text-fg-3 block mb-1">Bedtime</label>
                   <input
                     type="time"
                     value={bedtime}
                     onChange={e => { setBedtime(e.target.value); setSleepSaved(false) }}
-                    className="bg-gray-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-cta/50"
+                    className="bg-surface-2 border border-edge rounded-xl px-4 py-2.5 text-sm text-fg-1 focus:outline-none focus:ring-2 focus:ring-cta/50"
                   />
                 </div>
                 <div>
-                  <label className="text-sm text-gray-400 block mb-1">Wake Time</label>
+                  <label className="text-sm text-fg-3 block mb-1">Wake Time</label>
                   <input
                     type="time"
                     value={wakeTime}
                     onChange={e => { setWakeTime(e.target.value); setSleepSaved(false) }}
-                    className="bg-gray-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-cta/50"
+                    className="bg-surface-2 border border-edge rounded-xl px-4 py-2.5 text-sm text-fg-1 focus:outline-none focus:ring-2 focus:ring-cta/50"
                   />
                 </div>
                 {hours && (
@@ -171,23 +171,23 @@ export default function SleepPage() {
               </div>
 
               <div>
-                <label className="text-sm text-gray-400 block mb-2">Sleep Quality: <span className="text-gray-200 font-medium">{quality}/10</span></label>
+                <label className="text-sm text-fg-3 block mb-2">Sleep Quality: <span className="text-fg-2 font-medium">{quality}/10</span></label>
                 <input
                   type="range"
                   min={1}
                   max={10}
                   value={quality}
                   onChange={e => { setQuality(parseInt(e.target.value)); setSleepSaved(false) }}
-                  className="w-full accent-[#C4B400]"
+                  className="w-full accent-cta"
                 />
-                <div className="flex justify-between text-xs text-gray-600 mt-1">
+                <div className="flex justify-between text-xs text-fg-4 mt-1">
                   <span>Poor</span>
                   <span>Great</span>
                 </div>
               </div>
 
               <div>
-                <label className="text-sm text-gray-400 block mb-1">Notes</label>
+                <label className="text-sm text-fg-3 block mb-1">Notes</label>
                 <textarea
                   value={sleepNotes}
                   onChange={e => { setSleepNotes(e.target.value); setSleepSaved(false) }}
@@ -208,29 +208,29 @@ export default function SleepPage() {
           </div>
 
           {/* Recovery */}
-          <div className="bg-gray-900 rounded-2xl border border-white/10 p-6">
-            <h3 className="font-semibold text-gray-100 mb-1">Recovery</h3>
-            <p className="text-sm text-gray-500 mb-5">Muscle and memory are built in rest. Work hard, rest harder.</p>
+          <div className="card p-6">
+            <h3 className="font-semibold text-fg-1 mb-1">Recovery</h3>
+            <p className="text-sm text-fg-4 mb-5">Muscle and memory are built in rest. Work hard, rest harder.</p>
 
             <div className="space-y-4">
               <label className="flex items-center gap-3 cursor-pointer">
                 <div
                   onClick={() => { setIsRestDay(!isRestDay); setRecoverySaved(false) }}
                   className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
-                    isRestDay ? 'bg-cta border-cta' : 'border-gray-600 hover:border-gray-400'
+                    isRestDay ? 'bg-cta border-cta' : 'border-edge hover:border-fg-4'
                   }`}
                 >
                   {isRestDay && (
-                    <svg className="w-4 h-4 text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <svg className="w-4 h-4 text-fg-inverse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   )}
                 </div>
-                <span className="text-gray-200 font-medium">Today is a rest day</span>
+                <span className="text-fg-2 font-medium">Today is a rest day</span>
               </label>
 
               <div>
-                <label className="text-sm text-gray-400 block mb-2">Recovery Activities</label>
+                <label className="text-sm text-fg-3 block mb-2">Recovery Activities</label>
                 <div className="flex flex-wrap gap-2">
                   {RECOVERY_ACTIVITIES.map(act => {
                     const selected = activities.some(a => a.type === act)
@@ -239,7 +239,7 @@ export default function SleepPage() {
                         key={act}
                         onClick={() => toggleActivity(act)}
                         className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                          selected ? 'bg-cta/20 text-cta border border-cta/30' : 'text-gray-500 border border-white/10 hover:text-gray-300'
+                          selected ? 'bg-cta/20 text-cta border border-cta/30' : 'text-fg-4 border border-edge hover:text-fg-2'
                         }`}
                       >
                         {act}
@@ -250,7 +250,7 @@ export default function SleepPage() {
               </div>
 
               <div>
-                <label className="text-sm text-gray-400 block mb-1">Notes</label>
+                <label className="text-sm text-fg-3 block mb-1">Notes</label>
                 <textarea
                   value={recoveryNotes}
                   onChange={e => { setRecoveryNotes(e.target.value); setRecoverySaved(false) }}
@@ -274,8 +274,8 @@ export default function SleepPage() {
 
       {tab === 'tips' && (
         <div className="space-y-5">
-          <div className="bg-gray-900 rounded-2xl border border-white/10 p-6">
-            <h3 className="font-semibold text-gray-100 mb-3">Sleep Better Tonight</h3>
+          <div className="card p-6">
+            <h3 className="font-semibold text-fg-1 mb-3">Sleep Better Tonight</h3>
             <ul className="space-y-3">
               {[
                 { title: 'Consistent schedule', desc: 'Go to bed and wake up at the same time every day — even weekends.' },
@@ -288,16 +288,16 @@ export default function SleepPage() {
                 <li key={tip.title} className="flex gap-3">
                   <span className="text-cta mt-0.5">•</span>
                   <div>
-                    <p className="text-sm font-medium text-gray-200">{tip.title}</p>
-                    <p className="text-xs text-gray-500">{tip.desc}</p>
+                    <p className="text-sm font-medium text-fg-2">{tip.title}</p>
+                    <p className="text-xs text-fg-4">{tip.desc}</p>
                   </div>
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="bg-gray-900 rounded-2xl border border-white/10 p-6">
-            <h3 className="font-semibold text-gray-100 mb-3">Reduce Stress</h3>
+          <div className="card p-6">
+            <h3 className="font-semibold text-fg-1 mb-3">Reduce Stress</h3>
             <ul className="space-y-3">
               {[
                 { title: 'Box breathing', desc: 'Inhale 4 sec → Hold 4 sec → Exhale 4 sec → Hold 4 sec. Repeat 5 rounds.' },
@@ -309,8 +309,8 @@ export default function SleepPage() {
                 <li key={tip.title} className="flex gap-3">
                   <span className="text-cta mt-0.5">•</span>
                   <div>
-                    <p className="text-sm font-medium text-gray-200">{tip.title}</p>
-                    <p className="text-xs text-gray-500">{tip.desc}</p>
+                    <p className="text-sm font-medium text-fg-2">{tip.title}</p>
+                    <p className="text-xs text-fg-4">{tip.desc}</p>
                   </div>
                 </li>
               ))}
@@ -319,7 +319,7 @@ export default function SleepPage() {
 
           <div className="bg-gradient-to-r from-cta/10 to-brand-600/10 rounded-2xl border border-cta/20 p-6">
             <h3 className="font-semibold text-cta mb-2">Rest = Growth</h3>
-            <p className="text-sm text-gray-300">
+            <p className="text-sm text-fg-2">
               Muscle is broken down in training but built during rest. Memory consolidation happens during deep sleep.
               Your body and brain need recovery to adapt and grow stronger. Rest days aren&apos;t lazy days — they&apos;re growth days.
             </p>

@@ -18,7 +18,7 @@ export default function PublicNav({ email, isAdmin }: PublicNavProps) {
   }
 
   return (
-    <nav className="bg-gray-900 border-b border-white/10">
+    <nav className="bg-surface border-b border-edge">
       <div className="max-w-2xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-14">
           <Link href="/" className="text-cta font-bold text-lg tracking-widest uppercase">
@@ -30,21 +30,21 @@ export default function PublicNav({ email, isAdmin }: PublicNavProps) {
               <>
                 <Link
                   href="/dashboard"
-                  className="text-sm text-gray-400 hover:text-gray-100 font-medium transition-colors"
+                  className="text-sm text-fg-3 hover:text-fg-1 font-medium transition-colors"
                 >
                   My Progress
                 </Link>
                 {isAdmin && (
                   <Link
                     href="/admin"
-                    className="text-sm text-gray-400 hover:text-gray-100 font-medium transition-colors"
+                    className="text-sm text-fg-3 hover:text-fg-1 font-medium transition-colors"
                   >
                     Admin
                   </Link>
                 )}
                 <button
                   onClick={signOut}
-                  className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
+                  className="text-sm text-fg-4 hover:text-fg-2 transition-colors"
                 >
                   Sign out
                 </button>
@@ -52,7 +52,7 @@ export default function PublicNav({ email, isAdmin }: PublicNavProps) {
             ) : (
               <Link
                 href="/login"
-                className="text-sm bg-cta hover:bg-brand-600 text-gray-900 font-semibold px-4 py-2 rounded-xl transition-colors"
+                className="text-sm bg-cta hover:bg-brand-600 text-fg-inverse font-semibold px-4 py-2 rounded-xl transition-colors"
               >
                 Sign in
               </Link>

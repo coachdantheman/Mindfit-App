@@ -126,7 +126,7 @@ export default function FiveAStackSession() {
         <div className="flex items-center justify-between mb-6">
           <button
             onClick={() => router.push('/mindset')}
-            className="text-xs text-gray-500 hover:text-gray-300"
+            className="text-xs text-fg-4 hover:text-fg-2"
           >
             ← Exit ritual
           </button>
@@ -135,18 +135,18 @@ export default function FiveAStackSession() {
               <span
                 key={s.code}
                 className={`h-1.5 w-6 rounded-full ${
-                  i < stepIdx ? 'bg-cta' : i === stepIdx ? 'bg-cta/60' : 'bg-white/10'
+                  i < stepIdx ? 'bg-cta' : i === stepIdx ? 'bg-cta/60' : 'bg-surface-3/60'
                 }`}
               />
             ))}
           </div>
         </div>
 
-        <div className="bg-gray-900 rounded-2xl border border-cta/30 p-8 text-center">
+        <div className="bg-surface rounded-2xl border border-cta/30 p-8 text-center">
           <p className="text-xs uppercase tracking-[0.24em] text-cta mb-1">{step.label}</p>
-          <h2 className="text-3xl font-bold text-gray-100 mb-2">{step.title}</h2>
-          <p className="text-base text-gray-200 mt-4">{step.prompt}</p>
-          {step.subPrompt && <p className="text-sm text-gray-500 mt-1">{step.subPrompt}</p>}
+          <h2 className="text-3xl font-bold text-fg-1 mb-2">{step.title}</h2>
+          <p className="text-base text-fg-2 mt-4">{step.prompt}</p>
+          {step.subPrompt && <p className="text-sm text-fg-4 mt-1">{step.subPrompt}</p>}
 
           <div className="my-8 flex items-center justify-center">
             {step.code === 'A3' ? <BoxBreathing /> : <BreathPulse />}
@@ -155,7 +155,7 @@ export default function FiveAStackSession() {
           <div className="text-5xl font-mono font-semibold text-cta mb-2">
             {mm}:{ss}
           </div>
-          <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+          <div className="w-full h-1 bg-surface-3/60 rounded-full overflow-hidden">
             <div className="h-full bg-cta transition-all duration-1000 linear" style={{ width: `${progress}%` }} />
           </div>
 
@@ -178,7 +178,7 @@ export default function FiveAStackSession() {
               <button
                 onClick={skipCurrent}
                 disabled={saving}
-                className="px-4 py-2 text-sm rounded-lg border border-white/10 text-gray-400 hover:text-gray-200"
+                className="px-4 py-2 text-sm rounded-lg border border-edge text-fg-3 hover:text-fg-2"
               >
                 Skip step →
               </button>
@@ -186,7 +186,7 @@ export default function FiveAStackSession() {
           </div>
         </div>
 
-        {saving && <p className="text-center text-xs text-gray-500 mt-4">Saving session…</p>}
+        {saving && <p className="text-center text-xs text-fg-4 mt-4">Saving session…</p>}
       </div>
     </div>
   )
@@ -229,7 +229,7 @@ function StepBody({
     return (
       <div className="space-y-3 text-left">
         <div>
-          <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">Cue word</p>
+          <p className="text-xs uppercase tracking-wide text-fg-4 mb-2">Cue word</p>
           <div className="flex flex-wrap gap-2">
             {cueWords.map(c => (
               <button
@@ -238,7 +238,7 @@ function StepBody({
                 className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
                   payload.cue_word === c.cue_word
                     ? 'bg-cta/20 border-cta text-cta'
-                    : 'border-white/10 text-gray-400 hover:text-gray-200'
+                    : 'border-edge text-fg-3 hover:text-fg-2'
                 }`}
               >
                 {c.cue_word}
@@ -263,7 +263,7 @@ function StepBody({
           </div>
         </div>
         <div>
-          <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">External target</p>
+          <p className="text-xs uppercase tracking-wide text-fg-4 mb-2">External target</p>
           <input
             type="text"
             value={payload.external_target}

@@ -94,14 +94,14 @@ export default function WeeklyAssessment({ mode = 'weekly', onComplete }: Weekly
 
   return (
     <div className="space-y-5">
-      <div className="bg-gray-900 rounded-2xl border border-white/10 p-6">
+      <div className="card p-6">
         <div className="flex items-center justify-between mb-1">
-          <h3 className="font-semibold text-gray-100">{isBaseline ? 'Baseline Assessment' : 'Weekly Assessment'}</h3>
+          <h3 className="font-semibold text-fg-1">{isBaseline ? 'Baseline Assessment' : 'Weekly Assessment'}</h3>
           {!isBaseline && (
-            <span className="text-sm text-gray-500">Week of {new Date(weekDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+            <span className="text-sm text-fg-4">Week of {new Date(weekDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
           )}
         </div>
-        <p className="text-sm text-gray-500 mb-6">
+        <p className="text-sm text-fg-4 mb-6">
           {isBaseline
             ? 'Be honest — this is your starting point, and it’s how we measure your growth.'
             : 'Rate each area 1–10. Track your mental game weekly.'}
@@ -112,16 +112,16 @@ export default function WeeklyAssessment({ mode = 'weekly', onComplete }: Weekly
             <div key={key}>
               <div className="flex items-center justify-between mb-1.5">
                 <div>
-                  <span className="text-sm font-medium text-gray-200">{label}</span>
-                  <p className="text-xs text-gray-500">{description}</p>
+                  <span className="text-sm font-medium text-fg-2">{label}</span>
+                  <p className="text-xs text-fg-4">{description}</p>
                 </div>
                 <span className="text-lg font-bold text-cta tabular-nums w-8 text-right">{scores[key]}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-600 w-3">1</span>
+                <span className="text-xs text-fg-4 w-3">1</span>
                 <div className="relative flex-1 h-8 flex items-center">
                   <div className="absolute inset-y-0 left-0 right-0 flex items-center">
-                    <div className="w-full h-2 rounded-full bg-gray-800 overflow-hidden">
+                    <div className="w-full h-2 rounded-full bg-surface-2 overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${getScoreColor(scores[key])}`}
                         style={{ width: `${(scores[key] / 10) * 100}%` }}
@@ -140,25 +140,25 @@ export default function WeeklyAssessment({ mode = 'weekly', onComplete }: Weekly
                     className="absolute inset-0 w-full opacity-0 cursor-pointer"
                   />
                 </div>
-                <span className="text-xs text-gray-600 w-4">10</span>
+                <span className="text-xs text-fg-4 w-4">10</span>
               </div>
             </div>
           ))}
         </div>
 
-        <div className="mt-6 p-4 bg-gray-800/50 rounded-xl border border-white/5">
+        <div className="mt-6 p-4 bg-surface-2/50 rounded-xl border border-edge-muted">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-400">Overall Average</span>
+            <span className="text-sm font-medium text-fg-3">Overall Average</span>
             <span className="text-2xl font-bold text-cta">{average}</span>
           </div>
           <div className="flex items-center justify-between mt-1">
-            <span className="text-xs text-gray-500">Mental Performance Index (MPI)</span>
-            <span className="text-sm font-semibold text-gray-300 tabular-nums">{calcMPI(scores)} / 100</span>
+            <span className="text-xs text-fg-4">Mental Performance Index (MPI)</span>
+            <span className="text-sm font-semibold text-fg-2 tabular-nums">{calcMPI(scores)} / 100</span>
           </div>
         </div>
 
         <div className="mt-4">
-          <label className="text-sm text-gray-400 block mb-1">Notes (optional)</label>
+          <label className="text-sm text-fg-3 block mb-1">Notes (optional)</label>
           <textarea
             value={notes}
             onChange={e => { setNotes(e.target.value); setSaved(false) }}
@@ -179,7 +179,7 @@ export default function WeeklyAssessment({ mode = 'weekly', onComplete }: Weekly
           {!isBaseline && history.length > 1 && (
             <button
               onClick={() => setShowHistory(!showHistory)}
-              className="text-sm text-gray-400 hover:text-gray-200 transition-colors"
+              className="text-sm text-fg-3 hover:text-fg-2 transition-colors"
             >
               {showHistory ? 'Hide History' : `View History (${history.length})`}
             </button>
@@ -188,16 +188,16 @@ export default function WeeklyAssessment({ mode = 'weekly', onComplete }: Weekly
       </div>
 
       {showHistory && history.length > 0 && (
-        <div className="bg-gray-900 rounded-2xl border border-white/10 p-6">
-          <h3 className="font-semibold text-gray-100 mb-4">Assessment History</h3>
+        <div className="card p-6">
+          <h3 className="font-semibold text-fg-1 mb-4">Assessment History</h3>
           <div className="space-y-3">
             {history.map(entry => {
               const avg = Math.round(
                 (CATEGORIES.reduce((sum, c) => sum + (entry[c.key as keyof WeeklyAssessmentType] as number), 0) / CATEGORIES.length) * 10
               ) / 10
               return (
-                <div key={entry.id} className="flex items-center justify-between p-3 bg-gray-800/50 rounded-xl border border-white/5">
-                  <span className="text-sm text-gray-300">
+                <div key={entry.id} className="flex items-center justify-between p-3 bg-surface-2/50 rounded-xl border border-edge-muted">
+                  <span className="text-sm text-fg-2">
                     Week of {new Date(entry.week_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </span>
                   <div className="flex items-center gap-4">

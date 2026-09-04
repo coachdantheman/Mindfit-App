@@ -51,7 +51,7 @@ export default function AthleteDetail({ athleteId, backHref }: { athleteId: stri
       .catch(e => { setError(e.message); setLoading(false) })
   }, [athleteId])
 
-  if (loading) return <p className="text-sm text-gray-500">Loading athlete data…</p>
+  if (loading) return <p className="text-sm text-fg-4">Loading athlete data…</p>
   if (error) return <p className="text-sm text-red-400">{error}</p>
   if (!data) return null
 
@@ -80,8 +80,8 @@ export default function AthleteDetail({ athleteId, backHref }: { athleteId: stri
       </a>
 
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-100">{profile.full_name || profile.email}</h1>
-        <p className="text-gray-500 text-sm mt-1">
+        <h1 className="page-title">{profile.full_name || profile.email}</h1>
+        <p className="page-subtitle">
           {profile.email} · Joined {format(parseISO(profile.created_at), 'MMM d, yyyy')}
         </p>
       </div>
@@ -98,7 +98,7 @@ export default function AthleteDetail({ athleteId, backHref }: { athleteId: stri
       {section === 'mindset' && (
         <div className="space-y-6">
           {journalEntries.length === 0 ? (
-            <div className="text-center py-12 text-gray-400">
+            <div className="text-center py-12 text-fg-3">
               <p className="font-medium">No journal entries yet</p>
             </div>
           ) : (
@@ -106,39 +106,39 @@ export default function AthleteDetail({ athleteId, backHref }: { athleteId: stri
               <JournalRatingsGrid entries={journalEntries} />
 
               <div className="grid grid-cols-3 gap-3">
-                <div className="bg-gray-900 rounded-xl border border-white/10 p-3 text-center">
-                  <p className="text-lg font-bold text-gray-200">{vizCount}</p>
-                  <p className="text-xs text-gray-500">Visualizations</p>
+                <div className="bg-surface rounded-xl border border-edge p-3 text-center">
+                  <p className="text-lg font-bold text-fg-2">{vizCount}</p>
+                  <p className="text-xs text-fg-4">Visualizations</p>
                 </div>
-                <div className="bg-gray-900 rounded-xl border border-white/10 p-3 text-center">
-                  <p className="text-lg font-bold text-gray-200">{medCount}</p>
-                  <p className="text-xs text-gray-500">Meditations</p>
+                <div className="bg-surface rounded-xl border border-edge p-3 text-center">
+                  <p className="text-lg font-bold text-fg-2">{medCount}</p>
+                  <p className="text-xs text-fg-4">Meditations</p>
                 </div>
-                <div className="bg-gray-900 rounded-xl border border-white/10 p-3 text-center">
-                  <p className="text-lg font-bold text-gray-200">{goalCount.completed}</p>
-                  <p className="text-xs text-gray-500">Goals Hit</p>
+                <div className="bg-surface rounded-xl border border-edge p-3 text-center">
+                  <p className="text-lg font-bold text-fg-2">{goalCount.completed}</p>
+                  <p className="text-xs text-fg-4">Goals Hit</p>
                 </div>
               </div>
 
               <RatingChart entries={journalEntries} />
 
-              <div className="bg-gray-900 rounded-2xl border border-white/10 p-6">
-                <h3 className="font-semibold text-gray-100 mb-4">Recent Entries</h3>
+              <div className="card p-6">
+                <h3 className="font-semibold text-fg-1 mb-4">Recent Entries</h3>
                 <div className="space-y-3">
                   {journalEntries.map(e => (
-                    <div key={e.id} className="p-3 rounded-xl bg-gray-800/50 border border-white/5">
+                    <div key={e.id} className="p-3 rounded-xl bg-surface-2/50 border border-edge-muted">
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-medium text-gray-300">
+                        <p className="text-sm font-medium text-fg-2">
                           {format(parseISO(e.entry_date), 'EEEE, MMMM d')}
                         </p>
                         <div className="flex gap-1.5">
-                          <span className="text-[10px] text-blue-400 bg-blue-900/30 px-1.5 py-0.5 rounded-full">M:{e.rating_motivation}</span>
-                          <span className="text-[10px] text-purple-400 bg-purple-900/30 px-1.5 py-0.5 rounded-full">F:{e.rating_focus}</span>
-                          <span className="text-[10px] text-green-400 bg-green-900/30 px-1.5 py-0.5 rounded-full">C:{e.rating_confidence}</span>
-                          <span className="text-[10px] text-orange-400 bg-orange-900/30 px-1.5 py-0.5 rounded-full">A:{e.rating_anxiety}</span>
+                          <span className="text-[10px] text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded-full">M:{e.rating_motivation}</span>
+                          <span className="text-[10px] text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded-full">F:{e.rating_focus}</span>
+                          <span className="text-[10px] text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded-full">C:{e.rating_confidence}</span>
+                          <span className="text-[10px] text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded-full">A:{e.rating_anxiety}</span>
                         </div>
                       </div>
-                      <p className="text-xs text-gray-400"><span className="text-gray-500">Objective:</span> {e.objective}</p>
+                      <p className="text-xs text-fg-3"><span className="text-fg-4">Objective:</span> {e.objective}</p>
                     </div>
                   ))}
                 </div>
@@ -161,24 +161,24 @@ export default function AthleteDetail({ athleteId, backHref }: { athleteId: stri
       {section === 'nutrition' && (
         <div className="space-y-4">
           {foodEntries.length === 0 ? (
-            <div className="text-center py-12 text-gray-400">
+            <div className="text-center py-12 text-fg-3">
               <p className="font-medium">No nutrition data yet</p>
             </div>
           ) : (
             <>
               {nutritionGoal && <MacroBars totals={foodTotals} goal={nutritionGoal} title="Today&apos;s Macros" />}
-              <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
-                <h3 className="font-semibold text-gray-100 mb-3 text-sm">Recent Food Log</h3>
+              <div className="card p-5">
+                <h3 className="font-semibold text-fg-1 mb-3 text-sm">Recent Food Log</h3>
                 <div className="space-y-2">
                   {foodEntries.slice(0, 20).map(entry => (
-                    <div key={entry.id} className="flex items-center justify-between p-2 rounded-lg bg-gray-800/30">
+                    <div key={entry.id} className="flex items-center justify-between p-2 rounded-lg bg-surface-2/30">
                       <div>
-                        <p className="text-sm text-gray-200">{entry.food_name}</p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-sm text-fg-2">{entry.food_name}</p>
+                        <p className="text-xs text-fg-4">
                           {entry.meal_name} · {entry.calories} cal · {Number(entry.protein_g)}p · {Number(entry.carbs_g)}c · {Number(entry.fat_g)}f
                         </p>
                       </div>
-                      <span className="text-xs text-gray-500">{entry.entry_date}</span>
+                      <span className="text-xs text-fg-4">{entry.entry_date}</span>
                     </div>
                   ))}
                 </div>
@@ -192,18 +192,18 @@ export default function AthleteDetail({ athleteId, backHref }: { athleteId: stri
         <div className="space-y-4">
           <WorkoutLogList logs={workoutLogs} />
           {workoutLogs.some(l => l.exercise_logs && l.exercise_logs.length > 0) && (
-            <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
-              <h3 className="font-semibold text-gray-100 mb-3 text-sm">Per-Exercise Data</h3>
+            <div className="card p-5">
+              <h3 className="font-semibold text-fg-1 mb-3 text-sm">Per-Exercise Data</h3>
               <div className="space-y-2">
                 {workoutLogs
                   .filter(l => l.exercise_logs && l.exercise_logs.length > 0)
                   .slice(0, 10)
                   .map(l => (
-                    <div key={l.id} className="p-2 rounded-lg bg-gray-800/30">
-                      <p className="text-xs text-gray-400 mb-1">{l.workout_name} — {l.log_date}</p>
+                    <div key={l.id} className="p-2 rounded-lg bg-surface-2/30">
+                      <p className="text-xs text-fg-3 mb-1">{l.workout_name} — {l.log_date}</p>
                       <div className="flex flex-wrap gap-1">
                         {l.exercise_logs!.map(el => (
-                          <span key={el.id} className="text-[10px] text-gray-500 bg-gray-700/50 px-1.5 py-0.5 rounded">
+                          <span key={el.id} className="text-[10px] text-fg-4 bg-surface-3/50 px-1.5 py-0.5 rounded">
                             {el.exercise_name} S{el.set_number}: {el.reps ?? '-'}r{el.weight ? ` @${el.weight}lbs` : ''}{el.rpe ? ` RPE${el.rpe}` : ''}
                           </span>
                         ))}
@@ -259,9 +259,9 @@ function FlowSectionPanel({
 
   if (sessions.length === 0 && logs.length === 0 && checkins.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-400">
+      <div className="text-center py-12 text-fg-3">
         <p className="font-medium">No flow data yet</p>
-        <p className="text-xs text-gray-500 mt-1">Athlete hasn't started the Flow State tracker.</p>
+        <p className="text-xs text-fg-4 mt-1">Athlete hasn't started the Flow State tracker.</p>
       </div>
     )
   }
@@ -271,33 +271,33 @@ function FlowSectionPanel({
       {attention.length > 0 && (
         <div className="bg-cta/10 border border-cta/40 rounded-xl px-4 py-3">
           <p className="text-sm font-semibold text-cta mb-1">Needs attention</p>
-          <ul className="list-disc list-inside text-sm text-gray-300 space-y-0.5">
+          <ul className="list-disc list-inside text-sm text-fg-2 space-y-0.5">
             {attention.map((r, i) => <li key={i}>{r}</li>)}
           </ul>
         </div>
       )}
 
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-gray-900 rounded-xl border border-white/10 p-3 text-center">
+        <div className="bg-surface rounded-xl border border-edge p-3 text-center">
           <p className="text-lg font-bold text-cta">{streak}</p>
-          <p className="text-xs text-gray-500">Competition streak</p>
+          <p className="text-xs text-fg-4">Competition streak</p>
         </div>
-        <div className="bg-gray-900 rounded-xl border border-white/10 p-3 text-center">
-          <p className="text-lg font-bold text-gray-200">{avg7 != null ? avg7.toFixed(1) : '—'}</p>
-          <p className="text-xs text-gray-500">Avg flow (7d)</p>
+        <div className="bg-surface rounded-xl border border-edge p-3 text-center">
+          <p className="text-lg font-bold text-fg-2">{avg7 != null ? avg7.toFixed(1) : '—'}</p>
+          <p className="text-xs text-fg-4">Avg flow (7d)</p>
         </div>
-        <div className="bg-gray-900 rounded-xl border border-white/10 p-3 text-center">
-          <p className="text-lg font-bold text-gray-200">{logs.length}</p>
-          <p className="text-xs text-gray-500">Competitions</p>
+        <div className="bg-surface rounded-xl border border-edge p-3 text-center">
+          <p className="text-lg font-bold text-fg-2">{logs.length}</p>
+          <p className="text-xs text-fg-4">Competitions</p>
         </div>
       </div>
 
       <FlowBarChart logs={logs} />
 
       {latestCheckin && (
-        <div className="bg-gray-900 rounded-2xl border border-white/10 p-4 flex items-center justify-between flex-wrap gap-2">
+        <div className="card p-4 flex items-center justify-between flex-wrap gap-2">
           <div className="text-sm">
-            <span className="text-gray-500">Current stage: </span>
+            <span className="text-fg-4">Current stage: </span>
             <span
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-white"
               style={{ backgroundColor: STAGE_META[latestCheckin.stage].hex }}
@@ -305,16 +305,16 @@ function FlowSectionPanel({
               {STAGE_META[latestCheckin.stage].emoji} {STAGE_META[latestCheckin.stage].label}
             </span>
           </div>
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-fg-4">
             {formatDistanceToNow(parseISO(latestCheckin.checked_at), { addSuffix: true })}
           </span>
         </div>
       )}
 
-      <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
+      <div className="card p-5">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-xs uppercase tracking-wide text-gray-500">Coach note (visible to athlete)</p>
-          {savedAt && <span className="text-xs text-gray-500">Saved at {savedAt}</span>}
+          <p className="text-xs uppercase tracking-wide text-fg-4">Coach note (visible to athlete)</p>
+          {savedAt && <span className="text-xs text-fg-4">Saved at {savedAt}</span>}
         </div>
         <textarea
           value={note}

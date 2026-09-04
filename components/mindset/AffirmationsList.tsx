@@ -51,12 +51,12 @@ function SortableItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-start gap-3 p-3 rounded-xl bg-gray-800/50 border border-white/5 group"
+      className="flex items-start gap-3 p-3 rounded-xl bg-surface-2/50 border border-edge-muted group"
     >
       <button
         {...attributes}
         {...listeners}
-        className="text-gray-600 hover:text-gray-400 cursor-grab active:cursor-grabbing mt-0.5 touch-none"
+        className="text-fg-4 hover:text-fg-3 cursor-grab active:cursor-grabbing mt-0.5 touch-none"
         aria-label="Drag to reorder"
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -75,19 +75,19 @@ function SortableItem({
             value={editText}
             onChange={e => setEditText(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && saveEdit(a.id)}
-            className="flex-1 bg-gray-800 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-cta/50"
+            className="flex-1 bg-surface-2 border border-edge rounded-lg px-3 py-1.5 text-sm text-fg-1 focus:outline-none focus:ring-2 focus:ring-cta/50"
             autoFocus
           />
           <button onClick={() => saveEdit(a.id)} className="text-xs text-cta font-medium">Save</button>
-          <button onClick={() => setEditingId(null)} className="text-xs text-gray-500">Cancel</button>
+          <button onClick={() => setEditingId(null)} className="text-xs text-fg-4">Cancel</button>
         </div>
       ) : (
         <>
-          <p className="flex-1 text-sm text-gray-200 italic">&ldquo;{a.text}&rdquo;</p>
+          <p className="flex-1 text-sm text-fg-2 italic">&ldquo;{a.text}&rdquo;</p>
           <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
               onClick={() => { setEditingId(a.id); setEditText(a.text) }}
-              className="text-xs text-gray-500 hover:text-gray-300"
+              className="text-xs text-fg-4 hover:text-fg-2"
             >
               Edit
             </button>
@@ -182,9 +182,9 @@ export default function AffirmationsList() {
 
   return (
     <div className="space-y-5">
-      <div className="bg-gray-900 rounded-2xl border border-white/10 p-6">
-        <h3 className="font-semibold text-gray-100 mb-1">Self-Affirmations</h3>
-        <p className="text-sm text-gray-500 mb-5">What you tell yourself shapes who you become. Write it. Believe it. Become it.</p>
+      <div className="card p-6">
+        <h3 className="font-semibold text-fg-1 mb-1">Self-Affirmations</h3>
+        <p className="text-sm text-fg-4 mb-5">What you tell yourself shapes who you become. Write it. Believe it. Become it.</p>
 
         {affirmations.length > 0 && (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>

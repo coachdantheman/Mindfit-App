@@ -63,7 +63,7 @@ export default function NutritionProgressView({ entries, goal }: Props) {
 
   if (entries.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-400">
+      <div className="text-center py-12 text-fg-3">
         <p className="font-medium">No nutrition data yet</p>
         <p className="text-sm mt-1">Log food in the Nutrition tab to see your progress.</p>
       </div>
@@ -117,38 +117,38 @@ export default function NutritionProgressView({ entries, goal }: Props) {
             direction: dailyDelta > 0 ? 'up' : dailyDelta < 0 ? 'down' : 'flat',
           } : undefined}
           sparkline={last7.map(d => d.calories === 0 ? 0 : Math.min(1, d.calories / (goal?.calories || 2000)))}
-          color="#C4B400"
+          color="var(--cta)"
           context="7-day avg · vs 30-day avg"
         />
         <StatCard
           label="Goal Adherence"
           value={adherencePct != null ? adherencePct : '—'}
           unit={adherencePct != null ? '%' : ''}
-          color="#22c55e"
+          color="var(--chart-4)"
           context={goal ? 'Days within ±10% of calorie goal' : 'Set a calorie goal to track'}
         />
         <StatCard
           label="Logging Streak"
           value={loggingStreak}
           unit={loggingStreak === 1 ? 'day' : 'days'}
-          color="#3b82f6"
+          color="var(--chart-2)"
           context="Consecutive days logged"
         />
         <StatCard
           label="Days Logged"
           value={logged30.length}
           unit={`/${30}`}
-          color="#a855f7"
+          color="var(--chart-3)"
           context="Last 30 days"
         />
       </div>
 
       {/* 7-day macro avg vs goal */}
       {goal && logged7.length > 0 && (
-        <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
+        <div className="card p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-100 text-sm">7-Day Macro Averages</h3>
-            <span className="text-xs text-gray-500">{logged7.length} of last 7 days logged</span>
+            <h3 className="font-semibold text-fg-1 text-sm">7-Day Macro Averages</h3>
+            <span className="text-xs text-fg-4">{logged7.length} of last 7 days logged</span>
           </div>
           <MacroRow label="Calories" current={avgCal7}  target={goal.calories} unit="kcal" color="bg-cta" />
           <MacroRow label="Protein"  current={avgProt7} target={goal.protein_g} unit="g" color="bg-blue-500" />
@@ -158,22 +158,22 @@ export default function NutritionProgressView({ entries, goal }: Props) {
       )}
 
       {/* 30-day calorie chart with goal reference line */}
-      <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
+      <div className="card p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-gray-100 text-sm">Calories — Last 30 Days</h3>
-          {goal && <span className="text-xs text-gray-500">goal {goal.calories} kcal</span>}
+          <h3 className="font-semibold text-fg-1 text-sm">Calories — Last 30 Days</h3>
+          {goal && <span className="text-xs text-fg-4">goal {goal.calories} kcal</span>}
         </div>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-            <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#9ca3af' }} interval="preserveStartEnd" />
-            <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+            <XAxis dataKey="label" tick={{ fontSize: 10, fill: 'rgb(var(--fg-4))' }} interval="preserveStartEnd" />
+            <YAxis tick={{ fontSize: 11, fill: 'rgb(var(--fg-4))' }} />
             <Tooltip
               contentStyle={{
                 borderRadius: '12px',
-                border: '1px solid rgba(255,255,255,0.1)',
-                background: '#111827',
-                color: '#f3f4f6',
+                border: '1px solid var(--border)',
+                background: 'rgb(var(--surface))',
+                color: 'rgb(var(--fg-1))',
                 fontSize: 13,
               }}
               formatter={(v) => v == null ? 'not logged' : `${v} kcal`}
@@ -181,29 +181,29 @@ export default function NutritionProgressView({ entries, goal }: Props) {
             {goal && (
               <ReferenceLine
                 y={goal.calories}
-                stroke="#C4B400"
+                stroke="var(--cta)"
                 strokeDasharray="3 3"
                 strokeOpacity={0.6}
               />
             )}
-            <Bar dataKey="calories" fill="#C4B400" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="calories" fill="var(--cta)" radius={[3, 3, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
       {/* Recent entries across days */}
-      <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
-        <h3 className="font-semibold text-gray-100 mb-3 text-sm">Recent Food Log</h3>
+      <div className="card p-5">
+        <h3 className="font-semibold text-fg-1 mb-3 text-sm">Recent Food Log</h3>
         <div className="space-y-2">
           {entries.slice(0, 25).map(e => (
-            <div key={e.id} className="flex items-center justify-between p-2 rounded-lg bg-gray-800/30">
+            <div key={e.id} className="flex items-center justify-between p-2 rounded-lg bg-surface-2/30">
               <div>
-                <p className="text-sm text-gray-200">{e.food_name}</p>
-                <p className="text-xs text-gray-500">
+                <p className="text-sm text-fg-2">{e.food_name}</p>
+                <p className="text-xs text-fg-4">
                   {e.meal_name} · {e.calories} cal · {Number(e.protein_g)}p · {Number(e.carbs_g)}c · {Number(e.fat_g)}f
                 </p>
               </div>
-              <span className="text-xs text-gray-500">{format(parseISO(e.entry_date), 'MMM d')}</span>
+              <span className="text-xs text-fg-4">{format(parseISO(e.entry_date), 'MMM d')}</span>
             </div>
           ))}
         </div>
@@ -221,15 +221,15 @@ function MacroRow({
   return (
     <div className="mb-2.5 last:mb-0">
       <div className="flex justify-between text-xs mb-1">
-        <span className="text-gray-400">{label}</span>
-        <span className="text-gray-300 font-medium tabular-nums">
+        <span className="text-fg-3">{label}</span>
+        <span className="text-fg-2 font-medium tabular-nums">
           {current} / {target} {unit}
           <span className={`ml-2 text-[10px] ${onTrack ? 'text-green-400' : diff > 0 ? 'text-orange-400' : 'text-red-400'}`}>
             {diff > 0 ? '+' : ''}{diff}
           </span>
         </span>
       </div>
-      <div className="bg-gray-700 rounded-full h-2 overflow-hidden">
+      <div className="bg-surface-3 rounded-full h-2 overflow-hidden">
         <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
       </div>
     </div>

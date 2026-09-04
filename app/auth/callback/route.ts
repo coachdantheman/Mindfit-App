@@ -9,10 +9,8 @@ export async function GET(request: Request) {
     const supabase = await createServerSupabaseClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (error) {
-      // A "Database error saving new user" here means the signup trigger
-      // rejected a non-whitelisted email (e.g. an unapproved Google account).
       console.error('Auth callback failed:', error.message)
-      return NextResponse.redirect(`${origin}/login?error=no_access`)
+      return NextResponse.redirect(`${origin}/login?error=auth_failed`)
     }
   }
 

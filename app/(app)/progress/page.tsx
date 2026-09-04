@@ -80,16 +80,16 @@ export default function ProgressPage() {
 
   if (loading) return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-100 mb-2">Progress</h1>
-      <p className="text-sm text-gray-500">Loading your data…</p>
+      <h1 className="page-title mb-2">Progress</h1>
+      <p className="text-sm text-fg-4">Loading your data…</p>
     </div>
   )
 
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-100">Progress</h1>
-        <p className="text-gray-500 text-sm mt-1">Your performance at a glance.</p>
+        <h1 className="page-title">Progress</h1>
+        <p className="page-subtitle">Your performance at a glance.</p>
       </div>
 
       {overview && (
@@ -137,7 +137,7 @@ export default function ProgressPage() {
       {section === 'mindset' && (
         <div className="space-y-6">
           {journalEntries.length === 0 ? (
-            <div className="text-center py-12 text-gray-400">
+            <div className="text-center py-12 text-fg-3">
               <p className="font-medium">No journal data yet</p>
               <p className="text-sm mt-1">Start journaling to see your progress.</p>
             </div>
@@ -146,17 +146,17 @@ export default function ProgressPage() {
               <JournalRatingsGrid entries={journalEntries} />
 
               <div className="grid grid-cols-3 gap-3">
-                <div className="bg-gray-900 rounded-xl border border-white/10 p-3 text-center">
-                  <p className="text-lg font-bold text-gray-200">{vizCount}</p>
-                  <p className="text-xs text-gray-500">Visualizations</p>
+                <div className="bg-surface rounded-xl border border-edge p-3 text-center">
+                  <p className="text-lg font-bold text-fg-2">{vizCount}</p>
+                  <p className="text-xs text-fg-4">Visualizations</p>
                 </div>
-                <div className="bg-gray-900 rounded-xl border border-white/10 p-3 text-center">
-                  <p className="text-lg font-bold text-gray-200">{medCount}</p>
-                  <p className="text-xs text-gray-500">Meditations</p>
+                <div className="bg-surface rounded-xl border border-edge p-3 text-center">
+                  <p className="text-lg font-bold text-fg-2">{medCount}</p>
+                  <p className="text-xs text-fg-4">Meditations</p>
                 </div>
-                <div className="bg-gray-900 rounded-xl border border-white/10 p-3 text-center">
-                  <p className="text-lg font-bold text-gray-200">{goalCount.completed}</p>
-                  <p className="text-xs text-gray-500">Goals Hit</p>
+                <div className="bg-surface rounded-xl border border-edge p-3 text-center">
+                  <p className="text-lg font-bold text-fg-2">{goalCount.completed}</p>
+                  <p className="text-xs text-fg-4">Goals Hit</p>
                 </div>
               </div>
 
@@ -204,7 +204,7 @@ export default function ProgressPage() {
                         unit="/10"
                         delta={diff(e => e.rating_motivation)}
                         sparkline={spark(e => e.rating_motivation)}
-                        color="#3b82f6"
+                        color="var(--rating-motivation)"
                       />
                       <StatCard
                         label="Focus"
@@ -212,7 +212,7 @@ export default function ProgressPage() {
                         unit="/10"
                         delta={diff(e => e.rating_focus)}
                         sparkline={spark(e => e.rating_focus)}
-                        color="#a855f7"
+                        color="var(--rating-focus)"
                       />
                       <StatCard
                         label="Confidence"
@@ -220,7 +220,7 @@ export default function ProgressPage() {
                         unit="/10"
                         delta={diff(e => e.rating_confidence)}
                         sparkline={spark(e => e.rating_confidence)}
-                        color="#22c55e"
+                        color="var(--rating-confidence)"
                       />
                       <StatCard
                         label="Anxiety"
@@ -228,7 +228,7 @@ export default function ProgressPage() {
                         unit="/10"
                         delta={diff(e => e.rating_anxiety)}
                         sparkline={spark(e => e.rating_anxiety)}
-                        color="#f97316"
+                        color="var(--rating-anxiety)"
                         context="Lower is better"
                       />
                     </div>
@@ -266,11 +266,11 @@ function WeeklyAssessmentTrends({ assessments }: { assessments: WeeklyAssessment
   const latestAvg = Math.round(getAssessmentAvg(latest) * 10) / 10
 
   return (
-    <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
+    <div className="card p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-gray-100 text-sm">Weekly Assessment</h3>
+        <h3 className="font-semibold text-fg-1 text-sm">Weekly Assessment</h3>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500">{assessments.length} week{assessments.length !== 1 ? 's' : ''} tracked</span>
+          <span className="text-xs text-fg-4">{assessments.length} week{assessments.length !== 1 ? 's' : ''} tracked</span>
           <span className="text-lg font-bold text-cta">{latestAvg}</span>
         </div>
       </div>
@@ -282,8 +282,8 @@ function WeeklyAssessmentTrends({ assessments }: { assessments: WeeklyAssessment
           const diff = prev !== null ? current - prev : null
           return (
             <div key={key} className="flex items-center gap-3">
-              <span className="text-xs text-gray-400 w-24 shrink-0">{label}</span>
-              <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
+              <span className="text-xs text-fg-3 w-24 shrink-0">{label}</span>
+              <div className="flex-1 h-2 bg-surface-2 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all ${
                     current <= 3 ? 'bg-red-500/80' : current <= 5 ? 'bg-yellow-500/80' : current <= 7 ? 'bg-cta/60' : 'bg-green-500/80'
@@ -291,14 +291,14 @@ function WeeklyAssessmentTrends({ assessments }: { assessments: WeeklyAssessment
                   style={{ width: `${(current / 10) * 100}%` }}
                 />
               </div>
-              <span className="text-sm font-medium text-gray-200 w-5 text-right tabular-nums">{current}</span>
+              <span className="text-sm font-medium text-fg-2 w-5 text-right tabular-nums">{current}</span>
               {diff !== null && diff !== 0 && (
                 <span className={`text-xs font-medium w-6 ${diff > 0 ? 'text-green-400' : 'text-red-400'}`}>
                   {diff > 0 ? '+' : ''}{diff}
                 </span>
               )}
               {diff !== null && diff === 0 && (
-                <span className="text-xs text-gray-600 w-6">=</span>
+                <span className="text-xs text-fg-4 w-6">=</span>
               )}
             </div>
           )
@@ -306,8 +306,8 @@ function WeeklyAssessmentTrends({ assessments }: { assessments: WeeklyAssessment
       </div>
 
       {assessments.length > 1 && (
-        <div className="mt-4 pt-4 border-t border-white/5">
-          <h4 className="text-xs text-gray-500 mb-2">Weekly Averages</h4>
+        <div className="mt-4 pt-4 border-t border-edge-muted">
+          <h4 className="text-xs text-fg-4 mb-2">Weekly Averages</h4>
           <div className="flex gap-1.5 items-end h-16">
             {assessments.slice(0, 12).reverse().map(entry => {
               const avg = getAssessmentAvg(entry)
@@ -323,10 +323,10 @@ function WeeklyAssessmentTrends({ assessments }: { assessments: WeeklyAssessment
             })}
           </div>
           <div className="flex justify-between mt-1">
-            <span className="text-[10px] text-gray-600">
+            <span className="text-[10px] text-fg-4">
               {assessments.length > 1 ? new Date(assessments[Math.min(assessments.length - 1, 11)].week_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}
             </span>
-            <span className="text-[10px] text-gray-600">
+            <span className="text-[10px] text-fg-4">
               {new Date(assessments[0].week_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </span>
           </div>

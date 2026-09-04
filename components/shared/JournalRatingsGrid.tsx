@@ -3,10 +3,10 @@ import { avgOfJournal } from '@/lib/stats'
 
 export default function JournalRatingsGrid({ entries }: { entries: JournalEntry[] }) {
   const stats = [
-    { label: 'Avg Motivation', value: avgOfJournal(entries, 'rating_motivation'), color: 'text-blue-400 bg-blue-900/30 border border-blue-800/40' },
-    { label: 'Avg Focus', value: avgOfJournal(entries, 'rating_focus'), color: 'text-purple-400 bg-purple-900/30 border border-purple-800/40' },
-    { label: 'Avg Confidence', value: avgOfJournal(entries, 'rating_confidence'), color: 'text-green-400 bg-green-900/30 border border-green-800/40' },
-    { label: 'Avg Anxiety', value: avgOfJournal(entries, 'rating_anxiety'), color: 'text-orange-400 bg-orange-900/30 border border-orange-800/40' },
+    { label: 'Avg Motivation', value: avgOfJournal(entries, 'rating_motivation'), color: 'text-blue-400 bg-blue-500/10 border border-blue-500/20' },
+    { label: 'Avg Focus', value: avgOfJournal(entries, 'rating_focus'), color: 'text-purple-400 bg-purple-500/10 border border-purple-500/20' },
+    { label: 'Avg Confidence', value: avgOfJournal(entries, 'rating_confidence'), color: 'text-green-400 bg-green-500/10 border border-green-500/20' },
+    { label: 'Avg Anxiety', value: avgOfJournal(entries, 'rating_anxiety'), color: 'text-orange-400 bg-orange-500/10 border border-orange-500/20' },
   ]
 
   return (

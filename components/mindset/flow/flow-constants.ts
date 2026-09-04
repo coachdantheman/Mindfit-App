@@ -55,11 +55,12 @@ export const FIVE_A_STEPS: StepConfig[] = [
 
 export const TOTAL_SESSION_SEC = FIVE_A_STEPS.reduce((acc, s) => acc + s.durationSec, 0)
 
+// hex values are var() references so light mode can deepen them (globals.css)
 export const STAGE_META: Record<FlowStage, { label: string; hex: string; tw: string; emoji: string }> = {
-  struggle: { label: 'Struggle', hex: '#CB3A3A', tw: 'bg-[#CB3A3A]', emoji: '🔥' },
-  release:  { label: 'Release',  hex: '#6A4C93', tw: 'bg-[#6A4C93]', emoji: '🌊' },
-  flow:     { label: 'Flow',     hex: '#C4B400', tw: 'bg-cta',       emoji: '🌟' },
-  recovery: { label: 'Recovery', hex: '#3A8A6B', tw: 'bg-[#3A8A6B]', emoji: '🌱' },
+  struggle: { label: 'Struggle', hex: 'var(--flow-struggle)', tw: 'bg-[var(--flow-struggle)]', emoji: '🔥' },
+  release:  { label: 'Release',  hex: 'var(--flow-release)',  tw: 'bg-[var(--flow-release)]',  emoji: '🌊' },
+  flow:     { label: 'Flow',     hex: 'var(--flow-flow)',     tw: 'bg-cta',                    emoji: '🌟' },
+  recovery: { label: 'Recovery', hex: 'var(--flow-recovery)', tw: 'bg-[var(--flow-recovery)]', emoji: '🌱' },
 }
 
 export const FLOW_STAGES: FlowStage[] = ['struggle', 'release', 'flow', 'recovery']

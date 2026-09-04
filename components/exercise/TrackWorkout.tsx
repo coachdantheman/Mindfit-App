@@ -219,32 +219,32 @@ export default function TrackWorkout({ initialWorkout, onDone, showSuccess }: Pr
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-100">Tracking Workout</h3>
-          <button onClick={() => setMode('history')} className="text-xs text-gray-500 hover:text-gray-300">Cancel</button>
+          <h3 className="text-sm font-semibold text-fg-1">Tracking Workout</h3>
+          <button onClick={() => setMode('history')} className="text-xs text-fg-4 hover:text-fg-2">Cancel</button>
         </div>
 
         <input
           value={workoutName}
           onChange={e => setWorkoutName(e.target.value)}
           placeholder="Workout name"
-          className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50"
+          className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50"
         />
 
         {exercises.map((ex, exIdx) => (
-          <div key={exIdx} className="bg-gray-900 rounded-2xl border border-white/10 p-4 space-y-3">
+          <div key={exIdx} className="card p-4 space-y-3">
             <div className="flex items-center gap-2">
               <input
                 value={ex.name}
                 onChange={e => setExercises(prev => prev.map((x, i) => i === exIdx ? { ...x, name: e.target.value } : x))}
                 placeholder="Exercise name"
-                className="flex-1 bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50"
+                className="flex-1 bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50"
               />
               {exercises.length > 1 && (
                 <button onClick={() => removeExercise(exIdx)} className="text-red-400 hover:text-red-300 text-xs px-2">Remove</button>
               )}
             </div>
 
-            <div className="flex items-center gap-2 text-[10px] text-gray-500 uppercase tracking-wider px-1">
+            <div className="flex items-center gap-2 text-[10px] text-fg-4 uppercase tracking-wider px-1">
               <span className="w-6 text-center">Set</span>
               <span className="w-16">Reps</span>
               <span className="w-16">Weight</span>
@@ -281,20 +281,20 @@ export default function TrackWorkout({ initialWorkout, onDone, showSuccess }: Pr
             value={duration}
             onChange={e => setDuration(e.target.value)}
             placeholder="Duration (min)"
-            className="w-32 bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50"
+            className="w-32 bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50"
           />
           <input
             value={workoutNotes}
             onChange={e => setWorkoutNotes(e.target.value)}
             placeholder="Workout notes"
-            className="flex-1 bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50"
+            className="flex-1 bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50"
           />
         </div>
 
         <button
           onClick={finishWorkout}
           disabled={saving || !workoutName.trim()}
-          className="w-full bg-cta hover:bg-brand-600 text-gray-900 font-bold px-4 py-3 rounded-xl text-sm transition-colors disabled:opacity-50"
+          className="w-full bg-cta hover:bg-brand-600 text-fg-inverse font-bold px-4 py-3 rounded-xl text-sm transition-colors disabled:opacity-50"
         >
           {saving ? 'Saving...' : 'Finish Workout'}
         </button>
@@ -308,7 +308,7 @@ export default function TrackWorkout({ initialWorkout, onDone, showSuccess }: Pr
       <div className="flex flex-wrap gap-2">
         <button
           onClick={startCustom}
-          className="bg-cta hover:bg-brand-600 text-gray-900 font-semibold px-4 py-2 rounded-xl text-sm transition-colors"
+          className="bg-cta hover:bg-brand-600 text-fg-inverse font-semibold px-4 py-2 rounded-xl text-sm transition-colors"
         >
           + Custom Workout
         </button>
@@ -316,15 +316,15 @@ export default function TrackWorkout({ initialWorkout, onDone, showSuccess }: Pr
 
       {/* Coach assigned workouts */}
       {coachWorkouts.length > 0 && (
-        <div className="bg-gray-900 rounded-2xl border border-cta/30 p-4">
+        <div className="bg-surface rounded-2xl border border-cta/30 p-4">
           <h4 className="text-sm font-semibold text-cta mb-3">From Your Coach</h4>
           <div className="space-y-2">
             {coachWorkouts.map(cw => (
-              <div key={cw.id} className="flex items-center justify-between p-2 rounded-lg bg-gray-800/50">
+              <div key={cw.id} className="flex items-center justify-between p-2 rounded-lg bg-surface-2/50">
                 <div>
-                  <p className="text-sm font-medium text-gray-200">{cw.name}</p>
-                  {cw.description && <p className="text-xs text-gray-500">{cw.description}</p>}
-                  <p className="text-xs text-gray-500">{cw.exercises.length} exercises{cw.assigned_date ? ` · Due ${cw.assigned_date}` : ''}</p>
+                  <p className="text-sm font-medium text-fg-2">{cw.name}</p>
+                  {cw.description && <p className="text-xs text-fg-4">{cw.description}</p>}
+                  <p className="text-xs text-fg-4">{cw.exercises.length} exercises{cw.assigned_date ? ` · Due ${cw.assigned_date}` : ''}</p>
                 </div>
                 <button
                   onClick={() => startCoachWorkout(cw)}
@@ -340,36 +340,36 @@ export default function TrackWorkout({ initialWorkout, onDone, showSuccess }: Pr
 
       {/* History */}
       <div>
-        <h4 className="text-sm font-semibold text-gray-100 mb-3">Workout History</h4>
+        <h4 className="text-sm font-semibold text-fg-1 mb-3">Workout History</h4>
         {loading ? (
           <Skeleton />
         ) : logs.length === 0 ? (
-          <p className="text-sm text-gray-500 text-center py-8">No workouts logged yet. Start tracking!</p>
+          <p className="text-sm text-fg-4 text-center py-8">No workouts logged yet. Start tracking!</p>
         ) : (
           <div className="space-y-2">
             {logs.map(log => (
-              <div key={log.id} className="bg-gray-900 rounded-xl border border-white/10 overflow-hidden">
+              <div key={log.id} className="bg-surface rounded-xl border border-edge overflow-hidden">
                 <button
                   onClick={() => loadExerciseLogs(log.id)}
-                  className="w-full p-3 text-left hover:bg-gray-800/50 transition-colors"
+                  className="w-full p-3 text-left hover:bg-surface-2/50 transition-colors"
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-200">{log.workout_name}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-sm font-medium text-fg-2">{log.workout_name}</p>
+                      <p className="text-xs text-fg-4">
                         {log.category_name}
                         {log.duration_min ? ` · ${log.duration_min} min` : ''}
                       </p>
                     </div>
-                    <span className="text-xs text-gray-500">{format(parseISO(log.log_date), 'MMM d')}</span>
+                    <span className="text-xs text-fg-4">{format(parseISO(log.log_date), 'MMM d')}</span>
                   </div>
-                  {log.notes && <p className="text-xs text-gray-400 mt-1">{log.notes}</p>}
+                  {log.notes && <p className="text-xs text-fg-3 mt-1">{log.notes}</p>}
                 </button>
 
                 {expandedLog === log.id && exerciseLogs[log.id] && (
-                  <div className="px-3 pb-3 border-t border-white/5">
+                  <div className="px-3 pb-3 border-t border-edge-muted">
                     {exerciseLogs[log.id].length === 0 ? (
-                      <p className="text-xs text-gray-500 mt-2">No per-set data recorded.</p>
+                      <p className="text-xs text-fg-4 mt-2">No per-set data recorded.</p>
                     ) : (
                       <div className="mt-2 space-y-1">
                         {Object.entries(
@@ -378,11 +378,11 @@ export default function TrackWorkout({ initialWorkout, onDone, showSuccess }: Pr
                             return acc
                           }, {})
                         ).map(([name, sets]) => (
-                          <div key={name} className="p-2 rounded-lg bg-gray-800/50">
-                            <p className="text-xs font-medium text-gray-300 mb-1">{name}</p>
+                          <div key={name} className="p-2 rounded-lg bg-surface-2/50">
+                            <p className="text-xs font-medium text-fg-2 mb-1">{name}</p>
                             <div className="flex flex-wrap gap-2">
                               {sets.sort((a, b) => a.set_number - b.set_number).map(s => (
-                                <span key={s.id} className="text-[10px] text-gray-500 bg-gray-700/50 px-1.5 py-0.5 rounded">
+                                <span key={s.id} className="text-[10px] text-fg-4 bg-surface-3/50 px-1.5 py-0.5 rounded">
                                   S{s.set_number}: {s.reps ?? '-'}r{s.weight ? ` @ ${s.weight}lbs` : ''}
                                   {s.rpe ? ` RPE ${s.rpe}` : ''}
                                 </span>

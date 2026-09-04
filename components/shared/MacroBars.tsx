@@ -18,16 +18,16 @@ export default function MacroBars({ totals, goal, title }: { totals: Totals; goa
   ]
 
   return (
-    <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
-      {title && <h3 className="font-semibold text-gray-100 mb-3 text-sm">{title}</h3>}
+    <div className="card p-5">
+      {title && <h3 className="font-semibold text-fg-1 mb-3 text-sm">{title}</h3>}
       <div className="space-y-3">
         {macros.map(m => (
           <div key={m.label}>
             <div className="flex justify-between text-xs mb-1">
-              <span className="text-gray-400">{m.label}</span>
-              <span className="text-gray-300 font-medium">{Math.round(m.current)} / {m.goal} {m.unit}</span>
+              <span className="text-fg-3">{m.label}</span>
+              <span className="text-fg-2 font-medium">{Math.round(m.current)} / {m.goal} {m.unit}</span>
             </div>
-            <div className="bg-gray-700 rounded-full h-2.5 overflow-hidden">
+            <div className="bg-surface-3 rounded-full h-2.5 overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all ${m.color}`}
                 style={{ width: `${pct(m.current, m.goal)}%` }}

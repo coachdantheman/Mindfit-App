@@ -31,11 +31,11 @@ export default function LessonLinks({ section }: { section: LessonSection }) {
             href={lesson.skool_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 bg-gray-900/60 border border-white/5 hover:border-cta/40 transition-colors group"
+            className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 bg-surface/60 border border-edge-muted hover:border-cta/40 transition-colors group"
           >
             <div className="min-w-0">
-              <p className="text-sm text-gray-200 truncate group-hover:text-white">{lesson.title}</p>
-              <p className="text-xs text-gray-500 truncate">{lesson.module_name}</p>
+              <p className="text-sm text-fg-2 truncate group-hover:text-fg-1">{lesson.title}</p>
+              <p className="text-xs text-fg-4 truncate">{lesson.module_name}</p>
             </div>
             <span className="text-cta text-sm shrink-0">→</span>
           </a>

@@ -30,7 +30,7 @@ export default function JournalTab() {
 
   return (
     <div>
-      <p className="text-gray-500 text-sm mb-4">
+      <p className="text-fg-4 text-sm mb-4">
         {format(new Date(), 'EEEE, MMMM d, yyyy')}
       </p>
       {todayEntry ? (

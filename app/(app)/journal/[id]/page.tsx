@@ -25,7 +25,7 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
         <Link href="/progress" className="text-brand-500 text-sm hover:underline mb-2 inline-block">
           ← Back to Progress
         </Link>
-        <h1 className="text-2xl font-bold text-gray-100">
+        <h1 className="page-title">
           {format(parseISO((entry as JournalEntry).entry_date), 'EEEE, MMMM d, yyyy')}
         </h1>
       </div>

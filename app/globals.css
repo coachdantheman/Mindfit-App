@@ -53,16 +53,34 @@
   --danger:  #ef4444;
   --info:    #3b82f6;
 
-  --bg:           var(--ink-900);
-  --surface:      var(--ink-800);
-  --surface-2:    var(--ink-700);
+  /* Semantic theme tokens as RGB channel triples so Tailwind opacity
+     modifiers work (bg-surface/50). Dark is the default theme. */
+  --bg:        10 15 26;    /* #0A0F1A */
+  --surface:   17 24 39;    /* cards        (#111827) */
+  --surface-2: 31 41 55;    /* inputs, wells (#1f2937) */
+  --surface-3: 55 65 81;    /* raised hover  (#374151) */
+  --fg-1:      243 244 246;
+  --fg-2:      209 213 219;
+  --fg-3:      156 163 175;
+  --fg-4:      107 114 128;
+  --fg-inverse: 17 24 39;   /* text on gold, both themes */
+  --cta-rgb:       196 180 0;
+  --cta-hover-rgb: 154 139 0;
   --border:       rgba(255,255,255,0.10);
   --border-muted: rgba(255,255,255,0.05);
-  --fg-1:         var(--ink-100);
-  --fg-2:         var(--ink-300);
-  --fg-3:         var(--ink-400);
-  --fg-4:         var(--ink-500);
   --link:         var(--cta);
+
+  --chart-1: #C4B400;
+  --chart-2: #3b82f6;
+  --chart-3: #a855f7;
+  --chart-4: #22c55e;
+  --chart-5: #f97316;
+  --chart-6: #ef4444;
+
+  --flow-struggle: #CB3A3A;
+  --flow-release:  #6A4C93;
+  --flow-flow:     #C4B400;
+  --flow-recovery: #3A8A6B;
 
   --radius-sm:   0.5rem;
   --radius-md:   0.75rem;
@@ -81,38 +99,79 @@
 }
 
 html.light {
-  --bg:           var(--stone-50);
-  --surface:      #ffffff;
-  --surface-2:    var(--stone-50);
+  --bg:        245 245 244; /* stone-50 */
+  --surface:   255 255 255;
+  --surface-2: 245 245 244;
+  --surface-3: 231 229 228; /* stone-100 */
+  --fg-1:      28 25 23;
+  --fg-2:      68 64 60;
+  --fg-3:      87 83 78;
+  --fg-4:      120 113 108;
   --border:       rgba(0,0,0,0.10);
   --border-muted: rgba(0,0,0,0.06);
-  --fg-1:         var(--stone-900);
-  --fg-2:         var(--stone-700);
-  --fg-3:         var(--stone-600);
-  --fg-4:         var(--stone-500);
+
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.06);
+
+  /* Chart / rating hues darkened for contrast on light surfaces */
+  --rating-motivation: #2563eb;
+  --rating-focus:      #9333ea;
+  --rating-confidence: #16a34a;
+  --rating-anxiety:    #ea580c;
+  --chart-1: #9A8B00;
+  --chart-2: #2563eb;
+  --chart-3: #9333ea;
+  --chart-4: #16a34a;
+  --chart-5: #ea580c;
+  --chart-6: #dc2626;
+
+  --flow-struggle: #b32e2e;
+  --flow-release:  #5a3f80;
+  --flow-flow:     #9A8B00;
+  --flow-recovery: #2f7359;
 }
 
 @layer components {
+  .card {
+    @apply bg-surface border border-edge rounded-2xl shadow-[var(--shadow-card)];
+  }
   .btn-primary {
-    @apply bg-cta hover:bg-brand-600 text-gray-900 font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors disabled:opacity-50;
+    @apply bg-cta hover:bg-brand-600 text-fg-inverse font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply border border-cta/40 text-cta hover:bg-cta/10 font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply text-fg-4 hover:text-fg-2 font-medium px-3 py-2 rounded-xl text-sm transition-colors disabled:opacity-50;
   }
   .input-field {
-    @apply w-full bg-gray-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50;
+    @apply w-full bg-surface-2 border border-edge rounded-xl px-4 py-2.5 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50;
   }
   .textarea-field {
-    @apply w-full bg-gray-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50 resize-none;
+    @apply w-full bg-surface-2 border border-edge rounded-xl px-4 py-2.5 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50 resize-none;
   }
   .tab-btn {
-    @apply px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all text-gray-500 border border-white/10 hover:text-gray-300;
+    @apply px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all text-fg-4 border border-edge hover:text-fg-2;
   }
   .tab-btn-active {
     @apply px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all bg-cta/20 text-cta border border-cta/30;
+  }
+  .page-title {
+    @apply text-2xl font-bold text-fg-1;
+  }
+  .page-subtitle {
+    @apply text-fg-4 text-sm mt-1;
+  }
+  .skeleton {
+    @apply animate-pulse bg-surface-2 rounded-lg;
   }
 }
 
 @layer base {
   html {
     -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-page text-fg-1;
   }
 }
 
@@ -123,65 +182,15 @@ html.light {
 }
 
 /* ==============================
-   Light Mode Overrides
-   Dark mode is the default (no class).
-   Adding class="light" to <html> activates light.
+   Light-mode status text
+   Surfaces/text/borders theme via the token variables above; the only
+   raw Tailwind color classes left in components are status hues, which
+   need one step darker for contrast on light backgrounds.
    ============================== */
-
-html.light body {
-  background-color: #f5f5f4;
-  color: #1c1917;
-}
-
-/* Backgrounds */
-html.light .bg-mindfit-bg { background-color: #f5f5f4 !important; }
-html.light .bg-gray-900 { background-color: #ffffff !important; }
-html.light .bg-gray-800 { background-color: #f5f5f4 !important; }
-html.light .bg-gray-800\/50 { background-color: rgba(245,245,244,0.5) !important; }
-html.light .bg-gray-800\/30 { background-color: rgba(245,245,244,0.3) !important; }
-html.light .bg-white\/5 { background-color: rgba(0,0,0,0.04) !important; }
-html.light .bg-gray-700 { background-color: #e7e5e4 !important; }
-
-/* Text */
-html.light .text-gray-100 { color: #1c1917 !important; }
-html.light .text-gray-200 { color: #292524 !important; }
-html.light .text-gray-300 { color: #44403c !important; }
-html.light .text-gray-400 { color: #57534e !important; }
-html.light .text-gray-500 { color: #78716c !important; }
-html.light .text-gray-900 { color: #1c1917 !important; }
-
-/* Borders */
-html.light .border-white\/10 { border-color: rgba(0,0,0,0.1) !important; }
-html.light .border-white\/5 { border-color: rgba(0,0,0,0.06) !important; }
-
-/* Placeholders */
-html.light .placeholder\:text-gray-500::placeholder { color: #a8a29e !important; }
-
-/* Focus rings */
-html.light .focus\:ring-cta\/50:focus { --tw-ring-color: rgba(196,180,0,0.3) !important; }
-
-/* Divide */
-html.light .divide-white\/5 > * + * { border-color: rgba(0,0,0,0.06) !important; }
-
-/* Hover states */
-html.light .hover\:bg-gray-800:hover { background-color: #f5f5f4 !important; }
-html.light .hover\:bg-gray-800\/50:hover { background-color: rgba(245,245,244,0.5) !important; }
-html.light .hover\:text-gray-100:hover { color: #1c1917 !important; }
-html.light .hover\:text-gray-200:hover { color: #292524 !important; }
-html.light .hover\:text-gray-300:hover { color: #44403c !important; }
-
-/* Specific component overrides */
-html.light .bg-blue-900\/30 { background-color: rgba(59,130,246,0.12) !important; }
-html.light .bg-purple-900\/30 { background-color: rgba(168,85,247,0.12) !important; }
-html.light .bg-green-900\/30 { background-color: rgba(34,197,94,0.12) !important; }
-html.light .bg-orange-900\/30 { background-color: rgba(249,115,22,0.12) !important; }
-html.light .bg-green-900\/40 { background-color: rgba(34,197,94,0.15) !important; }
-html.light .bg-yellow-900\/40 { background-color: rgba(234,179,8,0.15) !important; }
-html.light .bg-purple-900\/40 { background-color: rgba(168,85,247,0.15) !important; }
-html.light .bg-red-900\/30 { background-color: rgba(239,68,68,0.12) !important; }
-html.light .bg-cta\/10 { background-color: rgba(196,180,0,0.08) !important; }
-html.light .bg-cta\/20 { background-color: rgba(196,180,0,0.12) !important; }
-html.light .bg-white\/10 { background-color: rgba(0,0,0,0.06) !important; }
-
-/* Shadows for light mode cards */
-html.light .bg-gray-900.rounded-2xl { box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+html.light .text-red-300, html.light .text-red-400 { color: #dc2626; }
+html.light .text-green-300, html.light .text-green-400 { color: #16a34a; }
+html.light .text-yellow-300, html.light .text-yellow-400 { color: #ca8a04; }
+html.light .text-amber-300, html.light .text-amber-400 { color: #d97706; }
+html.light .text-orange-300, html.light .text-orange-400 { color: #ea580c; }
+html.light .text-blue-300, html.light .text-blue-400 { color: #2563eb; }
+html.light .text-purple-300, html.light .text-purple-400 { color: #9333ea; }

@@ -18,14 +18,14 @@ export default function MemberTable() {
   if (loading) return <Skeleton />
 
   if (members.length === 0) {
-    return <p className="text-sm text-gray-500">No members have registered yet.</p>
+    return <p className="text-sm text-fg-4">No members have registered yet.</p>
   }
 
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-left text-xs text-gray-500 border-b border-white/10">
+          <tr className="text-left text-xs text-fg-4 border-b border-edge">
             <th className="pb-2 font-medium">Name</th>
             <th className="pb-2 font-medium">Email</th>
             <th className="pb-2 font-medium">Joined</th>
@@ -33,19 +33,19 @@ export default function MemberTable() {
             <th className="pb-2 font-medium">Role</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-white/5">
+        <tbody className="divide-y divide-edge-muted">
           {members.map(m => (
             <tr key={m.id} className="group">
               <td className="py-2.5 pr-4">
                 <Link
                   href={`/admin/athlete/${m.id}`}
-                  className="font-medium text-gray-300 hover:text-cta transition-colors"
+                  className="font-medium text-fg-2 hover:text-cta transition-colors"
                 >
                   {m.full_name || '—'}
                 </Link>
               </td>
-              <td className="py-2.5 pr-4 text-gray-400">{m.email}</td>
-              <td className="py-2.5 pr-4 text-gray-500">{format(parseISO(m.created_at), 'MMM d, yyyy')}</td>
+              <td className="py-2.5 pr-4 text-fg-3">{m.email}</td>
+              <td className="py-2.5 pr-4 text-fg-4">{format(parseISO(m.created_at), 'MMM d, yyyy')}</td>
               <td className="py-2.5 pr-4">
                 <span className="font-semibold text-cta">{m.entry_count}</span>
               </td>
@@ -54,8 +54,8 @@ export default function MemberTable() {
                   m.role === 'admin'
                     ? 'bg-cta/20 text-cta'
                     : m.role === 'coach'
-                    ? 'bg-purple-900/40 text-purple-400'
-                    : 'bg-white/10 text-gray-400'
+                    ? 'bg-purple-500/15 text-purple-400'
+                    : 'bg-surface-3/60 text-fg-3'
                 }`}>
                   {m.role}
                 </span>

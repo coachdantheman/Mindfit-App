@@ -301,9 +301,9 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-100">Customize Your Plan</h3>
+          <h3 className="text-sm font-semibold text-fg-1">Customize Your Plan</h3>
           <div className="flex gap-2">
-            <button onClick={() => setEditablePlan(null)} className="text-xs text-gray-500 hover:text-gray-300">Cancel</button>
+            <button onClick={() => setEditablePlan(null)} className="text-xs text-fg-4 hover:text-fg-2">Cancel</button>
             <button onClick={enhanceWithAI} disabled={enhancing} className="text-xs text-purple-400 hover:text-purple-300 disabled:opacity-50">
               {enhancing ? 'Enhancing...' : 'Enhance with AI'}
             </button>
@@ -312,40 +312,40 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
 
         {/* Progress bar when AI is enhancing */}
         {enhancing && (
-          <div className="bg-gray-900 rounded-2xl border border-purple-500/30 p-4 space-y-2">
+          <div className="bg-surface rounded-2xl border border-purple-500/30 p-4 space-y-2">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-purple-400 animate-pulse" />
               <p className="text-sm font-medium text-purple-300">AI is building your personalized plan...</p>
             </div>
-            <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+            <div className="w-full bg-surface-3 rounded-full h-2 overflow-hidden">
               <div
                 className="bg-purple-400 h-2 rounded-full transition-all duration-500 ease-out"
                 style={{ width: `${enhanceProgress}%` }}
               />
             </div>
-            <p className="text-[10px] text-gray-500">This may take 15-30 seconds</p>
+            <p className="text-[10px] text-fg-4">This may take 15-30 seconds</p>
           </div>
         )}
 
-        <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
-          <h3 className="font-bold text-gray-100">{editablePlan.title}</h3>
-          <p className="text-xs text-gray-500 mt-1">{editablePlan.description}</p>
+        <div className="card p-5">
+          <h3 className="font-bold text-fg-1">{editablePlan.title}</h3>
+          <p className="text-xs text-fg-4 mt-1">{editablePlan.description}</p>
         </div>
 
         {/* Save button at top for easy access */}
         <button
           onClick={savePlan}
           disabled={savingPlan || enhancing}
-          className="w-full bg-cta hover:bg-brand-600 text-gray-900 font-bold px-4 py-3 rounded-xl text-sm transition-colors disabled:opacity-50"
+          className="w-full bg-cta hover:bg-brand-600 text-fg-inverse font-bold px-4 py-3 rounded-xl text-sm transition-colors disabled:opacity-50"
         >
           {savingPlan ? 'Saving...' : 'Save This Plan'}
         </button>
 
         {editablePlan.blocks.map((block, bi) => (
-          <div key={bi} className="bg-gray-900 rounded-2xl border border-white/10 p-4 space-y-3">
+          <div key={bi} className="card p-4 space-y-3">
             <div>
-              <p className="font-semibold text-gray-100">{block.name}</p>
-              <p className="text-xs text-gray-500">
+              <p className="font-semibold text-fg-1">{block.name}</p>
+              <p className="text-xs text-fg-4">
                 Weeks {block.week_start}-{block.week_end} · {block.focus}
               </p>
             </div>
@@ -355,7 +355,7 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
               .slice(0, 1)
               .map(weekNum => (
                 <div key={weekNum}>
-                  <p className="text-xs uppercase tracking-wider text-gray-500 font-medium mb-2">
+                  <p className="text-xs uppercase tracking-wider text-fg-4 font-medium mb-2">
                     Week {weekNum}
                   </p>
                   {block.workouts
@@ -365,21 +365,21 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
                       const actualWi = block.workouts.indexOf(workout)
                       const isEditing = editingWorkout?.bi === bi && editingWorkout?.wi === actualWi
                       return (
-                        <div key={wi} className="bg-gray-800/50 rounded-xl p-3 mb-2">
+                        <div key={wi} className="bg-surface-2/50 rounded-xl p-3 mb-2">
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex-1 min-w-0">
                               {isEditing ? (
                                 <input
                                   value={workout.name}
                                   onChange={e => updateWorkoutField(bi, actualWi, 'name', e.target.value)}
-                                  className="bg-gray-700 border border-white/10 rounded px-2 py-1 text-sm text-gray-100 w-full"
+                                  className="bg-surface-3 border border-edge rounded px-2 py-1 text-sm text-fg-1 w-full"
                                 />
                               ) : (
-                                <p className="text-sm font-medium text-gray-200 truncate">
+                                <p className="text-sm font-medium text-fg-2 truncate">
                                   {DAY_NAMES[workout.day_of_week]} — {workout.name}
                                 </p>
                               )}
-                              <p className="text-xs text-gray-500 truncate">{workout.description}</p>
+                              <p className="text-xs text-fg-4 truncate">{workout.description}</p>
                             </div>
                             <button
                               onClick={() => setEditingWorkout(isEditing ? null : { bi, wi: actualWi })}
@@ -391,27 +391,27 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
 
                           <div className="space-y-1">
                             {workout.exercises.map((ex, ei) => (
-                              <div key={ex._key} className={`rounded bg-gray-700/30 ${isEditing ? 'p-2 space-y-1.5' : 'flex items-center gap-2 p-1.5'}`}>
+                              <div key={ex._key} className={`rounded bg-surface-3/30 ${isEditing ? 'p-2 space-y-1.5' : 'flex items-center gap-2 p-1.5'}`}>
                                 {isEditing ? (
                                   <>
                                     <input
                                       value={ex.name}
                                       onChange={e => updateExercise(bi, actualWi, ei, 'name', e.target.value)}
-                                      className="bg-gray-700 border border-white/10 rounded px-2 py-1 text-xs text-gray-100 w-full"
+                                      className="bg-surface-3 border border-edge rounded px-2 py-1 text-xs text-fg-1 w-full"
                                     />
                                     <div className="flex items-center gap-2">
                                       <input
                                         type="number"
                                         value={ex.sets}
                                         onChange={e => updateExercise(bi, actualWi, ei, 'sets', parseInt(e.target.value) || 1)}
-                                        className="bg-gray-700 border border-white/10 rounded px-1.5 py-1 text-xs text-gray-100 w-14 text-center"
+                                        className="bg-surface-3 border border-edge rounded px-1.5 py-1 text-xs text-fg-1 w-14 text-center"
                                         placeholder="Sets"
                                       />
-                                      <span className="text-xs text-gray-500">x</span>
+                                      <span className="text-xs text-fg-4">x</span>
                                       <input
                                         value={ex.reps}
                                         onChange={e => updateExercise(bi, actualWi, ei, 'reps', e.target.value)}
-                                        className="bg-gray-700 border border-white/10 rounded px-1.5 py-1 text-xs text-gray-100 w-20"
+                                        className="bg-surface-3 border border-edge rounded px-1.5 py-1 text-xs text-fg-1 w-20"
                                         placeholder="Reps"
                                       />
                                       <button
@@ -425,13 +425,13 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
                                       value={ex.notes || ''}
                                       onChange={e => updateExercise(bi, actualWi, ei, 'notes', e.target.value)}
                                       placeholder="Notes"
-                                      className="bg-gray-700 border border-white/10 rounded px-2 py-1 text-xs text-gray-100 w-full placeholder:text-gray-600"
+                                      className="bg-surface-3 border border-edge rounded px-2 py-1 text-xs text-fg-1 w-full placeholder:text-fg-4"
                                     />
                                   </>
                                 ) : (
                                   <>
-                                    <p className="text-xs text-gray-300 flex-1 truncate">{ex.name}</p>
-                                    <p className="text-[10px] text-gray-500 shrink-0">
+                                    <p className="text-xs text-fg-2 flex-1 truncate">{ex.name}</p>
+                                    <p className="text-[10px] text-fg-4 shrink-0">
                                       {ex.sets} x {ex.reps}
                                       {ex.notes ? ` · ${ex.notes}` : ''}
                                     </p>
@@ -454,7 +454,7 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
                 </div>
               ))}
             {block.workouts.length > block.workouts.filter(w => w.week_number === block.week_start).length && (
-              <p className="text-xs text-gray-500 italic">
+              <p className="text-xs text-fg-4 italic">
                 Weeks {block.week_start + 1}-{block.week_end} follow the same structure.
               </p>
             )}
@@ -466,7 +466,7 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
         <button
           onClick={savePlan}
           disabled={savingPlan}
-          className="w-full bg-cta hover:bg-brand-600 text-gray-900 font-bold px-4 py-3 rounded-xl text-sm transition-colors disabled:opacity-50"
+          className="w-full bg-cta hover:bg-brand-600 text-fg-inverse font-bold px-4 py-3 rounded-xl text-sm transition-colors disabled:opacity-50"
         >
           {savingPlan ? 'Saving...' : 'Save This Plan'}
         </button>
@@ -477,19 +477,19 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
   // Builder form
   return (
     <div className="space-y-5">
-      <div className="bg-gray-900 rounded-2xl border border-white/10 p-5 space-y-5">
+      <div className="card p-5 space-y-5">
         <div>
-          <h3 className="text-sm font-semibold text-gray-100 mb-1">Create a Plan</h3>
-          <p className="text-xs text-gray-500">Enter your sport and goals to generate a periodized training program. Edit any workout before saving.</p>
+          <h3 className="text-sm font-semibold text-fg-1 mb-1">Create a Plan</h3>
+          <p className="text-xs text-fg-4">Enter your sport and goals to generate a periodized training program. Edit any workout before saving.</p>
         </div>
 
         <div>
-          <label className="text-xs text-gray-500 block mb-1">Sport</label>
+          <label className="text-xs text-fg-4 block mb-1">Sport</label>
           <div className="flex flex-col sm:flex-row gap-2">
             <select
               value={SPORTS.includes(sport) ? sport : ''}
               onChange={e => setSport(e.target.value)}
-              className="flex-1 bg-gray-800 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-cta/50"
+              className="flex-1 bg-surface-2 border border-edge rounded-lg px-3 py-2.5 text-sm text-fg-1 focus:outline-none focus:ring-2 focus:ring-cta/50"
             >
               <option value="">Select sport...</option>
               {SPORTS.map(s => <option key={s} value={s}>{s}</option>)}
@@ -498,13 +498,13 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
               value={!SPORTS.includes(sport) ? sport : ''}
               onChange={e => setSport(e.target.value)}
               placeholder="Or type your sport"
-              className="flex-1 bg-gray-800 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50"
+              className="flex-1 bg-surface-2 border border-edge rounded-lg px-3 py-2.5 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50"
             />
           </div>
         </div>
 
         <div>
-          <label className="text-xs text-gray-500 block mb-2">Goals</label>
+          <label className="text-xs text-fg-4 block mb-2">Goals</label>
           <div className="flex flex-wrap gap-2">
             {GOALS.map(g => (
               <button
@@ -513,7 +513,7 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
                 className={`px-3 py-2 rounded-full text-xs font-medium border transition-all ${
                   selectedGoals.includes(g.key)
                     ? 'bg-cta/20 text-cta border-cta/30'
-                    : 'bg-gray-800 text-gray-400 border-white/10 hover:border-white/20'
+                    : 'bg-surface-2 text-fg-3 border-edge hover:border-fg-4'
                 }`}
               >
                 {g.label}
@@ -523,7 +523,7 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
         </div>
 
         <div>
-          <label className="text-xs text-gray-500 block mb-2">Experience Level</label>
+          <label className="text-xs text-fg-4 block mb-2">Experience Level</label>
           <div className="flex gap-2">
             {(['beginner', 'intermediate', 'advanced'] as const).map(level => (
               <button
@@ -532,7 +532,7 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
                 className={`flex-1 py-2.5 rounded-lg text-xs font-medium border transition-all ${
                   experience === level
                     ? 'bg-cta/20 text-cta border-cta/30'
-                    : 'bg-gray-800 text-gray-400 border-white/10 hover:border-white/20'
+                    : 'bg-surface-2 text-fg-3 border-edge hover:border-fg-4'
                 }`}
               >
                 {level.charAt(0).toUpperCase() + level.slice(1)}
@@ -542,22 +542,22 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
         </div>
 
         <div>
-          <label className="text-xs text-gray-500 block mb-1">Days Per Week: {daysPerWeek}</label>
+          <label className="text-xs text-fg-4 block mb-1">Days Per Week: {daysPerWeek}</label>
           <input
             type="range"
             min={3}
             max={6}
             value={daysPerWeek}
             onChange={e => setDaysPerWeek(parseInt(e.target.value))}
-            className="w-full h-2 rounded-full appearance-none bg-gray-700 accent-cta"
+            className="w-full h-2 rounded-full appearance-none bg-surface-3 accent-cta"
           />
-          <div className="flex justify-between text-[10px] text-gray-600 mt-1">
+          <div className="flex justify-between text-[10px] text-fg-4 mt-1">
             <span>3</span><span>4</span><span>5</span><span>6</span>
           </div>
         </div>
 
         <div>
-          <label className="text-xs text-gray-500 block mb-2">Program Duration</label>
+          <label className="text-xs text-fg-4 block mb-2">Program Duration</label>
           <div className="flex gap-2">
             {[4, 8, 12].map(w => (
               <button
@@ -566,7 +566,7 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
                 className={`flex-1 py-2.5 rounded-lg text-xs font-medium border transition-all ${
                   durationWeeks === w
                     ? 'bg-cta/20 text-cta border-cta/30'
-                    : 'bg-gray-800 text-gray-400 border-white/10 hover:border-white/20'
+                    : 'bg-surface-2 text-fg-3 border-edge hover:border-fg-4'
                 }`}
               >
                 {w} Weeks
@@ -579,7 +579,7 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
 
         <button
           onClick={generateInstant}
-          className="w-full bg-cta hover:bg-brand-600 text-gray-900 font-bold px-4 py-3 rounded-xl text-sm transition-colors"
+          className="w-full bg-cta hover:bg-brand-600 text-fg-inverse font-bold px-4 py-3 rounded-xl text-sm transition-colors"
         >
           Generate My Plan
         </button>
@@ -587,7 +587,7 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
         <button
           onClick={enhanceWithAI}
           disabled={enhancing || !sport.trim() || selectedGoals.length === 0}
-          className="w-full bg-purple-900/30 hover:bg-purple-900/50 text-purple-300 font-medium px-4 py-2.5 rounded-xl text-xs transition-colors disabled:opacity-40 border border-purple-500/20"
+          className="w-full bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 font-medium px-4 py-2.5 rounded-xl text-xs transition-colors disabled:opacity-40 border border-purple-500/20"
         >
           {enhancing ? 'Generating with AI...' : 'Or Generate with AI (more detailed)'}
         </button>
@@ -598,13 +598,13 @@ export default function BuildYourPlan({ onPlanSaved, showSuccess }: Props) {
               <div className="w-3 h-3 rounded-full bg-purple-400 animate-pulse" />
               <p className="text-sm font-medium text-purple-300">AI is building your personalized plan...</p>
             </div>
-            <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+            <div className="w-full bg-surface-3 rounded-full h-2 overflow-hidden">
               <div
                 className="bg-purple-400 h-2 rounded-full transition-all duration-500 ease-out"
                 style={{ width: `${enhanceProgress}%` }}
               />
             </div>
-            <p className="text-[10px] text-gray-500">This may take 15-30 seconds</p>
+            <p className="text-[10px] text-fg-4">This may take 15-30 seconds</p>
           </div>
         )}
       </div>

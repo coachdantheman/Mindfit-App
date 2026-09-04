@@ -58,7 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       </head>
-      <body className="min-h-screen bg-mindfit-bg text-gray-100 antialiased font-sans">
+      <body className="min-h-screen bg-page text-fg-1 antialiased font-sans">
         {children}
       </body>
     </html>

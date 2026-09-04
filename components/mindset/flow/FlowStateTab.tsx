@@ -65,13 +65,13 @@ export default function FlowStateTab() {
     <div className="space-y-5">
       {staleCache && (
         <div className="bg-yellow-500/10 border border-yellow-500/40 rounded-xl px-4 py-3 text-sm">
-          <p className="font-semibold text-yellow-300 mb-1">Supabase schema cache is stale</p>
-          <p className="text-xs text-gray-300">
+          <p className="font-semibold text-yellow-400 mb-1">Supabase schema cache is stale</p>
+          <p className="text-xs text-fg-2">
             Your Flow State data is there, but Supabase's API server hasn't picked up the latest
             migration yet. Fix:
             <br />
-            1. Open <span className="text-gray-100">Supabase Dashboard → Project Settings → API</span> and click
-            <span className="text-gray-100"> Restart server</span>, <em>or</em>
+            1. Open <span className="text-fg-1">Supabase Dashboard → Project Settings → API</span> and click
+            <span className="text-fg-1"> Restart server</span>, <em>or</em>
             <br />
             2. Run <code className="text-cta">NOTIFY pgrst, 'reload schema';</code> in the SQL Editor.
             <br />
@@ -86,7 +86,7 @@ export default function FlowStateTab() {
       )}
 
       {showSportHint && (
-        <div className="bg-gray-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-400 flex items-center justify-between gap-3">
+        <div className="bg-surface border border-edge rounded-xl px-4 py-3 text-sm text-fg-3 flex items-center justify-between gap-3">
           <span>Set your sport in Settings so sessions autofill it.</span>
           <button
             onClick={() => router.push('/settings')}
@@ -128,17 +128,17 @@ export default function FlowStateTab() {
 
       <StageTracker />
 
-      <div className="bg-gray-900 rounded-2xl border border-white/10 p-6">
-        <h3 className="font-semibold text-gray-100 mb-3">Last flow session</h3>
+      <div className="card p-6">
+        <h3 className="font-semibold text-fg-1 mb-3">Last flow session</h3>
         {!lastLog ? (
-          <p className="text-sm text-gray-500">No flow logs yet. Run the stack and log your first session.</p>
+          <p className="text-sm text-fg-4">No flow logs yet. Run the stack and log your first session.</p>
         ) : (
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
-              <p className="text-sm text-gray-300">
+              <p className="text-sm text-fg-2">
                 {format(parseISO(lastLog.logged_at), 'EEEE, MMM d · h:mma')}
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-fg-4 mt-1">
                 {lastLog.sport || profile?.primary_sport || '—'} · flow score{' '}
                 <span className="text-cta font-semibold">{lastLog.flow_score}/10</span>
               </p>
@@ -164,12 +164,12 @@ function StatCard({
   label, value, suffix, small, gold,
 }: { label: string; value: string; suffix?: string; small?: boolean; gold?: boolean }) {
   return (
-    <div className="bg-gray-900 rounded-xl border border-white/10 p-3">
-      <p className="text-[11px] uppercase tracking-wide text-gray-500">{label}</p>
-      <p className={`${small ? 'text-sm' : 'text-2xl'} font-bold mt-1 ${gold ? 'text-cta' : 'text-gray-100'}`}>
+    <div className="bg-surface rounded-xl border border-edge p-3">
+      <p className="text-[11px] uppercase tracking-wide text-fg-4">{label}</p>
+      <p className={`${small ? 'text-sm' : 'text-2xl'} font-bold mt-1 ${gold ? 'text-cta' : 'text-fg-1'}`}>
         {value}
       </p>
-      {suffix && <p className="text-[11px] text-gray-500 mt-0.5">{suffix}</p>}
+      {suffix && <p className="text-[11px] text-fg-4 mt-0.5">{suffix}</p>}
     </div>
   )
 }

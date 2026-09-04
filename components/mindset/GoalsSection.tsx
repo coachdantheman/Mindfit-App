@@ -73,24 +73,24 @@ export default function GoalsSection() {
 
   return (
     <div className="space-y-5">
-      <div className="bg-gray-900 rounded-2xl border border-white/10 p-6">
+      <div className="card p-6">
         <div className="flex items-center justify-between mb-1">
-          <h3 className="font-semibold text-gray-100">Goals</h3>
+          <h3 className="font-semibold text-fg-1">Goals</h3>
           <button
             onClick={() => setShowForm(!showForm)}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
               showForm
-                ? 'text-gray-400 border border-white/10 hover:text-gray-200'
+                ? 'text-fg-3 border border-edge hover:text-fg-2'
                 : 'bg-cta/20 text-cta border border-cta/30 hover:bg-cta/30'
             }`}
           >
             {showForm ? 'Cancel' : '+ New Goal'}
           </button>
         </div>
-        <p className="text-sm text-gray-500 mb-5">Set your targets. Track your progress. Champions know where they're headed.</p>
+        <p className="text-sm text-fg-4 mb-5">Set your targets. Track your progress. Champions know where they're headed.</p>
 
         {showForm && (
-          <form onSubmit={addGoal} className="bg-gray-800/50 rounded-xl border border-white/5 p-4 mb-5 space-y-3">
+          <form onSubmit={addGoal} className="bg-surface-2/50 rounded-xl border border-edge-muted p-4 mb-5 space-y-3">
             <div className="flex gap-2">
               {(['weekly', 'season', 'year'] as GoalType[]).map(t => (
                 <button
@@ -127,7 +127,7 @@ export default function GoalsSection() {
         )}
 
         {goals.length === 0 && !showForm && (
-          <div className="text-center py-8 text-gray-400">
+          <div className="text-center py-8 text-fg-3">
             <p className="font-medium">No goals set yet</p>
             <p className="text-sm mt-1">Start by setting a weekly goal.</p>
           </div>
@@ -138,16 +138,16 @@ export default function GoalsSection() {
           if (items.length === 0) return null
           return (
             <div key={type} className="mb-5 last:mb-0">
-              <h4 className="text-xs uppercase tracking-wider text-gray-500 font-medium mb-3">{GOAL_LABELS[type]}</h4>
+              <h4 className="text-xs uppercase tracking-wider text-fg-4 font-medium mb-3">{GOAL_LABELS[type]}</h4>
               <div className="space-y-2">
                 {items.map(g => (
-                  <div key={g.id} className="p-3 rounded-xl bg-gray-800/50 border border-white/5 group">
+                  <div key={g.id} className="p-3 rounded-xl bg-surface-2/50 border border-edge-muted group">
                     <div className="flex items-start justify-between mb-2">
                       <div>
-                        <p className={`text-sm font-medium ${g.is_completed ? 'text-green-400 line-through' : 'text-gray-200'}`}>
+                        <p className={`text-sm font-medium ${g.is_completed ? 'text-green-400 line-through' : 'text-fg-2'}`}>
                           {g.title}
                         </p>
-                        {g.description && <p className="text-xs text-gray-500 mt-0.5">{g.description}</p>}
+                        {g.description && <p className="text-xs text-fg-4 mt-0.5">{g.description}</p>}
                       </div>
                       <button
                         onClick={() => deleteGoal(g.id)}
@@ -157,13 +157,13 @@ export default function GoalsSection() {
                       </button>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="flex-1 bg-gray-700 rounded-full h-2 overflow-hidden">
+                      <div className="flex-1 bg-surface-3 rounded-full h-2 overflow-hidden">
                         <div
                           className="h-full bg-cta rounded-full transition-all"
                           style={{ width: `${g.progress}%` }}
                         />
                       </div>
-                      <span className="text-xs text-gray-400 w-8 text-right">{g.progress}%</span>
+                      <span className="text-xs text-fg-3 w-8 text-right">{g.progress}%</span>
                       <input
                         type="range"
                         min={0}
@@ -171,7 +171,7 @@ export default function GoalsSection() {
                         step={5}
                         value={g.progress}
                         onChange={e => updateProgress(g.id, parseInt(e.target.value))}
-                        className="w-20 accent-[#C4B400]"
+                        className="w-20 accent-cta"
                       />
                     </div>
                   </div>

@@ -21,22 +21,22 @@ export default function StatCard({
   context,
   icon,
   sparkline,
-  color = '#C4B400',
+  color = 'var(--cta)',
 }: StatCardProps) {
   return (
-    <div className="bg-gray-900 border border-white/10 rounded-2xl p-4 transition-colors hover:border-white/20">
-      <div className="flex items-center justify-between text-gray-500 mb-2.5">
+    <div className="card p-4 transition-colors hover:border-fg-4/40">
+      <div className="flex items-center justify-between text-fg-4 mb-2.5">
         <span className="text-[11px] uppercase tracking-wider font-semibold font-mono">
           {label}
         </span>
         {icon && <span className="w-3.5 h-3.5">{icon}</span>}
       </div>
       <div className="leading-none">
-        <span className="text-[30px] font-bold tracking-tight text-gray-100 tabular-nums">
+        <span className="text-[30px] font-bold tracking-tight text-fg-1 tabular-nums">
           {value}
         </span>
         {unit && (
-          <span className="text-sm font-medium text-gray-400 ml-0.5">{unit}</span>
+          <span className="text-sm font-medium text-fg-3 ml-0.5">{unit}</span>
         )}
       </div>
       <div className="flex items-center justify-between mt-2.5">
@@ -47,7 +47,7 @@ export default function StatCard({
                 ? 'bg-green-500/10 text-green-400'
                 : delta.direction === 'down'
                 ? 'bg-orange-500/10 text-orange-400'
-                : 'bg-white/5 text-gray-400'
+                : 'bg-surface-2/60 text-fg-3'
             }`}
           >
             {delta.direction === 'up' ? '▲' : delta.direction === 'down' ? '▼' : '—'}{' '}
@@ -58,7 +58,7 @@ export default function StatCard({
           <Sparkline points={sparkline} color={color} />
         )}
       </div>
-      {context && <p className="text-[10.5px] text-gray-500 mt-1.5">{context}</p>}
+      {context && <p className="text-[10.5px] text-fg-4 mt-1.5">{context}</p>}
     </div>
   )
 }

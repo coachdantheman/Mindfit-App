@@ -113,15 +113,15 @@ export default function CreateWorkout() {
     <div className="space-y-6">
       {/* Create form */}
       <form onSubmit={submit} className="space-y-4">
-        <h3 className="font-semibold text-gray-100">Create & Assign Workout</h3>
+        <h3 className="font-semibold text-fg-1">Create & Assign Workout</h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Athlete</label>
+            <label className="text-xs text-fg-4 block mb-1">Athlete</label>
             <select
               value={athleteId}
               onChange={e => setAthleteId(e.target.value)}
-              className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-cta/50"
+              className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 focus:outline-none focus:ring-2 focus:ring-cta/50"
             >
               <option value="">Select athlete...</option>
               {athletes.map(a => (
@@ -130,70 +130,70 @@ export default function CreateWorkout() {
             </select>
           </div>
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Assigned Date (optional)</label>
+            <label className="text-xs text-fg-4 block mb-1">Assigned Date (optional)</label>
             <input
               type="date"
               value={assignedDate}
               onChange={e => setAssignedDate(e.target.value)}
-              className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-cta/50"
+              className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 focus:outline-none focus:ring-2 focus:ring-cta/50"
             />
           </div>
         </div>
 
         <div>
-          <label className="text-xs text-gray-500 block mb-1">Workout Name</label>
+          <label className="text-xs text-fg-4 block mb-1">Workout Name</label>
           <input
             value={name}
             onChange={e => setName(e.target.value)}
             placeholder="e.g., Upper Body Strength"
-            className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50"
+            className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50"
           />
         </div>
 
         <div>
-          <label className="text-xs text-gray-500 block mb-1">Description (optional)</label>
+          <label className="text-xs text-fg-4 block mb-1">Description (optional)</label>
           <input
             value={description}
             onChange={e => setDescription(e.target.value)}
             placeholder="Brief description of the workout focus"
-            className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50"
+            className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50"
           />
         </div>
 
         {/* Exercise rows */}
         <div className="space-y-2">
-          <label className="text-xs text-gray-500 block">Exercises</label>
+          <label className="text-xs text-fg-4 block">Exercises</label>
           {exercises.map((ex, idx) => (
-            <div key={idx} className="flex items-center gap-2 bg-gray-800/50 rounded-lg p-2">
+            <div key={idx} className="flex items-center gap-2 bg-surface-2/50 rounded-lg p-2">
               <div className="flex flex-col gap-0.5">
-                <button type="button" onClick={() => moveExercise(idx, -1)} className="text-[10px] text-gray-500 hover:text-gray-300 leading-none">▲</button>
-                <button type="button" onClick={() => moveExercise(idx, 1)} className="text-[10px] text-gray-500 hover:text-gray-300 leading-none">▼</button>
+                <button type="button" onClick={() => moveExercise(idx, -1)} className="text-[10px] text-fg-4 hover:text-fg-2 leading-none">▲</button>
+                <button type="button" onClick={() => moveExercise(idx, 1)} className="text-[10px] text-fg-4 hover:text-fg-2 leading-none">▼</button>
               </div>
               <input
                 value={ex.name}
                 onChange={e => updateExercise(idx, 'name', e.target.value)}
                 placeholder="Exercise name"
-                className="flex-1 bg-gray-800 border border-white/10 rounded-lg px-2 py-1.5 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50"
+                className="flex-1 bg-surface-2 border border-edge rounded-lg px-2 py-1.5 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50"
               />
               <input
                 type="number"
                 value={ex.sets}
                 onChange={e => updateExercise(idx, 'sets', e.target.value)}
                 placeholder="Sets"
-                className="w-14 bg-gray-800 border border-white/10 rounded-lg px-2 py-1.5 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50 text-center"
+                className="w-14 bg-surface-2 border border-edge rounded-lg px-2 py-1.5 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50 text-center"
               />
-              <span className="text-gray-600 text-xs">x</span>
+              <span className="text-fg-4 text-xs">x</span>
               <input
                 value={ex.reps}
                 onChange={e => updateExercise(idx, 'reps', e.target.value)}
                 placeholder="Reps"
-                className="w-16 bg-gray-800 border border-white/10 rounded-lg px-2 py-1.5 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50 text-center"
+                className="w-16 bg-surface-2 border border-edge rounded-lg px-2 py-1.5 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50 text-center"
               />
               <input
                 value={ex.notes}
                 onChange={e => updateExercise(idx, 'notes', e.target.value)}
                 placeholder="Notes"
-                className="flex-1 bg-gray-800 border border-white/10 rounded-lg px-2 py-1.5 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50"
+                className="flex-1 bg-surface-2 border border-edge rounded-lg px-2 py-1.5 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50"
               />
               {exercises.length > 1 && (
                 <button type="button" onClick={() => removeExercise(idx)} className="text-red-400 hover:text-red-300 text-xs px-1">x</button>
@@ -208,7 +208,7 @@ export default function CreateWorkout() {
         <button
           type="submit"
           disabled={saving || !athleteId || !name.trim()}
-          className="bg-cta hover:bg-brand-600 text-gray-900 font-semibold px-4 py-2 rounded-xl text-sm transition-colors disabled:opacity-50"
+          className="bg-cta hover:bg-brand-600 text-fg-inverse font-semibold px-4 py-2 rounded-xl text-sm transition-colors disabled:opacity-50"
         >
           {saving ? 'Assigning...' : success ? 'Assigned!' : 'Assign Workout'}
         </button>
@@ -217,14 +217,14 @@ export default function CreateWorkout() {
       {/* Previously assigned workouts */}
       {assigned.length > 0 && (
         <div>
-          <h4 className="text-sm font-semibold text-gray-100 mb-3">Assigned Workouts</h4>
+          <h4 className="text-sm font-semibold text-fg-1 mb-3">Assigned Workouts</h4>
           <div className="space-y-2">
             {assigned.map(w => (
-              <div key={w.id} className="p-3 rounded-xl bg-gray-800/50 border border-white/10">
+              <div key={w.id} className="p-3 rounded-xl bg-surface-2/50 border border-edge">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-200">{w.name}</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-sm font-medium text-fg-2">{w.name}</p>
+                    <p className="text-xs text-fg-4">
                       {(w as any).athlete?.full_name || (w as any).athlete?.email || 'Athlete'}
                       {w.assigned_date ? ` · Due ${w.assigned_date}` : ''}
                       · {w.exercises.length} exercises
@@ -232,7 +232,7 @@ export default function CreateWorkout() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`text-[10px] px-2 py-0.5 rounded-full ${
-                      w.is_completed ? 'bg-green-900/50 text-green-400' : 'bg-yellow-900/50 text-yellow-400'
+                      w.is_completed ? 'bg-green-500/15 text-green-400' : 'bg-yellow-500/15 text-yellow-400'
                     }`}>
                       {w.is_completed ? 'Completed' : 'Pending'}
                     </span>

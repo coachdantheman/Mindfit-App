@@ -3,8 +3,7 @@ import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 
-const NO_ACCESS_MSG =
-  "This account doesn't have access yet. Join the MindFit community on Skool or contact your coach."
+const AUTH_ERROR_MSG = 'Something went wrong signing you in. Please try again.'
 
 function LoginForm() {
   const router = useRouter()
@@ -16,14 +15,12 @@ function LoginForm() {
   const [codeSent, setCodeSent] = useState(false)
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState(
-    searchParams.get('error') === 'no_access' ? NO_ACCESS_MSG : ''
-  )
+  const [error, setError] = useState(searchParams.get('error') ? AUTH_ERROR_MSG : '')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
 
   const inputClass =
-    'w-full border border-gray-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-gray-800 text-gray-100 placeholder:text-gray-500'
+    'w-full border border-edge rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-surface-2 text-fg-1 placeholder:text-fg-4'
 
   const sendCode = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -95,23 +92,24 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-mindfit-bg px-4">
+    <div className="min-h-screen flex items-center justify-center bg-page px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold tracking-widest uppercase text-cta">MindFit</h1>
-          <p className="text-gray-500 mt-1">Mental Skills Training</p>
+          <p className="text-fg-4 mt-1">Mental Skills Training</p>
         </div>
 
-        <div className="bg-gray-900 rounded-2xl border border-white/10 p-8">
-          <h2 className="text-xl font-semibold mb-2 text-gray-100">Sign in</h2>
-          <p className="text-sm text-gray-500 mb-6">
-            Use the email you joined the MindFit community with.
+        <div className="bg-surface rounded-2xl border border-edge p-8">
+          <h2 className="text-xl font-semibold mb-2 text-fg-1">Sign in or create account</h2>
+          <p className="text-sm text-fg-4 mb-6">
+            Enter your email and we&rsquo;ll send you a 6-digit code. New here? Same box —
+            your account is created automatically.
           </p>
 
           {codeSent ? (
             <form onSubmit={verifyCode} className="space-y-4">
-              <p className="text-sm text-gray-400">
-                We sent a 6-digit code to <span className="text-gray-200">{email}</span>.
+              <p className="text-sm text-fg-3">
+                We sent a 6-digit code to <span className="text-fg-2">{email}</span>.
               </p>
               <input
                 type="text"
@@ -131,7 +129,7 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={loading || code.length < 6}
-                className="w-full bg-cta hover:bg-brand-600 text-gray-900 font-semibold py-3 rounded-xl transition-colors disabled:opacity-60"
+                className="w-full bg-cta hover:bg-brand-600 text-fg-inverse font-semibold py-3 rounded-xl transition-colors disabled:opacity-60"
               >
                 {loading ? 'Checking…' : 'Sign in'}
               </button>
@@ -139,7 +137,7 @@ function LoginForm() {
                 <button
                   type="button"
                   onClick={() => { setCodeSent(false); setCode(''); setError('') }}
-                  className="text-gray-500 hover:text-gray-300"
+                  className="text-fg-4 hover:text-fg-2"
                 >
                   ← Different email
                 </button>
@@ -156,7 +154,7 @@ function LoginForm() {
             <>
               <form onSubmit={showPassword ? handlePasswordLogin : sendCode} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-fg-2 mb-1">Email</label>
                   <input
                     type="email"
                     required
@@ -169,7 +167,7 @@ function LoginForm() {
 
                 {showPassword && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">Password</label>
+                    <label className="block text-sm font-medium text-fg-2 mb-1">Password</label>
                     <input
                       type="password"
                       required
@@ -188,7 +186,7 @@ function LoginForm() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-cta hover:bg-brand-600 text-gray-900 font-semibold py-3 rounded-xl transition-colors disabled:opacity-60"
+                  className="w-full bg-cta hover:bg-brand-600 text-fg-inverse font-semibold py-3 rounded-xl transition-colors disabled:opacity-60"
                 >
                   {loading
                     ? 'One moment…'
@@ -201,21 +199,21 @@ function LoginForm() {
               <button
                 type="button"
                 onClick={() => { setShowPassword(!showPassword); setError('') }}
-                className="block w-full text-center text-sm text-gray-500 hover:text-gray-300 mt-4"
+                className="block w-full text-center text-sm text-fg-4 hover:text-fg-2 mt-4"
               >
                 {showPassword ? 'Use a sign-in code instead' : 'Use password instead'}
               </button>
 
               <div className="flex items-center gap-3 my-5">
-                <div className="flex-1 h-px bg-gray-700" />
-                <span className="text-xs text-gray-500">or</span>
-                <div className="flex-1 h-px bg-gray-700" />
+                <div className="flex-1 h-px bg-edge" />
+                <span className="text-xs text-fg-4">or</span>
+                <div className="flex-1 h-px bg-edge" />
               </div>
 
               <button
                 onClick={handleGoogle}
                 disabled={googleLoading}
-                className="w-full flex items-center justify-center gap-3 border border-gray-700 rounded-xl px-4 py-3 text-sm font-medium text-gray-300 hover:bg-gray-800 transition-colors disabled:opacity-60"
+                className="w-full flex items-center justify-center gap-3 border border-edge rounded-xl px-4 py-3 text-sm font-medium text-fg-2 hover:bg-surface-2 transition-colors disabled:opacity-60"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -226,17 +224,17 @@ function LoginForm() {
                 {googleLoading ? 'Redirecting…' : 'Continue with Google'}
               </button>
 
-              <p className="text-center text-sm text-gray-500 mt-6">
-                New here? Join the community at{' '}
+              <p className="text-center text-sm text-fg-4 mt-6">
+                Part of the{' '}
                 <a
                   href="https://www.skool.com/mindfit"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-cta hover:underline"
                 >
-                  skool.com/mindfit
-                </a>{' '}
-                and access is automatic.
+                  MindFit Skool community
+                </a>
+                ? Use your Skool email and your coach is linked automatically.
               </p>
             </>
           )}

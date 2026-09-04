@@ -53,12 +53,12 @@ export default function StageTracker() {
 
   if (unavailable) {
     return (
-      <div className="bg-gray-900 rounded-2xl border border-yellow-500/40 p-5">
-        <p className="text-sm font-semibold text-yellow-300 mb-1">Stage tracker temporarily unavailable</p>
-        <p className="text-xs text-gray-400">
+      <div className="bg-surface rounded-2xl border border-yellow-500/40 p-5">
+        <p className="text-sm font-semibold text-yellow-400 mb-1">Stage tracker temporarily unavailable</p>
+        <p className="text-xs text-fg-3">
           Supabase's API server is serving a stale schema cache. To fix:
-          in <span className="text-gray-200">Supabase Dashboard → Project Settings → API</span> click
-          <span className="text-gray-200"> Restart server</span>, or run
+          in <span className="text-fg-1">Supabase Dashboard → Project Settings → API</span> click
+          <span className="text-fg-1"> Restart server</span>, or run
           <code className="mx-1 text-cta"> NOTIFY pgrst, 'reload schema';</code>
           in the SQL editor.
         </p>
@@ -67,33 +67,33 @@ export default function StageTracker() {
   }
 
   return (
-    <div className="bg-gray-900 rounded-2xl border border-white/10 p-6">
+    <div className="card p-6">
       <div className="flex items-center justify-between mb-1">
-        <h3 className="font-semibold text-gray-100">What stage are you in right now?</h3>
+        <h3 className="font-semibold text-fg-1">What stage are you in right now?</h3>
       </div>
-      <p className="text-sm text-gray-500 mb-4">
+      <p className="text-sm text-fg-4 mb-4">
         Track the 4-stage cycle — Struggle → Release → Flow → Recovery → Struggle. Tap the one you're in.
       </p>
 
       {!loading && latest && (
         <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
           <div className="text-sm">
-            <span className="text-gray-500">Last check-in: </span>
+            <span className="text-fg-4">Last check-in: </span>
             <span
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-white"
               style={{ backgroundColor: STAGE_META[latest.stage].hex }}
             >
               {STAGE_META[latest.stage].emoji} {STAGE_META[latest.stage].label}
             </span>
-            <span className="text-gray-500 ml-2 text-xs">
+            <span className="text-fg-4 ml-2 text-xs">
               {formatDistanceToNow(parseISO(latest.checked_at), { addSuffix: true })}
             </span>
           </div>
           {suggest && (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-fg-4">
               Next in the cycle:{' '}
               <span className="text-cta font-semibold">{STAGE_META[suggest].label}</span>
-              {latest.stage === 'flow' && <span className="text-gray-500"> — always transition through Recovery</span>}
+              {latest.stage === 'flow' && <span className="text-fg-4"> — always transition through Recovery</span>}
             </p>
           )}
         </div>
@@ -115,7 +115,7 @@ export default function StageTracker() {
                   ? 'text-white'
                   : isSuggested
                     ? 'border-cta/50 text-cta hover:bg-cta/10'
-                    : 'border-white/10 text-gray-300 hover:border-white/30'
+                    : 'border-edge text-fg-2 hover:border-fg-4'
               }`}
             >
               <span className="mr-1">{STAGE_META[s].emoji}</span>

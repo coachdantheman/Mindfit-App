@@ -67,7 +67,7 @@ export default function RatingSlider({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-gray-300">{label}</label>
+        <label className="text-sm font-medium text-fg-2">{label}</label>
         <span
           className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm tabular-nums ${color} transition-transform ${pulse ? 'scale-110' : 'scale-100'}`}
         >
@@ -88,13 +88,13 @@ export default function RatingSlider({
         onPointerMove={onPointerMove}
         onKeyDown={onKeyDown}
       >
-        <div ref={railRef} className="relative h-2.5 rounded-full bg-white/5">
+        <div ref={railRef} className="relative h-2.5 rounded-full bg-surface-3/60">
           <div
             className={`absolute top-0 bottom-0 left-0 rounded-full transition-[width] duration-150 ${color}`}
             style={{ width: `${pct}%` }}
           />
           <div
-            className="absolute top-1/2 w-5 h-5 rounded-full bg-white border-[3px] border-mindfit-bg -translate-x-1/2 -translate-y-1/2 shadow-md transition-transform"
+            className="absolute top-1/2 w-5 h-5 rounded-full bg-white border-[3px] border-page -translate-x-1/2 -translate-y-1/2 shadow-md transition-transform"
             style={{ left: `${pct}%` }}
           />
         </div>
@@ -109,8 +109,8 @@ export default function RatingSlider({
             onClick={() => onChange(n)}
             className={`text-[10px] tabular-nums px-1 rounded transition-colors ${
               n === value
-                ? 'text-gray-100 font-semibold'
-                : 'text-gray-500 hover:text-gray-200'
+                ? 'text-fg-1 font-semibold'
+                : 'text-fg-4 hover:text-fg-2'
             }`}
             tabIndex={-1}
           >

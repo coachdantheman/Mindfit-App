@@ -63,7 +63,7 @@ export default function MacroPercentageSlider({
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-xs text-gray-500 block mb-1">Total Calories</label>
+        <label className="text-xs text-fg-4 block mb-1">Total Calories</label>
         <div className="flex items-center gap-3">
           <input
             type="range"
@@ -72,13 +72,13 @@ export default function MacroPercentageSlider({
             step={50}
             value={totalCalories}
             onChange={e => onCaloriesChange(parseInt(e.target.value))}
-            className="flex-1 h-2 rounded-full appearance-none bg-gray-700 accent-cta"
+            className="flex-1 h-2 rounded-full appearance-none bg-surface-3 accent-cta"
           />
           <input
             type="number"
             value={totalCalories}
             onChange={e => onCaloriesChange(parseInt(e.target.value) || 1200)}
-            className="w-20 bg-gray-800 border border-white/10 rounded-lg px-2 py-1.5 text-sm text-gray-100 text-center focus:outline-none focus:ring-2 focus:ring-cta/50"
+            className="w-20 bg-surface-2 border border-edge rounded-lg px-2 py-1.5 text-sm text-fg-1 text-center focus:outline-none focus:ring-2 focus:ring-cta/50"
           />
         </div>
       </div>
@@ -93,8 +93,8 @@ export default function MacroPercentageSlider({
       {sliders.map(s => (
         <div key={s.key}>
           <div className="flex justify-between text-xs mb-1">
-            <span className="text-gray-400">{s.label}: {s.pct}%</span>
-            <span className="text-gray-300 font-medium">
+            <span className="text-fg-3">{s.label}: {s.pct}%</span>
+            <span className="text-fg-2 font-medium">
               {gramsFromPct(s.pct, CAL_PER_G[s.key])}g
             </span>
           </div>
@@ -104,12 +104,12 @@ export default function MacroPercentageSlider({
             max={80}
             value={s.pct}
             onChange={e => rebalance(s.key, parseInt(e.target.value))}
-            className={`w-full h-2 rounded-full appearance-none bg-gray-700 ${s.color}`}
+            className={`w-full h-2 rounded-full appearance-none bg-surface-3 ${s.color}`}
           />
         </div>
       ))}
 
-      <p className="text-xs text-gray-500 text-center">
+      <p className="text-xs text-fg-4 text-center">
         {gramsFromPct(proteinPct, 4)}g P / {gramsFromPct(carbsPct, 4)}g C / {gramsFromPct(fatPct, 9)}g F
       </p>
     </div>

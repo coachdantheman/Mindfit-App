@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { isEmail } from '@/lib/validate'
 
-// Server-side gate for magic-link sign-in. Existing users may always
-// request a code; new users only if their email is whitelisted.
+// Pre-flight for magic-link sign-in. Signup is open to everyone; this
+// only tells the client whether the email belongs to an existing user.
 export async function POST(req: Request) {
   const { email } = await req.json()
 
@@ -13,17 +13,11 @@ export async function POST(req: Request) {
   const normalized = email.toLowerCase().trim()
 
   const admin = createAdminClient()
-  const [{ data: profile }, { data: approved }] = await Promise.all([
-    admin.from('profiles').select('id').eq('email', normalized).maybeSingle(),
-    admin.from('approved_emails').select('id').eq('email', normalized).maybeSingle(),
-  ])
-
-  if (!profile && !approved) {
-    return NextResponse.json(
-      { error: "This email doesn't have access yet. Join the MindFit community on Skool or contact your coach." },
-      { status: 403 }
-    )
-  }
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('id')
+    .eq('email', normalized)
+    .maybeSingle()
 
   return NextResponse.json({ allowed: true, shouldCreateUser: !profile })
 }

@@ -204,14 +204,14 @@ export default function NutritionPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-100">Nutrition</h1>
-          <p className="text-gray-500 text-sm mt-1">Track your daily fuel.</p>
+          <h1 className="page-title">Nutrition</h1>
+          <p className="page-subtitle">Track your daily fuel.</p>
         </div>
         <button
           onClick={() => setShowGoalForm(!showGoalForm)}
           className={`px-4 py-2 rounded-xl text-sm font-medium transition-all border ${
             showGoalForm
-              ? 'text-gray-400 border-white/10 hover:text-gray-200'
+              ? 'text-fg-3 border-edge hover:text-fg-2'
               : 'bg-cta/20 text-cta border-cta/30 hover:bg-cta/30'
           }`}
         >
@@ -220,14 +220,14 @@ export default function NutritionPage() {
       </div>
 
       {showGoalForm && (
-        <div className="bg-gray-900 rounded-2xl border border-white/10 p-5 mb-5 space-y-4">
+        <div className="card p-5 mb-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-100">Daily Goals</h3>
-            <div className="flex bg-gray-800 rounded-lg p-0.5 border border-white/10">
+            <h3 className="text-sm font-semibold text-fg-1">Daily Goals</h3>
+            <div className="flex bg-surface-2 rounded-lg p-0.5 border border-edge">
               <button
                 onClick={() => setGoalMode('absolute')}
                 className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                  goalMode === 'absolute' ? 'bg-cta/20 text-cta' : 'text-gray-400 hover:text-gray-200'
+                  goalMode === 'absolute' ? 'bg-cta/20 text-cta' : 'text-fg-3 hover:text-fg-2'
                 }`}
               >
                 Grams
@@ -235,7 +235,7 @@ export default function NutritionPage() {
               <button
                 onClick={() => setGoalMode('percentage')}
                 className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                  goalMode === 'percentage' ? 'bg-cta/20 text-cta' : 'text-gray-400 hover:text-gray-200'
+                  goalMode === 'percentage' ? 'bg-cta/20 text-cta' : 'text-fg-3 hover:text-fg-2'
                 }`}
               >
                 Percentage
@@ -253,12 +253,12 @@ export default function NutritionPage() {
                   { label: 'Fat (g)', value: gFat, set: setGFat },
                 ].map(f => (
                   <div key={f.label}>
-                    <label className="text-xs text-gray-500 block mb-1">{f.label}</label>
+                    <label className="text-xs text-fg-4 block mb-1">{f.label}</label>
                     <input
                       type="number"
                       value={f.value}
                       onChange={e => f.set(parseInt(e.target.value) || 0)}
-                      className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-cta/50"
+                      className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 focus:outline-none focus:ring-2 focus:ring-cta/50"
                     />
                   </div>
                 ))}
@@ -284,7 +284,7 @@ export default function NutritionPage() {
             />
           )}
 
-          <button onClick={saveGoals} disabled={goalSuccess} className="bg-cta hover:bg-brand-600 text-gray-900 font-semibold px-4 py-2 rounded-xl text-sm transition-colors disabled:opacity-70">
+          <button onClick={saveGoals} disabled={goalSuccess} className="bg-cta hover:bg-brand-600 text-fg-inverse font-semibold px-4 py-2 rounded-xl text-sm transition-colors disabled:opacity-70">
             {goalSuccess ? 'Success' : 'Save Goals'}
           </button>
         </div>
@@ -292,13 +292,13 @@ export default function NutritionPage() {
 
       {/* Date picker */}
       <div className="flex items-center gap-3 mb-5">
-        <button onClick={() => setDate(subDays(new Date(date + 'T12:00:00'), 1).toISOString().split('T')[0])} className="text-gray-400 hover:text-gray-200 text-lg px-1 py-1">←</button>
-        <span className="text-sm font-medium text-gray-200">{format(new Date(date + 'T12:00:00'), 'EEEE, MMM d')}</span>
-        <button onClick={() => setDate(addDays(new Date(date + 'T12:00:00'), 1).toISOString().split('T')[0])} className="text-gray-400 hover:text-gray-200 text-lg px-1 py-1">→</button>
+        <button onClick={() => setDate(subDays(new Date(date + 'T12:00:00'), 1).toISOString().split('T')[0])} className="text-fg-3 hover:text-fg-2 text-lg px-1 py-1">←</button>
+        <span className="text-sm font-medium text-fg-2">{format(new Date(date + 'T12:00:00'), 'EEEE, MMM d')}</span>
+        <button onClick={() => setDate(addDays(new Date(date + 'T12:00:00'), 1).toISOString().split('T')[0])} className="text-fg-3 hover:text-fg-2 text-lg px-1 py-1">→</button>
       </div>
 
       {/* Macro progress bars */}
-      <div className="bg-gray-900 rounded-2xl border border-white/10 p-5 mb-5">
+      <div className="card p-5 mb-5">
         <div className="space-y-3">
           {[
             { label: 'Calories', current: totals.calories, goal: goalCalories, unit: 'kcal', color: 'bg-cta' },
@@ -308,10 +308,10 @@ export default function NutritionPage() {
           ].map(m => (
             <div key={m.label}>
               <div className="flex justify-between text-xs mb-1">
-                <span className="text-gray-400">{m.label}</span>
-                <span className="text-gray-300 font-medium">{Math.round(m.current)} / {m.goal} {m.unit}</span>
+                <span className="text-fg-3">{m.label}</span>
+                <span className="text-fg-2 font-medium">{Math.round(m.current)} / {m.goal} {m.unit}</span>
               </div>
-              <div className="bg-gray-700 rounded-full h-2.5 overflow-hidden">
+              <div className="bg-surface-3 rounded-full h-2.5 overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all ${m.color}`}
                   style={{ width: `${Math.min(pct(m.current, m.goal), 100)}%` }}
@@ -324,17 +324,17 @@ export default function NutritionPage() {
 
       {/* Quick Add */}
       {frequentFoods.length > 0 && (
-        <div className="bg-gray-900 rounded-2xl border border-white/10 p-5 mb-5">
-          <h3 className="font-semibold text-gray-100 text-sm mb-3">Quick Add</h3>
+        <div className="card p-5 mb-5">
+          <h3 className="font-semibold text-fg-1 text-sm mb-3">Quick Add</h3>
           <div className="flex flex-wrap gap-2">
             {frequentFoods.map(food => (
               <button
                 key={food.food_name}
                 onClick={() => quickAdd(food)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-800 border border-white/10 hover:border-cta/40 hover:bg-cta/10 transition-all text-left"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-2 border border-edge hover:border-cta/40 hover:bg-cta/10 transition-all text-left"
               >
-                <span className="text-sm text-gray-200">{food.food_name}</span>
-                <span className="text-xs text-gray-500">{food.calories} cal</span>
+                <span className="text-sm text-fg-2">{food.food_name}</span>
+                <span className="text-xs text-fg-4">{food.calories} cal</span>
               </button>
             ))}
           </div>
@@ -342,9 +342,9 @@ export default function NutritionPage() {
       )}
 
       {/* Food entries by meal */}
-      <div className="bg-gray-900 rounded-2xl border border-white/10 p-5">
+      <div className="card p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-gray-100 text-sm">Food Log</h3>
+          <h3 className="font-semibold text-fg-1 text-sm">Food Log</h3>
           <button
             onClick={() => setShowAddForm(!showAddForm)}
             className="text-sm text-cta font-medium hover:underline"
@@ -354,12 +354,12 @@ export default function NutritionPage() {
         </div>
 
         {showAddForm && (
-          <form onSubmit={addFood} className="bg-gray-800/50 rounded-xl border border-white/5 p-4 mb-4 space-y-3">
+          <form onSubmit={addFood} className="bg-surface-2/50 rounded-xl border border-edge-muted p-4 mb-4 space-y-3">
             <div className="flex gap-2">
               <select
                 value={fMeal}
                 onChange={e => setFMeal(e.target.value)}
-                className="bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-cta/50"
+                className="bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 focus:outline-none focus:ring-2 focus:ring-cta/50"
               >
                 {MEALS.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
@@ -367,7 +367,7 @@ export default function NutritionPage() {
                 value={fFood}
                 onChange={e => setFFood(e.target.value)}
                 placeholder="Food name"
-                className="flex-1 bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50"
+                className="flex-1 bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50"
               />
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -377,12 +377,12 @@ export default function NutritionPage() {
                   value={fCalories}
                   onChange={e => { setFCalories(e.target.value); setCaloriesManual(true) }}
                   placeholder="Cal"
-                  className={`w-full bg-gray-800 border rounded-lg px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50 ${
-                    calorieMismatch ? 'border-amber-500/50' : 'border-white/10'
+                  className={`w-full bg-surface-2 border rounded-lg px-3 py-2 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50 ${
+                    calorieMismatch ? 'border-amber-500/50' : 'border-edge'
                   }`}
                 />
                 {!caloriesManual && fCalories && (
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-500">auto</span>
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-fg-4">auto</span>
                 )}
               </div>
               {[
@@ -396,7 +396,7 @@ export default function NutritionPage() {
                   value={f.value}
                   onChange={e => f.set(e.target.value)}
                   placeholder={f.label}
-                  className="bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cta/50"
+                  className="bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50"
                 />
               ))}
             </div>
@@ -408,7 +408,7 @@ export default function NutritionPage() {
             <button
               type="submit"
               disabled={saving || !fFood.trim()}
-              className="bg-cta hover:bg-brand-600 text-gray-900 font-semibold px-4 py-2 rounded-xl text-sm transition-colors disabled:opacity-50"
+              className="bg-cta hover:bg-brand-600 text-fg-inverse font-semibold px-4 py-2 rounded-xl text-sm transition-colors disabled:opacity-50"
             >
               {saving ? 'Adding...' : foodSuccess ? 'Success' : 'Add'}
             </button>
@@ -418,7 +418,7 @@ export default function NutritionPage() {
         {loading ? (
           <Skeleton />
         ) : entries.length === 0 ? (
-          <p className="text-sm text-gray-500 text-center py-6">No food logged for this day.</p>
+          <p className="text-sm text-fg-4 text-center py-6">No food logged for this day.</p>
         ) : (
           <div className="space-y-4">
             {MEALS.map(meal => {
@@ -426,13 +426,13 @@ export default function NutritionPage() {
               if (mealEntries.length === 0) return null
               return (
                 <div key={meal}>
-                  <h4 className="text-xs uppercase tracking-wider text-gray-500 font-medium mb-2">{meal}</h4>
+                  <h4 className="text-xs uppercase tracking-wider text-fg-4 font-medium mb-2">{meal}</h4>
                   <div className="space-y-1">
                     {mealEntries.map(e => (
-                      <div key={e.id} className="flex items-center justify-between p-2 rounded-lg bg-gray-800/30">
+                      <div key={e.id} className="flex items-center justify-between p-2 rounded-lg bg-surface-2/30">
                         <div>
-                          <p className="text-sm text-gray-200">{e.food_name}</p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-sm text-fg-2">{e.food_name}</p>
+                          <p className="text-xs text-fg-4">
                             {e.calories} cal · {Number(e.protein_g)}p · {Number(e.carbs_g)}c · {Number(e.fat_g)}f
                           </p>
                         </div>

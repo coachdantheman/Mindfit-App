@@ -44,19 +44,19 @@ export default function JournalForm({ previewMode = false }: { previewMode?: boo
     }
   }
 
-  const fieldClass = `w-full border border-gray-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-gray-800 text-gray-100 placeholder:text-gray-500`
+  const fieldClass = `input-field py-3`
   const errorClass = `text-red-400 text-xs mt-1`
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
 
       {/* Section 1: Objective */}
-      <section className="bg-gray-900 rounded-2xl border border-white/10 p-6 space-y-3">
-        <h2 className="font-semibold text-gray-100 flex items-center gap-2">
+      <section className="card p-6 space-y-3">
+        <h2 className="font-semibold text-fg-1 flex items-center gap-2">
           <span className="w-6 h-6 rounded-full bg-brand-600 text-white text-xs flex items-center justify-center font-bold">1</span>
           Today&apos;s Objective
         </h2>
-        <p className="text-sm text-gray-400">What is your goal for today?</p>
+        <p className="text-sm text-fg-3">What is your goal for today?</p>
         <textarea
           {...register('objective', { required: 'Required' })}
           rows={3}
@@ -67,12 +67,12 @@ export default function JournalForm({ previewMode = false }: { previewMode?: boo
       </section>
 
       {/* Section 2: Action Steps */}
-      <section className="bg-gray-900 rounded-2xl border border-white/10 p-6 space-y-3">
-        <h2 className="font-semibold text-gray-100 flex items-center gap-2">
+      <section className="card p-6 space-y-3">
+        <h2 className="font-semibold text-fg-1 flex items-center gap-2">
           <span className="w-6 h-6 rounded-full bg-brand-600 text-white text-xs flex items-center justify-center font-bold">2</span>
           3 Action Steps
         </h2>
-        <p className="text-sm text-gray-400">What 3 actions will you take to achieve your objective?</p>
+        <p className="text-sm text-fg-3">What 3 actions will you take to achieve your objective?</p>
         <div className="space-y-2">
           {(['action_step_1', 'action_step_2', 'action_step_3'] as const).map((field, i) => (
             <div key={field}>
@@ -88,12 +88,12 @@ export default function JournalForm({ previewMode = false }: { previewMode?: boo
       </section>
 
       {/* Section 3: Strengths */}
-      <section className="bg-gray-900 rounded-2xl border border-white/10 p-6 space-y-3">
-        <h2 className="font-semibold text-gray-100 flex items-center gap-2">
+      <section className="card p-6 space-y-3">
+        <h2 className="font-semibold text-fg-1 flex items-center gap-2">
           <span className="w-6 h-6 rounded-full bg-brand-600 text-white text-xs flex items-center justify-center font-bold">3</span>
           3 Strengths
         </h2>
-        <p className="text-sm text-gray-400">List 3 of your strengths today.</p>
+        <p className="text-sm text-fg-3">List 3 of your strengths today.</p>
         <div className="space-y-2">
           {(['strength_1', 'strength_2', 'strength_3'] as const).map((field, i) => (
             <div key={field}>
@@ -109,12 +109,12 @@ export default function JournalForm({ previewMode = false }: { previewMode?: boo
       </section>
 
       {/* Section 4: Weakness */}
-      <section className="bg-gray-900 rounded-2xl border border-white/10 p-6 space-y-3">
-        <h2 className="font-semibold text-gray-100 flex items-center gap-2">
+      <section className="card p-6 space-y-3">
+        <h2 className="font-semibold text-fg-1 flex items-center gap-2">
           <span className="w-6 h-6 rounded-full bg-brand-600 text-white text-xs flex items-center justify-center font-bold">4</span>
           One Weakness to Focus On
         </h2>
-        <p className="text-sm text-gray-400">What one area do you want to improve today?</p>
+        <p className="text-sm text-fg-3">What one area do you want to improve today?</p>
         <input
           {...register('weakness', { required: 'Required' })}
           placeholder="I will work on..."
@@ -124,11 +124,11 @@ export default function JournalForm({ previewMode = false }: { previewMode?: boo
       </section>
 
       {/* Section 5: Notes */}
-      <section className="bg-gray-900 rounded-2xl border border-white/10 p-6 space-y-3">
-        <h2 className="font-semibold text-gray-100 flex items-center gap-2">
-          <span className="w-6 h-6 rounded-full bg-gray-700 text-gray-300 text-xs flex items-center justify-center font-bold">5</span>
+      <section className="card p-6 space-y-3">
+        <h2 className="font-semibold text-fg-1 flex items-center gap-2">
+          <span className="w-6 h-6 rounded-full bg-surface-3 text-fg-2 text-xs flex items-center justify-center font-bold">5</span>
           Extra Notes
-          <span className="text-gray-500 text-xs font-normal">(optional)</span>
+          <span className="text-fg-4 text-xs font-normal">(optional)</span>
         </h2>
         <textarea
           {...register('extra_notes')}
@@ -139,12 +139,12 @@ export default function JournalForm({ previewMode = false }: { previewMode?: boo
       </section>
 
       {/* Section 6: Ratings */}
-      <section className="bg-gray-900 rounded-2xl border border-white/10 p-6 space-y-5">
-        <h2 className="font-semibold text-gray-100 flex items-center gap-2">
+      <section className="card p-6 space-y-5">
+        <h2 className="font-semibold text-fg-1 flex items-center gap-2">
           <span className="w-6 h-6 rounded-full bg-brand-600 text-white text-xs flex items-center justify-center font-bold">6</span>
           Daily Ratings (1–10)
         </h2>
-        <p className="text-sm text-gray-400">Rate yourself honestly for today.</p>
+        <p className="text-sm text-fg-3">Rate yourself honestly for today.</p>
         <RatingSlider
           label="Motivation"
           value={ratings.motivation}
@@ -176,13 +176,13 @@ export default function JournalForm({ previewMode = false }: { previewMode?: boo
       </section>
 
       {error && (
-        <p className="text-red-400 text-sm bg-red-900/30 rounded-lg px-4 py-3">{error}</p>
+        <p className="text-red-400 text-sm bg-red-500/10 rounded-lg px-4 py-3">{error}</p>
       )}
 
       {previewMode ? (
         <a
           href="/login"
-          className="block w-full text-center bg-cta hover:bg-brand-600 text-gray-900 font-semibold py-4 rounded-xl transition-colors text-base"
+          className="block w-full text-center bg-cta hover:bg-brand-600 text-fg-inverse font-semibold py-4 rounded-xl transition-colors text-base"
         >
           Sign in to submit and save your journal
         </a>
@@ -190,7 +190,7 @@ export default function JournalForm({ previewMode = false }: { previewMode?: boo
         <button
           type="submit"
           disabled={submitting}
-          className="w-full bg-cta hover:bg-brand-600 text-gray-900 font-semibold py-4 rounded-xl transition-colors disabled:opacity-60 text-base"
+          className="w-full bg-cta hover:bg-brand-600 text-fg-inverse font-semibold py-4 rounded-xl transition-colors disabled:opacity-60 text-base"
         >
           {submitting ? 'Saving…' : 'Submit Today\'s Journal'}
         </button>

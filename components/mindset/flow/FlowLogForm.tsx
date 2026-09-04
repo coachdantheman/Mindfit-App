@@ -67,15 +67,15 @@ export default function FlowLogForm() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
-      <button onClick={() => router.push('/mindset')} className="text-sm text-gray-500 hover:text-gray-300 mb-4">
+      <button onClick={() => router.push('/mindset')} className="text-sm text-fg-4 hover:text-fg-2 mb-4">
         ← Back to Mindset
       </button>
-      <h1 className="text-2xl font-bold text-gray-100 mb-1">Log flow session</h1>
-      <p className="text-gray-500 text-sm mb-6">Takes less than a minute.</p>
+      <h1 className="text-2xl font-bold text-fg-1 mb-1">Log flow session</h1>
+      <p className="text-fg-4 text-sm mb-6">Takes less than a minute.</p>
 
-      <div className="bg-gray-900 rounded-2xl border border-white/10 p-6 space-y-6">
+      <div className="card p-6 space-y-6">
         <div>
-          <label className="text-sm text-gray-400 block mb-1">Sport</label>
+          <label className="text-sm text-fg-3 block mb-1">Sport</label>
           {primarySport && secondarySport && (
             <div className="flex gap-2 mb-2">
               {[primarySport, secondarySport].map(opt => (
@@ -86,7 +86,7 @@ export default function FlowLogForm() {
                   className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                     sport === opt
                       ? 'bg-cta/20 border-cta text-cta'
-                      : 'border-white/10 text-gray-400 hover:text-gray-200'
+                      : 'border-edge text-fg-3 hover:text-fg-2'
                   }`}
                 >
                   {opt}
@@ -116,7 +116,7 @@ export default function FlowLogForm() {
         <IntSlider label="Flow score — how in the zone were you?" value={flow} onChange={setFlow} />
 
         <div>
-          <p className="text-sm text-gray-400 mb-2">Which triggers fired today?</p>
+          <p className="text-sm text-fg-3 mb-2">Which triggers fired today?</p>
           <div className="flex flex-wrap gap-2">
             {TRIGGERS.map(t => (
               <button
@@ -126,7 +126,7 @@ export default function FlowLogForm() {
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                   triggers.includes(t.code)
                     ? 'bg-cta/20 border-cta text-cta'
-                    : 'border-white/10 text-gray-400 hover:text-gray-200'
+                    : 'border-edge text-fg-3 hover:text-fg-2'
                 }`}
               >
                 {t.label}
@@ -136,7 +136,7 @@ export default function FlowLogForm() {
         </div>
 
         <div>
-          <label className="text-sm text-gray-400 block mb-1">What's one thing that worked or didn't?</label>
+          <label className="text-sm text-fg-3 block mb-1">What's one thing that worked or didn't?</label>
           <textarea
             value={note}
             onChange={e => setNote(e.target.value)}
@@ -160,7 +160,7 @@ function DecimalSlider({ label, value, onChange }: { label: string; value: numbe
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
-        <label className="text-sm text-gray-400">{label}</label>
+        <label className="text-sm text-fg-3">{label}</label>
         <span className="text-cta font-bold tabular-nums">{value.toFixed(1)}/10</span>
       </div>
       <input
@@ -180,7 +180,7 @@ function IntSlider({ label, value, onChange }: { label: string; value: number; o
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
-        <label className="text-sm text-gray-400">{label}</label>
+        <label className="text-sm text-fg-3">{label}</label>
         <span className="text-cta font-bold tabular-nums">{value}/10</span>
       </div>
       <input

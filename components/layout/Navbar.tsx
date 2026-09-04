@@ -84,12 +84,12 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
 
   return (
     <>
-      <nav className="bg-gray-900/80 backdrop-blur border-b border-white/10">
+      <nav className="bg-surface/80 backdrop-blur border-b border-edge">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-14">
             {/* Logo lockup */}
             <Link href="/mindset" className="flex items-center gap-2.5">
-              <span className="w-8 h-8 rounded-lg bg-mindfit-bg flex items-center justify-center ring-1 ring-cta/25 shadow-[0_0_12px_rgba(196,180,0,0.18)]">
+              <span className="w-8 h-8 rounded-lg bg-page flex items-center justify-center ring-1 ring-cta/25 shadow-[0_0_12px_rgba(196,180,0,0.18)]">
                 <Image
                   src="/brand/logo-color.png"
                   alt="MindFit"
@@ -98,7 +98,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
                   priority
                 />
               </span>
-              <span className="text-gray-100 font-bold text-sm tracking-[0.18em] uppercase hidden sm:inline">
+              <span className="text-fg-1 font-bold text-sm tracking-[0.18em] uppercase hidden sm:inline">
                 Mind<span className="text-cta">fit</span>
               </span>
             </Link>
@@ -113,8 +113,8 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
                     href={tab.href}
                     className={`relative px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       active
-                        ? 'text-gray-100'
-                        : 'text-gray-400 hover:text-gray-100 hover:bg-white/[0.03]'
+                        ? 'text-fg-1'
+                        : 'text-fg-3 hover:text-fg-1 hover:bg-surface-2/60'
                     }`}
                   >
                     {tab.label}
@@ -130,7 +130,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
                   className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     isActive('/admin') || isActive('/coach')
                       ? 'text-cta'
-                      : 'text-gray-400 hover:text-gray-100'
+                      : 'text-fg-3 hover:text-fg-1'
                   }`}
                 >
                   {role === 'admin' ? 'Admin' : 'Coach'}
@@ -147,7 +147,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
                   className={`sm:hidden p-1.5 rounded-md transition-colors ${
                     isActive('/admin') || isActive('/coach')
                       ? 'text-cta bg-cta/10'
-                      : 'text-gray-400 hover:text-gray-100 hover:bg-white/5'
+                      : 'text-fg-3 hover:text-fg-1 hover:bg-surface-2'
                   }`}
                   title={role === 'admin' ? 'Admin' : 'Coach'}
                   aria-label={role === 'admin' ? 'Admin' : 'Coach'}
@@ -160,7 +160,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
                 className={`p-1.5 rounded-md transition-colors ${
                   isActive('/settings')
                     ? 'text-cta bg-cta/10'
-                    : 'text-gray-400 hover:text-gray-100 hover:bg-white/5'
+                    : 'text-fg-3 hover:text-fg-1 hover:bg-surface-2'
                 }`}
                 title="Settings"
               >
@@ -168,7 +168,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
               </Link>
               <Link
                 href="/settings"
-                className="w-8 h-8 rounded-full items-center justify-center text-[11px] font-bold text-mindfit-bg bg-gradient-to-br from-[#e8dc70] to-mindfit-gold hidden sm:flex ring-1 ring-transparent hover:ring-cta/50 transition-shadow"
+                className="w-8 h-8 rounded-full items-center justify-center text-[11px] font-bold text-fg-inverse bg-gradient-to-br from-[#e8dc70] to-mindfit-gold hidden sm:flex ring-1 ring-transparent hover:ring-cta/50 transition-shadow"
                 title={fullName || email}
                 aria-label="Profile settings"
               >
@@ -176,7 +176,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
               </Link>
               <button
                 onClick={signOut}
-                className="text-gray-400 hover:text-gray-100 text-xs font-medium transition-colors hidden sm:block"
+                className="text-fg-3 hover:text-fg-1 text-xs font-medium transition-colors hidden sm:block"
               >
                 Sign out
               </button>
@@ -186,7 +186,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
       </nav>
 
       {/* Mobile bottom tab bar */}
-      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-gray-900 border-t border-white/10 pb-safe">
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-edge pb-safe">
         <div className="flex items-stretch">
           {tabs.map(tab => {
             const Icon = tab.icon
@@ -196,7 +196,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
                 key={tab.href}
                 href={tab.href}
                 className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors ${
-                  active ? 'text-cta' : 'text-gray-500'
+                  active ? 'text-cta' : 'text-fg-4'
                 }`}
               >
                 <Icon className="w-5 h-5" />

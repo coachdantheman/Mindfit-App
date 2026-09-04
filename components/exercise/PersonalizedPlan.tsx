@@ -40,17 +40,17 @@ export default function PersonalizedPlan({ onStartWorkout, onGoToCreate, refresh
     onStartWorkout(workout.exercises as WorkoutExercise[], workout.name, workout.id)
   }
 
-  if (loading) return <p className="text-sm text-gray-500">Loading your plan...</p>
+  if (loading) return <p className="text-sm text-fg-4">Loading your plan...</p>
 
   if (!program) {
     return (
       <div className="text-center py-16">
         <div className="text-4xl mb-3">🏋️</div>
-        <p className="font-medium text-gray-300">No plan yet</p>
-        <p className="text-sm text-gray-500 mt-1 mb-4">Create a personalized training program to get started.</p>
+        <p className="font-medium text-fg-2">No plan yet</p>
+        <p className="text-sm text-fg-4 mt-1 mb-4">Create a personalized training program to get started.</p>
         <button
           onClick={onGoToCreate}
-          className="bg-cta hover:bg-brand-600 text-gray-900 font-semibold px-6 py-2.5 rounded-xl text-sm transition-colors"
+          className="bg-cta hover:bg-brand-600 text-fg-inverse font-semibold px-6 py-2.5 rounded-xl text-sm transition-colors"
         >
           Create a Plan
         </button>
@@ -61,7 +61,7 @@ export default function PersonalizedPlan({ onStartWorkout, onGoToCreate, refresh
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-100">Your Active Plan</h3>
+        <h3 className="text-sm font-semibold text-fg-1">Your Active Plan</h3>
         <button
           onClick={onGoToCreate}
           className="text-xs text-cta hover:underline"

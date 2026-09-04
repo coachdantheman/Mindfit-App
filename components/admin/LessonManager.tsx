@@ -18,8 +18,7 @@ const SECTIONS: { value: LessonSection; label: string }[] = [
   { value: 'general', label: 'General' },
 ]
 
-const inputClass =
-  'w-full border border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-gray-800 text-gray-100 placeholder:text-gray-500'
+const inputClass = 'input-field'
 
 export default function LessonManager() {
   const [lessons, setLessons] = useState<Lesson[]>([])
@@ -85,12 +84,12 @@ export default function LessonManager() {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-gray-100 mb-1">Skool Lessons</h2>
-      <p className="text-sm text-gray-500 mb-6">
+      <h2 className="text-lg font-semibold text-fg-1 mb-1">Skool Lessons</h2>
+      <p className="text-sm text-fg-4 mb-6">
         Link classroom lessons to app sections. Members see them as &ldquo;Learn this in the Locker Room&rdquo; cards.
       </p>
 
-      <form onSubmit={addLesson} className="grid gap-3 sm:grid-cols-2 mb-8 bg-white/5 rounded-2xl p-4">
+      <form onSubmit={addLesson} className="grid gap-3 sm:grid-cols-2 mb-8 bg-surface-2/60 rounded-2xl p-4">
         <input required value={title} onChange={e => setTitle(e.target.value)} className={inputClass} placeholder="Lesson title" />
         <input required value={url} onChange={e => setUrl(e.target.value)} className={inputClass} placeholder="https://www.skool.com/mindfit/classroom/…" />
         <input required value={moduleName} onChange={e => setModuleName(e.target.value)} className={inputClass} placeholder="Module (e.g. Confidence Foundations)" />
@@ -101,7 +100,7 @@ export default function LessonManager() {
           <button
             type="submit"
             disabled={saving}
-            className="shrink-0 bg-cta hover:bg-brand-600 text-gray-900 font-semibold px-5 rounded-xl text-sm transition-colors disabled:opacity-60"
+            className="shrink-0 bg-cta hover:bg-brand-600 text-fg-inverse font-semibold px-5 rounded-xl text-sm transition-colors disabled:opacity-60"
           >
             {saving ? 'Adding…' : 'Add'}
           </button>
@@ -112,23 +111,23 @@ export default function LessonManager() {
       {loading ? (
         <Skeleton />
       ) : lessons.length === 0 ? (
-        <p className="text-sm text-gray-500">No lessons yet. Add your first Skool lesson above.</p>
+        <p className="text-sm text-fg-4">No lessons yet. Add your first Skool lesson above.</p>
       ) : (
         <div className="space-y-2">
           {lessons.map(lesson => (
-            <div key={lesson.id} className="flex items-center gap-3 rounded-xl px-4 py-3 bg-gray-800/60 border border-white/5">
+            <div key={lesson.id} className="flex items-center gap-3 rounded-xl px-4 py-3 bg-surface-2/60 border border-edge-muted">
               <div className="min-w-0 flex-1">
-                <p className={`text-sm truncate ${lesson.is_published ? 'text-gray-200' : 'text-gray-500 line-through'}`}>
+                <p className={`text-sm truncate ${lesson.is_published ? 'text-fg-2' : 'text-fg-4 line-through'}`}>
                   {lesson.title}
                 </p>
-                <p className="text-xs text-gray-500 truncate">
+                <p className="text-xs text-fg-4 truncate">
                   {lesson.module_name} · {sectionLabel(lesson.app_section)}
                 </p>
               </div>
               <a href={lesson.skool_url} target="_blank" rel="noopener noreferrer" className="text-xs text-cta hover:underline shrink-0">
                 Open
               </a>
-              <button onClick={() => togglePublished(lesson)} className="text-xs text-gray-400 hover:text-gray-200 shrink-0">
+              <button onClick={() => togglePublished(lesson)} className="text-xs text-fg-3 hover:text-fg-2 shrink-0">
                 {lesson.is_published ? 'Unpublish' : 'Publish'}
               </button>
               <button onClick={() => removeLesson(lesson)} className="text-xs text-red-400/80 hover:text-red-400 shrink-0">
