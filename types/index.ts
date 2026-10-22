@@ -93,6 +93,11 @@ export interface NutritionGoal {
   protein_pct: number
   carbs_pct: number
   fat_pct: number
+  goal_type: 'gain' | 'lose' | 'maintain' | null
+  activity_level: 'light' | 'moderate' | 'high' | null
+  current_weight_lb: number | null
+  target_weight_lb: number | null
+  quiz_completed_at: string | null
   updated_at: string
 }
 
@@ -106,6 +111,51 @@ export interface FoodEntry {
   protein_g: number
   carbs_g: number
   fat_g: number
+  food_id: string | null
+  servings: number
+  serving_size: string | null
+  created_at: string
+}
+
+export type FoodCategory =
+  | 'protein' | 'carb' | 'fruit_veg' | 'dairy' | 'snack'
+  | 'drink' | 'fast_food' | 'meal' | 'supplement' | 'other'
+
+export interface Food {
+  id: string
+  user_id: string | null
+  slug: string | null
+  name: string
+  brand: string | null
+  category: FoodCategory
+  serving_size: string
+  serving_grams: number | null
+  calories: number
+  protein_g: number
+  carbs_g: number
+  fat_g: number
+  source: 'curated' | 'user' | 'ai'
+  created_at: string
+}
+
+export interface RecentFood {
+  food_name: string
+  food_id: string | null
+  serving_size: string | null
+  servings: number
+  calories: number
+  protein_g: number
+  carbs_g: number
+  fat_g: number
+  last_logged: string
+}
+
+export interface WeighIn {
+  id: string
+  user_id: string
+  entry_date: string
+  weight_lb: number
+  note: string | null
   created_at: string
 }
 

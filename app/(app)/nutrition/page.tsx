@@ -1,458 +1,82 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
-import { format, addDays, subDays } from 'date-fns'
-import { FoodEntry, NutritionGoal } from '@/types'
-import MacroPercentageSlider from '@/components/nutrition/MacroPercentageSlider'
+import { useCallback, useEffect, useState } from 'react'
+import { Food, NutritionGoal } from '@/types'
+import TodayView from '@/components/nutrition/TodayView'
+import TrendsView from '@/components/nutrition/TrendsView'
+import GoalsView from '@/components/nutrition/GoalsView'
 import LessonLinks from '@/components/shared/LessonLinks'
-import Skeleton from '@/components/shared/Skeleton'
 
-const MEALS = ['Breakfast', 'Lunch', 'Dinner', 'Snack'] as const
+type Tab = 'today' | 'trends' | 'goals'
 
-interface FrequentFood {
-  food_name: string
-  meal_name: string
-  calories: number
-  protein_g: number
-  carbs_g: number
-  fat_g: number
-  count: number
-}
+const TABS: { key: Tab; label: string }[] = [
+  { key: 'today', label: 'Today' },
+  { key: 'trends', label: 'Trends' },
+  { key: 'goals', label: 'Goals' },
+]
 
 export default function NutritionPage() {
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
-  const [entries, setEntries] = useState<FoodEntry[]>([])
-  const [goals, setGoals] = useState<NutritionGoal | null>(null)
-  const [frequentFoods, setFrequentFoods] = useState<FrequentFood[]>([])
-  const [loading, setLoading] = useState(true)
-  const [showGoalForm, setShowGoalForm] = useState(false)
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [goalSuccess, setGoalSuccess] = useState(false)
-  const [foodSuccess, setFoodSuccess] = useState(false)
+  const [tab, setTab] = useState<Tab>('today')
+  const [goal, setGoal] = useState<NutritionGoal | null>(null)
+  const [foods, setFoods] = useState<Food[]>([])
+  const [favorites, setFavorites] = useState<Food[]>([])
+  const [toast, setToast] = useState<string | null>(null)
 
-  // Goal form state
-  const [goalMode, setGoalMode] = useState<'absolute' | 'percentage'>('absolute')
-  const [gCalories, setGCalories] = useState(2000)
-  const [gProtein, setGProtein] = useState(150)
-  const [gCarbs, setGCarbs] = useState(250)
-  const [gFat, setGFat] = useState(65)
-  const [gProteinPct, setGProteinPct] = useState(30)
-  const [gCarbsPct, setGCarbsPct] = useState(40)
-  const [gFatPct, setGFatPct] = useState(30)
-
-  // Add food form state
-  const [fMeal, setFMeal] = useState<string>('Breakfast')
-  const [fFood, setFFood] = useState('')
-  const [fCalories, setFCalories] = useState('')
-  const [fProtein, setFProtein] = useState('')
-  const [fCarbs, setFCarbs] = useState('')
-  const [fFat, setFFat] = useState('')
-  const [caloriesManual, setCaloriesManual] = useState(false)
-  const [saving, setSaving] = useState(false)
-
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    const [entriesRes, goalsRes] = await Promise.all([
-      fetch(`/api/nutrition/entries?date=${date}`),
-      fetch('/api/nutrition/goals'),
-    ])
-    const entriesData = await entriesRes.json()
-    const goalsData = await goalsRes.json()
-    setEntries(entriesData)
-    setGoals(goalsData)
-    if (goalsData) {
-      setGCalories(goalsData.calories)
-      setGProtein(goalsData.protein_g)
-      setGCarbs(goalsData.carbs_g)
-      setGFat(goalsData.fat_g)
-      setGoalMode(goalsData.mode || 'absolute')
-      setGProteinPct(goalsData.protein_pct ?? 30)
-      setGCarbsPct(goalsData.carbs_pct ?? 40)
-      setGFatPct(goalsData.fat_pct ?? 30)
-    }
-    setLoading(false)
-  }, [date])
-
-  useEffect(() => { fetchData() }, [fetchData])
-
-  useEffect(() => {
-    fetch('/api/nutrition/frequent-foods')
-      .then(r => r.json())
-      .then(data => { if (Array.isArray(data)) setFrequentFoods(data) })
+  const notify = useCallback((msg: string) => {
+    setToast(msg)
+    setTimeout(() => setToast(null), 2500)
   }, [])
 
-  // Auto-calculate calories from macros when entering food
-  const autoCalories = Math.round(
-    (parseFloat(fProtein) || 0) * 4 +
-    (parseFloat(fCarbs) || 0) * 4 +
-    (parseFloat(fFat) || 0) * 9
-  )
-
   useEffect(() => {
-    if (!caloriesManual && (fProtein || fCarbs || fFat)) {
-      setFCalories(autoCalories > 0 ? String(autoCalories) : '')
-    }
-  }, [fProtein, fCarbs, fFat, caloriesManual, autoCalories])
+    fetch('/api/nutrition/goals').then(r => r.json()).then(g => setGoal(g?.id ? g : null))
+    fetch('/api/nutrition/foods').then(r => r.json()).then(d => setFoods(Array.isArray(d) ? d : []))
+    fetch('/api/nutrition/favorites').then(r => r.json()).then(d => setFavorites(Array.isArray(d) ? d : []))
+  }, [])
 
-  const calorieMismatch = caloriesManual && autoCalories > 0 && fCalories
-    ? Math.abs(parseInt(fCalories) - autoCalories) / autoCalories > 0.1
-    : false
-
-  const totals = entries.reduce(
-    (acc, e) => ({
-      calories: acc.calories + e.calories,
-      protein: acc.protein + Number(e.protein_g),
-      carbs: acc.carbs + Number(e.carbs_g),
-      fat: acc.fat + Number(e.fat_g),
-    }),
-    { calories: 0, protein: 0, carbs: 0, fat: 0 }
-  )
-
-  const saveGoals = async () => {
-    const payload: Record<string, unknown> = { mode: goalMode, calories: gCalories }
-    if (goalMode === 'absolute') {
-      payload.protein_g = gProtein
-      payload.carbs_g = gCarbs
-      payload.fat_g = gFat
-    } else {
-      payload.protein_pct = gProteinPct
-      payload.carbs_pct = gCarbsPct
-      payload.fat_pct = gFatPct
-    }
-    const res = await fetch('/api/nutrition/goals', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+  const toggleFavorite = useCallback(async (food: Food) => {
+    const isFav = favorites.some(f => f.id === food.id)
+    setFavorites(prev => isFav ? prev.filter(f => f.id !== food.id) : [food, ...prev])
+    await fetch('/api/nutrition/favorites', {
+      method: isFav ? 'DELETE' : 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ food_id: food.id }),
     })
-    if (res.ok) {
-      const data = await res.json()
-      setGoals(data)
-      setGProtein(data.protein_g)
-      setGCarbs(data.carbs_g)
-      setGFat(data.fat_g)
-      setGoalSuccess(true)
-      setTimeout(() => { setGoalSuccess(false); setShowGoalForm(false) }, 1500)
-    }
-  }
-
-  const postFood = async (payload: { meal_name: string; food_name: string; calories: number; protein_g: number; carbs_g: number; fat_g: number }) => {
-    const res = await fetch('/api/nutrition/entries', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entry_date: date, ...payload }),
-    })
-    if (res.ok) {
-      const data = await res.json()
-      setEntries(prev => [...prev, data])
-    }
-  }
-
-  const addFood = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!fFood.trim()) return
-    setSaving(true)
-    await postFood({
-      meal_name: fMeal,
-      food_name: fFood,
-      calories: parseInt(fCalories) || 0,
-      protein_g: parseFloat(fProtein) || 0,
-      carbs_g: parseFloat(fCarbs) || 0,
-      fat_g: parseFloat(fFat) || 0,
-    })
-    setFFood('')
-    setFCalories('')
-    setFProtein('')
-    setFCarbs('')
-    setFFat('')
-    setCaloriesManual(false)
-    setFoodSuccess(true)
-    setTimeout(() => { setFoodSuccess(false); setShowAddForm(false) }, 1500)
-    setSaving(false)
-  }
-
-  const quickAdd = async (food: FrequentFood) => {
-    await postFood({
-      meal_name: food.meal_name,
-      food_name: food.food_name,
-      calories: food.calories,
-      protein_g: food.protein_g,
-      carbs_g: food.carbs_g,
-      fat_g: food.fat_g,
-    })
-  }
-
-  const removeEntry = async (id: string) => {
-    await fetch('/api/nutrition/entries', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    })
-    setEntries(prev => prev.filter(e => e.id !== id))
-  }
-
-  const pct = (current: number, goal: number) => goal > 0 ? Math.min(100, Math.round((current / goal) * 100)) : 0
-
-  const goalCalories = goals?.calories || 2000
-  const goalProtein = goals?.protein_g || 150
-  const goalCarbs = goals?.carbs_g || 250
-  const goalFat = goals?.fat_g || 65
-
-  // Sanity check for absolute mode
-  const absoluteCalcCal = gProtein * 4 + gCarbs * 4 + gFat * 9
-  const absoluteMismatch = goalMode === 'absolute' && Math.abs(gCalories - absoluteCalcCal) / (absoluteCalcCal || 1) > 0.1
+  }, [favorites])
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="page-title">Nutrition</h1>
-          <p className="page-subtitle">Track your daily fuel.</p>
-        </div>
-        <button
-          onClick={() => setShowGoalForm(!showGoalForm)}
-          className={`px-4 py-2 rounded-xl text-sm font-medium transition-all border ${
-            showGoalForm
-              ? 'text-fg-3 border-edge hover:text-fg-2'
-              : 'bg-cta/20 text-cta border-cta/30 hover:bg-cta/30'
-          }`}
-        >
-          {showGoalForm ? 'Cancel' : 'Set Goals'}
-        </button>
+      <div className="mb-6">
+        <h1 className="page-title">Nutrition</h1>
+        <p className="page-subtitle">Fuel like it&rsquo;s part of training — because it is.</p>
       </div>
 
-      {showGoalForm && (
-        <div className="card p-5 mb-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-fg-1">Daily Goals</h3>
-            <div className="flex bg-surface-2 rounded-lg p-0.5 border border-edge">
-              <button
-                onClick={() => setGoalMode('absolute')}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                  goalMode === 'absolute' ? 'bg-cta/20 text-cta' : 'text-fg-3 hover:text-fg-2'
-                }`}
-              >
-                Grams
-              </button>
-              <button
-                onClick={() => setGoalMode('percentage')}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                  goalMode === 'percentage' ? 'bg-cta/20 text-cta' : 'text-fg-3 hover:text-fg-2'
-                }`}
-              >
-                Percentage
-              </button>
-            </div>
-          </div>
-
-          {goalMode === 'absolute' ? (
-            <>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[
-                  { label: 'Calories', value: gCalories, set: setGCalories },
-                  { label: 'Protein (g)', value: gProtein, set: setGProtein },
-                  { label: 'Carbs (g)', value: gCarbs, set: setGCarbs },
-                  { label: 'Fat (g)', value: gFat, set: setGFat },
-                ].map(f => (
-                  <div key={f.label}>
-                    <label className="text-xs text-fg-4 block mb-1">{f.label}</label>
-                    <input
-                      type="number"
-                      value={f.value}
-                      onChange={e => f.set(parseInt(e.target.value) || 0)}
-                      className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 focus:outline-none focus:ring-2 focus:ring-cta/50"
-                    />
-                  </div>
-                ))}
-              </div>
-              {absoluteMismatch && (
-                <p className="text-xs text-amber-400">
-                  Macros add up to {absoluteCalcCal} cal (your target is {gCalories} cal)
-                </p>
-              )}
-            </>
-          ) : (
-            <MacroPercentageSlider
-              totalCalories={gCalories}
-              proteinPct={gProteinPct}
-              carbsPct={gCarbsPct}
-              fatPct={gFatPct}
-              onCaloriesChange={setGCalories}
-              onChange={({ proteinPct, carbsPct, fatPct }) => {
-                setGProteinPct(proteinPct)
-                setGCarbsPct(carbsPct)
-                setGFatPct(fatPct)
-              }}
-            />
-          )}
-
-          <button onClick={saveGoals} disabled={goalSuccess} className="bg-cta hover:bg-brand-600 text-fg-inverse font-semibold px-4 py-2 rounded-xl text-sm transition-colors disabled:opacity-70">
-            {goalSuccess ? 'Success' : 'Save Goals'}
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-1 scrollbar-none">
+        {TABS.map(t => (
+          <button key={t.key} onClick={() => setTab(t.key)} className={tab === t.key ? 'tab-btn-active' : 'tab-btn'}>
+            {t.label}
           </button>
+        ))}
+      </div>
+
+      {toast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] bg-surface border border-cta/40 text-fg-1 text-sm px-4 py-2 rounded-xl shadow-lg">
+          {toast}
         </div>
       )}
 
-      {/* Date picker */}
-      <div className="flex items-center gap-3 mb-5">
-        <button onClick={() => setDate(subDays(new Date(date + 'T12:00:00'), 1).toISOString().split('T')[0])} className="text-fg-3 hover:text-fg-2 text-lg px-1 py-1">←</button>
-        <span className="text-sm font-medium text-fg-2">{format(new Date(date + 'T12:00:00'), 'EEEE, MMM d')}</span>
-        <button onClick={() => setDate(addDays(new Date(date + 'T12:00:00'), 1).toISOString().split('T')[0])} className="text-fg-3 hover:text-fg-2 text-lg px-1 py-1">→</button>
+      <div className={tab === 'today' ? '' : 'hidden'}>
+        <TodayView
+          goal={goal}
+          foods={foods}
+          favorites={favorites}
+          onToggleFavorite={toggleFavorite}
+          onFoodCreated={f => setFoods(prev => [f, ...prev])}
+          onSetGoal={() => setTab('goals')}
+          notify={notify}
+        />
       </div>
+      {tab === 'trends' && <TrendsView goal={goal} />}
+      {tab === 'goals' && <GoalsView goal={goal} onSaved={setGoal} notify={notify} />}
 
-      {/* Macro progress bars */}
-      <div className="card p-5 mb-5">
-        <div className="space-y-3">
-          {[
-            { label: 'Calories', current: totals.calories, goal: goalCalories, unit: 'kcal', color: 'bg-cta' },
-            { label: 'Protein', current: totals.protein, goal: goalProtein, unit: 'g', color: 'bg-blue-500' },
-            { label: 'Carbs', current: totals.carbs, goal: goalCarbs, unit: 'g', color: 'bg-green-500' },
-            { label: 'Fat', current: totals.fat, goal: goalFat, unit: 'g', color: 'bg-orange-500' },
-          ].map(m => (
-            <div key={m.label}>
-              <div className="flex justify-between text-xs mb-1">
-                <span className="text-fg-3">{m.label}</span>
-                <span className="text-fg-2 font-medium">{Math.round(m.current)} / {m.goal} {m.unit}</span>
-              </div>
-              <div className="bg-surface-3 rounded-full h-2.5 overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${m.color}`}
-                  style={{ width: `${Math.min(pct(m.current, m.goal), 100)}%` }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Quick Add */}
-      {frequentFoods.length > 0 && (
-        <div className="card p-5 mb-5">
-          <h3 className="font-semibold text-fg-1 text-sm mb-3">Quick Add</h3>
-          <div className="flex flex-wrap gap-2">
-            {frequentFoods.map(food => (
-              <button
-                key={food.food_name}
-                onClick={() => quickAdd(food)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-2 border border-edge hover:border-cta/40 hover:bg-cta/10 transition-all text-left"
-              >
-                <span className="text-sm text-fg-2">{food.food_name}</span>
-                <span className="text-xs text-fg-4">{food.calories} cal</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Food entries by meal */}
-      <div className="card p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-fg-1 text-sm">Food Log</h3>
-          <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="text-sm text-cta font-medium hover:underline"
-          >
-            {showAddForm ? 'Cancel' : '+ Add Food'}
-          </button>
-        </div>
-
-        {showAddForm && (
-          <form onSubmit={addFood} className="bg-surface-2/50 rounded-xl border border-edge-muted p-4 mb-4 space-y-3">
-            <div className="flex gap-2">
-              <select
-                value={fMeal}
-                onChange={e => setFMeal(e.target.value)}
-                className="bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 focus:outline-none focus:ring-2 focus:ring-cta/50"
-              >
-                {MEALS.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-              <input
-                value={fFood}
-                onChange={e => setFFood(e.target.value)}
-                placeholder="Food name"
-                className="flex-1 bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50"
-              />
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <div className="relative">
-                <input
-                  type="number"
-                  value={fCalories}
-                  onChange={e => { setFCalories(e.target.value); setCaloriesManual(true) }}
-                  placeholder="Cal"
-                  className={`w-full bg-surface-2 border rounded-lg px-3 py-2 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50 ${
-                    calorieMismatch ? 'border-amber-500/50' : 'border-edge'
-                  }`}
-                />
-                {!caloriesManual && fCalories && (
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-fg-4">auto</span>
-                )}
-              </div>
-              {[
-                { label: 'Protein g', value: fProtein, set: setFProtein },
-                { label: 'Carbs g', value: fCarbs, set: setFCarbs },
-                { label: 'Fat g', value: fFat, set: setFFat },
-              ].map(f => (
-                <input
-                  key={f.label}
-                  type="number"
-                  value={f.value}
-                  onChange={e => f.set(e.target.value)}
-                  placeholder={f.label}
-                  className="bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50"
-                />
-              ))}
-            </div>
-            {calorieMismatch && (
-              <p className="text-xs text-amber-400">
-                Macros add up to {autoCalories} cal (you entered {fCalories})
-              </p>
-            )}
-            <button
-              type="submit"
-              disabled={saving || !fFood.trim()}
-              className="bg-cta hover:bg-brand-600 text-fg-inverse font-semibold px-4 py-2 rounded-xl text-sm transition-colors disabled:opacity-50"
-            >
-              {saving ? 'Adding...' : foodSuccess ? 'Success' : 'Add'}
-            </button>
-          </form>
-        )}
-
-        {loading ? (
-          <Skeleton />
-        ) : entries.length === 0 ? (
-          <p className="text-sm text-fg-4 text-center py-6">No food logged for this day.</p>
-        ) : (
-          <div className="space-y-4">
-            {MEALS.map(meal => {
-              const mealEntries = entries.filter(e => e.meal_name === meal)
-              if (mealEntries.length === 0) return null
-              return (
-                <div key={meal}>
-                  <h4 className="text-xs uppercase tracking-wider text-fg-4 font-medium mb-2">{meal}</h4>
-                  <div className="space-y-1">
-                    {mealEntries.map(e => (
-                      <div key={e.id} className="flex items-center justify-between p-2 rounded-lg bg-surface-2/30">
-                        <div>
-                          <p className="text-sm text-fg-2">{e.food_name}</p>
-                          <p className="text-xs text-fg-4">
-                            {e.calories} cal · {Number(e.protein_g)}p · {Number(e.carbs_g)}c · {Number(e.fat_g)}f
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => removeEntry(e.id)}
-                          className="text-xs text-red-400 hover:text-red-300 ml-3 shrink-0 py-1 px-2"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
-
-      <LessonLinks section="nutrition" />
+      <div className="mt-6"><LessonLinks section="nutrition" /></div>
     </div>
   )
 }

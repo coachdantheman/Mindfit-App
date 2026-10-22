@@ -1,5 +1,6 @@
 'use client'
 import { useMemo } from 'react'
+import { groupEntriesByDay, fillMissingDays as fillDays } from '@/lib/nutrition'
 import { FoodEntry, NutritionGoal } from '@/types'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
@@ -23,36 +24,11 @@ interface DayTotal {
 }
 
 function groupByDay(entries: FoodEntry[]): DayTotal[] {
-  const map = new Map<string, DayTotal>()
-  for (const e of entries) {
-    const cur = map.get(e.entry_date) ?? {
-      date: e.entry_date,
-      label: format(parseISO(e.entry_date), 'M/d'),
-      calories: 0, protein: 0, carbs: 0, fat: 0, entryCount: 0,
-    }
-    cur.calories += e.calories
-    cur.protein  += Number(e.protein_g)
-    cur.carbs    += Number(e.carbs_g)
-    cur.fat      += Number(e.fat_g)
-    cur.entryCount += 1
-    map.set(e.entry_date, cur)
-  }
-  return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date))
+  return groupEntriesByDay(entries).map(d => ({ ...d, label: format(parseISO(d.date), 'M/d') }))
 }
 
 function fillMissingDays(days: DayTotal[], totalDays: number): DayTotal[] {
-  const today = new Date()
-  const bins: DayTotal[] = []
-  for (let i = totalDays - 1; i >= 0; i--) {
-    const d = new Date(today); d.setDate(d.getDate() - i)
-    const iso = d.toISOString().split('T')[0]
-    const existing = days.find(x => x.date === iso)
-    bins.push(existing ?? {
-      date: iso, label: format(d, 'M/d'),
-      calories: 0, protein: 0, carbs: 0, fat: 0, entryCount: 0,
-    })
-  }
-  return bins
+  return fillDays(days, totalDays).map(d => ({ ...d, label: format(parseISO(d.date), 'M/d') }))
 }
 
 export default function NutritionProgressView({ entries, goal }: Props) {
