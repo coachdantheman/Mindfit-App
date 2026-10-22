@@ -14,7 +14,7 @@ function LoginForm() {
   const [code, setCode] = useState('')
   const [codeSent, setCodeSent] = useState(false)
   const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
+  const [mode, setMode] = useState<'signup' | 'signin' | 'code'>('signup')
   const [error, setError] = useState(searchParams.get('error') ? AUTH_ERROR_MSG : '')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
@@ -41,7 +41,10 @@ function LoginForm() {
 
     const { error } = await supabase.auth.signInWithOtp({
       email: email.toLowerCase().trim(),
-      options: { shouldCreateUser: gateData.shouldCreateUser },
+      options: {
+        shouldCreateUser: gateData.shouldCreateUser,
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
     })
     if (error) {
       setError('Could not send the code. Please try again in a minute.')
@@ -69,11 +72,44 @@ function LoginForm() {
     }
   }
 
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    const res = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      setError(data.error)
+      if (res.status === 409) setMode('signin')
+      setLoading(false)
+      return
+    }
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.toLowerCase().trim(),
+      password,
+    })
+    if (error) {
+      setError('Account created, but sign-in failed. Try signing in.')
+      setMode('signin')
+      setLoading(false)
+    } else {
+      router.push('/')
+      router.refresh()
+    }
+  }
+
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.toLowerCase().trim(),
+      password,
+    })
     if (error) {
       setError('Invalid email or password.')
       setLoading(false)
@@ -100,11 +136,24 @@ function LoginForm() {
         </div>
 
         <div className="bg-surface rounded-2xl border border-edge p-8">
-          <h2 className="text-xl font-semibold mb-2 text-fg-1">Sign in or create account</h2>
-          <p className="text-sm text-fg-4 mb-6">
-            Enter your email and we&rsquo;ll send you a 6-digit code. New here? Same box —
-            your account is created automatically.
-          </p>
+          {!codeSent && (
+            <div className="grid grid-cols-2 gap-1 p-1 mb-6 bg-surface-2 rounded-xl">
+              {(['signup', 'signin'] as const).map(m => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => { setMode(m); setError('') }}
+                  className={`py-2 rounded-lg text-sm font-medium transition-colors ${
+                    mode === m || (m === 'signin' && mode === 'code')
+                      ? 'bg-surface text-fg-1'
+                      : 'text-fg-4 hover:text-fg-2'
+                  }`}
+                >
+                  {m === 'signup' ? 'Create account' : 'Sign in'}
+                </button>
+              ))}
+            </div>
+          )}
 
           {codeSent ? (
             <form onSubmit={verifyCode} className="space-y-4">
@@ -152,7 +201,10 @@ function LoginForm() {
             </form>
           ) : (
             <>
-              <form onSubmit={showPassword ? handlePasswordLogin : sendCode} className="space-y-4">
+              <form
+                onSubmit={mode === 'signup' ? handleSignup : mode === 'signin' ? handlePasswordLogin : sendCode}
+                className="space-y-4"
+              >
                 <div>
                   <label className="block text-sm font-medium text-fg-2 mb-1">Email</label>
                   <input
@@ -165,16 +217,18 @@ function LoginForm() {
                   />
                 </div>
 
-                {showPassword && (
+                {mode !== 'code' && (
                   <div>
                     <label className="block text-sm font-medium text-fg-2 mb-1">Password</label>
                     <input
                       type="password"
                       required
+                      minLength={mode === 'signup' ? 8 : undefined}
+                      autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                       value={password}
                       onChange={e => setPassword(e.target.value)}
                       className={inputClass}
-                      placeholder="••••••••"
+                      placeholder={mode === 'signup' ? 'At least 8 characters' : '••••••••'}
                     />
                   </div>
                 )}
@@ -190,19 +244,23 @@ function LoginForm() {
                 >
                   {loading
                     ? 'One moment…'
-                    : showPassword
-                      ? 'Sign in with password'
-                      : 'Email me a sign-in code'}
+                    : mode === 'signup'
+                      ? 'Create account'
+                      : mode === 'signin'
+                        ? 'Sign in'
+                        : 'Email me a sign-in code'}
                 </button>
               </form>
 
-              <button
-                type="button"
-                onClick={() => { setShowPassword(!showPassword); setError('') }}
-                className="block w-full text-center text-sm text-fg-4 hover:text-fg-2 mt-4"
-              >
-                {showPassword ? 'Use a sign-in code instead' : 'Use password instead'}
-              </button>
+              {mode !== 'signup' && (
+                <button
+                  type="button"
+                  onClick={() => { setMode(mode === 'code' ? 'signin' : 'code'); setError('') }}
+                  className="block w-full text-center text-sm text-fg-4 hover:text-fg-2 mt-4"
+                >
+                  {mode === 'code' ? 'Use password instead' : 'Forgot password? Email me a code'}
+                </button>
+              )}
 
               <div className="flex items-center gap-3 my-5">
                 <div className="flex-1 h-px bg-edge" />
