@@ -20,7 +20,7 @@ export default function ReadinessHero({
   return (
     <div className="relative overflow-hidden rounded-[18px] bg-surface border border-edge p-6">
       <div className="absolute inset-0 bg-gradient-to-br from-cta/[0.08] via-cta/[0.02] to-transparent pointer-events-none" />
-      <div className="absolute -top-20 -right-20 w-[280px] h-[280px] rounded-full bg-cta/15 blur-3xl pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[200px] h-[200px] rounded-full bg-cta/15 blur-3xl pointer-events-none" />
 
       <div className="relative grid grid-cols-1 sm:grid-cols-[200px_1fr] gap-7 items-center">
         <div className="relative w-[200px] h-[200px] flex items-center justify-center mx-auto sm:mx-0">

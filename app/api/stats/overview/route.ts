@@ -13,21 +13,31 @@ export async function GET() {
   since.setDate(since.getDate() - 60)
   const sinceDate = since.toISOString().split('T')[0]
 
-  const [journal, flow, food, sleep, workouts, assessments] = await Promise.all([
-    admin.from('journal_entries').select('entry_date').eq('user_id', auth.userId).gte('entry_date', sinceDate),
-    admin.from('flow_sessions').select('started_at').eq('user_id', auth.userId).gte('started_at', since.toISOString()),
-    admin.from('food_entries').select('entry_date').eq('user_id', auth.userId).gte('entry_date', sinceDate),
-    admin.from('sleep_entries').select('entry_date').eq('user_id', auth.userId).gte('entry_date', sinceDate),
-    admin.from('workout_logs').select('log_date').eq('user_id', auth.userId).gte('log_date', sinceDate),
+  // Any logged activity keeps the streak alive — even a single small entry.
+  const dates = async (table: string, col: string, floor: string): Promise<string[]> =>
+    admin.from(table).select(col).eq('user_id', auth.userId).gte(col, floor)
+      .then(r => ((r.data ?? []) as unknown as Record<string, string>[]).map(row => row[col]))
+  const byDate = (table: string, col: string) => dates(table, col, sinceDate)
+  const byTimestamp = (table: string, col: string) => dates(table, col, since.toISOString())
+
+  const [journal, flow, food, sleep, workouts, recovery, visualization, meditation, affirmations, goals, weighIns, assessments] = await Promise.all([
+    byDate('journal_entries', 'entry_date'),
+    byTimestamp('flow_sessions', 'started_at'),
+    byDate('food_entries', 'entry_date'),
+    byDate('sleep_entries', 'entry_date'),
+    byDate('workout_logs', 'log_date'),
+    byDate('recovery_entries', 'entry_date'),
+    byDate('visualization_entries', 'entry_date'),
+    byDate('meditation_entries', 'entry_date'),
+    byTimestamp('affirmations', 'created_at'),
+    byTimestamp('goals', 'created_at'),
+    byDate('weigh_ins', 'entry_date'),
     admin.from('weekly_assessments').select('*').eq('user_id', auth.userId).order('week_date', { ascending: false }),
   ])
 
   const streak = calcActivityStreak([
-    journal.data?.map(r => r.entry_date),
-    flow.data?.map(r => r.started_at),
-    food.data?.map(r => r.entry_date),
-    sleep.data?.map(r => r.entry_date),
-    workouts.data?.map(r => r.log_date),
+    journal, flow, food, sleep, workouts, recovery, visualization, meditation, affirmations, goals, weighIns,
+    assessments.data?.filter(a => a.week_date >= sinceDate).map(a => a.week_date),
   ])
 
   const all = assessments.data ?? []

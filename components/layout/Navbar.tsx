@@ -6,25 +6,26 @@ import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { UserRole } from '@/types'
 
-function StreakChip() {
+function StreakChip({ pathname }: { pathname: string }) {
   const [streak, setStreak] = useState<number | null>(null)
 
+  // Re-check on every navigation (throttled) so a fresh log lights the
+  // flame right away instead of on the next visit.
   useEffect(() => {
-    const cached = sessionStorage.getItem('mf_streak')
-    if (cached !== null) {
-      setStreak(Number(cached))
-      return
-    }
+    let cached: { streak: number; ts: number } | null = null
+    try { cached = JSON.parse(sessionStorage.getItem('mf_streak') ?? 'null') } catch {}
+    if (cached && typeof cached.streak === 'number') setStreak(cached.streak)
+    if (cached && Date.now() - cached.ts < 60_000) return
     fetch('/api/stats/overview')
       .then(r => (r.ok ? r.json() : null))
       .then(data => {
         if (data && typeof data.streak === 'number') {
           setStreak(data.streak)
-          sessionStorage.setItem('mf_streak', String(data.streak))
+          sessionStorage.setItem('mf_streak', JSON.stringify({ streak: data.streak, ts: Date.now() }))
         }
       })
       .catch(() => {})
-  }, [])
+  }, [pathname])
 
   if (!streak) return null
   return (
@@ -140,7 +141,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
 
             {/* Right cluster */}
             <div className="flex items-center gap-2">
-              <StreakChip />
+              <StreakChip pathname={pathname} />
               {(role === 'admin' || role === 'coach') && (
                 <Link
                   href={role === 'admin' ? '/admin' : '/coach'}
