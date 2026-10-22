@@ -27,7 +27,7 @@ export default function FoodEntryRow({ entry, onServings, onDelete }: Props) {
       {open && (
         <div className="flex items-center justify-between gap-3 px-3 pb-3">
           <ServingStepper size="sm" value={servings} servingSize={entry.serving_size} onChange={v => onServings(entry.id, v)} />
-          <button type="button" onClick={() => onDelete(entry.id)} className="text-xs text-red-400 hover:underline">Remove</button>
+          <button type="button" onClick={() => onDelete(entry.id)} className="text-xs text-red-400 hover:underline py-2 px-1">Remove</button>
         </div>
       )}
     </div>

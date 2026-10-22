@@ -45,10 +45,10 @@ export default function WeighInCard({ weighIns, targetWeight, onSaved }: Props) 
         {latest && <span className="text-xs text-fg-4">latest {Number(latest.weight_lb)} lb · {latest.entry_date}</span>}
       </div>
 
-      <form onSubmit={save} className="flex gap-2">
+      <form onSubmit={save} className="grid grid-cols-[5rem_1fr] sm:flex gap-2">
         <input type="number" inputMode="decimal" step="0.1" min="50" max="500" required placeholder="lb" value={weight} onChange={e => setWeight(e.target.value)} className="input-field w-24" />
         <input type="date" value={date} max={localDateISO(new Date())} onChange={e => setDate(e.target.value)} className="input-field flex-1" />
-        <button type="submit" disabled={saving} className="btn-primary">Log</button>
+        <button type="submit" disabled={saving} className="btn-primary col-span-2 sm:col-span-1">Log</button>
       </form>
       {error && <p className="text-xs text-red-400">{error}</p>}
 

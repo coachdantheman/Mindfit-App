@@ -238,7 +238,7 @@ export default function SleepPage() {
                       <button
                         key={act}
                         onClick={() => toggleActivity(act)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                        className={`px-3 py-2.5 sm:py-1.5 rounded-lg text-sm sm:text-xs font-medium transition-all ${
                           selected ? 'bg-cta/20 text-cta border border-cta/30' : 'text-fg-4 border border-edge hover:text-fg-2'
                         }`}
                       >

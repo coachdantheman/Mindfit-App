@@ -30,7 +30,7 @@ function StreakChip() {
   return (
     <Link
       href="/progress"
-      className="flex items-center gap-1 px-2 py-1 rounded-full bg-cta/10 text-cta text-xs font-semibold tabular-nums"
+      className="flex items-center gap-1 px-2.5 py-1.5 sm:px-2 sm:py-1 rounded-full bg-cta/10 text-cta text-xs font-semibold tabular-nums"
       title={`${streak}-day training streak`}
     >
       🔥 {streak}
@@ -89,7 +89,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
           <div className="flex items-center justify-between h-14">
             {/* Logo lockup */}
             <Link href="/mindset" className="flex items-center gap-2.5">
-              <span className="w-8 h-8 rounded-lg bg-page flex items-center justify-center ring-1 ring-cta/25 shadow-[0_0_12px_rgba(196,180,0,0.18)]">
+              <span className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-page flex items-center justify-center ring-1 ring-cta/25 shadow-[0_0_12px_rgba(196,180,0,0.18)]">
                 <Image
                   src="/brand/logo-color.png"
                   alt="MindFit"
@@ -144,7 +144,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
               {(role === 'admin' || role === 'coach') && (
                 <Link
                   href={role === 'admin' ? '/admin' : '/coach'}
-                  className={`sm:hidden p-1.5 rounded-md transition-colors ${
+                  className={`sm:hidden p-2.5 rounded-md transition-colors ${
                     isActive('/admin') || isActive('/coach')
                       ? 'text-cta bg-cta/10'
                       : 'text-fg-3 hover:text-fg-1 hover:bg-surface-2'
@@ -157,7 +157,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
               )}
               <Link
                 href="/settings"
-                className={`p-1.5 rounded-md transition-colors ${
+                className={`p-2.5 sm:p-1.5 rounded-md transition-colors ${
                   isActive('/settings')
                     ? 'text-cta bg-cta/10'
                     : 'text-fg-3 hover:text-fg-1 hover:bg-surface-2'
@@ -195,11 +195,11 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
               <Link
                 key={tab.href}
                 href={tab.href}
-                className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors ${
+                className={`flex-1 flex flex-col items-center justify-center gap-1 py-2.5 min-h-[56px] text-[11px] font-medium transition-colors ${
                   active ? 'text-cta' : 'text-fg-4'
                 }`}
               >
-                <Icon className="w-5 h-5" />
+                <Icon className="w-6 h-6" />
                 {tab.label}
               </Link>
             )

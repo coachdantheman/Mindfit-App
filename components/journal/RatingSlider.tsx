@@ -107,7 +107,7 @@ export default function RatingSlider({
             key={n}
             type="button"
             onClick={() => onChange(n)}
-            className={`text-[10px] tabular-nums px-1 rounded transition-colors ${
+            className={`text-[10px] tabular-nums min-w-[28px] min-h-[32px] sm:min-w-0 sm:min-h-0 px-1 rounded transition-colors ${
               n === value
                 ? 'text-fg-1 font-semibold'
                 : 'text-fg-4 hover:text-fg-2'

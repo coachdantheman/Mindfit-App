@@ -194,3 +194,33 @@ html.light .text-amber-300, html.light .text-amber-400 { color: #d97706; }
 html.light .text-orange-300, html.light .text-orange-400 { color: #ea580c; }
 html.light .text-blue-300, html.light .text-blue-400 { color: #2563eb; }
 html.light .text-purple-300, html.light .text-purple-400 { color: #9333ea; }
+
+/* ==============================
+   Mobile pass (phones < 640px)
+   Bigger type, 44px tap targets, no iOS zoom-on-focus, tighter vertical
+   rhythm. Tailwind utilities stay as written; these only override at
+   phone width.
+   ============================== */
+@media (max-width: 639px) {
+  html { font-size: 17px; }
+
+  .tab-btn, .tab-btn-active {
+    min-height: 44px;
+    padding: 0.625rem 1rem;
+    font-size: 0.9375rem;
+  }
+  .btn-primary, .btn-secondary, .btn-ghost { min-height: 44px; }
+  .btn-ghost { padding-left: 0.75rem; padding-right: 0.75rem; }
+
+  /* 16px+ in form fields stops Safari zooming the page on focus. */
+  .input-field, .textarea-field, input, select, textarea { font-size: max(16px, 1em); }
+  .input-field, .textarea-field { min-height: 48px; }
+
+  /* Arbitrary micro-sizes used for labels/captions floor at 12px. */
+  [class~="text-[9px]"], [class~="text-[10px]"], [class~="text-[10.5px]"], [class~="text-[11px]"] {
+    font-size: 12px;
+  }
+
+  main { padding-top: 1.25rem; }
+  .card.p-5 { padding: 1rem; }
+}

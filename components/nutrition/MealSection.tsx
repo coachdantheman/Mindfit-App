@@ -27,9 +27,9 @@ export default function MealSection({ meal, entries, canCopyYesterday, onAdd, on
         </div>
       )}
       <div className="flex items-center gap-4">
-        <button type="button" onClick={onAdd} className="text-sm font-medium text-cta hover:underline">+ Add food</button>
+        <button type="button" onClick={onAdd} className="text-sm font-medium text-cta hover:underline py-2">+ Add food</button>
         {entries.length === 0 && canCopyYesterday && (
-          <button type="button" onClick={onCopyYesterday} className="text-xs text-fg-4 hover:text-fg-2">Copy yesterday</button>
+          <button type="button" onClick={onCopyYesterday} className="text-xs text-fg-4 hover:text-fg-2 py-2">Copy yesterday</button>
         )}
       </div>
     </div>

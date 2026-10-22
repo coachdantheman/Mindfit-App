@@ -79,7 +79,7 @@ export default function FoodSearchList({ foods, favoriteIds, onToggleFavorite, o
               <button
                 type="button"
                 onClick={() => onToggleFavorite(f)}
-                className={`w-8 h-8 shrink-0 ${favoriteIds.has(f.id) ? 'text-cta' : 'text-fg-4 hover:text-fg-2'}`}
+                className={`w-11 h-11 sm:w-8 sm:h-8 text-lg sm:text-base shrink-0 ${favoriteIds.has(f.id) ? 'text-cta' : 'text-fg-4 hover:text-fg-2'}`}
                 aria-label={favoriteIds.has(f.id) ? 'Remove favorite' : 'Add favorite'}
               >
                 {favoriteIds.has(f.id) ? '★' : '☆'}
