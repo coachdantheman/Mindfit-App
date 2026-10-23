@@ -47,7 +47,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     admin.from('journal_entries').select('*').eq('user_id', athleteId).order('entry_date', { ascending: false }).limit(30),
     admin.from('food_entries').select('*').eq('user_id', athleteId).order('entry_date', { ascending: false }).limit(50),
     admin.from('nutrition_goals').select('*').eq('user_id', athleteId).single(),
-    admin.from('workout_logs').select('*, workouts(name), workout_categories(name)').eq('user_id', athleteId).order('log_date', { ascending: false }).limit(30),
+    admin.from('workout_logs').select('*, exercise_logs(*)').eq('user_id', athleteId).order('log_date', { ascending: false }).limit(30),
     admin.from('sleep_entries').select('*').eq('user_id', athleteId).order('entry_date', { ascending: false }).limit(30),
     admin.from('visualization_entries').select('*').eq('user_id', athleteId).eq('completed', true),
     admin.from('meditation_entries').select('*').eq('user_id', athleteId).eq('completed', true),
@@ -65,8 +65,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     nutritionGoal: nutritionGoal ?? null,
     workoutLogs: (workoutLogs ?? []).map((l: any) => ({
       ...l,
-      workout_name: l.workouts?.name ?? 'Unknown',
-      category_name: l.workout_categories?.name ?? 'Unknown',
+      exercise_logs: (l.exercise_logs ?? []).sort((a: any, b: any) =>
+        String(a.created_at).localeCompare(String(b.created_at)) || a.set_number - b.set_number),
     })),
     sleepEntries: sleepEntries ?? [],
     vizCount: (vizEntries ?? []).length,

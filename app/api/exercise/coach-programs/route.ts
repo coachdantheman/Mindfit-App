@@ -11,7 +11,7 @@ export async function GET() {
   // Get assignments for this athlete
   const { data: assignments } = await admin
     .from('coach_program_assignments')
-    .select('program_id, label, coach_id')
+    .select('program_id, label, coach_id, assigned_at')
     .eq('athlete_id', auth.userId)
 
   if (!assignments || assignments.length === 0) {
@@ -58,6 +58,7 @@ export async function GET() {
 
     return {
       ...p,
+      start_date: assignment?.assigned_at ? String(assignment.assigned_at).slice(0, 10) : p.start_date ?? null,
       label: assignment?.label || p.title,
       coach_name: coachMap.get(assignment?.coach_id || '') || 'Coach',
       blocks: pBlocks.map(b => ({

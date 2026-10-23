@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { extractJson } from '@/lib/ai-json'
 import Anthropic from '@anthropic-ai/sdk'
 
 export const maxDuration = 60
@@ -62,29 +63,16 @@ Keep it concise — ${numBlocks} blocks, ${days_per_week} workouts per block, 5-
 
   try {
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-opus-5-5',
       max_tokens: 8000,
-      messages: [
-        { role: 'user', content: userPrompt },
-      ],
+      output_config: { effort: 'low' },
       system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }],
     })
 
-    const text = message.content[0].type === 'text' ? message.content[0].text : ''
-
-    let jsonStr = text
-    const fenceMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/)
-    if (fenceMatch) {
-      jsonStr = fenceMatch[1]
-    } else {
-      const braceStart = text.indexOf('{')
-      const braceEnd = text.lastIndexOf('}')
-      if (braceStart !== -1 && braceEnd > braceStart) {
-        jsonStr = text.slice(braceStart, braceEnd + 1)
-      }
-    }
-
-    const program = JSON.parse(jsonStr.trim())
+    const text = message.content.find(b => b.type === 'text')?.text ?? ''
+    const program = extractJson(text) as { blocks?: unknown[] }
+    if (!Array.isArray(program?.blocks) || program.blocks.length === 0) throw new SyntaxError('no blocks')
     return NextResponse.json(program)
   } catch (err: any) {
     console.error('AI generation error:', err?.message || err)

@@ -1,334 +1,154 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { format, parseISO } from 'date-fns'
-import { WorkoutExercise, WorkoutLog, ExerciseLog, Workout, CoachWorkout } from '@/types'
-import ExerciseSetRow from './ExerciseSetRow'
+import type { CoachWorkout } from '@/types'
+import type { ExerciseLibraryRow, ExerciseLogRow, MuscleGroup, StartWorkoutInput, WorkoutLogRow } from '@/types/exercise'
+import ActiveWorkout from './ActiveWorkout'
+import FinishSummary, { type FinishResult } from './FinishSummary'
 import Skeleton from '@/components/shared/Skeleton'
-
-interface SetData {
-  set_number: number
-  reps: string
-  weight: string
-  rpe: string
-  notes: string
-}
-
-interface TrackingExercise {
-  name: string
-  sets: SetData[]
-}
-
-type WorkoutSource = 'custom' | 'prebuilt' | 'coach'
+import { clearDraft, draftStats, draftToSessionPayload, saveDraft, type WorkoutDraft } from '@/lib/workout-draft'
+import type { DetectedPr } from '@/lib/strength'
 
 interface Props {
-  initialWorkout?: { exercises: WorkoutExercise[]; name: string; categoryName: string; workoutId?: string; coachWorkoutId?: string; programWorkoutId?: string; source: WorkoutSource }
-  onDone?: () => void
-  showSuccess?: (msg: string) => void
+  draft: WorkoutDraft | null            // the open workout
+  savedDraft: WorkoutDraft | null       // an unfinished workout found on this device
+  library: ExerciseLibraryRow[]
+  onDraftChange: (d: WorkoutDraft | null) => void
+  onResume: () => void
+  onDiscardSaved: () => void
+  onStart: (input: StartWorkoutInput) => void
+  onCreateExercise: (name: string, muscle_group: MuscleGroup) => Promise<ExerciseLibraryRow | null>
+  notify: (msg: string, kind?: 'success' | 'error') => void
+  refreshKey: number
 }
 
-export default function TrackWorkout({ initialWorkout, onDone, showSuccess }: Props) {
-  const [mode, setMode] = useState<'select' | 'track' | 'history'>('history')
-  const [logs, setLogs] = useState<WorkoutLog[]>([])
-  const [expandedLog, setExpandedLog] = useState<string | null>(null)
-  const [exerciseLogs, setExerciseLogs] = useState<Record<string, ExerciseLog[]>>({})
+export default function TrackWorkout({ draft, savedDraft, library, onDraftChange, onResume, onDiscardSaved, onStart, onCreateExercise, notify, refreshKey }: Props) {
+  const [logs, setLogs] = useState<WorkoutLogRow[]>([])
   const [loading, setLoading] = useState(true)
-
-  // Tracking state
-  const [workoutName, setWorkoutName] = useState('')
-  const [categoryName, setCategoryName] = useState('')
-  const [workoutId, setWorkoutId] = useState<string | null>(null)
-  const [coachWorkoutId, setCoachWorkoutId] = useState<string | null>(null)
-  const [programWorkoutId, setProgramWorkoutId] = useState<string | null>(null)
-  const [exercises, setExercises] = useState<TrackingExercise[]>([])
-  const [duration, setDuration] = useState('')
-  const [workoutNotes, setWorkoutNotes] = useState('')
-  const [saving, setSaving] = useState(false)
-
-  // Coach assigned workouts
+  const [expanded, setExpanded] = useState<string | null>(null)
   const [coachWorkouts, setCoachWorkouts] = useState<CoachWorkout[]>([])
+  const [saving, setSaving] = useState(false)
+  const [finished, setFinished] = useState<FinishResult | null>(null)
 
   const fetchHistory = useCallback(async () => {
     setLoading(true)
-    const res = await fetch('/api/exercise/logs')
+    const res = await fetch('/api/exercise/logs?include=sets')
     if (res.ok) setLogs(await res.json())
     setLoading(false)
   }, [])
 
-  useEffect(() => {
-    fetchHistory()
+  const fetchCoach = useCallback(() => {
     fetch('/api/exercise/athlete-assignments')
-      .then(r => r.ok ? r.json() : [])
+      .then(r => (r.ok ? r.json() : []))
       .then(data => { if (Array.isArray(data)) setCoachWorkouts(data) })
-  }, [fetchHistory])
+      .catch(() => {})
+  }, [])
 
-  useEffect(() => {
-    if (initialWorkout) {
-      startTracking(
-        initialWorkout.exercises,
-        initialWorkout.name,
-        initialWorkout.categoryName,
-        initialWorkout.workoutId || null,
-        initialWorkout.coachWorkoutId || null,
-        initialWorkout.programWorkoutId || null
-      )
-    }
-  }, [initialWorkout])
+  useEffect(() => { fetchHistory(); fetchCoach() }, [fetchHistory, fetchCoach, refreshKey])
 
-  const startTracking = (exList: WorkoutExercise[], name: string, catName: string, wId: string | null, cwId: string | null, pwId: string | null = null) => {
-    setWorkoutName(name)
-    setCategoryName(catName)
-    setWorkoutId(wId)
-    setCoachWorkoutId(cwId)
-    setProgramWorkoutId(pwId)
-    setExercises(exList.map(ex => ({
-      name: ex.name,
-      sets: Array.from({ length: ex.sets || 3 }, (_, i) => ({
-        set_number: i + 1,
-        reps: ex.reps || '',
-        weight: '',
-        rpe: '',
-        notes: '',
-      })),
-    })))
-    setMode('track')
-  }
+  // Autosave every change to this device.
+  useEffect(() => { if (draft) saveDraft(draft) }, [draft])
 
-  const startCustom = () => {
-    setWorkoutName('')
-    setCategoryName('Custom')
-    setWorkoutId(null)
-    setCoachWorkoutId(null)
-    setExercises([{ name: '', sets: [{ set_number: 1, reps: '', weight: '', rpe: '', notes: '' }] }])
-    setMode('track')
-  }
-
-  const startCoachWorkout = (cw: CoachWorkout) => {
-    startTracking(cw.exercises, cw.name, 'Coach Assigned', null, cw.id)
-  }
-
-  const addExercise = () => {
-    setExercises(prev => [...prev, { name: '', sets: [{ set_number: 1, reps: '', weight: '', rpe: '', notes: '' }] }])
-  }
-
-  const removeExercise = (idx: number) => {
-    setExercises(prev => prev.filter((_, i) => i !== idx))
-  }
-
-  const addSet = (exIdx: number) => {
-    setExercises(prev => prev.map((ex, i) => {
-      if (i !== exIdx) return ex
-      return {
-        ...ex,
-        sets: [...ex.sets, { set_number: ex.sets.length + 1, reps: '', weight: '', rpe: '', notes: '' }],
-      }
-    }))
-  }
-
-  const updateSet = (exIdx: number, setIdx: number, data: SetData) => {
-    setExercises(prev => prev.map((ex, i) => {
-      if (i !== exIdx) return ex
-      return { ...ex, sets: ex.sets.map((s, si) => si === setIdx ? data : s) }
-    }))
-  }
-
-  const removeSet = (exIdx: number, setIdx: number) => {
-    setExercises(prev => prev.map((ex, i) => {
-      if (i !== exIdx) return ex
-      const newSets = ex.sets.filter((_, si) => si !== setIdx).map((s, si) => ({ ...s, set_number: si + 1 }))
-      return { ...ex, sets: newSets }
-    }))
-  }
-
-  const finishWorkout = async () => {
-    if (!workoutName.trim()) return
+  const finish = async () => {
+    if (!draft) return
+    const stats = draftStats(draft)
+    if (stats.doneSets === 0 && !confirm('No sets are marked ✓. Save this workout with no sets?')) return
+    if (!draft.name.trim()) { notify('Give the workout a name first.', 'error'); return }
     setSaving(true)
-
-    // Create workout log
-    const logRes = await fetch('/api/exercise/logs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        workout_id: workoutId,
-        coach_workout_id: coachWorkoutId,
-        program_workout_id: programWorkoutId,
-        category_name: categoryName,
-        workout_name: workoutName,
-        duration_min: duration ? parseInt(duration) : null,
-        notes: workoutNotes || null,
-      }),
-    })
-
-    if (logRes.ok) {
-      const logData = await logRes.json()
-
-      // Create exercise logs
-      const allSets = exercises.flatMap(ex =>
-        ex.sets
-          .filter(s => s.reps || s.weight)
-          .map(s => ({
-            workout_log_id: logData.id,
-            exercise_name: ex.name,
-            set_number: s.set_number,
-            reps: s.reps ? parseInt(s.reps) : null,
-            weight: s.weight ? parseFloat(s.weight) : null,
-            rpe: s.rpe ? parseInt(s.rpe) : null,
-            notes: s.notes || null,
-          }))
-      )
-
-      if (allSets.length > 0) {
-        await fetch('/api/exercise/exercise-logs', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(allSets),
-        })
+    try {
+      const payload = draftToSessionPayload(draft)
+      const res = await fetch('/api/exercise/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        notify(err.error || "Couldn't save the workout. Your sets are still here.", 'error')
+        return
       }
-
-      // Mark coach workout as completed
-      if (coachWorkoutId) {
-        await fetch('/api/exercise/athlete-assignments', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: coachWorkoutId }),
-        })
-      }
-
-      setMode('history')
+      const data = (await res.json()) as { id: string; prs: DetectedPr[] }
+      clearDraft()
+      onDraftChange(null)
+      setFinished({
+        name: payload.log.workout_name,
+        doneSets: stats.doneSets,
+        volume: stats.volume,
+        durationMin: payload.log.duration_min,
+        exercises: payload.exercises.length,
+        prs: data.prs ?? [],
+      })
+      notify(data.prs?.length ? `Workout saved · ${data.prs.length} PR${data.prs.length > 1 ? 's' : ''}!` : 'Workout saved')
       fetchHistory()
-      showSuccess?.('Workout logged successfully!')
-      onDone?.()
+      fetchCoach()
+    } catch {
+      notify("Couldn't reach the server. Your sets are still here.", 'error')
+    } finally {
+      setSaving(false)
     }
-
-    setSaving(false)
   }
 
-  const loadExerciseLogs = async (logId: string) => {
-    if (exerciseLogs[logId]) {
-      setExpandedLog(expandedLog === logId ? null : logId)
-      return
-    }
-    const res = await fetch(`/api/exercise/exercise-logs?workout_log_id=${logId}`)
-    if (res.ok) {
-      const data = await res.json()
-      setExerciseLogs(prev => ({ ...prev, [logId]: data }))
-    }
-    setExpandedLog(logId)
+  const cancel = () => {
+    clearDraft()
+    onDraftChange(null)
   }
 
-  if (mode === 'track') {
+  if (draft) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-fg-1">Tracking Workout</h3>
-          <button onClick={() => setMode('history')} className="text-xs text-fg-4 hover:text-fg-2">Cancel</button>
-        </div>
-
-        <input
-          value={workoutName}
-          onChange={e => setWorkoutName(e.target.value)}
-          placeholder="Workout name"
-          className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50"
-        />
-
-        {exercises.map((ex, exIdx) => (
-          <div key={exIdx} className="card p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <input
-                value={ex.name}
-                onChange={e => setExercises(prev => prev.map((x, i) => i === exIdx ? { ...x, name: e.target.value } : x))}
-                placeholder="Exercise name"
-                className="flex-1 bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50"
-              />
-              {exercises.length > 1 && (
-                <button onClick={() => removeExercise(exIdx)} className="text-red-400 hover:text-red-300 text-xs px-2">Remove</button>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2 text-[10px] text-fg-4 uppercase tracking-wider px-1">
-              <span className="w-6 text-center">Set</span>
-              <span className="w-16">Reps</span>
-              <span className="w-16">Weight</span>
-              <span className="w-16">RPE</span>
-              <span className="flex-1">Notes</span>
-              <span className="w-4" />
-            </div>
-
-            {ex.sets.map((set, setIdx) => (
-              <ExerciseSetRow
-                key={setIdx}
-                data={set}
-                onChange={data => updateSet(exIdx, setIdx, data)}
-                onRemove={() => removeSet(exIdx, setIdx)}
-              />
-            ))}
-
-            <button
-              onClick={() => addSet(exIdx)}
-              className="text-xs text-cta hover:underline"
-            >
-              + Add Set
-            </button>
-          </div>
-        ))}
-
-        <button onClick={addExercise} className="text-sm text-cta font-medium hover:underline">
-          + Add Exercise
-        </button>
-
-        <div className="flex gap-2">
-          <input
-            type="number"
-            value={duration}
-            onChange={e => setDuration(e.target.value)}
-            placeholder="Duration (min)"
-            className="w-32 bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50"
-          />
-          <input
-            value={workoutNotes}
-            onChange={e => setWorkoutNotes(e.target.value)}
-            placeholder="Workout notes"
-            className="flex-1 bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50"
-          />
-        </div>
-
-        <button
-          onClick={finishWorkout}
-          disabled={saving || !workoutName.trim()}
-          className="w-full bg-cta hover:bg-brand-600 text-fg-inverse font-bold px-4 py-3 rounded-xl text-sm transition-colors disabled:opacity-50"
-        >
-          {saving ? 'Saving...' : 'Finish Workout'}
-        </button>
-      </div>
+      <ActiveWorkout
+        draft={draft}
+        library={library}
+        saving={saving}
+        onChange={onDraftChange}
+        onFinish={finish}
+        onCancel={cancel}
+        onCreateExercise={onCreateExercise}
+      />
     )
   }
 
   return (
     <div className="space-y-4">
-      {/* Start buttons */}
-      <div className="flex flex-wrap gap-2">
-        <button
-          onClick={startCustom}
-          className="bg-cta hover:bg-brand-600 text-fg-inverse font-semibold px-4 py-2 rounded-xl text-sm transition-colors"
-        >
-          + Custom Workout
-        </button>
-      </div>
+      {finished && <FinishSummary result={finished} onClose={() => setFinished(null)} />}
 
-      {/* Coach assigned workouts */}
+      {savedDraft && (
+        <div className="card p-4 border-cta/40 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-fg-1 truncate">Unfinished: {savedDraft.name || 'Workout'}</p>
+            <p className="text-xs text-fg-4">
+              {draftStats(savedDraft).doneSets} sets logged · started {format(parseISO(savedDraft.startedAt), 'MMM d, h:mm a')}
+            </p>
+          </div>
+          <div className="flex gap-1 shrink-0">
+            <button type="button" onClick={onDiscardSaved} className="btn-ghost">Discard</button>
+            <button type="button" onClick={onResume} className="btn-primary">Resume</button>
+          </div>
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={() => onStart({ name: '', categoryName: 'Custom', exercises: [], source: 'custom' })}
+        className="btn-primary w-full"
+      >
+        + Start a custom workout
+      </button>
+
       {coachWorkouts.length > 0 && (
         <div className="bg-surface rounded-2xl border border-cta/30 p-4">
-          <h4 className="text-sm font-semibold text-cta mb-3">From Your Coach</h4>
+          <h4 className="text-sm font-semibold text-cta mb-3">From your coach</h4>
           <div className="space-y-2">
             {coachWorkouts.map(cw => (
-              <div key={cw.id} className="flex items-center justify-between p-2 rounded-lg bg-surface-2/50">
-                <div>
-                  <p className="text-sm font-medium text-fg-2">{cw.name}</p>
-                  {cw.description && <p className="text-xs text-fg-4">{cw.description}</p>}
+              <div key={cw.id} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-surface-2/50">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-fg-2 truncate">{cw.name}</p>
+                  {cw.description && <p className="text-xs text-fg-4 truncate">{cw.description}</p>}
                   <p className="text-xs text-fg-4">{cw.exercises.length} exercises{cw.assigned_date ? ` · Due ${cw.assigned_date}` : ''}</p>
                 </div>
                 <button
-                  onClick={() => startCoachWorkout(cw)}
-                  className="bg-cta/20 text-cta font-medium px-3 py-1.5 rounded-lg text-xs hover:bg-cta/30"
+                  type="button"
+                  onClick={() => onStart({ name: cw.name, categoryName: 'Coach Assigned', exercises: cw.exercises, source: 'coach_workout', coachWorkoutId: cw.id })}
+                  className="btn-secondary shrink-0 px-3 py-2"
                 >
                   Start
                 </button>
@@ -338,67 +158,71 @@ export default function TrackWorkout({ initialWorkout, onDone, showSuccess }: Pr
         </div>
       )}
 
-      {/* History */}
       <div>
-        <h4 className="text-sm font-semibold text-fg-1 mb-3">Workout History</h4>
+        <h4 className="text-sm font-semibold text-fg-1 mb-3">Workout history</h4>
         {loading ? (
           <Skeleton />
         ) : logs.length === 0 ? (
-          <p className="text-sm text-fg-4 text-center py-8">No workouts logged yet. Start tracking!</p>
+          <p className="text-sm text-fg-4 text-center py-8">No workouts logged yet. Start one above or from My Plan.</p>
         ) : (
           <div className="space-y-2">
-            {logs.map(log => (
-              <div key={log.id} className="bg-surface rounded-xl border border-edge overflow-hidden">
-                <button
-                  onClick={() => loadExerciseLogs(log.id)}
-                  className="w-full p-3 text-left hover:bg-surface-2/50 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-fg-2">{log.workout_name}</p>
-                      <p className="text-xs text-fg-4">
-                        {log.category_name}
-                        {log.duration_min ? ` · ${log.duration_min} min` : ''}
-                      </p>
-                    </div>
-                    <span className="text-xs text-fg-4">{format(parseISO(log.log_date), 'MMM d')}</span>
-                  </div>
-                  {log.notes && <p className="text-xs text-fg-3 mt-1">{log.notes}</p>}
-                </button>
-
-                {expandedLog === log.id && exerciseLogs[log.id] && (
-                  <div className="px-3 pb-3 border-t border-edge-muted">
-                    {exerciseLogs[log.id].length === 0 ? (
-                      <p className="text-xs text-fg-4 mt-2">No per-set data recorded.</p>
-                    ) : (
-                      <div className="mt-2 space-y-1">
-                        {Object.entries(
-                          exerciseLogs[log.id].reduce<Record<string, ExerciseLog[]>>((acc, el) => {
-                            (acc[el.exercise_name] = acc[el.exercise_name] || []).push(el)
-                            return acc
-                          }, {})
-                        ).map(([name, sets]) => (
-                          <div key={name} className="p-2 rounded-lg bg-surface-2/50">
-                            <p className="text-xs font-medium text-fg-2 mb-1">{name}</p>
-                            <div className="flex flex-wrap gap-2">
-                              {sets.sort((a, b) => a.set_number - b.set_number).map(s => (
-                                <span key={s.id} className="text-[10px] text-fg-4 bg-surface-3/50 px-1.5 py-0.5 rounded">
-                                  S{s.set_number}: {s.reps ?? '-'}r{s.weight ? ` @ ${s.weight}lbs` : ''}
-                                  {s.rpe ? ` RPE ${s.rpe}` : ''}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
+            {logs.map(log => {
+              const sets = log.exercise_logs ?? []
+              const open = expanded === log.id
+              return (
+                <div key={log.id} className="bg-surface rounded-xl border border-edge overflow-hidden">
+                  <button type="button" onClick={() => setExpanded(open ? null : log.id)} className="w-full p-3 text-left hover:bg-surface-2/50 transition-colors">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-fg-2 truncate">{log.workout_name}</p>
+                        <p className="text-xs text-fg-4">
+                          {log.category_name}
+                          {log.duration_min ? ` · ${log.duration_min} min` : ''}
+                          {sets.length ? ` · ${sets.length} sets` : ''}
+                        </p>
                       </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
+                      <span className="text-xs text-fg-4 shrink-0">{format(parseISO(log.log_date), 'MMM d')}</span>
+                    </div>
+                    {log.notes && <p className="text-xs text-fg-3 mt-1">{log.notes}</p>}
+                  </button>
+                  {open && (
+                    <div className="px-3 pb-3 border-t border-edge-muted">
+                      {sets.length === 0 ? (
+                        <p className="text-xs text-fg-4 mt-2">No per-set data recorded.</p>
+                      ) : (
+                        <div className="mt-2 space-y-1">
+                          {groupSets(sets).map(([name, rows]) => (
+                            <div key={name} className="p-2 rounded-lg bg-surface-2/50">
+                              <p className="text-xs font-medium text-fg-2 mb-1">{name}</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {rows.map(s => (
+                                  <span key={s.id} className="text-[11px] text-fg-4 bg-surface-3/50 px-1.5 py-0.5 rounded tabular-nums">
+                                    {s.reps ?? '—'}{s.weight ? ` × ${Number(s.weight)}` : ''}{s.rpe ? ` @${s.rpe}` : ''}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
     </div>
   )
+}
+
+function groupSets(sets: ExerciseLogRow[]): [string, ExerciseLogRow[]][] {
+  const map = new Map<string, ExerciseLogRow[]>()
+  for (const s of sets) {
+    const g = map.get(s.exercise_name)
+    if (g) g.push(s)
+    else map.set(s.exercise_name, [s])
+  }
+  return [...map.entries()].map(([n, rows]) => [n, rows.sort((a, b) => a.set_number - b.set_number)])
 }
