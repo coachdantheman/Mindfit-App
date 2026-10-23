@@ -47,6 +47,31 @@ Push to GitHub → Vercel deploys. Migrations (step 1) must already be applied.
 - [ ] Coach dashboard shows the athlete table (last active, streak, MPI, flags) and CSV export
 - [ ] Phone: browser menu → "Add to Home Screen" → MindFit installs as an app
 
+## 7. Quote of the Day + push notifications (v16, Oct 2026)
+Order matters: migration → env vars → deploy.
+1. **Migration**: run `supabase-migration-v16-push.sql` in the Supabase SQL Editor (creates `push_subscriptions`).
+2. **VAPID keys** (one-time, local terminal):
+   ```bash
+   npx web-push generate-vapid-keys
+   ```
+   Add to Vercel (Settings → Environment Variables, all environments) and to `.env.local`:
+   - `NEXT_PUBLIC_VAPID_PUBLIC_KEY` — the Public Key
+   - `VAPID_PRIVATE_KEY` — the Private Key (never in client code)
+   - `VAPID_SUBJECT` — `mailto:daniel@mindfit.academy`
+   Changing the keys later invalidates every existing subscription; users would need to toggle the setting off and on.
+3. **`CRON_SECRET`** — any long random string, in Vercel. Vercel attaches it to scheduled calls of `/api/cron/daily-quote`.
+4. **Cron schedule**: `vercel.json` runs the route at 12:00 and 13:00 UTC; the route only sends when it is 7 AM in US Central (so it works across daylight saving). On the Vercel Hobby plan cron timing is approximate (within the hour).
+5. **Deploy**, then smoke test:
+   - [ ] Mindset tab shows the quote card; Share works (native share sheet on phone, copies on desktop)
+   - [ ] `/quote` renders the standalone dark card; `/api/quote/image` and `?format=story` return PNGs
+   - [ ] Settings → Notifications → toggle on → browser asks permission → a "Daily quote is on" notification arrives immediately
+   - [ ] Manual send: `curl -H "Authorization: Bearer $CRON_SECRET" "https://<your-app-domain>/api/cron/daily-quote?force=1"` → `{"ok":true,"sent":N,...}`
+   - [ ] Toggle off → row disappears from `push_subscriptions`
+
+**iOS note**: Safari on iPhone only delivers web push to PWAs added to the Home Screen (iOS 16.4+). The toggle explains this when it detects iOS in a normal browser tab. Users must: Share → Add to Home Screen → open MindFit from the icon → Settings → turn the toggle on.
+
+**Widget note**: a true home-screen widget (iOS WidgetKit / Android App Widget) requires a native app. The web equivalent shipped here is the `/quote` page (screenshot or share to stories) and the PNG endpoint for posting. The real widget comes with the future native (Capacitor) wrapper.
+
 ## Webhook test command
 ```bash
 curl -X POST https://<your-app-domain>/api/webhooks/skool \

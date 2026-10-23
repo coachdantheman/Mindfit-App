@@ -2,6 +2,7 @@
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { useEffect, useState } from 'react'
+import DailyQuoteToggle from '@/components/shared/DailyQuoteToggle'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -130,6 +131,12 @@ export default function SettingsPage() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Notifications */}
+        <div className="card p-5">
+          <h3 className="font-semibold text-fg-1 mb-4 text-sm">Notifications</h3>
+          <DailyQuoteToggle />
         </div>
 
         {/* Appearance */}

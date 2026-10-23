@@ -3,6 +3,7 @@ import { useState, Suspense } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter, useSearchParams } from 'next/navigation'
 import LessonLinks from '@/components/shared/LessonLinks'
+import QuoteOfTheDay from '@/components/mindset/QuoteOfTheDay'
 import { LessonSection } from '@/types'
 
 const JournalTab = dynamic(() => import('@/components/mindset/JournalTab'))
@@ -52,6 +53,8 @@ function MindsetContent() {
         <h1 className="page-title">Mindset</h1>
         <p className="page-subtitle">Train your mind. Build your identity.</p>
       </div>
+
+      <QuoteOfTheDay />
 
       <div className="flex gap-2 mb-6 overflow-x-auto pb-1 scrollbar-none snap-x snap-mandatory">
         {tabs.map(tab => (
