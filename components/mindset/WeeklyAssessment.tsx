@@ -1,5 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
+import SaveButton from '@/components/shared/SaveButton'
+import { clearDraft, draftKey, readDraft, writeDraft } from '@/lib/useDraft'
 import { WeeklyAssessment as WeeklyAssessmentType } from '@/types'
 import { MPI_DIMENSIONS, calcMPI, MpiKey } from '@/lib/mpi'
 import Skeleton from '@/components/shared/Skeleton'
@@ -35,6 +37,7 @@ export default function WeeklyAssessment({ mode = 'weekly', onComplete }: Weekly
   )
   const [notes, setNotes] = useState('')
   const [saved, setSaved] = useState(false)
+  const [justSaved, setJustSaved] = useState(false)
   const [loading, setLoading] = useState(!isBaseline)
   const [saving, setSaving] = useState(false)
   const [history, setHistory] = useState<WeeklyAssessmentType[]>([])
@@ -55,11 +58,19 @@ export default function WeeklyAssessment({ mode = 'weekly', onComplete }: Weekly
         setScores(loaded as Record<CategoryKey, number>)
         setNotes(current.notes || '')
         setSaved(true)
+      } else {
+        const draft = readDraft<{ scores: Record<CategoryKey, number>; notes: string }>(draftKey('weekly-assessment'))
+        if (draft) { setScores(draft.scores); setNotes(draft.notes) }
       }
       setHistory(weeklies)
       setLoading(false)
     })
   }, [weekDate, isBaseline])
+
+  useEffect(() => {
+    if (loading || saved || isBaseline) return
+    writeDraft(draftKey('weekly-assessment'), { scores, notes })
+  }, [scores, notes, loading, saved, isBaseline])
 
   const handleSave = async () => {
     setSaving(true)
@@ -75,6 +86,8 @@ export default function WeeklyAssessment({ mode = 'weekly', onComplete }: Weekly
     })
     if (res.ok) {
       setSaved(true)
+      setJustSaved(true)
+      clearDraft(draftKey('weekly-assessment'))
       const saved = await res.json()
       if (!isBaseline) {
         setHistory(prev => {
@@ -169,13 +182,14 @@ export default function WeeklyAssessment({ mode = 'weekly', onComplete }: Weekly
         </div>
 
         <div className="flex items-center gap-3 mt-4">
-          <button
+          <SaveButton
+            type="button"
+            state={saving ? 'saving' : justSaved ? 'saved' : 'idle'}
+            idleLabel={saved ? 'Saved ✓' : isBaseline ? 'See My MPI Score' : 'Save Assessment'}
+            disabled={saved}
             onClick={handleSave}
-            disabled={saving || saved}
-            className="btn-primary"
-          >
-            {saving ? 'Saving…' : saved ? 'Success ✓' : isBaseline ? 'See My MPI Score' : 'Save Assessment'}
-          </button>
+            className="sm:w-auto"
+          />
           {!isBaseline && history.length > 1 && (
             <button
               onClick={() => setShowHistory(!showHistory)}

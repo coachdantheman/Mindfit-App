@@ -124,6 +124,7 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
           recent={recent}
           favorites={favorites}
           onToggleFavorite={onToggleFavorite}
+          onFoodCreated={onFoodCreated}
           onAdd={addItems}
           onClose={() => setSheetMeal(null)}
         />

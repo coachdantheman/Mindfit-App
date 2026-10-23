@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { Food, RecentFood } from '@/types'
 import { FoodMacros, scaleFood } from '@/lib/nutrition'
 import FoodSearchList from './FoodSearchList'
@@ -15,7 +16,9 @@ export interface AddItem extends FoodMacros {
   source?: 'user' | 'ai'
 }
 
-type SheetTab = 'search' | 'recent' | 'favorites' | 'describe'
+type SheetTab = 'search' | 'scan' | 'recent' | 'favorites' | 'describe'
+
+const BarcodeScanner = dynamic(() => import('./BarcodeScanner'), { ssr: false })
 
 interface Props {
   meal: string
@@ -23,13 +26,15 @@ interface Props {
   recent: RecentFood[]
   favorites: Food[]
   onToggleFavorite: (food: Food) => void
+  onFoodCreated?: (food: Food) => void
   onAdd: (items: AddItem[], saveToFoods?: boolean) => Promise<void>
   onClose: () => void
 }
 
-export default function AddFoodSheet({ meal, foods, recent, favorites, onToggleFavorite, onAdd, onClose }: Props) {
+export default function AddFoodSheet({ meal, foods, recent, favorites, onToggleFavorite, onFoodCreated, onAdd, onClose }: Props) {
   const [tab, setTab] = useState<SheetTab>('search')
   const [busy, setBusy] = useState(false)
+  const [scanMiss, setScanMiss] = useState(false)
   const favoriteIds = new Set(favorites.map(f => f.id))
 
   useEffect(() => {
@@ -46,6 +51,7 @@ export default function AddFoodSheet({ meal, foods, recent, favorites, onToggleF
 
   const TABS: { key: SheetTab; label: string }[] = [
     { key: 'search', label: 'Search' },
+    { key: 'scan', label: 'Scan' },
     { key: 'recent', label: 'Recent' },
     { key: 'favorites', label: 'Favorites' },
     { key: 'describe', label: 'Describe' },
@@ -68,8 +74,19 @@ export default function AddFoodSheet({ meal, foods, recent, favorites, onToggleF
         </div>
         <div className="px-5 pb-5 overflow-y-auto">
           {tab === 'search' && (
-            <FoodSearchList foods={foods} favoriteIds={favoriteIds} onToggleFavorite={onToggleFavorite} busy={busy}
-              onAdd={(item, save) => add([item], save)} />
+            <>
+              {scanMiss && <p className="text-xs text-amber-400 mb-2">That barcode isn’t in the database yet — search for it or add it manually.</p>}
+              <FoodSearchList foods={foods} favoriteIds={favoriteIds} onToggleFavorite={onToggleFavorite} busy={busy}
+                onAdd={(item, save) => add([item], save)} />
+            </>
+          )}
+          {tab === 'scan' && (
+            <BarcodeScanner
+              busy={busy}
+              onAdd={item => add([item])}
+              onFoodCreated={f => onFoodCreated?.(f)}
+              onNotFound={() => { setScanMiss(true); setTab('search') }}
+            />
           )}
           {tab === 'recent' && (
             recent.length === 0

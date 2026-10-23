@@ -14,13 +14,16 @@ export async function GET(req: Request) {
   const admin = createAdminClient()
   const { data, error } = await admin
     .from('weigh_ins')
-    .select('*')
+    .select('*, progress_photos(slot)')
     .eq('user_id', auth.userId)
     .gte('entry_date', shiftDate(localDateISO(new Date()), -days))
     .order('entry_date', { ascending: true })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+  return NextResponse.json((data ?? []).map(({ progress_photos, ...row }) => ({
+    ...row,
+    photo_slots: (progress_photos as { slot: string }[] | null)?.map(p => p.slot) ?? [],
+  })))
 }
 
 export async function POST(req: Request) {

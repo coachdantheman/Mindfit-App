@@ -3,6 +3,12 @@ import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import LessonLinks from '@/components/shared/LessonLinks'
 import Skeleton from '@/components/shared/Skeleton'
+import SaveButton from '@/components/shared/SaveButton'
+import { useToast } from '@/components/shared/Toast'
+import { clearDraft, draftKey, readDraft, writeDraft } from '@/lib/useDraft'
+
+interface SleepDraft { bedtime: string; wakeTime: string; quality: number; sleepNotes: string }
+interface RecoveryDraft { isRestDay: boolean; activities: { type: string; duration_min: number }[]; recoveryNotes: string }
 
 const RECOVERY_ACTIVITIES = ['Stretching', 'Foam Rolling', 'Ice Bath', 'Massage', 'Yoga', 'Walking', 'Epsom Salt Bath', 'Compression']
 
@@ -26,7 +32,11 @@ export default function SleepPage() {
   const [recoverySaved, setRecoverySaved] = useState(false)
 
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const [saving, setSaving] = useState<'sleep' | 'recovery' | null>(null)
+  const [justSaved, setJustSaved] = useState<'sleep' | 'recovery' | null>(null)
+  const notify = useToast()
+  const sleepKey = draftKey('sleep')
+  const recoveryKey = draftKey('recovery')
 
   useEffect(() => {
     Promise.all([
@@ -40,6 +50,9 @@ export default function SleepPage() {
         setQuality(s.sleep_quality || 7)
         setSleepNotes(s.notes || '')
         setSleepSaved(true)
+      } else {
+        const d = readDraft<SleepDraft>(sleepKey)
+        if (d) { setBedtime(d.bedtime); setWakeTime(d.wakeTime); setQuality(d.quality); setSleepNotes(d.sleepNotes) }
       }
       if (recoveryData.length > 0) {
         const r = recoveryData[0]
@@ -47,10 +60,23 @@ export default function SleepPage() {
         setActivities(r.activities || [])
         setRecoveryNotes(r.notes || '')
         setRecoverySaved(true)
+      } else {
+        const d = readDraft<RecoveryDraft>(recoveryKey)
+        if (d) { setIsRestDay(d.isRestDay); setActivities(d.activities); setRecoveryNotes(d.recoveryNotes) }
       }
       setLoading(false)
     })
-  }, [today])
+  }, [today, sleepKey, recoveryKey])
+
+  // Unsaved edits persist across tab switches and reloads.
+  useEffect(() => {
+    if (loading || sleepSaved) return
+    writeDraft<SleepDraft>(sleepKey, { bedtime, wakeTime, quality, sleepNotes })
+  }, [bedtime, wakeTime, quality, sleepNotes, loading, sleepSaved, sleepKey])
+  useEffect(() => {
+    if (loading || recoverySaved) return
+    writeDraft<RecoveryDraft>(recoveryKey, { isRestDay, activities, recoveryNotes })
+  }, [isRestDay, activities, recoveryNotes, loading, recoverySaved, recoveryKey])
 
   const calcHours = () => {
     if (!bedtime || !wakeTime) return null
@@ -65,7 +91,7 @@ export default function SleepPage() {
   const hours = calcHours()
 
   const saveSleep = async () => {
-    setSaving(true)
+    setSaving('sleep')
     const res = await fetch('/api/sleep/entries', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -78,12 +104,13 @@ export default function SleepPage() {
         notes: sleepNotes || null,
       }),
     })
-    if (res.ok) setSleepSaved(true)
-    setSaving(false)
+    if (res.ok) { setSleepSaved(true); setJustSaved('sleep'); clearDraft(sleepKey); notify('Sleep log saved') }
+    else notify('Could not save your sleep log.', 'error')
+    setSaving(null)
   }
 
   const saveRecovery = async () => {
-    setSaving(true)
+    setSaving('recovery')
     const res = await fetch('/api/sleep/recovery', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -94,8 +121,9 @@ export default function SleepPage() {
         notes: recoveryNotes || null,
       }),
     })
-    if (res.ok) setRecoverySaved(true)
-    setSaving(false)
+    if (res.ok) { setRecoverySaved(true); setJustSaved('recovery'); clearDraft(recoveryKey); notify('Recovery saved') }
+    else notify('Could not save your recovery log.', 'error')
+    setSaving(null)
   }
 
   const toggleActivity = (type: string) => {
@@ -136,8 +164,9 @@ export default function SleepPage() {
         ))}
       </div>
 
-      {tab === 'track' && (
-        <div className="space-y-5">
+      {/* Both tabs stay mounted so unsaved edits survive switching. */}
+      {(
+        <div className={`space-y-5 ${tab === 'track' ? '' : 'hidden'}`}>
           {/* Sleep Tracking */}
           <div className="card p-6">
             <h3 className="font-semibold text-fg-1 mb-1">Sleep Log</h3>
@@ -197,13 +226,14 @@ export default function SleepPage() {
                 />
               </div>
 
-              <button
+              <SaveButton
+                type="button"
+                state={saving === 'sleep' ? 'saving' : justSaved === 'sleep' ? 'saved' : 'idle'}
+                idleLabel={sleepSaved ? 'Saved ✓' : 'Save Sleep Log'}
+                disabled={sleepSaved || saving !== null}
                 onClick={saveSleep}
-                disabled={saving || sleepSaved}
-                className="btn-primary"
-              >
-                {saving ? 'Saving…' : sleepSaved ? 'Success ✓' : 'Save Sleep Log'}
-              </button>
+                className="sm:w-auto"
+              />
             </div>
           </div>
 
@@ -260,13 +290,14 @@ export default function SleepPage() {
                 />
               </div>
 
-              <button
+              <SaveButton
+                type="button"
+                state={saving === 'recovery' ? 'saving' : justSaved === 'recovery' ? 'saved' : 'idle'}
+                idleLabel={recoverySaved ? 'Saved ✓' : 'Save Recovery'}
+                disabled={recoverySaved || saving !== null}
                 onClick={saveRecovery}
-                disabled={saving || recoverySaved}
-                className="btn-primary"
-              >
-                {saving ? 'Saving…' : recoverySaved ? 'Success ✓' : 'Save Recovery'}
-              </button>
+                className="sm:w-auto"
+              />
             </div>
           </div>
         </div>

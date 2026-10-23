@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer } from 'recharts'
 import { WeighIn } from '@/types'
 import { linearTrend, localDateISO } from '@/lib/nutrition'
+import ProgressPhotoSheet from './ProgressPhotoSheet'
 
 interface Props {
   weighIns: WeighIn[]
@@ -15,6 +16,7 @@ export default function WeighInCard({ weighIns, targetWeight, onSaved }: Props) 
   const [date, setDate] = useState(() => localDateISO(new Date()))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [photoFor, setPhotoFor] = useState<WeighIn | null>(null)
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -23,8 +25,9 @@ export default function WeighInCard({ weighIns, targetWeight, onSaved }: Props) 
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ weight_lb: parseFloat(weight), entry_date: date }),
     })
-    if (!res.ok) setError((await res.json()).error ?? 'Could not save.')
-    else { setWeight(''); onSaved() }
+    const data = await res.json()
+    if (!res.ok) setError(data.error ?? 'Could not save.')
+    else { setWeight(''); onSaved(); setPhotoFor({ ...data, photo_slots: [] }) }
     setSaving(false)
   }
 
@@ -81,13 +84,25 @@ export default function WeighInCard({ weighIns, targetWeight, onSaved }: Props) 
       {weighIns.length > 0 && (
         <div className="divide-y divide-edge-muted">
           {[...weighIns].reverse().slice(0, 5).map(w => (
-            <div key={w.id} className="flex items-center justify-between py-1.5 text-xs">
+            <div key={w.id} className="flex items-center justify-between gap-3 py-1.5 text-xs">
               <span className="text-fg-3">{w.entry_date}</span>
               <span className="text-fg-2 tabular-nums">{Number(w.weight_lb)} lb</span>
+              <button
+                type="button"
+                onClick={() => setPhotoFor(w)}
+                className={`py-1 px-2 rounded-lg ${w.photo_slots?.length ? 'text-cta' : 'text-fg-4 hover:text-fg-2'}`}
+                aria-label="Progress photos"
+              >
+                📷{w.photo_slots?.length ? ` ${w.photo_slots.length}` : ''}
+              </button>
               <button type="button" onClick={() => remove(w.id)} className="text-fg-4 hover:text-red-400">Remove</button>
             </div>
           ))}
         </div>
+      )}
+
+      {photoFor && (
+        <ProgressPhotoSheet weighIn={photoFor} onChange={onSaved} onClose={() => setPhotoFor(null)} />
       )}
     </div>
   )

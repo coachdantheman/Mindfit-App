@@ -1,23 +1,49 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { useRouter } from 'next/navigation'
-import { JournalFormData } from '@/types'
+import { JournalEntry, JournalFormData } from '@/types'
 import RatingSlider from './RatingSlider'
+import SaveButton, { SaveState } from '@/components/shared/SaveButton'
+import { useToast } from '@/components/shared/Toast'
+import { clearDraft, draftKey, readDraft, writeDraft } from '@/lib/useDraft'
 
-export default function JournalForm({ previewMode = false }: { previewMode?: boolean }) {
-  const router = useRouter()
-  const [submitting, setSubmitting] = useState(false)
+const DEFAULTS: Partial<JournalFormData> = {
+  rating_motivation: 5,
+  rating_focus: 5,
+  rating_confidence: 5,
+  rating_anxiety: 5,
+}
+
+interface Props {
+  previewMode?: boolean
+  onSaved?: (entry: JournalEntry) => void
+}
+
+export default function JournalForm({ previewMode = false, onSaved }: Props) {
+  const notify = useToast()
+  const [state, setState] = useState<SaveState>('idle')
   const [error, setError] = useState('')
+  const [restored, setRestored] = useState(false)
+  const key = draftKey('journal')
 
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<JournalFormData>({
-    defaultValues: {
-      rating_motivation: 5,
-      rating_focus: 5,
-      rating_confidence: 5,
-      rating_anxiety: 5,
-    },
+  const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<JournalFormData>({
+    defaultValues: DEFAULTS,
   })
+
+  // Restore an unsent draft, then keep it updated as the athlete types.
+  useEffect(() => {
+    const saved = readDraft<Partial<JournalFormData>>(key)
+    if (saved) { reset({ ...DEFAULTS, ...saved }); setRestored(true) }
+  }, [key, reset])
+
+  const timer = useRef<ReturnType<typeof setTimeout>>()
+  useEffect(() => {
+    const sub = watch(values => {
+      clearTimeout(timer.current)
+      timer.current = setTimeout(() => writeDraft(key, values), 300)
+    })
+    return () => { sub.unsubscribe(); clearTimeout(timer.current) }
+  }, [watch, key])
 
   const ratings = {
     motivation: watch('rating_motivation'),
@@ -27,20 +53,29 @@ export default function JournalForm({ previewMode = false }: { previewMode?: boo
   }
 
   const onSubmit = async (data: JournalFormData) => {
-    setSubmitting(true)
+    setState('saving')
     setError('')
     const today = new Date().toISOString().split('T')[0]
-    const res = await fetch('/api/journal', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...data, entry_date: today }),
-    })
-    const json = await res.json()
-    if (!res.ok) {
-      setError(json.error || 'Failed to save. Please try again.')
-      setSubmitting(false)
-    } else {
-      router.refresh()
+    try {
+      const res = await fetch('/api/journal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, entry_date: today }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        setError(json.error || 'Failed to save. Please try again.')
+        setState('error')
+        return
+      }
+      clearTimeout(timer.current)
+      clearDraft(key)
+      setState('saved')
+      notify('Journal saved — streak kept 🔥')
+      onSaved?.(json)
+    } catch {
+      setError('Failed to save. Please try again.')
+      setState('error')
     }
   }
 
@@ -49,6 +84,9 @@ export default function JournalForm({ previewMode = false }: { previewMode?: boo
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      {restored && (
+        <p className="text-xs text-fg-4 -mb-4">Picked up where you left off — your draft was saved.</p>
+      )}
 
       {/* Section 1: Objective */}
       <section className="card p-6 space-y-3">
@@ -187,13 +225,12 @@ export default function JournalForm({ previewMode = false }: { previewMode?: boo
           Sign in to submit and save your journal
         </a>
       ) : (
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full bg-cta hover:bg-brand-600 text-fg-inverse font-semibold py-4 rounded-xl transition-colors disabled:opacity-60 text-base"
-        >
-          {submitting ? 'Saving…' : 'Submit Today\'s Journal'}
-        </button>
+        <SaveButton
+          state={state}
+          idleLabel="Submit Today's Journal"
+          savedLabel="Submitted ✓"
+          className="py-4 text-base"
+        />
       )}
     </form>
   )

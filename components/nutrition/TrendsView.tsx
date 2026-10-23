@@ -6,6 +6,7 @@ import StatCard from '@/components/dashboard/StatCard'
 import CaloriesChart from './CaloriesChart'
 import MacroAverages from './MacroAverages'
 import WeighInCard from './WeighInCard'
+import ProgressCompare from './ProgressCompare'
 
 const RANGES: { key: TrendRange; label: string }[] = [
   { key: 'day', label: 'Day' },
@@ -66,6 +67,7 @@ export default function TrendsView({ goal }: { goal: NutritionGoal | null }) {
       {goal && avg && <MacroAverages avg={avg} goal={goal} caption={caption} />}
 
       <WeighInCard weighIns={weighIns} targetWeight={goal?.target_weight_lb ?? null} onSaved={loadWeighIns} />
+      <ProgressCompare weighIns={weighIns} />
     </div>
   )
 }

@@ -1,5 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
+import SaveButton from '@/components/shared/SaveButton'
+import { useToast } from '@/components/shared/Toast'
 import { Goal, GoalType } from '@/types'
 import Skeleton from '@/components/shared/Skeleton'
 
@@ -10,6 +12,7 @@ const GOAL_LABELS: Record<GoalType, string> = {
 }
 
 export default function GoalsSection() {
+  const notify = useToast()
   const [goals, setGoals] = useState<Goal[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -39,6 +42,9 @@ export default function GoalsSection() {
       setFormTitle('')
       setFormDesc('')
       setShowForm(false)
+      notify('Goal added ✓')
+    } else {
+      notify('Could not add the goal. Please try again.', 'error')
     }
     setSaving(false)
   }
@@ -116,13 +122,13 @@ export default function GoalsSection() {
               rows={2}
               className="textarea-field"
             />
-            <button
-              type="submit"
-              disabled={saving || !formTitle.trim()}
-              className="btn-primary"
-            >
-              {saving ? 'Saving…' : 'Add Goal'}
-            </button>
+            <SaveButton
+              state={saving ? 'saving' : 'idle'}
+              idleLabel="Add Goal"
+              savingLabel="Adding…"
+              disabled={!formTitle.trim()}
+              className="sm:w-auto"
+            />
           </form>
         )}
 

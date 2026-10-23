@@ -134,7 +134,8 @@ export interface Food {
   protein_g: number
   carbs_g: number
   fat_g: number
-  source: 'curated' | 'user' | 'ai'
+  source: 'curated' | 'user' | 'ai' | 'barcode'
+  barcode: string | null
   created_at: string
 }
 
@@ -157,6 +158,13 @@ export interface WeighIn {
   weight_lb: number
   note: string | null
   created_at: string
+  photo_slots?: string[]
+}
+
+export interface ProgressPhoto {
+  id: string
+  slot: 'front' | 'side' | 'back'
+  url: string
 }
 
 // Exercise

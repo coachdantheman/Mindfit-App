@@ -36,7 +36,7 @@ export default function JournalTab() {
       {todayEntry ? (
         <TodayEntry entry={todayEntry} />
       ) : (
-        <JournalForm />
+        <JournalForm onSaved={entry => setTimeout(() => setTodayEntry(entry), 1500)} />
       )}
 
       <Link

@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { useToast } from '@/components/shared/Toast'
 import { Affirmation } from '@/types'
 import {
   DndContext,
@@ -105,6 +106,7 @@ function SortableItem({
 }
 
 export default function AffirmationsList() {
+  const notify = useToast()
   const [affirmations, setAffirmations] = useState<Affirmation[]>([])
   const [newText, setNewText] = useState('')
   const [loading, setLoading] = useState(true)
@@ -136,6 +138,9 @@ export default function AffirmationsList() {
       const data = await res.json()
       setAffirmations(prev => [...prev, data])
       setNewText('')
+      notify('Affirmation added ✓')
+    } else {
+      notify('Could not add it. Please try again.', 'error')
     }
     setAdding(false)
   }

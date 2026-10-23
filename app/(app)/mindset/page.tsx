@@ -41,10 +41,23 @@ function MindsetContent() {
   const paramTab = searchParams.get('tab')
   const initialTab = tabs.find(t => t === paramTab) ?? 'Journal'
   const [activeTab, setActiveTab] = useState<Tab>(initialTab)
+  // Tabs stay mounted once visited so half-written forms survive switching.
+  const [visited, setVisited] = useState<Tab[]>([initialTab])
 
   const selectTab = (tab: Tab) => {
     setActiveTab(tab)
+    setVisited(v => v.includes(tab) ? v : [...v, tab])
     router.replace(`/mindset?tab=${encodeURIComponent(tab)}`, { scroll: false })
+  }
+
+  const tabContent: Record<Tab, React.ReactNode> = {
+    'Journal': <JournalTab />,
+    'Weekly Assessment': <WeeklyAssessment />,
+    'Flow State': <FlowStateTab />,
+    'Visualization': <VisualizationForm />,
+    'Meditation': <MeditationForm />,
+    'Affirmations': <AffirmationsList />,
+    'Goals': <GoalsSection />,
   }
 
   return (
@@ -68,13 +81,11 @@ function MindsetContent() {
         ))}
       </div>
 
-      {activeTab === 'Journal' && <JournalTab />}
-      {activeTab === 'Weekly Assessment' && <WeeklyAssessment />}
-      {activeTab === 'Flow State' && <FlowStateTab />}
-      {activeTab === 'Visualization' && <VisualizationForm />}
-      {activeTab === 'Meditation' && <MeditationForm />}
-      {activeTab === 'Affirmations' && <AffirmationsList />}
-      {activeTab === 'Goals' && <GoalsSection />}
+      {visited.map(tab => (
+        <div key={tab} className={tab === activeTab ? '' : 'hidden'}>
+          {tabContent[tab]}
+        </div>
+      ))}
 
       <LessonLinks section={tabSections[activeTab]} />
     </div>
