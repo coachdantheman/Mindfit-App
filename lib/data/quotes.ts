@@ -163,15 +163,27 @@ export function quoteDateKey(date: Date = new Date(), timeZone = QUOTE_TIMEZONE)
   return `${get('year')}-${get('month')}-${get('day')}`
 }
 
-// Day number since epoch for a YYYY-MM-DD key, walked through the library in
-// a fixed shuffled order (coprime stride) so consecutive days feel varied.
+// Days alternate between MindFit originals and elite athletes/coaches. Each
+// pool is walked in a fixed shuffled order (coprime stride) so consecutive
+// picks from the same pool feel varied, and every quote appears before any repeats.
+export const ORIGINALS = QUOTES.filter(q => q.author === MF)
+export const ATTRIBUTED = QUOTES.filter(q => q.author !== MF)
+
+const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b))
+function coprimeStride(n: number): number {
+  let s = 37
+  while (gcd(s, n) !== 1) s++
+  return s
+}
+
 export function quoteForDateKey(key: string): Quote {
   const [y, m, d] = key.split('-').map(Number)
   const dayNumber = Math.floor(Date.UTC(y, m - 1, d) / 86_400_000)
-  const n = QUOTES.length
-  const stride = 37 // coprime with 135 (3^3 * 5) and with most nearby lengths
-  const index = ((dayNumber * stride) % n + n) % n
-  return QUOTES[index]
+  const pool = dayNumber % 2 === 0 ? ORIGINALS : ATTRIBUTED
+  const step = Math.floor(dayNumber / 2)
+  const n = pool.length
+  const index = ((step * coprimeStride(n)) % n + n) % n
+  return pool[index]
 }
 
 export function getQuoteOfTheDay(date: Date = new Date()): Quote & { date: string } {

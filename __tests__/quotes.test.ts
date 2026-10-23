@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { QUOTES, quoteForDateKey, quoteDateKey, getQuoteOfTheDay, getQuoteById } from '../lib/data/quotes'
+import { QUOTES, ORIGINALS, ATTRIBUTED, quoteForDateKey, quoteDateKey, getQuoteOfTheDay, getQuoteById } from '../lib/data/quotes'
 
 test('quotes — library has at least 120 entries', () => {
   assert.ok(QUOTES.length >= 120, `only ${QUOTES.length} quotes`)
@@ -27,13 +27,18 @@ test('quoteForDateKey — stable for a given date', () => {
   assert.equal(getQuoteById(a.id)?.text, a.text)
 })
 
-test('quoteForDateKey — consecutive days differ and full cycle covers every quote', () => {
+test('quoteForDateKey — alternates MindFit and attributed, and cycles every quote', () => {
   assert.notEqual(quoteForDateKey('2026-10-22').id, quoteForDateKey('2026-10-23').id)
   const seen = new Set<string>()
   const start = Date.UTC(2026, 0, 1)
-  for (let i = 0; i < QUOTES.length; i++) {
-    const d = new Date(start + i * 86_400_000)
-    seen.add(quoteForDateKey(d.toISOString().slice(0, 10)).id)
+  const days = 2 * Math.max(ORIGINALS.length, ATTRIBUTED.length)
+  let prevIsOriginal: boolean | null = null
+  for (let i = 0; i < days; i++) {
+    const q = quoteForDateKey(new Date(start + i * 86_400_000).toISOString().slice(0, 10))
+    const isOriginal = q.author === 'MindFit'
+    if (prevIsOriginal !== null) assert.notEqual(isOriginal, prevIsOriginal, `day ${i} did not alternate`)
+    prevIsOriginal = isOriginal
+    seen.add(q.id)
   }
   assert.equal(seen.size, QUOTES.length)
 })
