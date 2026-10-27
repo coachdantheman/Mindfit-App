@@ -6,6 +6,7 @@ import RatingSlider from './RatingSlider'
 import SaveButton, { SaveState } from '@/components/shared/SaveButton'
 import { useToast } from '@/components/shared/Toast'
 import { clearDraft, draftKey, readDraft, writeDraft } from '@/lib/useDraft'
+import { localDateISO } from '@/lib/dates'
 
 const DEFAULTS: Partial<JournalFormData> = {
   rating_motivation: 5,
@@ -55,7 +56,7 @@ export default function JournalForm({ previewMode = false, onSaved }: Props) {
   const onSubmit = async (data: JournalFormData) => {
     setState('saving')
     setError('')
-    const today = new Date().toISOString().split('T')[0]
+    const today = localDateISO()
     try {
       const res = await fetch('/api/journal', {
         method: 'POST',

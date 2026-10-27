@@ -6,13 +6,14 @@ import JournalForm from '@/components/journal/JournalForm'
 import TodayEntry from '@/components/journal/TodayEntry'
 import { JournalEntry } from '@/types'
 import Skeleton from '@/components/shared/Skeleton'
+import { localDateISO } from '@/lib/dates'
 
 export default function JournalTab() {
   const [todayEntry, setTodayEntry] = useState<JournalEntry | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const today = new Date().toISOString().split('T')[0]
+    const today = localDateISO()
     fetch(`/api/journal?date=${today}`)
       .then(r => r.json())
       .then(data => {

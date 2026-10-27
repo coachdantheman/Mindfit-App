@@ -15,6 +15,7 @@ import {
 } from '@/components/mindset/flow-logic'
 import { STAGE_META } from '@/components/mindset/flow/flow-constants'
 import { formatDistanceToNow } from 'date-fns'
+import { localDateISO } from '@/lib/dates'
 
 const RatingChart = dynamic(() => import('@/components/dashboard/RatingChart'), { ssr: false })
 const FlowBarChart = dynamic(() => import('@/components/mindset/flow/FlowBarChart'), { ssr: false })
@@ -61,7 +62,7 @@ export default function AthleteDetail({ athleteId, backHref }: { athleteId: stri
   } = data
   const { avgSleep, avgSleepQuality } = calcSleepAverages(sleepEntries)
 
-  const todayStr = new Date().toISOString().split('T')[0]
+  const todayStr = localDateISO()
   const todayEntries = foodEntries.filter(e => e.entry_date === todayStr)
   const foodTotals = todayEntries.reduce(
     (acc, e) => ({
@@ -242,7 +243,7 @@ function FlowSectionPanel({
     const recent = logs.filter(l => new Date(l.logged_at) >= since)
     return avgFlowScore(recent)
   })()
-  const today = new Date().toISOString().split('T')[0]
+  const today = localDateISO()
   const attention = needsAttention(logs, sessions, today, checkins)
   const latestCheckin = checkins[0] ?? null
 

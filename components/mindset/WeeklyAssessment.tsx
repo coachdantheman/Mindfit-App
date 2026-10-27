@@ -5,6 +5,7 @@ import { clearDraft, draftKey, readDraft, writeDraft } from '@/lib/useDraft'
 import { WeeklyAssessment as WeeklyAssessmentType } from '@/types'
 import { MPI_DIMENSIONS, calcMPI, MpiKey } from '@/lib/mpi'
 import Skeleton from '@/components/shared/Skeleton'
+import { localDateISO } from '@/lib/dates'
 
 const CATEGORIES = MPI_DIMENSIONS
 
@@ -15,7 +16,7 @@ function getMonday(d: Date): string {
   const day = date.getDay()
   const diff = date.getDate() - day + (day === 0 ? -6 : 1)
   date.setDate(diff)
-  return date.toISOString().split('T')[0]
+  return localDateISO(date)
 }
 
 function getScoreColor(score: number): string {

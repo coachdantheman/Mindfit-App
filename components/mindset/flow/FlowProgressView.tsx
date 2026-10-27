@@ -10,6 +10,7 @@ import {
 import { STAGE_META, TRIGGER_LABEL, FIVE_A_STEPS } from '@/components/mindset/flow/flow-constants'
 import ReadinessHero from '@/components/dashboard/ReadinessHero'
 import StatCard from '@/components/dashboard/StatCard'
+import { localDateISO } from '@/lib/dates'
 
 const FlowBarChart = dynamic(() => import('@/components/mindset/flow/FlowBarChart'), { ssr: false })
 
@@ -100,7 +101,7 @@ export default function FlowProgressView() {
       )
     : 0
 
-  const attention = needsAttention(logs, sessions, new Date().toISOString().split('T')[0], checkins)
+  const attention = needsAttention(logs, sessions, localDateISO(), checkins)
   const recommendation = generateRecommendation(logs, sessions)
 
   return (

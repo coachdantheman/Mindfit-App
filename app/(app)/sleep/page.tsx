@@ -6,6 +6,7 @@ import Skeleton from '@/components/shared/Skeleton'
 import SaveButton from '@/components/shared/SaveButton'
 import { useToast } from '@/components/shared/Toast'
 import { clearDraft, draftKey, readDraft, writeDraft } from '@/lib/useDraft'
+import { localDateISO } from '@/lib/dates'
 
 interface SleepDraft { bedtime: string; wakeTime: string; quality: number; sleepNotes: string }
 interface RecoveryDraft { isRestDay: boolean; activities: { type: string; duration_min: number }[]; recoveryNotes: string }
@@ -16,7 +17,7 @@ type Tab = 'track' | 'tips'
 
 export default function SleepPage() {
   const [tab, setTab] = useState<Tab>('track')
-  const today = new Date().toISOString().split('T')[0]
+  const today = localDateISO()
 
   // Sleep form state
   const [bedtime, setBedtime] = useState('')

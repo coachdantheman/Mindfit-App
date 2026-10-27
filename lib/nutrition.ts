@@ -1,4 +1,5 @@
 import type { FoodEntry } from '@/types'
+import { localDateISO } from '@/lib/dates'
 
 export const MEALS = ['Breakfast', 'Lunch', 'Dinner', 'Snack'] as const
 export type MealName = (typeof MEALS)[number]
@@ -174,12 +175,7 @@ export function groupEntriesByDay(entries: (MacroRow & { entry_date: string })[]
   return [...map.values()].sort((a, b) => a.date.localeCompare(b.date))
 }
 
-export function localDateISO(d: Date): string {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
+export { localDateISO }
 
 export function shiftDate(iso: string, days: number): string {
   const [y, m, d] = iso.split('-').map(Number)

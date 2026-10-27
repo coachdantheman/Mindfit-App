@@ -4,6 +4,7 @@ import Skeleton from '@/components/shared/Skeleton'
 import SaveButton, { SaveState } from '@/components/shared/SaveButton'
 import { useToast } from '@/components/shared/Toast'
 import { clearDraft, draftKey, readDraft, writeDraft } from '@/lib/useDraft'
+import { localDateISO } from '@/lib/dates'
 
 interface Props {
   endpoint: string
@@ -30,7 +31,7 @@ export default function DailyPracticeForm({
   const [loading, setLoading] = useState(true)
   const [state, setState] = useState<SaveState>('idle')
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = localDateISO()
   const key = draftKey(`practice:${endpoint}`)
 
   useEffect(() => {
