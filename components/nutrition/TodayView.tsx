@@ -1,11 +1,13 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
-import { Food, FoodEntry, NutritionGoal, RecentFood } from '@/types'
+import { Food, FoodEntry, NutritionGoal, RecentFood, SavedMeal } from '@/types'
 import { MEALS, MealName, localDateISO, shiftDate, sumEntries } from '@/lib/nutrition'
 import DateStrip from './DateStrip'
 import DailySummary from './DailySummary'
 import MealSection from './MealSection'
 import AddFoodSheet, { AddItem } from './AddFoodSheet'
+import GameDayCard from './GameDayCard'
+import SaveMealSheet from './SaveMealSheet'
 
 interface Props {
   goal: NutritionGoal | null
@@ -24,6 +26,8 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
   const [recent, setRecent] = useState<RecentFood[]>([])
   const [loading, setLoading] = useState(true)
   const [sheetMeal, setSheetMeal] = useState<MealName | null>(null)
+  const [savedMeals, setSavedMeals] = useState<SavedMeal[]>([])
+  const [saveMeal, setSaveMeal] = useState<MealName | null>(null)
 
   const load = useCallback(async () => {
     const [e, y] = await Promise.all([
@@ -41,6 +45,9 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
 
   useEffect(() => { setLoading(true); load() }, [load])
   useEffect(() => { loadRecent() }, [loadRecent])
+  useEffect(() => {
+    fetch('/api/nutrition/saved-meals').then(r => r.json()).then(d => setSavedMeals(Array.isArray(d) ? d : []))
+  }, [])
 
   const addItems = async (items: AddItem[], saveToFoods?: boolean) => {
     if (!sheetMeal) return
@@ -95,12 +102,43 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
     else notify(data.error ?? 'Could not copy.')
   }
 
+  const saveMealAs = async (name: string) => {
+    if (!saveMeal) return
+    const ids = entries.filter(e => e.meal_name === saveMeal).map(e => e.id)
+    const res = await fetch('/api/nutrition/saved-meals', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, meal_name: saveMeal, entry_ids: ids }),
+    })
+    const data = await res.json()
+    if (res.ok) { setSavedMeals(prev => [data, ...prev]); notify(`Saved "${name}" to Favorites`) }
+    else notify(data.error ?? 'Could not save meal.')
+    setSaveMeal(null)
+  }
+
+  const addSavedMeal = async (meal: SavedMeal) => {
+    if (!sheetMeal) return
+    const res = await fetch('/api/nutrition/saved-meals/log', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ saved_meal_id: meal.id, entry_date: date, meal_name: sheetMeal }),
+    })
+    const data = await res.json()
+    if (res.ok) { setEntries(prev => [...prev, ...data.inserted]); notify(`Added ${meal.name} to ${sheetMeal}`); loadRecent() }
+    else notify(data.error ?? 'Could not add meal.')
+    setSheetMeal(null)
+  }
+
+  const deleteSavedMeal = async (meal: SavedMeal) => {
+    setSavedMeals(prev => prev.filter(m => m.id !== meal.id))
+    await fetch('/api/nutrition/saved-meals', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: meal.id }) })
+  }
+
   const totals = sumEntries(entries)
 
   return (
     <div className="space-y-4">
       <DateStrip date={date} onChange={setDate} />
       <DailySummary totals={totals} goal={goal} onSetGoal={onSetGoal} />
+      <GameDayCard today={date} bodyWeightLb={goal?.current_weight_lb} />
       {loading ? (
         <div className="space-y-3">{[0, 1, 2].map(i => <div key={i} className="skeleton h-16" />)}</div>
       ) : (
@@ -112,6 +150,7 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
             canCopyYesterday={yesterdayMeals.has(meal)}
             onAdd={() => setSheetMeal(meal)}
             onCopyYesterday={() => copyYesterday(meal)}
+            onSaveMeal={() => setSaveMeal(meal)}
             onServings={updateServings}
             onDelete={remove}
           />
@@ -123,10 +162,22 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
           foods={foods}
           recent={recent}
           favorites={favorites}
+          savedMeals={savedMeals}
+          onAddSavedMeal={addSavedMeal}
+          onDeleteSavedMeal={deleteSavedMeal}
           onToggleFavorite={onToggleFavorite}
           onFoodCreated={onFoodCreated}
           onAdd={addItems}
           onClose={() => setSheetMeal(null)}
+        />
+      )}
+      {saveMeal && (
+        <SaveMealSheet
+          meal={saveMeal}
+          entries={entries.filter(e => e.meal_name === saveMeal)}
+          defaultName={`${saveMeal} – ${date}`}
+          onSave={saveMealAs}
+          onClose={() => setSaveMeal(null)}
         />
       )}
     </div>

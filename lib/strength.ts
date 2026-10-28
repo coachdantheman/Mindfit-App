@@ -209,6 +209,21 @@ export function bestE1rm(sets: SetLike[]): number {
   return Math.round(best)
 }
 
+export interface BestSet { weight: number; reps: number; date: string }
+
+// Heaviest set (ties → more reps). With no weighted sets, the most reps.
+export function bestSetFrom(sets: SetLike[]): BestSet | null {
+  let best: BestSet | null = null
+  for (const s of sets) {
+    const reps = s.reps ?? 0
+    const weight = s.weight == null ? 0 : Number(s.weight)
+    if (reps <= 0 && weight <= 0) continue
+    const date = (s.created_at ?? '').slice(0, 10)
+    if (!best || weight > best.weight || (weight === best.weight && reps > best.reps)) best = { weight, reps, date }
+  }
+  return best
+}
+
 export interface SessionPoint {
   date: string       // YYYY-MM-DD
   e1rm: number

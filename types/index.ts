@@ -117,6 +117,27 @@ export interface FoodEntry {
   created_at: string
 }
 
+export interface SavedMealItem {
+  id: string
+  food_id: string | null
+  food_name: string
+  serving_size: string | null
+  servings: number
+  calories: number
+  protein_g: number
+  carbs_g: number
+  fat_g: number
+  sort_order: number
+}
+
+export interface SavedMeal {
+  id: string
+  name: string
+  default_meal_name: string | null
+  created_at: string
+  items: SavedMealItem[]
+}
+
 export type FoodCategory =
   | 'protein' | 'carb' | 'fruit_veg' | 'dairy' | 'snack'
   | 'drink' | 'fast_food' | 'meal' | 'supplement' | 'other'

@@ -9,11 +9,12 @@ interface Props {
   canCopyYesterday: boolean
   onAdd: () => void
   onCopyYesterday: () => void
+  onSaveMeal: () => void
   onServings: (id: string, servings: number) => void
   onDelete: (id: string) => void
 }
 
-export default function MealSection({ meal, entries, canCopyYesterday, onAdd, onCopyYesterday, onServings, onDelete }: Props) {
+export default function MealSection({ meal, entries, canCopyYesterday, onAdd, onCopyYesterday, onSaveMeal, onServings, onDelete }: Props) {
   const kcal = entries.reduce((s, e) => s + Number(e.calories), 0)
   return (
     <div className="card p-4">
@@ -30,6 +31,9 @@ export default function MealSection({ meal, entries, canCopyYesterday, onAdd, on
         <button type="button" onClick={onAdd} className="text-sm font-medium text-cta hover:underline py-2">+ Add food</button>
         {entries.length === 0 && canCopyYesterday && (
           <button type="button" onClick={onCopyYesterday} className="text-xs text-fg-4 hover:text-fg-2 py-2">Copy yesterday</button>
+        )}
+        {entries.length > 0 && (
+          <button type="button" onClick={onSaveMeal} className="text-xs text-fg-4 hover:text-fg-2 py-2">Save as meal</button>
         )}
       </div>
     </div>

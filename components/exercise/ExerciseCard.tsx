@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import SetRow, { setFields } from './SetRow'
+import { format, parseISO } from 'date-fns'
 import { emptySet, type DraftExercise, type DraftSet } from '@/lib/workout-draft'
 
 export interface LastSets {
@@ -8,6 +9,7 @@ export interface LastSets {
   workout_log_id: string | null
   sets: { set_number: number; reps: number | null; weight: number | null; rpe: number | null }[]
   best?: number
+  bestSet?: { weight: number; reps: number; date: string } | null
 }
 
 interface Props {
@@ -62,6 +64,24 @@ export default function ExerciseCard({ exercise, last, onChange, onRemove, onSet
   }
 
   const lastLine = last && last.sets.length > 0 ? summarizeLast(last, exercise.measure) : null
+  const bestSet = last?.bestSet ?? null
+  const bestDate = bestSet?.date ? ` (${format(parseISO(bestSet.date), 'MMM d')})` : ''
+  const bestLine =
+    exercise.measure === 'weight_reps' && bestSet && bestSet.weight > 0
+      ? `${bestSet.weight} lb × ${bestSet.reps}${bestDate}${last?.best ? ` · est. 1RM ${last.best} lb` : ''}`
+      : exercise.measure === 'reps' && bestSet && bestSet.reps > 0
+        ? `${bestSet.reps} reps${bestDate}`
+        : last?.best
+          ? `${last.best}${exercise.measure === 'distance_in' ? ' in' : ''}`
+          : null
+  const beatingBest = !!bestSet && exercise.sets.some(s => {
+    if (!s.done) return false
+    const w = Number(s.weight) || 0
+    const r = Number(s.reps) || 0
+    if (exercise.measure === 'weight_reps') return w > bestSet.weight || (w === bestSet.weight && r > bestSet.reps)
+    if (exercise.measure === 'reps') return r > bestSet.reps
+    return false
+  })
   const lastWeightFor = (i: number) => (last?.sets.length ? last.sets[Math.min(i, last.sets.length - 1)].weight : null)
 
   return (
@@ -79,9 +99,10 @@ export default function ExerciseCard({ exercise, last, onChange, onRemove, onSet
           ) : (
             <p className="text-xs text-fg-4">First time logging this</p>
           )}
-          {last?.best ? (
+          {bestLine ? (
             <p className="text-[11px] text-fg-4">
-              {exercise.measure === 'weight_reps' ? 'Best est. 1RM' : 'Best'}: <span className="text-fg-2 tabular-nums">{last.best}{exercise.measure === 'weight_reps' ? ' lb' : exercise.measure === 'distance_in' ? ' in' : ''}</span>
+              Best: <span className="text-fg-2 tabular-nums">{bestLine}</span>
+              {beatingBest && <span className="text-cta font-medium"> · New best ↑</span>}
             </p>
           ) : null}
         </div>

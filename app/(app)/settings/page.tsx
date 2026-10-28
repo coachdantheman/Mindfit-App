@@ -11,6 +11,7 @@ export default function SettingsPage() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
   const [primarySport, setPrimarySport] = useState('')
   const [secondarySport, setSecondarySport] = useState('')
+  const [nextGame, setNextGame] = useState('')
   const [sportsLoaded, setSportsLoaded] = useState(false)
   const [sportsSaving, setSportsSaving] = useState(false)
   const [sportsStatus, setSportsStatus] = useState<{ ok: boolean; msg: string } | null>(null)
@@ -27,6 +28,7 @@ export default function SettingsPage() {
         if (p) {
           setPrimarySport(p.primary_sport ?? '')
           setSecondarySport(p.secondary_sport ?? '')
+          setNextGame(p.next_competition_at?.slice(0, 10) ?? '')
         }
         setSportsLoaded(true)
       })
@@ -42,6 +44,7 @@ export default function SettingsPage() {
         body: JSON.stringify({
           primary_sport: primarySport,
           secondary_sport: secondarySport,
+          next_competition_at: nextGame || null,
         }),
       })
       if (!res.ok) {
@@ -89,7 +92,7 @@ export default function SettingsPage() {
         <div className="card p-5">
           <h3 className="font-semibold text-fg-1 mb-1 text-sm">Sports</h3>
           <p className="text-sm text-fg-4 mb-4">
-            Used to autofill your Flow State sessions and logs.
+            Used to autofill your Flow State sessions and logs. Your next game date drives the game-day fueling plan in Nutrition.
           </p>
           <div className="space-y-3">
             <div>
@@ -112,6 +115,16 @@ export default function SettingsPage() {
                 value={secondarySport}
                 onChange={e => setSecondarySport(e.target.value)}
                 placeholder="e.g. Track"
+                className="input-field"
+                disabled={!sportsLoaded}
+              />
+            </div>
+            <div>
+              <label className="block text-xs uppercase tracking-wide text-fg-4 mb-1">Next game or match</label>
+              <input
+                type="date"
+                value={nextGame}
+                onChange={e => setNextGame(e.target.value)}
                 className="input-field"
                 disabled={!sportsLoaded}
               />

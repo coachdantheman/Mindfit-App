@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { Food, RecentFood } from '@/types'
+import { Food, RecentFood, SavedMeal } from '@/types'
 import { FoodMacros, scaleFood } from '@/lib/nutrition'
 import FoodSearchList from './FoodSearchList'
 import DescribeMeal from './DescribeMeal'
@@ -25,13 +25,16 @@ interface Props {
   foods: Food[]
   recent: RecentFood[]
   favorites: Food[]
+  savedMeals: SavedMeal[]
+  onAddSavedMeal: (meal: SavedMeal) => Promise<void>
+  onDeleteSavedMeal: (meal: SavedMeal) => void
   onToggleFavorite: (food: Food) => void
   onFoodCreated?: (food: Food) => void
   onAdd: (items: AddItem[], saveToFoods?: boolean) => Promise<void>
   onClose: () => void
 }
 
-export default function AddFoodSheet({ meal, foods, recent, favorites, onToggleFavorite, onFoodCreated, onAdd, onClose }: Props) {
+export default function AddFoodSheet({ meal, foods, recent, favorites, savedMeals, onAddSavedMeal, onDeleteSavedMeal, onToggleFavorite, onFoodCreated, onAdd, onClose }: Props) {
   const [tab, setTab] = useState<SheetTab>('search')
   const [busy, setBusy] = useState(false)
   const [scanMiss, setScanMiss] = useState(false)
@@ -47,6 +50,10 @@ export default function AddFoodSheet({ meal, foods, recent, favorites, onToggleF
   const add = async (items: AddItem[], save?: boolean) => {
     setBusy(true)
     try { await onAdd(items, save) } finally { setBusy(false) }
+  }
+  const addMeal = async (m: SavedMeal) => {
+    setBusy(true)
+    try { await onAddSavedMeal(m) } finally { setBusy(false) }
   }
 
   const TABS: { key: SheetTab; label: string }[] = [
@@ -97,12 +104,40 @@ export default function AddFoodSheet({ meal, foods, recent, favorites, onToggleF
                   busy={busy} onPick={i => add([i])} />
           )}
           {tab === 'favorites' && (
-            favorites.length === 0
-              ? <p className="text-sm text-fg-4 text-center py-8">Tap ☆ on any food in Search to favorite it.</p>
-              : <QuickList
-                  items={favorites.map(f => ({ key: f.id, name: f.name, sub: f.serving_size, kcal: f.calories,
-                    item: { food_name: f.name, food_id: f.id, serving_size: f.serving_size, servings: 1, calories: f.calories, protein_g: Number(f.protein_g), carbs_g: Number(f.carbs_g), fat_g: Number(f.fat_g) } }))}
-                  busy={busy} onPick={i => add([i])} />
+            <div className="space-y-4">
+              <div>
+                <p className="text-[11px] uppercase tracking-wider text-fg-4 mb-1">Meals</p>
+                {savedMeals.length === 0
+                  ? <p className="text-sm text-fg-4 py-3">Save a logged meal to re-add it in one tap.</p>
+                  : <div className="divide-y divide-edge-muted">
+                      {savedMeals.map(m => {
+                        const kcal = m.items.reduce((s, i) => s + Number(i.calories), 0)
+                        return (
+                          <div key={m.id} className="flex items-center gap-2">
+                            <button type="button" disabled={busy} onClick={() => addMeal(m)} className="flex-1 flex items-center justify-between py-2.5 text-left disabled:opacity-50 min-w-0">
+                              <div className="min-w-0">
+                                <p className="text-sm text-fg-1 truncate">{m.name}</p>
+                                <p className="text-[11px] text-fg-4 truncate">{m.items.length} item{m.items.length === 1 ? '' : 's'} · {m.items.map(i => i.food_name).join(', ')}</p>
+                              </div>
+                              <span className="text-sm font-semibold text-fg-2 tabular-nums ml-3 shrink-0">+ {kcal}</span>
+                            </button>
+                            <button type="button" onClick={() => { if (confirm(`Remove "${m.name}" from saved meals?`)) onDeleteSavedMeal(m) }}
+                              aria-label={`Remove ${m.name}`} className="btn-ghost px-2 text-fg-4 shrink-0">✕</button>
+                          </div>
+                        )
+                      })}
+                    </div>}
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wider text-fg-4 mb-1">Foods</p>
+                {favorites.length === 0
+                  ? <p className="text-sm text-fg-4 py-3">Tap ☆ on any food in Search to favorite it.</p>
+                  : <QuickList
+                      items={favorites.map(f => ({ key: f.id, name: f.name, sub: f.serving_size, kcal: f.calories,
+                        item: { food_name: f.name, food_id: f.id, serving_size: f.serving_size, servings: 1, calories: f.calories, protein_g: Number(f.protein_g), carbs_g: Number(f.carbs_g), fat_g: Number(f.fat_g) } }))}
+                      busy={busy} onPick={i => add([i])} />}
+              </div>
+            </div>
           )}
           {tab === 'describe' && <DescribeMeal meal={meal} busy={busy} onAddMany={items => add(items, true)} />}
         </div>

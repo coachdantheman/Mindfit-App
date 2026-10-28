@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   epley, brzycki, e1rm, isReliableReps, interpolateRow, thresholdsFor, tierFor,
-  liftersPercentile, generalPopulationPercentile, evaluateLift, bestE1rm, sessionSeries, detectPrs, prKey,
+  liftersPercentile, generalPopulationPercentile, evaluateLift, bestE1rm, bestSetFrom, sessionSeries, detectPrs, prKey,
 } from '../lib/strength'
 import { STRENGTH_STANDARDS, AGE_FACTOR, ageFactor, TIER_PERCENTILES } from '../lib/data/strength-standards'
 import type { StandardKey } from '../types/exercise'
@@ -145,4 +145,17 @@ test('bestE1rm / sessionSeries / detectPrs', () => {
   const none = detectPrs([{ exercise_id: 'x', exercise_name: 'Bench Press', sets: [{ reps: 1, weight: 240 }] }], prev)
   assert.equal(none.length, 0)
   function prkey(id: string | null, n: string) { return prKey(id, n) }
+})
+
+test('bestSetFrom — heaviest wins, ties by reps, reps-only fallback', () => {
+  const sets = [
+    { reps: 8, weight: 135, created_at: '2026-01-01T10:00:00Z' },
+    { reps: 3, weight: 185, created_at: '2026-01-08T10:00:00Z' },
+    { reps: 5, weight: 185, created_at: '2026-01-15T10:00:00Z' },
+    { reps: 12, weight: 95, created_at: '2026-01-20T10:00:00Z' },
+  ]
+  assert.deepEqual(bestSetFrom(sets), { weight: 185, reps: 5, date: '2026-01-15' })
+  assert.deepEqual(bestSetFrom([{ reps: 10, weight: null, created_at: '2026-02-01' }, { reps: 14, weight: 0, created_at: '2026-02-03' }]), { weight: 0, reps: 14, date: '2026-02-03' })
+  assert.equal(bestSetFrom([]), null)
+  assert.equal(bestSetFrom([{ reps: null, weight: null }]), null)
 })

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
-import { bestE1rm } from '@/lib/strength'
+import { bestE1rm, bestSetFrom, type BestSet } from '@/lib/strength'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -10,6 +10,7 @@ interface LastSets {
   workout_log_id: string | null
   sets: { set_number: number; reps: number | null; weight: number | null; rpe: number | null }[]
   best: number   // best e1RM across the fetched history (0 when none)
+  bestSet: BestSet | null   // heaviest set (ties → more reps)
 }
 
 // Most recent session's sets per exercise. Keyed by exercise_id for linked
@@ -35,15 +36,15 @@ export async function GET(req: Request) {
   ])
 
   const out: Record<string, LastSets> = {}
-  const history: Record<string, { reps: number | null; weight: number | null }[]> = {}
+  const history: Record<string, { reps: number | null; weight: number | null; created_at: string }[]> = {}
   const pick = (rows: any[], keyOf: (r: any) => string) => {
     for (const r of rows) {
       const key = keyOf(r)
       const weight = r.weight == null ? null : Number(r.weight)
-      ;(history[key] ||= []).push({ reps: r.reps, weight })
+      ;(history[key] ||= []).push({ reps: r.reps, weight, created_at: String(r.created_at) })
       const sessionKey = r.workout_log_id ?? `day:${String(r.created_at).slice(0, 10)}`
       if (!out[key]) {
-        out[key] = { date: String(r.created_at).slice(0, 10), workout_log_id: r.workout_log_id ?? null, sets: [], best: 0 }
+        out[key] = { date: String(r.created_at).slice(0, 10), workout_log_id: r.workout_log_id ?? null, sets: [], best: 0, bestSet: null }
       }
       const curKey = out[key].workout_log_id ?? `day:${out[key].date}`
       if (curKey !== sessionKey) continue
@@ -55,6 +56,7 @@ export async function GET(req: Request) {
   for (const [k, v] of Object.entries(out)) {
     v.sets.sort((a, b) => a.set_number - b.set_number)
     v.best = bestE1rm(history[k] ?? [])
+    v.bestSet = bestSetFrom(history[k] ?? [])
   }
 
   return NextResponse.json(out)
