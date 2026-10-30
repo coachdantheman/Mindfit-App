@@ -21,7 +21,7 @@ export async function GET(req: Request) {
 
   if (date) query = query.eq('entry_date', date)
 
-  if (!date) query = query.limit(90)
+  if (!date) query = query.limit(400)
 
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
