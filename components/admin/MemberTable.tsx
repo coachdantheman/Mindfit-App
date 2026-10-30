@@ -15,6 +15,14 @@ export default function MemberTable() {
       .then(data => { setMembers(data); setLoading(false) })
   }, [])
 
+  const remove = async (m: MemberWithCount) => {
+    if (!confirm(`Delete ${m.email} and ALL their data? This cannot be undone.`)) return
+    const res = await fetch(`/api/admin/members/${m.id}`, { method: 'DELETE' })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) { alert(data.error || 'Delete failed'); return }
+    setMembers(prev => prev.filter(x => x.id !== m.id))
+  }
+
   if (loading) return <Skeleton />
 
   if (members.length === 0) {
@@ -31,6 +39,7 @@ export default function MemberTable() {
             <th className="pb-2 font-medium">Joined</th>
             <th className="pb-2 font-medium">Entries</th>
             <th className="pb-2 font-medium">Role</th>
+            <th className="pb-2 font-medium"><span className="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody className="divide-y divide-edge-muted">
@@ -59,6 +68,13 @@ export default function MemberTable() {
                 }`}>
                   {m.role}
                 </span>
+              </td>
+              <td className="py-2.5 text-right">
+                {m.role !== 'admin' && (
+                  <button type="button" onClick={() => remove(m)} className="text-xs text-fg-4 hover:text-red-400" aria-label={`Delete ${m.email}`}>
+                    Delete
+                  </button>
+                )}
               </td>
             </tr>
           ))}

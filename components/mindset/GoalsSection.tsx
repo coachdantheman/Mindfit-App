@@ -112,12 +112,14 @@ export default function GoalsSection() {
             <input
               value={formTitle}
               onChange={e => setFormTitle(e.target.value)}
+              aria-label="Goal title"
               placeholder="Goal title"
               className="input-field"
             />
             <textarea
               value={formDesc}
               onChange={e => setFormDesc(e.target.value)}
+              aria-label="Goal description"
               placeholder="Description (optional)"
               rows={2}
               className="textarea-field"
@@ -157,7 +159,7 @@ export default function GoalsSection() {
                       </div>
                       <button
                         onClick={() => deleteGoal(g.id)}
-                        className="text-xs text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="text-xs text-red-400 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 transition-opacity"
                       >
                         Delete
                       </button>

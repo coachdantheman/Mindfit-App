@@ -62,21 +62,24 @@ export default function OnboardingPage() {
             measured against today.
           </p>
 
-          <label className="block text-sm font-medium text-fg-2 mb-2">What&rsquo;s your name?</label>
+          <label htmlFor="onboarding-name" className="block text-sm font-medium text-fg-2 mb-2">What&rsquo;s your name?</label>
           <input
+            id="onboarding-name"
             type="text"
             value={name}
             onChange={e => setName(e.target.value)}
             maxLength={120}
-            className="w-full border border-edge rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-surface-2 text-fg-1 placeholder:text-fg-4 mb-6"
+            className="w-full border border-edge rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 bg-surface-2 text-fg-1 placeholder:text-fg-4 mb-6"
             placeholder="First and last name"
           />
 
-          <label className="block text-sm font-medium text-fg-2 mb-2">What&rsquo;s your primary sport?</label>
-          <div className="flex flex-wrap gap-2 mb-8">
+          <p id="onboarding-sport-label" className="block text-sm font-medium text-fg-2 mb-2">What&rsquo;s your primary sport?</p>
+          <div className="flex flex-wrap gap-2 mb-8" role="group" aria-labelledby="onboarding-sport-label">
             {SPORTS.map(s => (
               <button
                 key={s}
+                type="button"
+                aria-pressed={sport === s}
                 onClick={() => setSport(s)}
                 className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
                   sport === s

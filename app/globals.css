@@ -51,6 +51,7 @@
   --success: #22c55e;
   --warn:    #eab308;
   --danger:  #ef4444;
+  --danger-bg: rgba(127,29,29,0.30);
   --info:    #3b82f6;
 
   /* Semantic theme tokens as RGB channel triples so Tailwind opacity
@@ -62,12 +63,12 @@
   --fg-1:      243 244 246;
   --fg-2:      209 213 219;
   --fg-3:      156 163 175;
-  --fg-4:      107 114 128;
+  --fg-4:      139 147 161; /* #8b93a1 — 4.6:1 on inputs, was #6b7280 */
   --fg-inverse: 17 24 39;   /* text on gold, both themes */
   --cta-rgb:       196 180 0;
   --cta-hover-rgb: 154 139 0;
-  --border:       rgba(255,255,255,0.10);
-  --border-muted: rgba(255,255,255,0.05);
+  --border:       rgba(255,255,255,0.20);
+  --border-muted: rgba(255,255,255,0.08);
   --link:         var(--cta);
 
   --chart-1: #C4B400;
@@ -107,8 +108,20 @@ html.light {
   --fg-2:      68 64 60;
   --fg-3:      87 83 78;
   --fg-4:      120 113 108;
-  --border:       rgba(0,0,0,0.10);
-  --border-muted: rgba(0,0,0,0.06);
+  --border:       rgba(0,0,0,0.18);
+  --border-muted: rgba(0,0,0,0.08);
+
+  /* Gold text on white needs a deep olive to reach 4.5:1 (#C4B400 is 2.1:1).
+     Buttons on that olive flip to white text. */
+  --fg-inverse:    255 255 255;
+  --cta:           #6B6200;
+  --cta-hover:     #554E00;
+  --cta-rgb:       107 98 0;
+  --cta-hover-rgb: 85 78 0;
+  --link:          var(--cta);
+  --danger:    #b91c1c;
+  --danger-bg: rgba(254,226,226,0.9);
+  --shadow-ring-cta: 0 0 0 2px rgba(107,98,0,0.55);
 
   --shadow-card: 0 1px 3px rgba(0,0,0,0.06);
 
@@ -144,16 +157,21 @@ html.light {
     @apply text-fg-4 hover:text-fg-2 font-medium px-3 py-2 rounded-xl text-sm transition-colors disabled:opacity-50;
   }
   .input-field {
-    @apply w-full bg-surface-2 border border-edge rounded-xl px-4 py-2.5 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50;
+    @apply w-full bg-surface-2 border border-edge rounded-xl px-4 py-2.5 text-sm text-fg-1 placeholder:text-fg-4;
   }
   .textarea-field {
-    @apply w-full bg-surface-2 border border-edge rounded-xl px-4 py-2.5 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50 resize-none;
+    @apply w-full bg-surface-2 border border-edge rounded-xl px-4 py-2.5 text-sm text-fg-1 placeholder:text-fg-4 resize-none;
+  }
+  .error-box {
+    @apply text-sm rounded-lg px-3 py-2;
+    color: var(--danger);
+    background: var(--danger-bg);
   }
   .tab-btn {
     @apply px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all text-fg-4 border border-edge hover:text-fg-2;
   }
   .tab-btn-active {
-    @apply px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all bg-cta/20 text-cta border border-cta/30;
+    @apply px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all bg-cta/15 text-cta border border-cta/40;
   }
   .page-title {
     @apply text-2xl font-bold text-fg-1;
@@ -173,6 +191,16 @@ html.light {
   body {
     @apply bg-page text-fg-1;
   }
+  /* One visible focus ring for every control, keyboard only. */
+  :focus-visible {
+    outline: 2px solid rgb(var(--cta-rgb));
+    outline-offset: 2px;
+  }
+  input:focus-visible, textarea:focus-visible, select:focus-visible {
+    outline-offset: 0;
+    border-color: rgb(var(--cta-rgb));
+  }
+  .sr-only:not(:focus):not(:active) { clip: rect(0 0 0 0); }
 }
 
 @layer utilities {
@@ -187,11 +215,11 @@ html.light {
    raw Tailwind color classes left in components are status hues, which
    need one step darker for contrast on light backgrounds.
    ============================== */
-html.light .text-red-300, html.light .text-red-400 { color: #dc2626; }
-html.light .text-green-300, html.light .text-green-400 { color: #16a34a; }
-html.light .text-yellow-300, html.light .text-yellow-400 { color: #ca8a04; }
+html.light .text-red-300, html.light .text-red-400 { color: #b91c1c; }
+html.light .text-orange-300, html.light .text-orange-400 { color: #c2410c; }
+html.light .text-green-300, html.light .text-green-400 { color: #15803d; }
+html.light .text-yellow-300, html.light .text-yellow-400 { color: #854d0e; }
 html.light .text-amber-300, html.light .text-amber-400 { color: #d97706; }
-html.light .text-orange-300, html.light .text-orange-400 { color: #ea580c; }
 html.light .text-blue-300, html.light .text-blue-400 { color: #2563eb; }
 html.light .text-purple-300, html.light .text-purple-400 { color: #9333ea; }
 

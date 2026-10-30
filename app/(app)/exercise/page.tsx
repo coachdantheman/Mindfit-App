@@ -1,4 +1,5 @@
 'use client'
+import TabBar from '@/components/shared/TabBar'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Workout } from '@/types'
 import type { AthleteProfile, ExerciseLibraryRow, MuscleGroup, StartWorkoutInput } from '@/types/exercise'
@@ -87,19 +88,15 @@ export default function ExercisePage() {
         <p className="page-subtitle">Follow your plan, log sets fast, and see where your strength stands.</p>
       </div>
 
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-1 scrollbar-none">
-        {TABS.map(t => (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => setTab(t.key)}
-            className={`shrink-0 relative ${tab === t.key ? 'tab-btn-active' : 'tab-btn'}`}
-          >
-            {t.label}
-            {t.key === 'track' && hasDraft && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-cta" aria-label="Workout in progress" />}
-          </button>
-        ))}
-      </div>
+      <TabBar
+        label="Exercise sections"
+        tabs={TABS.map(t => ({
+          ...t,
+          badge: t.key === 'track' && hasDraft ? <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-cta" role="img" aria-label="Workout in progress" /> : undefined,
+        }))}
+        active={tab}
+        onSelect={setTab}
+      />
 
       {/* Keep-alive tabs — hidden instead of unmounted so form state survives */}
       <div className={tab === 'plan' ? '' : 'hidden'}>

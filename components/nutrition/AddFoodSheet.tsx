@@ -1,5 +1,7 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useFocusTrap } from '@/lib/useFocusTrap'
+import TabBar from '@/components/shared/TabBar'
 import dynamic from 'next/dynamic'
 import { Food, RecentFood, SavedMeal } from '@/types'
 import { FoodMacros, scaleFood } from '@/lib/nutrition'
@@ -40,12 +42,7 @@ export default function AddFoodSheet({ meal, foods, recent, favorites, savedMeal
   const [scanMiss, setScanMiss] = useState(false)
   const favoriteIds = new Set(favorites.map(f => f.id))
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', onKey)
-    document.body.style.overflow = 'hidden'
-    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = '' }
-  }, [onClose])
+  const dialogRef = useFocusTrap<HTMLDivElement>(onClose)
 
   const add = async (items: AddItem[], save?: boolean) => {
     setBusy(true)
@@ -66,18 +63,14 @@ export default function AddFoodSheet({ meal, foods, recent, favorites, savedMeal
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative w-full sm:max-w-lg max-h-[92vh] sm:max-h-[85vh] bg-surface border border-edge rounded-t-3xl sm:rounded-3xl flex flex-col pb-safe">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} aria-hidden="true" />
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="add-food-title" tabIndex={-1} className="relative w-full sm:max-w-lg max-h-[92vh] sm:max-h-[85vh] bg-surface border border-edge rounded-t-3xl sm:rounded-3xl flex flex-col pb-safe">
         <div className="flex items-center justify-between px-5 pt-4 pb-2">
-          <h3 className="font-semibold text-fg-1">Add to {meal}</h3>
+          <h3 id="add-food-title" className="font-semibold text-fg-1">Add to {meal}</h3>
           <button type="button" onClick={onClose} className="btn-ghost px-2" aria-label="Close">✕</button>
         </div>
-        <div className="flex gap-2 px-5 pb-3 overflow-x-auto scrollbar-none">
-          {TABS.map(t => (
-            <button key={t.key} type="button" onClick={() => setTab(t.key)} className={tab === t.key ? 'tab-btn-active' : 'tab-btn'}>
-              {t.label}
-            </button>
-          ))}
+        <div className="px-5">
+          <TabBar label="Add food methods" tabs={TABS} active={tab} onSelect={setTab} className="mb-3" />
         </div>
         <div className="px-5 pb-5 overflow-y-auto">
           {tab === 'search' && (

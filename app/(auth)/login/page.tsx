@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 
 const AUTH_ERROR_MSG = 'Something went wrong signing you in. Please try again.'
@@ -18,6 +19,8 @@ function LoginForm() {
   const [error, setError] = useState(searchParams.get('error') ? AUTH_ERROR_MSG : '')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [agreed, setAgreed] = useState(false)
+  const needsConsent = mode === 'signup' || mode === 'code'
 
   // A coach's device may still hold the coach's session. Clear it so an
   // athlete creating an account here never writes into the coach's data.
@@ -29,11 +32,12 @@ function LoginForm() {
   }, [])
 
   const inputClass =
-    'w-full border border-edge rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-surface-2 text-fg-1 placeholder:text-fg-4'
+    'w-full border border-edge rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 bg-surface-2 text-fg-1 placeholder:text-fg-4'
 
   const sendCode = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    if (needsConsent && !agreed) { setError('Please accept the Terms and Privacy Policy.'); return }
     setLoading(true)
 
     const gate = await fetch('/api/auth/otp', {
@@ -52,7 +56,8 @@ function LoginForm() {
       email: email.toLowerCase().trim(),
       options: {
         shouldCreateUser: gateData.shouldCreateUser,
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?terms=1`,
+        data: { terms_accepted_at: new Date().toISOString() },
       },
     })
     if (error) {
@@ -84,11 +89,12 @@ function LoginForm() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    if (!agreed) { setError('Please accept the Terms and Privacy Policy.'); return }
     setLoading(true)
     const res = await fetch('/api/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, termsAccepted: true }),
     })
     const data = await res.json()
     if (!res.ok) {
@@ -129,10 +135,11 @@ function LoginForm() {
   }
 
   const handleGoogle = async () => {
+    if (mode === 'signup' && !agreed) { setError('Please accept the Terms and Privacy Policy.'); return }
     setGoogleLoading(true)
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: `${window.location.origin}/auth/callback${agreed ? '?terms=1' : ''}` },
     })
   }
 
@@ -146,11 +153,13 @@ function LoginForm() {
 
         <div className="bg-surface rounded-2xl border border-edge p-8">
           {!codeSent && (
-            <div className="grid grid-cols-2 gap-1 p-1 mb-6 bg-surface-2 rounded-xl">
+            <div className="grid grid-cols-2 gap-1 p-1 mb-6 bg-surface-2 rounded-xl" role="tablist" aria-label="Create account or sign in">
               {(['signup', 'signin'] as const).map(m => (
                 <button
                   key={m}
                   type="button"
+                  role="tab"
+                  aria-selected={mode === m || (m === 'signin' && mode === 'code')}
                   onClick={() => { setMode(m); setError('') }}
                   className={`py-2 rounded-lg text-sm font-medium transition-colors ${
                     mode === m || (m === 'signin' && mode === 'code')
@@ -173,6 +182,7 @@ function LoginForm() {
                 type="text"
                 inputMode="numeric"
                 autoComplete="one-time-code"
+                aria-label="6-digit code"
                 required
                 maxLength={6}
                 value={code}
@@ -182,7 +192,7 @@ function LoginForm() {
                 autoFocus
               />
               {error && (
-                <p className="text-red-400 text-sm bg-red-900/30 rounded-lg px-3 py-2">{error}</p>
+                <p role="alert" className="error-box">{error}</p>
               )}
               <button
                 type="submit"
@@ -215,9 +225,11 @@ function LoginForm() {
                 className="space-y-4"
               >
                 <div>
-                  <label className="block text-sm font-medium text-fg-2 mb-1">Email</label>
+                  <label htmlFor="login-email" className="block text-sm font-medium text-fg-2 mb-1">Email</label>
                   <input
+                    id="login-email"
                     type="email"
+                    autoComplete="email"
                     required
                     value={email}
                     onChange={e => setEmail(e.target.value)}
@@ -228,8 +240,9 @@ function LoginForm() {
 
                 {mode !== 'code' && (
                   <div>
-                    <label className="block text-sm font-medium text-fg-2 mb-1">Password</label>
+                    <label htmlFor="login-password" className="block text-sm font-medium text-fg-2 mb-1">Password</label>
                     <input
+                      id="login-password"
                       type="password"
                       required
                       minLength={mode === 'signup' ? 8 : undefined}
@@ -242,8 +255,24 @@ function LoginForm() {
                   </div>
                 )}
 
+                {needsConsent && (
+                  <label className="flex items-start gap-2 text-sm text-fg-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={agreed}
+                      onChange={e => setAgreed(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-edge bg-surface-2 accent-[#C4B400]"
+                    />
+                    <span>
+                      I agree to the{' '}
+                      <Link href="/terms" className="text-cta hover:underline" target="_blank">Terms of Service</Link> and{' '}
+                      <Link href="/privacy" className="text-cta hover:underline" target="_blank">Privacy Policy</Link>.
+                    </span>
+                  </label>
+                )}
+
                 {error && (
-                  <p className="text-red-400 text-sm bg-red-900/30 rounded-lg px-3 py-2">{error}</p>
+                  <p role="alert" className="error-box">{error}</p>
                 )}
 
                 <button
@@ -302,6 +331,9 @@ function LoginForm() {
                   MindFit Skool community
                 </a>
                 ? Use your Skool email and your coach is linked automatically.
+              </p>
+              <p className="text-center text-xs text-fg-4 mt-4">
+                <Link href="/terms" className="hover:text-fg-2">Terms</Link> · <Link href="/privacy" className="hover:text-fg-2">Privacy</Link> · <Link href="/cookies" className="hover:text-fg-2">Cookies</Link>
               </p>
             </>
           )}

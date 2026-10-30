@@ -38,6 +38,7 @@ export default function DescribeMeal({ meal, onAddMany, busy }: Props) {
   return (
     <div className="space-y-3">
       <textarea
+        aria-label="Describe your meal"
         className="textarea-field"
         rows={3}
         placeholder='e.g. "2 scrambled eggs, 2 slices of toast with peanut butter, 16 oz chocolate milk"'

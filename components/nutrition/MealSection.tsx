@@ -19,7 +19,7 @@ export default function MealSection({ meal, entries, canCopyYesterday, onAdd, on
   return (
     <div className="card p-4">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="font-semibold text-fg-1 text-sm">{meal}</h3>
+        <h3 className="font-semibold text-fg-1 text-sm" id={`meal-${meal}`}>{meal}</h3>
         <span className="text-xs text-fg-4 tabular-nums">{kcal > 0 ? `${kcal} kcal` : ''}</span>
       </div>
       {entries.length > 0 && (
@@ -28,7 +28,7 @@ export default function MealSection({ meal, entries, canCopyYesterday, onAdd, on
         </div>
       )}
       <div className="flex items-center gap-4">
-        <button type="button" onClick={onAdd} className="text-sm font-medium text-cta hover:underline py-2">+ Add food</button>
+        <button type="button" onClick={onAdd} aria-describedby={`meal-${meal}`} className="text-sm font-medium text-cta hover:underline py-2">+ Add food</button>
         {entries.length === 0 && canCopyYesterday && (
           <button type="button" onClick={onCopyYesterday} className="text-xs text-fg-4 hover:text-fg-2 py-2">Copy yesterday</button>
         )}

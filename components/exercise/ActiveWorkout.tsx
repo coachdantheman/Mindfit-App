@@ -90,7 +90,7 @@ export default function ActiveWorkout({ draft, library, saving, onChange, onFini
             onChange={e => onChange({ ...draft, name: e.target.value })}
             placeholder="Workout name"
             aria-label="Workout name"
-            className="w-full bg-transparent font-bold text-fg-1 text-lg placeholder:text-fg-4 focus:outline-none"
+            className="w-full bg-transparent font-bold text-fg-1 text-lg placeholder:text-fg-4"
           />
           <p className="text-xs text-fg-4 tabular-nums">{draft.categoryName} · {elapsed} · {stats.doneSets}/{stats.totalSets} sets</p>
         </div>

@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useId, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { FlowTrigger } from '@/types'
 import { TRIGGERS } from '@/components/mindset/flow/flow-constants'
@@ -136,8 +136,8 @@ export default function FlowLogForm() {
         </div>
 
         <div>
-          <label className="text-sm text-fg-3 block mb-1">What's one thing that worked or didn't?</label>
-          <textarea
+          <label htmlFor="flowlogform-what-s-one-thing-that-worked-or-didn-t" className="text-sm text-fg-3 block mb-1">What's one thing that worked or didn't?</label>
+          <textarea id="flowlogform-what-s-one-thing-that-worked-or-didn-t"
             value={note}
             onChange={e => setNote(e.target.value)}
             rows={2}
@@ -157,13 +157,15 @@ export default function FlowLogForm() {
 }
 
 function DecimalSlider({ label, value, onChange }: { label: string; value: number; onChange: (n: number) => void }) {
+  const id = useId()
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
-        <label className="text-sm text-fg-3">{label}</label>
+        <label htmlFor={id} className="text-sm text-fg-3">{label}</label>
         <span className="text-cta font-bold tabular-nums">{value.toFixed(1)}/10</span>
       </div>
       <input
+        id={id}
         type="range"
         min={1}
         max={10}
@@ -177,13 +179,15 @@ function DecimalSlider({ label, value, onChange }: { label: string; value: numbe
 }
 
 function IntSlider({ label, value, onChange }: { label: string; value: number; onChange: (n: number) => void }) {
+  const id = useId()
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
-        <label className="text-sm text-fg-3">{label}</label>
+        <label htmlFor={id} className="text-sm text-fg-3">{label}</label>
         <span className="text-cta font-bold tabular-nums">{value}/10</span>
       </div>
       <input
+        id={id}
         type="range"
         min={1}
         max={10}

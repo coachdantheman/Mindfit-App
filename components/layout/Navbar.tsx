@@ -82,6 +82,11 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
     pathname === href || pathname.startsWith(href + '/')
 
   const initials = computeInitials(fullName, email)
+  const roleLink =
+    role === 'admin' ? { href: '/admin', label: 'Admin' } :
+    role === 'coach' ? { href: '/coach', label: 'Coach' } :
+    role === 'parent' ? { href: '/parent', label: 'My Athletes' } :
+    null
 
   return (
     <>
@@ -112,6 +117,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
                   <Link
                     key={tab.href}
                     href={tab.href}
+                    aria-current={active ? 'page' : undefined}
                     className={`relative px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       active
                         ? 'text-fg-1'
@@ -125,16 +131,17 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
                   </Link>
                 )
               })}
-              {(role === 'admin' || role === 'coach') && (
+              {roleLink && (
                 <Link
-                  href={role === 'admin' ? '/admin' : '/coach'}
+                  href={roleLink.href}
+                  aria-current={isActive(roleLink.href) ? 'page' : undefined}
                   className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isActive('/admin') || isActive('/coach')
+                    isActive(roleLink.href)
                       ? 'text-cta'
                       : 'text-fg-3 hover:text-fg-1'
                   }`}
                 >
-                  {role === 'admin' ? 'Admin' : 'Coach'}
+                  {roleLink.label}
                 </Link>
               )}
             </div>
@@ -142,16 +149,17 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
             {/* Right cluster */}
             <div className="flex items-center gap-2">
               <StreakChip pathname={pathname} />
-              {(role === 'admin' || role === 'coach') && (
+              {roleLink && (
                 <Link
-                  href={role === 'admin' ? '/admin' : '/coach'}
+                  href={roleLink.href}
+                  aria-current={isActive(roleLink.href) ? 'page' : undefined}
                   className={`sm:hidden p-2.5 rounded-md transition-colors ${
-                    isActive('/admin') || isActive('/coach')
+                    isActive(roleLink.href)
                       ? 'text-cta bg-cta/10'
                       : 'text-fg-3 hover:text-fg-1 hover:bg-surface-2'
                   }`}
-                  title={role === 'admin' ? 'Admin' : 'Coach'}
-                  aria-label={role === 'admin' ? 'Admin' : 'Coach'}
+                  title={roleLink.label}
+                  aria-label={roleLink.label}
                 >
                   <ShieldIcon className="w-5 h-5" />
                 </Link>
@@ -164,6 +172,8 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
                     : 'text-fg-3 hover:text-fg-1 hover:bg-surface-2'
                 }`}
                 title="Settings"
+                aria-label="Settings"
+                aria-current={isActive('/settings') ? 'page' : undefined}
               >
                 <SettingsIcon className="w-5 h-5" />
               </Link>
@@ -187,7 +197,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
       </nav>
 
       {/* Mobile bottom tab bar */}
-      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-edge pb-safe">
+      <nav aria-label="Primary" className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-edge pb-safe">
         <div className="flex items-stretch">
           {tabs.map(tab => {
             const Icon = tab.icon
@@ -196,6 +206,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
               <Link
                 key={tab.href}
                 href={tab.href}
+                aria-current={active ? 'page' : undefined}
                 className={`flex-1 flex flex-col items-center justify-center gap-1 py-2.5 min-h-[56px] text-[11px] font-medium transition-colors ${
                   active ? 'text-cta' : 'text-fg-4'
                 }`}
@@ -206,7 +217,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
             )
           })}
         </div>
-      </div>
+      </nav>
     </>
   )
 }

@@ -13,7 +13,7 @@ interface Props {
   onCreateExercise: (name: string, muscle_group: MuscleGroup) => Promise<ExerciseLibraryRow | null>
 }
 
-const NUM = 'w-12 bg-surface-2 border border-edge rounded-lg px-1 py-2 text-sm text-fg-1 text-center tabular-nums focus:outline-none focus:ring-2 focus:ring-cta/50'
+const NUM = 'w-12 bg-surface-2 border border-edge rounded-lg px-1 py-2 text-sm text-fg-1 text-center tabular-nums focus:ring-2 focus:ring-cta/50'
 
 // Per-day template for one block: pick a day, name it, add exercises with
 // sets × reps targets. Every week of the block gets the same template.
@@ -96,7 +96,7 @@ export default function PlanDayEditor({ blocks, templates, onChange, library, on
                 <div key={ei} className="bg-surface-2/50 rounded-xl p-2.5 space-y-2">
                   <div className="flex items-center justify-between gap-2">
                     <input value={ex.name} onChange={e => updateExercise(ei, { name: e.target.value })} aria-label="Exercise name"
-                      className="flex-1 min-w-0 bg-transparent text-sm text-fg-1 font-medium focus:outline-none" />
+                      className="flex-1 min-w-0 bg-transparent text-sm text-fg-1 font-medium" />
                     <button type="button" onClick={() => removeExercise(ei)} aria-label="Remove exercise" className="btn-ghost px-2">✕</button>
                   </div>
                   <div className="flex items-center gap-2">
@@ -105,7 +105,7 @@ export default function PlanDayEditor({ blocks, templates, onChange, library, on
                     <input value={ex.reps} onChange={e => updateExercise(ei, { reps: e.target.value })} placeholder="reps"
                       aria-label="Rep target" className={`${NUM} w-20`} />
                     <input value={ex.notes ?? ''} onChange={e => updateExercise(ei, { notes: e.target.value })} placeholder="Notes"
-                      aria-label="Notes" className="flex-1 min-w-0 bg-surface-2 border border-edge rounded-lg px-2 py-2 text-xs text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50" />
+                      aria-label="Notes" className="flex-1 min-w-0 bg-surface-2 border border-edge rounded-lg px-2 py-2 text-xs text-fg-1 placeholder:text-fg-4 focus:ring-2 focus:ring-cta/50" />
                   </div>
                 </div>
               ))}

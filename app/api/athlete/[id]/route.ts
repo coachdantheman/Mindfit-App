@@ -3,20 +3,27 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
-  const auth = await verifyApiUser('admin', 'coach')
+  const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
   const athleteId = params.id
   const admin = createAdminClient()
 
-  if (auth.role === 'coach') {
-    const { data: link } = await admin
-      .from('coach_athletes')
-      .select('id')
-      .eq('coach_id', auth.userId)
-      .eq('athlete_id', athleteId)
-      .single()
-    if (!link) return NextResponse.json({ error: 'Not your athlete' }, { status: 403 })
+  // Admins see everyone. A coach needs a coach_athletes link; anyone else
+  // needs a parent_athletes link and gets a read-only view.
+  let viewer: 'admin' | 'coach' | 'parent' = 'parent'
+  if (auth.role === 'admin') {
+    viewer = 'admin'
+  } else {
+    const [{ data: coachLink }, { data: parentLink }] = await Promise.all([
+      auth.role === 'coach'
+        ? admin.from('coach_athletes').select('id').eq('coach_id', auth.userId).eq('athlete_id', athleteId).maybeSingle()
+        : Promise.resolve({ data: null }),
+      admin.from('parent_athletes').select('id').eq('parent_id', auth.userId).eq('athlete_id', athleteId).maybeSingle(),
+    ])
+    if (coachLink) viewer = 'coach'
+    else if (parentLink) viewer = 'parent'
+    else return NextResponse.json({ error: 'Not your athlete' }, { status: 403 })
   }
 
   const { data: profile } = await admin
@@ -55,7 +62,9 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     admin.from('flow_sessions').select('*').eq('user_id', athleteId).order('started_at', { ascending: false }).limit(1000),
     admin.from('flow_logs').select('*').eq('user_id', athleteId).order('logged_at', { ascending: false }).limit(1000),
     admin.from('flow_stage_checkins').select('*').eq('user_id', athleteId).order('checked_at', { ascending: false }).limit(500),
-    admin.from('flow_coach_notes').select('*').eq('athlete_id', athleteId).eq('coach_id', auth.userId).maybeSingle(),
+    viewer === 'parent'
+      ? Promise.resolve({ data: null })
+      : admin.from('flow_coach_notes').select('*').eq('athlete_id', athleteId).eq('coach_id', auth.userId).maybeSingle(),
   ])
 
   return NextResponse.json({
@@ -76,5 +85,6 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     flowLogs: flowLogs ?? [],
     flowStageCheckins: flowStageCheckins ?? [],
     flowCoachNote: coachNote?.note ?? null,
+    readOnly: viewer === 'parent',
   })
 }

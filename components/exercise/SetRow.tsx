@@ -10,7 +10,7 @@ interface Props {
   onRemove?: () => void
 }
 
-const FIELD = 'w-full bg-surface-2 border border-edge rounded-lg px-2 py-2 text-sm text-fg-1 text-center tabular-nums placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50 disabled:opacity-60'
+const FIELD = 'w-full bg-surface-2 border border-edge rounded-lg px-2 py-2 text-sm text-fg-1 text-center tabular-nums placeholder:text-fg-4 focus:ring-2 focus:ring-cta/50 disabled:opacity-60'
 
 // Which columns a set shows, by how the exercise is measured. Seconds ride
 // in `reps`, inches ride in `weight`, so the payload shape never changes.

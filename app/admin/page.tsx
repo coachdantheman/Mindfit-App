@@ -1,4 +1,5 @@
 'use client'
+import TabBar from '@/components/shared/TabBar'
 import { useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import WhitelistTable from '@/components/admin/WhitelistTable'
@@ -29,17 +30,7 @@ function AdminContent() {
         <p className="page-subtitle">Manage member access, coaches, and view progress.</p>
       </div>
 
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
-        {tabs.map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={activeTab === tab ? 'tab-btn-active' : 'tab-btn'}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
+      <TabBar label="Admin sections" tabs={tabs.map(t => ({ key: t, label: t }))} active={activeTab} onSelect={setActiveTab} />
 
       <div className="card p-6">
         {activeTab === 'Skool & Coach Access' && <WhitelistTable />}

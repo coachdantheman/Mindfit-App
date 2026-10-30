@@ -73,10 +73,11 @@ function SortableItem({
       {editingId === a.id ? (
         <div className="flex-1 flex gap-2">
           <input
+            aria-label="Edit affirmation"
             value={editText}
             onChange={e => setEditText(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && saveEdit(a.id)}
-            className="flex-1 bg-surface-2 border border-edge rounded-lg px-3 py-1.5 text-sm text-fg-1 focus:outline-none focus:ring-2 focus:ring-cta/50"
+            className="flex-1 bg-surface-2 border border-edge rounded-lg px-3 py-1.5 text-sm text-fg-1 focus:ring-2 focus:ring-cta/50"
             autoFocus
           />
           <button onClick={() => saveEdit(a.id)} className="text-xs text-cta font-medium">Save</button>
@@ -85,7 +86,7 @@ function SortableItem({
       ) : (
         <>
           <p className="flex-1 text-sm text-fg-2 italic">&ldquo;{a.text}&rdquo;</p>
-          <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex gap-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-within:opacity-100 transition-opacity">
             <button
               onClick={() => { setEditingId(a.id); setEditText(a.text) }}
               className="text-xs text-fg-4 hover:text-fg-2"
@@ -217,6 +218,7 @@ export default function AffirmationsList() {
           <input
             value={newText}
             onChange={e => setNewText(e.target.value)}
+            aria-label="New affirmation"
             placeholder="I am confident under pressure…"
             className="input-field flex-1"
           />

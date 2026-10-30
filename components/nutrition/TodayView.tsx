@@ -1,5 +1,5 @@
 'use client'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Food, FoodEntry, NutritionGoal, RecentFood, SavedMeal } from '@/types'
 import { MEALS, MealName, localDateISO, shiftDate, sumEntries } from '@/lib/nutrition'
 import DateStrip from './DateStrip'
@@ -16,10 +16,11 @@ interface Props {
   onToggleFavorite: (food: Food) => void
   onFoodCreated: (food: Food) => void
   onSetGoal: () => void
+  onOpenGameDay: () => void
   notify: (msg: string) => void
 }
 
-export default function TodayView({ goal, foods, favorites, onToggleFavorite, onFoodCreated, onSetGoal, notify }: Props) {
+export default function TodayView({ goal, foods, favorites, onToggleFavorite, onFoodCreated, onSetGoal, onOpenGameDay, notify }: Props) {
   const [date, setDate] = useState(() => localDateISO(new Date()))
   const [entries, setEntries] = useState<FoodEntry[]>([])
   const [yesterdayMeals, setYesterdayMeals] = useState<Set<string>>(new Set())
@@ -49,6 +50,27 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
     fetch('/api/nutrition/saved-meals').then(r => r.json()).then(d => setSavedMeals(Array.isArray(d) ? d : []))
   }, [])
 
+  // Every meal the athlete builds lands in Favorites on its own. A slot
+  // needs at least two items to count as a meal, and the server skips
+  // item sets it already has.
+  const autoTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+  const entriesRef = useRef(entries)
+  entriesRef.current = entries
+  const autoSaveMeal = useCallback((meal: MealName) => {
+    clearTimeout(autoTimers.current[meal])
+    autoTimers.current[meal] = setTimeout(async () => {
+      const ids = entriesRef.current.filter(e => e.meal_name === meal).map(e => e.id)
+      if (ids.length < 2) return
+      const res = await fetch('/api/nutrition/saved-meals', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ auto: true, meal_name: meal, entry_date: date, entry_ids: ids }),
+      })
+      if (!res.ok) return
+      const data = await res.json()
+      if (data?.id && !data.duplicate) setSavedMeals(prev => [...prev.filter(m => !m.auto_saved), data, ...prev.filter(m => m.auto_saved)])
+    }, 1500)
+  }, [date])
+
   const addItems = async (items: AddItem[], saveToFoods?: boolean) => {
     if (!sheetMeal) return
     const added: FoodEntry[] = []
@@ -75,6 +97,7 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
       setEntries(prev => [...prev, ...added])
       notify(`Added ${added.length === 1 ? added[0].food_name : `${added.length} items`} to ${sheetMeal}`)
       loadRecent()
+      autoSaveMeal(sheetMeal)
     }
     setSheetMeal(null)
   }
@@ -98,7 +121,7 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
       body: JSON.stringify({ from_date: shiftDate(date, -1), to_date: date, meal_name: meal }),
     })
     const data = await res.json()
-    if (res.ok) { setEntries(prev => [...prev, ...data.inserted]); notify(`Copied yesterday's ${meal.toLowerCase()}`) }
+    if (res.ok) { setEntries(prev => [...prev, ...data.inserted]); notify(`Copied yesterday's ${meal.toLowerCase()}`); autoSaveMeal(meal) }
     else notify(data.error ?? 'Could not copy.')
   }
 
@@ -138,7 +161,7 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
     <div className="space-y-4">
       <DateStrip date={date} onChange={setDate} />
       <DailySummary totals={totals} goal={goal} onSetGoal={onSetGoal} />
-      <GameDayCard today={date} bodyWeightLb={goal?.current_weight_lb} />
+      <GameDayCard today={date} onOpenGameDay={onOpenGameDay} />
       {loading ? (
         <div className="space-y-3">{[0, 1, 2].map(i => <div key={i} className="skeleton h-16" />)}</div>
       ) : (

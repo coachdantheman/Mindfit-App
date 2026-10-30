@@ -122,9 +122,9 @@ export default function PreBuiltWorkouts({ onStartWorkout, notify }: Props) {
                       {logForm?.workoutId === w.id ? (
                         <form onSubmit={logWorkout} className="flex-1 flex gap-2 items-end min-w-0">
                           <input type="number" value={logDuration} onChange={e => setLogDuration(e.target.value)} placeholder="Min"
-                            className="w-20 bg-surface-2 border border-edge rounded-lg px-2 py-2 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50" />
+                            className="w-20 bg-surface-2 border border-edge rounded-lg px-2 py-2 text-sm text-fg-1 placeholder:text-fg-4 focus:ring-2 focus:ring-cta/50" />
                           <input value={logNotes} onChange={e => setLogNotes(e.target.value)} placeholder="Notes"
-                            className="flex-1 min-w-0 bg-surface-2 border border-edge rounded-lg px-2 py-2 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50" />
+                            className="flex-1 min-w-0 bg-surface-2 border border-edge rounded-lg px-2 py-2 text-sm text-fg-1 placeholder:text-fg-4 focus:ring-2 focus:ring-cta/50" />
                           <button type="submit" disabled={saving} className="btn-secondary px-3 py-2">
                             {saving ? '…' : 'Log'}
                           </button>

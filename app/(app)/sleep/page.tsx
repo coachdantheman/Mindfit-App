@@ -1,4 +1,5 @@
 'use client'
+import TabBar from '@/components/shared/TabBar'
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import LessonLinks from '@/components/shared/LessonLinks'
@@ -153,17 +154,7 @@ export default function SleepPage() {
         <p className="page-subtitle">{format(new Date(), 'EEEE, MMMM d, yyyy')}</p>
       </div>
 
-      <div className="flex gap-2 mb-6">
-        {(['track', 'tips'] as Tab[]).map(t => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={tab === t ? 'tab-btn-active' : 'tab-btn'}
-          >
-            {t === 'track' ? 'Track' : 'Tips & Recovery'}
-          </button>
-        ))}
-      </div>
+      <TabBar label="Sleep sections" tabs={[{ key: 'track' as Tab, label: 'Track' }, { key: 'tips' as Tab, label: 'Tips & Recovery' }]} active={tab} onSelect={setTab} />
 
       {/* Both tabs stay mounted so unsaved edits survive switching. */}
       {(
@@ -176,21 +167,21 @@ export default function SleepPage() {
             <div className="space-y-4">
               <div className="flex gap-4">
                 <div>
-                  <label className="text-sm text-fg-3 block mb-1">Bedtime</label>
-                  <input
+                  <label htmlFor="sleep-bedtime" className="text-sm text-fg-3 block mb-1">Bedtime</label>
+                  <input id="sleep-bedtime"
                     type="time"
                     value={bedtime}
                     onChange={e => { setBedtime(e.target.value); setSleepSaved(false) }}
-                    className="bg-surface-2 border border-edge rounded-xl px-4 py-2.5 text-sm text-fg-1 focus:outline-none focus:ring-2 focus:ring-cta/50"
+                    className="bg-surface-2 border border-edge rounded-xl px-4 py-2.5 text-sm text-fg-1 focus:ring-2 focus:ring-cta/50"
                   />
                 </div>
                 <div>
-                  <label className="text-sm text-fg-3 block mb-1">Wake Time</label>
-                  <input
+                  <label htmlFor="sleep-wake-time" className="text-sm text-fg-3 block mb-1">Wake Time</label>
+                  <input id="sleep-wake-time"
                     type="time"
                     value={wakeTime}
                     onChange={e => { setWakeTime(e.target.value); setSleepSaved(false) }}
-                    className="bg-surface-2 border border-edge rounded-xl px-4 py-2.5 text-sm text-fg-1 focus:outline-none focus:ring-2 focus:ring-cta/50"
+                    className="bg-surface-2 border border-edge rounded-xl px-4 py-2.5 text-sm text-fg-1 focus:ring-2 focus:ring-cta/50"
                   />
                 </div>
                 {hours && (
@@ -217,8 +208,8 @@ export default function SleepPage() {
               </div>
 
               <div>
-                <label className="text-sm text-fg-3 block mb-1">Notes</label>
-                <textarea
+                <label htmlFor="sleep-notes" className="text-sm text-fg-3 block mb-1">Notes</label>
+                <textarea id="sleep-notes"
                   value={sleepNotes}
                   onChange={e => { setSleepNotes(e.target.value); setSleepSaved(false) }}
                   placeholder="How did you sleep? Any disruptions?"
@@ -245,9 +236,15 @@ export default function SleepPage() {
 
             <div className="space-y-4">
               <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isRestDay}
+                  onChange={() => { setIsRestDay(!isRestDay); setRecoverySaved(false) }}
+                  className="sr-only peer"
+                />
                 <div
-                  onClick={() => { setIsRestDay(!isRestDay); setRecoverySaved(false) }}
-                  className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
+                  aria-hidden="true"
+                  className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-cta ${
                     isRestDay ? 'bg-cta border-cta' : 'border-edge hover:border-fg-4'
                   }`}
                 >
@@ -281,8 +278,8 @@ export default function SleepPage() {
               </div>
 
               <div>
-                <label className="text-sm text-fg-3 block mb-1">Notes</label>
-                <textarea
+                <label htmlFor="sleep-notes-2" className="text-sm text-fg-3 block mb-1">Notes</label>
+                <textarea id="sleep-notes-2"
                   value={recoveryNotes}
                   onChange={e => { setRecoveryNotes(e.target.value); setRecoverySaved(false) }}
                   placeholder="How are you recovering? Any soreness?"

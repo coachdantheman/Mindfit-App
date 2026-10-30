@@ -32,8 +32,8 @@ export default function CustomFoodForm({ initialName = '', onAdd, busy }: Props)
 
   return (
     <form onSubmit={submit} className="space-y-3">
-      <input className="input-field" placeholder="Food name" value={name} onChange={e => setName(e.target.value)} required />
-      <input className="input-field" placeholder="Serving (e.g. 1 cup, 4 oz)" value={serving} onChange={e => setServing(e.target.value)} />
+      <input className="input-field" aria-label="Food name" placeholder="Food name" value={name} onChange={e => setName(e.target.value)} required />
+      <input className="input-field" aria-label="Serving size" placeholder="Serving (e.g. 1 cup, 4 oz)" value={serving} onChange={e => setServing(e.target.value)} />
       <div className="grid grid-cols-4 gap-2">
         {[
           { label: 'Cal', v: cal, set: setCal, ph: calc ? String(calc) : '0' },
@@ -42,8 +42,8 @@ export default function CustomFoodForm({ initialName = '', onAdd, busy }: Props)
           { label: 'F g', v: f, set: setF, ph: '0' },
         ].map(x => (
           <div key={x.label}>
-            <label className="block text-[10px] uppercase tracking-wider text-fg-4 mb-1">{x.label}</label>
-            <input type="number" inputMode="decimal" min="0" className="input-field px-2 text-center" placeholder={x.ph} value={x.v} onChange={e => x.set(e.target.value)} />
+            <label htmlFor={`custom-food-${x.label}`} className="block text-[10px] uppercase tracking-wider text-fg-4 mb-1">{x.label}</label>
+            <input id={`custom-food-${x.label}`} type="number" inputMode="decimal" min="0" className="input-field px-2 text-center" placeholder={x.ph} value={x.v} onChange={e => x.set(e.target.value)} />
           </div>
         ))}
       </div>

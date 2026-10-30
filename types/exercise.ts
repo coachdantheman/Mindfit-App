@@ -59,6 +59,8 @@ export interface StartWorkoutInput {
   workoutId?: string | null
   programWorkoutId?: string | null
   coachWorkoutId?: string | null
+  // Repeating a logged workout: last session's reps per set become the placeholders.
+  prefill?: { name: string; reps: (string | null)[] }[]
 }
 
 export interface SessionPr {

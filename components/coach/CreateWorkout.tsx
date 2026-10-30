@@ -117,11 +117,11 @@ export default function CreateWorkout() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-fg-4 block mb-1">Athlete</label>
-            <select
+            <label htmlFor="createworkout-athlete" className="text-xs text-fg-4 block mb-1">Athlete</label>
+            <select id="createworkout-athlete"
               value={athleteId}
               onChange={e => setAthleteId(e.target.value)}
-              className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 focus:outline-none focus:ring-2 focus:ring-cta/50"
+              className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 focus:ring-2 focus:ring-cta/50"
             >
               <option value="">Select athlete...</option>
               {athletes.map(a => (
@@ -130,33 +130,33 @@ export default function CreateWorkout() {
             </select>
           </div>
           <div>
-            <label className="text-xs text-fg-4 block mb-1">Assigned Date (optional)</label>
-            <input
+            <label htmlFor="createworkout-assigned-date-optional" className="text-xs text-fg-4 block mb-1">Assigned Date (optional)</label>
+            <input id="createworkout-assigned-date-optional"
               type="date"
               value={assignedDate}
               onChange={e => setAssignedDate(e.target.value)}
-              className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 focus:outline-none focus:ring-2 focus:ring-cta/50"
+              className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 focus:ring-2 focus:ring-cta/50"
             />
           </div>
         </div>
 
         <div>
-          <label className="text-xs text-fg-4 block mb-1">Workout Name</label>
-          <input
+          <label htmlFor="createworkout-workout-name" className="text-xs text-fg-4 block mb-1">Workout Name</label>
+          <input id="createworkout-workout-name"
             value={name}
             onChange={e => setName(e.target.value)}
             placeholder="e.g., Upper Body Strength"
-            className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50"
+            className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 placeholder:text-fg-4 focus:ring-2 focus:ring-cta/50"
           />
         </div>
 
         <div>
-          <label className="text-xs text-fg-4 block mb-1">Description (optional)</label>
-          <input
+          <label htmlFor="createworkout-description-optional" className="text-xs text-fg-4 block mb-1">Description (optional)</label>
+          <input id="createworkout-description-optional"
             value={description}
             onChange={e => setDescription(e.target.value)}
             placeholder="Brief description of the workout focus"
-            className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50"
+            className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 placeholder:text-fg-4 focus:ring-2 focus:ring-cta/50"
           />
         </div>
 
@@ -173,27 +173,27 @@ export default function CreateWorkout() {
                 value={ex.name}
                 onChange={e => updateExercise(idx, 'name', e.target.value)}
                 placeholder="Exercise name"
-                className="flex-1 bg-surface-2 border border-edge rounded-lg px-2 py-1.5 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50"
+                className="flex-1 bg-surface-2 border border-edge rounded-lg px-2 py-1.5 text-sm text-fg-1 placeholder:text-fg-4 focus:ring-2 focus:ring-cta/50"
               />
               <input
                 type="number"
                 value={ex.sets}
                 onChange={e => updateExercise(idx, 'sets', e.target.value)}
                 placeholder="Sets"
-                className="w-14 bg-surface-2 border border-edge rounded-lg px-2 py-1.5 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50 text-center"
+                className="w-14 bg-surface-2 border border-edge rounded-lg px-2 py-1.5 text-sm text-fg-1 placeholder:text-fg-4 focus:ring-2 focus:ring-cta/50 text-center"
               />
               <span className="text-fg-4 text-xs">x</span>
               <input
                 value={ex.reps}
                 onChange={e => updateExercise(idx, 'reps', e.target.value)}
                 placeholder="Reps"
-                className="w-16 bg-surface-2 border border-edge rounded-lg px-2 py-1.5 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50 text-center"
+                className="w-16 bg-surface-2 border border-edge rounded-lg px-2 py-1.5 text-sm text-fg-1 placeholder:text-fg-4 focus:ring-2 focus:ring-cta/50 text-center"
               />
               <input
                 value={ex.notes}
                 onChange={e => updateExercise(idx, 'notes', e.target.value)}
                 placeholder="Notes"
-                className="flex-1 bg-surface-2 border border-edge rounded-lg px-2 py-1.5 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50"
+                className="flex-1 bg-surface-2 border border-edge rounded-lg px-2 py-1.5 text-sm text-fg-1 placeholder:text-fg-4 focus:ring-2 focus:ring-cta/50"
               />
               {exercises.length > 1 && (
                 <button type="button" onClick={() => removeExercise(idx)} className="text-red-400 hover:text-red-300 text-xs px-1">x</button>

@@ -36,12 +36,12 @@ export default function GoalEditor({ goal, onSave }: Props) {
     <div className="card p-5 space-y-4">
       <div>
         <div className="flex items-center justify-between mb-1">
-          <label className="text-xs text-fg-4">Daily calories</label>
+          <label htmlFor="goal-calories" className="text-xs text-fg-4">Daily calories</label>
           <span className="text-[11px] text-fg-4">macros follow automatically</span>
         </div>
         <div className="flex items-center gap-3">
-          <input type="range" min={1200} max={CALORIE_CEILING} step={50} value={calories} onChange={e => setCalories(parseInt(e.target.value))} className="flex-1 h-2 rounded-full appearance-none bg-surface-3 accent-cta" />
-          <input type="number" min={1200} max={CALORIE_CEILING} step={50} value={calories} onChange={e => setCalories(Math.max(1200, Math.min(CALORIE_CEILING, parseInt(e.target.value) || 1200)))} className="input-field w-24 text-center tabular-nums" />
+          <input type="range" aria-label="Daily calories slider" min={1200} max={CALORIE_CEILING} step={50} value={calories} onChange={e => setCalories(parseInt(e.target.value))} className="flex-1 h-2 rounded-full appearance-none bg-surface-3 accent-cta" />
+          <input id="goal-calories" type="number" min={1200} max={CALORIE_CEILING} step={50} value={calories} onChange={e => setCalories(Math.max(1200, Math.min(CALORIE_CEILING, parseInt(e.target.value) || 1200)))} className="input-field w-24 text-center tabular-nums" />
         </div>
       </div>
 

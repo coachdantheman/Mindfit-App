@@ -1,4 +1,4 @@
-export type UserRole = 'member' | 'admin' | 'coach'
+export type UserRole = 'member' | 'admin' | 'coach' | 'parent'
 
 export interface Profile {
   id: string
@@ -8,6 +8,9 @@ export interface Profile {
   primary_sport: string | null
   secondary_sport: string | null
   next_competition_at: string | null
+  next_competition_time: string | null   // 'HH:MM:SS' or null
+  terms_accepted_at: string | null
+  invited_by: string | null
   onboarded_at: string | null
   created_at: string
 }
@@ -72,6 +75,7 @@ export interface AthleteOverview {
 export interface MemberWithCount extends Profile {
   entry_count: number
   overview?: AthleteOverview | null
+  status?: 'active' | 'invited'
 }
 
 export interface CoachAthlete {
@@ -79,6 +83,26 @@ export interface CoachAthlete {
   coach_id: string
   athlete_id: string
   created_at: string
+}
+
+export interface ParentAthlete {
+  id: string
+  parent_id: string
+  athlete_id: string
+  created_at: string
+}
+
+export type ClaimStatus = 'created' | 'linked' | 'already_linked' | 'invalid' | 'error'
+export interface ClaimResult {
+  email: string
+  status: ClaimStatus
+  message?: string
+}
+
+export interface LinkedPerson {
+  id: string
+  full_name: string | null
+  email: string
 }
 
 // Nutrition
@@ -134,6 +158,7 @@ export interface SavedMeal {
   id: string
   name: string
   default_meal_name: string | null
+  auto_saved: boolean
   created_at: string
   items: SavedMealItem[]
 }

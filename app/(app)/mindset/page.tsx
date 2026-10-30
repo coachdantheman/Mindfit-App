@@ -1,4 +1,5 @@
 'use client'
+import TabBar from '@/components/shared/TabBar'
 import { useState, Suspense } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -69,17 +70,7 @@ function MindsetContent() {
 
       <QuoteOfTheDay />
 
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-1 scrollbar-none snap-x snap-mandatory">
-        {tabs.map(tab => (
-          <button
-            key={tab}
-            onClick={() => selectTab(tab)}
-            className={`snap-start shrink-0 ${activeTab === tab ? 'tab-btn-active' : 'tab-btn'}`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
+      <TabBar label="Mindset sections" tabs={tabs.map(t => ({ key: t, label: t }))} active={activeTab} onSelect={selectTab} className="snap-x snap-mandatory" itemClassName="snap-start" />
 
       {visited.map(tab => (
         <div key={tab} className={tab === activeTab ? '' : 'hidden'}>

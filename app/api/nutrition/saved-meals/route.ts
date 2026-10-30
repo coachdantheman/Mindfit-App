@@ -12,9 +12,11 @@ export async function GET() {
   const admin = createAdminClient()
   const { data: meals, error } = await admin
     .from('saved_meals')
-    .select('id, name, default_meal_name, created_at')
+    .select('id, name, default_meal_name, auto_saved, created_at')
     .eq('user_id', auth.userId)
+    .order('auto_saved', { ascending: true })
     .order('created_at', { ascending: false })
+    .limit(60)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (!meals || meals.length === 0) return NextResponse.json([])
 
@@ -31,13 +33,21 @@ export async function GET() {
   })))
 }
 
-// Save a set of logged food_entries as a named meal.
+type Item = { food_id: string | null; food_name: string; servings: number }
+const fingerprint = (items: Item[]) =>
+  items.map(i => `${i.food_id ?? i.food_name.toLowerCase()}|${Number(i.servings)}`).sort().join(';')
+
+// Save a set of logged food_entries as a named meal. With `auto: true` the
+// app is saving on the athlete's behalf: the name defaults to the slot and
+// date, and a meal with the same items is not saved twice.
 export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
   const body = await req.json()
-  const name = requireString(body.name, 80)
+  const auto = body.auto === true
+  const mealName = optionalString(body.meal_name, 40)
+  const name = requireString(body.name, 80) ?? (auto && mealName ? `${mealName} · ${optionalString(body.entry_date, 10) ?? ''}`.trim() : null)
   const ids: string[] = Array.isArray(body.entry_ids) ? body.entry_ids.filter((x: unknown) => typeof x === 'string').slice(0, 40) : []
   if (!name || ids.length === 0) return NextResponse.json({ error: 'name and entry_ids required' }, { status: 400 })
 
@@ -51,10 +61,20 @@ export async function POST(req: Request) {
   if (readErr) return NextResponse.json({ error: readErr.message }, { status: 500 })
   if (!entries || entries.length === 0) return NextResponse.json({ error: 'No entries found.' }, { status: 400 })
 
+  if (auto) {
+    const { data: existing } = await admin
+      .from('saved_meals')
+      .select('id, saved_meal_items(food_id, food_name, servings)')
+      .eq('user_id', auth.userId)
+    const fp = fingerprint(entries)
+    const dupe = (existing ?? []).find((m: any) => fingerprint(m.saved_meal_items ?? []) === fp)
+    if (dupe) return NextResponse.json({ duplicate: true, id: dupe.id })
+  }
+
   const { data: meal, error } = await admin
     .from('saved_meals')
-    .insert({ user_id: auth.userId, name, default_meal_name: optionalString(body.meal_name, 40) })
-    .select('id, name, default_meal_name, created_at')
+    .insert({ user_id: auth.userId, name, default_meal_name: mealName, auto_saved: auto })
+    .select('id, name, default_meal_name, auto_saved, created_at')
     .single()
   if (error || !meal) return NextResponse.json({ error: error?.message ?? 'insert failed' }, { status: 500 })
 

@@ -3,15 +3,21 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { useEffect, useState } from 'react'
 import DailyQuoteToggle from '@/components/shared/DailyQuoteToggle'
+import SharingCard from '@/components/settings/SharingCard'
+import DeleteAccountCard from '@/components/settings/DeleteAccountCard'
+import Link from 'next/link'
+import type { UserRole } from '@/types'
 
 export default function SettingsPage() {
   const router = useRouter()
   const supabase = createClient()
   const [email, setEmail] = useState('')
+  const [role, setRole] = useState<UserRole>('member')
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
   const [primarySport, setPrimarySport] = useState('')
   const [secondarySport, setSecondarySport] = useState('')
   const [nextGame, setNextGame] = useState('')
+  const [nextGameTime, setNextGameTime] = useState('')
   const [sportsLoaded, setSportsLoaded] = useState(false)
   const [sportsSaving, setSportsSaving] = useState(false)
   const [sportsStatus, setSportsStatus] = useState<{ ok: boolean; msg: string } | null>(null)
@@ -26,9 +32,11 @@ export default function SettingsPage() {
       .then(r => r.ok ? r.json() : null)
       .then(p => {
         if (p) {
+          setRole(p.role ?? 'member')
           setPrimarySport(p.primary_sport ?? '')
           setSecondarySport(p.secondary_sport ?? '')
           setNextGame(p.next_competition_at?.slice(0, 10) ?? '')
+          setNextGameTime(p.next_competition_time?.slice(0, 5) ?? '')
         }
         setSportsLoaded(true)
       })
@@ -45,6 +53,7 @@ export default function SettingsPage() {
           primary_sport: primarySport,
           secondary_sport: secondarySport,
           next_competition_at: nextGame || null,
+          next_competition_time: nextGameTime || null,
         }),
       })
       if (!res.ok) {
@@ -96,8 +105,8 @@ export default function SettingsPage() {
           </p>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs uppercase tracking-wide text-fg-4 mb-1">Primary sport</label>
-              <input
+              <label htmlFor="settings-primary-sport" className="block text-xs uppercase tracking-wide text-fg-4 mb-1">Primary sport</label>
+              <input id="settings-primary-sport"
                 type="text"
                 value={primarySport}
                 onChange={e => setPrimarySport(e.target.value)}
@@ -107,10 +116,11 @@ export default function SettingsPage() {
               />
             </div>
             <div>
-              <label className="block text-xs uppercase tracking-wide text-fg-4 mb-1">
+              <label htmlFor="settings-secondary-sport" className="block text-xs uppercase tracking-wide text-fg-4 mb-1">
                 Secondary sport <span className="text-fg-4">(optional)</span>
               </label>
               <input
+                id="settings-secondary-sport"
                 type="text"
                 value={secondarySport}
                 onChange={e => setSecondarySport(e.target.value)}
@@ -119,15 +129,29 @@ export default function SettingsPage() {
                 disabled={!sportsLoaded}
               />
             </div>
-            <div>
-              <label className="block text-xs uppercase tracking-wide text-fg-4 mb-1">Next game or match</label>
-              <input
-                type="date"
-                value={nextGame}
-                onChange={e => setNextGame(e.target.value)}
-                className="input-field"
-                disabled={!sportsLoaded}
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="settings-next-game" className="block text-xs uppercase tracking-wide text-fg-4 mb-1">Next game or match</label>
+                <input
+                  id="settings-next-game"
+                  type="date"
+                  value={nextGame}
+                  onChange={e => setNextGame(e.target.value)}
+                  className="input-field"
+                  disabled={!sportsLoaded}
+                />
+              </div>
+              <div>
+                <label htmlFor="settings-next-game-time" className="block text-xs uppercase tracking-wide text-fg-4 mb-1">Start time</label>
+                <input
+                  id="settings-next-game-time"
+                  type="time"
+                  value={nextGameTime}
+                  onChange={e => setNextGameTime(e.target.value)}
+                  className="input-field"
+                  disabled={!sportsLoaded}
+                />
+              </div>
             </div>
             <div className="flex items-center gap-3 pt-1">
               <button
@@ -145,6 +169,8 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+
+        <SharingCard role={role} />
 
         {/* Notifications */}
         <div className="card p-5">
@@ -188,6 +214,16 @@ export default function SettingsPage() {
           </a>
         </div>
 
+        {/* Legal */}
+        <div className="card p-5">
+          <h3 className="font-semibold text-fg-1 mb-3 text-sm">About</h3>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+            <Link href="/terms" className="text-cta hover:underline">Terms of Service</Link>
+            <Link href="/privacy" className="text-cta hover:underline">Privacy Policy</Link>
+            <Link href="/cookies" className="text-cta hover:underline">Cookie Policy</Link>
+          </div>
+        </div>
+
         {/* Sign out */}
         <div className="card p-5">
           <h3 className="font-semibold text-fg-1 mb-3 text-sm">Session</h3>
@@ -198,6 +234,8 @@ export default function SettingsPage() {
             Sign out
           </button>
         </div>
+
+        <DeleteAccountCard />
       </div>
     </div>
   )

@@ -92,13 +92,14 @@ export default function JournalForm({ previewMode = false, onSaved }: Props) {
       {/* Section 1: Objective */}
       <section className="card p-6 space-y-3">
         <h2 className="font-semibold text-fg-1 flex items-center gap-2">
-          <span className="w-6 h-6 rounded-full bg-brand-600 text-white text-xs flex items-center justify-center font-bold">1</span>
+          <span className="w-6 h-6 rounded-full bg-cta text-fg-inverse text-xs flex items-center justify-center font-bold">1</span>
           Today&apos;s Objective
         </h2>
         <p className="text-sm text-fg-3">What is your goal for today?</p>
         <textarea
           {...register('objective', { required: 'Required' })}
           rows={3}
+          aria-label="Today\u2019s objective"
           placeholder="I want to..."
           className={fieldClass}
         />
@@ -108,7 +109,7 @@ export default function JournalForm({ previewMode = false, onSaved }: Props) {
       {/* Section 2: Action Steps */}
       <section className="card p-6 space-y-3">
         <h2 className="font-semibold text-fg-1 flex items-center gap-2">
-          <span className="w-6 h-6 rounded-full bg-brand-600 text-white text-xs flex items-center justify-center font-bold">2</span>
+          <span className="w-6 h-6 rounded-full bg-cta text-fg-inverse text-xs flex items-center justify-center font-bold">2</span>
           3 Action Steps
         </h2>
         <p className="text-sm text-fg-3">What 3 actions will you take to achieve your objective?</p>
@@ -117,6 +118,7 @@ export default function JournalForm({ previewMode = false, onSaved }: Props) {
             <div key={field}>
               <input
                 {...register(field, { required: 'Required' })}
+                aria-label={`Action step ${i + 1}`}
                 placeholder={`Action ${i + 1}`}
                 className={fieldClass}
               />
@@ -129,7 +131,7 @@ export default function JournalForm({ previewMode = false, onSaved }: Props) {
       {/* Section 3: Strengths */}
       <section className="card p-6 space-y-3">
         <h2 className="font-semibold text-fg-1 flex items-center gap-2">
-          <span className="w-6 h-6 rounded-full bg-brand-600 text-white text-xs flex items-center justify-center font-bold">3</span>
+          <span className="w-6 h-6 rounded-full bg-cta text-fg-inverse text-xs flex items-center justify-center font-bold">3</span>
           3 Strengths
         </h2>
         <p className="text-sm text-fg-3">List 3 of your strengths today.</p>
@@ -138,6 +140,7 @@ export default function JournalForm({ previewMode = false, onSaved }: Props) {
             <div key={field}>
               <input
                 {...register(field, { required: 'Required' })}
+                aria-label={`Strength ${i + 1}`}
                 placeholder={`Strength ${i + 1}`}
                 className={fieldClass}
               />
@@ -150,12 +153,13 @@ export default function JournalForm({ previewMode = false, onSaved }: Props) {
       {/* Section 4: Weakness */}
       <section className="card p-6 space-y-3">
         <h2 className="font-semibold text-fg-1 flex items-center gap-2">
-          <span className="w-6 h-6 rounded-full bg-brand-600 text-white text-xs flex items-center justify-center font-bold">4</span>
+          <span className="w-6 h-6 rounded-full bg-cta text-fg-inverse text-xs flex items-center justify-center font-bold">4</span>
           One Weakness to Focus On
         </h2>
         <p className="text-sm text-fg-3">What one area do you want to improve today?</p>
         <input
           {...register('weakness', { required: 'Required' })}
+          aria-label="Weakness to work on"
           placeholder="I will work on..."
           className={fieldClass}
         />
@@ -172,6 +176,7 @@ export default function JournalForm({ previewMode = false, onSaved }: Props) {
         <textarea
           {...register('extra_notes')}
           rows={3}
+          aria-label="Extra notes"
           placeholder="Anything else on your mind..."
           className={fieldClass}
         />
@@ -180,7 +185,7 @@ export default function JournalForm({ previewMode = false, onSaved }: Props) {
       {/* Section 6: Ratings */}
       <section className="card p-6 space-y-5">
         <h2 className="font-semibold text-fg-1 flex items-center gap-2">
-          <span className="w-6 h-6 rounded-full bg-brand-600 text-white text-xs flex items-center justify-center font-bold">6</span>
+          <span className="w-6 h-6 rounded-full bg-cta text-fg-inverse text-xs flex items-center justify-center font-bold">6</span>
           Daily Ratings (1–10)
         </h2>
         <p className="text-sm text-fg-3">Rate yourself honestly for today.</p>

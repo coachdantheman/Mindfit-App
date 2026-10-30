@@ -95,9 +95,15 @@ export default function DailyPracticeForm({
 
         <div className="space-y-4">
           <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={completed}
+              onChange={() => { setCompleted(!completed); touch() }}
+              className="sr-only peer"
+            />
             <div
-              onClick={() => { setCompleted(!completed); touch() }}
-              className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
+              aria-hidden="true"
+              className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-cta ${
                 completed ? 'bg-cta border-cta' : 'border-edge hover:border-fg-3'
               }`}
             >
@@ -112,8 +118,8 @@ export default function DailyPracticeForm({
 
           <div className="flex gap-3">
             <div>
-              <label className="text-sm text-fg-3 block mb-1">Duration (minutes)</label>
-              <input
+              <label htmlFor="dailypracticeform-duration-minutes" className="text-sm text-fg-3 block mb-1">Duration (minutes)</label>
+              <input id="dailypracticeform-duration-minutes"
                 type="number"
                 min="1"
                 max="120"
@@ -127,8 +133,8 @@ export default function DailyPracticeForm({
           </div>
 
           <div>
-            <label className="text-sm text-fg-3 block mb-1">Notes</label>
-            <textarea
+            <label htmlFor="dailypracticeform-notes" className="text-sm text-fg-3 block mb-1">Notes</label>
+            <textarea id="dailypracticeform-notes"
               value={notes}
               onChange={e => { setNotes(e.target.value); touch() }}
               placeholder={notesPlaceholder}

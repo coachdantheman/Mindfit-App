@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { useFocusTrap } from '@/lib/useFocusTrap'
 import { ProgressPhoto, WeighIn } from '@/types'
 import { PHOTO_SLOTS, PhotoSlot, downscaleImage } from '@/lib/images'
 import { useToast } from '@/components/shared/Toast'
@@ -22,12 +23,7 @@ export default function ProgressPhotoSheet({ weighIn, onChange, onClose }: Props
     fetch(`/api/nutrition/weigh-ins/${weighIn.id}/photos`).then(r => r.json()).then(d => setPhotos(Array.isArray(d) ? d : []))
 
   useEffect(() => { load() }, [weighIn.id]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', onKey)
-    document.body.style.overflow = 'hidden'
-    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = '' }
-  }, [onClose])
+  const dialogRef = useFocusTrap<HTMLDivElement>(onClose)
 
   const upload = async (slot: PhotoSlot, file: File) => {
     setBusy(slot)
@@ -58,11 +54,11 @@ export default function ProgressPhotoSheet({ weighIn, onChange, onClose }: Props
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative w-full sm:max-w-lg max-h-[92vh] bg-surface border border-edge rounded-t-3xl sm:rounded-3xl flex flex-col pb-safe">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} aria-hidden="true" />
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="progress-photos-title" tabIndex={-1} className="relative w-full sm:max-w-lg max-h-[92vh] bg-surface border border-edge rounded-t-3xl sm:rounded-3xl flex flex-col pb-safe">
         <div className="flex items-center justify-between px-5 pt-4 pb-2">
           <div>
-            <h3 className="font-semibold text-fg-1">Progress photos</h3>
+            <h3 id="progress-photos-title" className="font-semibold text-fg-1">Progress photos</h3>
             <p className="text-xs text-fg-4">{weighIn.entry_date} · {Number(weighIn.weight_lb)} lb</p>
           </div>
           <button type="button" onClick={onClose} className="btn-ghost px-2" aria-label="Close">✕</button>

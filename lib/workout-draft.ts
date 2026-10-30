@@ -65,6 +65,13 @@ export function exerciseFromPlan(name: string, sets: number, targetReps: string 
   }
 }
 
+// Repeat of a logged workout: one set per previous set, previous reps as placeholder.
+export function exerciseFromHistory(name: string, reps: (string | null)[], library: ExerciseLibraryRow[]): DraftExercise {
+  const ex = exerciseFromPlan(name, Math.max(1, reps.length), null, library)
+  ex.sets = ex.sets.map((s, i) => ({ ...s, targetReps: reps[i] || null }))
+  return ex
+}
+
 export function exerciseFromLibrary(row: ExerciseLibraryRow, sets = 3): DraftExercise {
   return {
     key: nextKey(),
@@ -90,7 +97,9 @@ export function draftFromWorkout(input: StartWorkoutInput, library: ExerciseLibr
     programWorkoutId: input.programWorkoutId ?? null,
     coachWorkoutId: input.coachWorkoutId ?? null,
     notes: '',
-    exercises: input.exercises.map(ex => exerciseFromPlan(ex.name, ex.sets, ex.reps || null, library)),
+    exercises: input.prefill?.length
+      ? input.prefill.map(p => exerciseFromHistory(p.name, p.reps, library))
+      : input.exercises.map(ex => exerciseFromPlan(ex.name, ex.sets, ex.reps || null, library)),
   }
 }
 

@@ -93,6 +93,20 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
     onDraftChange(null)
   }
 
+  const repeat = (log: WorkoutLogRow) => {
+    const groups = groupSets(log.exercise_logs ?? [])
+    onStart({
+      name: log.workout_name,
+      categoryName: log.category_name,
+      source: log.source ?? 'custom',
+      workoutId: log.workout_id,
+      programWorkoutId: log.program_workout_id,
+      coachWorkoutId: log.coach_workout_id,
+      exercises: groups.map(([name, rows]) => ({ name, sets: rows.length, reps: '', notes: '' })),
+      prefill: groups.map(([name, rows]) => ({ name, reps: rows.map(r => (r.reps != null ? String(r.reps) : null)) })),
+    })
+  }
+
   if (draft) {
     return (
       <ActiveWorkout
@@ -171,7 +185,7 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
               const open = expanded === log.id
               return (
                 <div key={log.id} className="bg-surface rounded-xl border border-edge overflow-hidden">
-                  <button type="button" onClick={() => setExpanded(open ? null : log.id)} className="w-full p-3 text-left hover:bg-surface-2/50 transition-colors">
+                  <button type="button" onClick={() => setExpanded(open ? null : log.id)} aria-expanded={open} className="w-full p-3 text-left hover:bg-surface-2/50 transition-colors">
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-fg-2 truncate">{log.workout_name}</p>
@@ -187,6 +201,11 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
                   </button>
                   {open && (
                     <div className="px-3 pb-3 border-t border-edge-muted">
+                      {sets.length > 0 && (
+                        <button type="button" onClick={() => repeat(log)} className="btn-secondary w-full mt-3">
+                          Do workout again
+                        </button>
+                      )}
                       {sets.length === 0 ? (
                         <p className="text-xs text-fg-4 mt-2">No per-set data recorded.</p>
                       ) : (

@@ -55,6 +55,9 @@ export default async function HomePage() {
 
           <JournalForm previewMode />
         </div>
+        <p className="text-center text-xs text-fg-4 mt-10">
+          <a href="/terms" className="hover:text-fg-2">Terms</a> · <a href="/privacy" className="hover:text-fg-2">Privacy</a> · <a href="/cookies" className="hover:text-fg-2">Cookies</a>
+        </p>
       </main>
     </div>
   )

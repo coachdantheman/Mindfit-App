@@ -216,20 +216,20 @@ export default function CreateProgram() {
           value={title}
           onChange={e => setTitle(e.target.value)}
           placeholder="Program title *"
-          className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2.5 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50"
+          className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2.5 text-sm text-fg-1 placeholder:text-fg-4 focus:ring-2 focus:ring-cta/50"
         />
         <input
           value={label}
           onChange={e => setLabel(e.target.value)}
           placeholder="Label for athletes (default: title)"
-          className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2.5 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50"
+          className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2.5 text-sm text-fg-1 placeholder:text-fg-4 focus:ring-2 focus:ring-cta/50"
         />
         <textarea
           value={description}
           onChange={e => setDescription(e.target.value)}
           placeholder="Description (optional)"
           rows={2}
-          className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2.5 text-sm text-fg-1 placeholder:text-fg-4 focus:outline-none focus:ring-2 focus:ring-cta/50 resize-none"
+          className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2.5 text-sm text-fg-1 placeholder:text-fg-4 focus:ring-2 focus:ring-cta/50 resize-none"
         />
         <div>
           <label className="text-xs text-fg-4 block mb-1">Duration</label>

@@ -76,6 +76,7 @@ export async function GET() {
       ...p,
       entry_count: p.journal_entries?.[0]?.count ?? 0,
       journal_entries: undefined,
+      status: !p.onboarded_at && p.invited_by ? 'invited' : 'active',
       overview: o
         ? {
             last_journal_date: o.last_journal_date,

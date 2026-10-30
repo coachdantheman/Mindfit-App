@@ -69,7 +69,7 @@ export default function RatingSlider({
       <div className="flex items-center justify-between">
         <label className="text-sm font-medium text-fg-2">{label}</label>
         <span
-          className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm tabular-nums ${color} transition-transform ${pulse ? 'scale-110' : 'scale-100'}`}
+          className={`w-9 h-9 rounded-full flex items-center justify-center text-[#0A0F1A] font-bold text-sm tabular-nums ${color} transition-transform ${pulse ? 'scale-110' : 'scale-100'}`}
         >
           {value}
         </span>

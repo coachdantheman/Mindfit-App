@@ -34,9 +34,10 @@ interface AthleteData {
   flowLogs: FlowLog[]
   flowStageCheckins: FlowStageCheckin[]
   flowCoachNote: string | null
+  readOnly?: boolean
 }
 
-export default function AthleteDetail({ athleteId, backHref }: { athleteId: string; backHref: string }) {
+export default function AthleteDetail({ athleteId, backHref, readOnly }: { athleteId: string; backHref: string; readOnly?: boolean }) {
   const [data, setData] = useState<AthleteData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -156,6 +157,7 @@ export default function AthleteDetail({ athleteId, backHref }: { athleteId: stri
           logs={flowLogs}
           checkins={flowStageCheckins}
           initialNote={flowCoachNote}
+          readOnly={readOnly || data.readOnly}
         />
       )}
 
@@ -225,13 +227,14 @@ export default function AthleteDetail({ athleteId, backHref }: { athleteId: stri
 }
 
 function FlowSectionPanel({
-  athleteId, sessions, logs, checkins, initialNote,
+  athleteId, sessions, logs, checkins, initialNote, readOnly,
 }: {
   athleteId: string
   sessions: FlowSession[]
   logs: FlowLog[]
   checkins: FlowStageCheckin[]
   initialNote: string | null
+  readOnly?: boolean
 }) {
   const [note, setNote] = useState(initialNote ?? '')
   const [saving, setSaving] = useState(false)
@@ -312,7 +315,7 @@ function FlowSectionPanel({
         </div>
       )}
 
-      <div className="card p-5">
+      {!readOnly && <div className="card p-5">
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs uppercase tracking-wide text-fg-4">Coach note (visible to athlete)</p>
           {savedAt && <span className="text-xs text-fg-4">Saved at {savedAt}</span>}
@@ -330,7 +333,7 @@ function FlowSectionPanel({
             {saving ? 'Saving…' : 'Save now'}
           </button>
         </div>
-      </div>
+      </div>}
     </div>
   )
 }

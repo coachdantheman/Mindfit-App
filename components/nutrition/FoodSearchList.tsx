@@ -69,7 +69,7 @@ export default function FoodSearchList({ foods, favoriteIds, onToggleFavorite, o
         <div className="divide-y divide-edge-muted max-h-[50vh] overflow-y-auto -mx-1">
           {results.map(f => (
             <div key={f.id} className="flex items-center gap-2 px-1">
-              <button type="button" onClick={() => { setSelected(f); setServings(1) }} className="flex-1 flex items-center justify-between py-2.5 text-left min-w-0">
+              <button type="button" onClick={() => { setSelected(f); setServings(1) }} aria-label={`${f.name}${f.brand ? `, ${f.brand}` : ''}, ${f.calories} kcal per ${f.serving_size}`} className="flex-1 flex items-center justify-between py-2.5 text-left min-w-0">
                 <div className="min-w-0">
                   <p className="text-sm text-fg-1 truncate">{f.name}</p>
                   <p className="text-[11px] text-fg-4 truncate">{f.serving_size} · {Math.round(Number(f.protein_g))}P · {Math.round(Number(f.carbs_g))}C · {Math.round(Number(f.fat_g))}F</p>

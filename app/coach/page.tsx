@@ -2,11 +2,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { format, parseISO } from 'date-fns'
 import { MemberWithCount } from '@/types'
-import AddEmailForm from '@/components/admin/AddEmailForm'
+import BulkClaimForm from '@/components/coach/BulkClaimForm'
 import CreateWorkout from '@/components/coach/CreateWorkout'
 import CreateProgram from '@/components/coach/CreateProgram'
 import Link from 'next/link'
 import Skeleton from '@/components/shared/Skeleton'
+import TabBar from '@/components/shared/TabBar'
+import { useToast } from '@/components/shared/Toast'
 
 const FLAG_LABELS: Record<string, { label: string; className: string }> = {
   inactive_7d: { label: 'Inactive 7d', className: 'bg-red-500/10 text-red-400' },
@@ -44,7 +46,17 @@ function exportCSV(athletes: MemberWithCount[]) {
   URL.revokeObjectURL(url)
 }
 
-function AthleteTable({ athletes }: { athletes: MemberWithCount[] }) {
+function AthleteTable({ athletes, onChanged, notify }: { athletes: MemberWithCount[]; onChanged: () => void; notify: (msg: string) => void }) {
+  const remove = async (a: MemberWithCount) => {
+    if (!confirm(`Remove ${a.full_name || a.email} from your roster? Their account and data stay.`)) return
+    const res = await fetch(`/api/coach/athletes/${a.id}`, { method: 'DELETE' })
+    notify(res.ok ? 'Removed from your roster' : 'Could not remove')
+    if (res.ok) onChanged()
+  }
+  const resend = async (a: MemberWithCount) => {
+    const res = await fetch(`/api/coach/athletes/${a.id}/resend`, { method: 'POST' })
+    notify(res.ok ? `Invite sent to ${a.email}` : 'Could not send invite')
+  }
   const flagged = athletes.filter(a => (a.overview?.flags?.length ?? 0) > 0)
   const ordered = [
     ...flagged,
@@ -78,6 +90,7 @@ function AthleteTable({ athletes }: { athletes: MemberWithCount[] }) {
               <th className="px-2 py-2 font-semibold text-right">Streak</th>
               <th className="px-2 py-2 font-semibold text-right">MPI</th>
               <th className="px-2 py-2 font-semibold">Status</th>
+              <th className="px-2 py-2 font-semibold"><span className="sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody>
@@ -106,7 +119,9 @@ function AthleteTable({ athletes }: { athletes: MemberWithCount[] }) {
                 </td>
                 <td className="px-2 py-3">
                   <div className="flex flex-wrap gap-1">
-                    {(a.overview?.flags ?? []).length === 0 ? (
+                    {a.status === 'invited' ? (
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-cta/15 text-cta">Invited</span>
+                    ) : (a.overview?.flags ?? []).length === 0 ? (
                       <span className="text-xs text-green-400/80">On track</span>
                     ) : (
                       (a.overview?.flags ?? []).map(f => (
@@ -116,6 +131,12 @@ function AthleteTable({ athletes }: { athletes: MemberWithCount[] }) {
                       ))
                     )}
                   </div>
+                </td>
+                <td className="px-2 py-3 text-right whitespace-nowrap">
+                  {a.status === 'invited' && (
+                    <button type="button" onClick={() => resend(a)} className="text-xs text-fg-3 hover:text-cta mr-3">Resend invite</button>
+                  )}
+                  <button type="button" onClick={() => remove(a)} className="text-xs text-fg-4 hover:text-red-400" aria-label={`Remove ${a.full_name || a.email}`}>Remove</button>
                 </td>
               </tr>
             ))}
@@ -130,6 +151,7 @@ export default function CoachPage() {
   const [athletes, setAthletes] = useState<MemberWithCount[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'athletes' | 'add' | 'workouts' | 'programs'>('athletes')
+  const notify = useToast()
 
   const fetchAthletes = useCallback(async () => {
     const res = await fetch('/api/coach/athletes')
@@ -146,31 +168,26 @@ export default function CoachPage() {
         <p className="page-subtitle">Manage and monitor your athletes.</p>
       </div>
 
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
-        {([
+      <TabBar
+        label="Coach sections"
+        tabs={[
           { key: 'athletes' as const, label: 'My Athletes' },
-          { key: 'add' as const, label: 'Add Athlete' },
+          { key: 'add' as const, label: 'Add Athletes' },
           { key: 'workouts' as const, label: 'Workouts' },
           { key: 'programs' as const, label: 'Programs' },
-        ]).map(t => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={tab === t.key ? 'tab-btn-active' : 'tab-btn'}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+        ]}
+        active={tab}
+        onSelect={setTab}
+      />
 
       <div className="card p-6">
         {tab === 'programs' ? (
           <CreateProgram />
         ) : tab === 'add' ? (
           <div>
-            <h3 className="font-semibold text-fg-1 mb-1">Add New Athlete</h3>
-            <p className="text-sm text-fg-4 mb-3">Enter their email to grant app access. They'll be linked to you automatically when they sign up.</p>
-            <AddEmailForm onAdded={() => { fetchAthletes(); setTab('athletes') }} />
+            <h3 className="font-semibold text-fg-1 mb-1">Add Athletes</h3>
+            <p className="text-sm text-fg-4 mb-3">Paste your roster. Each athlete gets an account and shows up in My Athletes right away.</p>
+            <BulkClaimForm onDone={fetchAthletes} />
           </div>
         ) : tab === 'workouts' ? (
           <CreateWorkout />
@@ -188,7 +205,7 @@ export default function CoachPage() {
             </button>
           </div>
         ) : (
-          <AthleteTable athletes={athletes} />
+          <AthleteTable athletes={athletes} onChanged={fetchAthletes} notify={notify} />
         )}
       </div>
     </div>
