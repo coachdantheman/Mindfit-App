@@ -1,5 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { readRoster } from '@/components/shared/roster'
 import { format, parseISO } from 'date-fns'
 import { Profile, JournalEntry, FoodEntry, NutritionGoal, WorkoutLog, SleepEntry, FlowSession, FlowLog, FlowStageCheckin } from '@/types'
 import { calcSleepAverages } from '@/lib/stats'
@@ -37,11 +39,14 @@ interface AthleteData {
   readOnly?: boolean
 }
 
-export default function AthleteDetail({ athleteId, backHref, readOnly }: { athleteId: string; backHref: string; readOnly?: boolean }) {
+export default function AthleteDetail({ athleteId, backHref, backLabel = 'Back', readOnly }: { athleteId: string; backHref: string; backLabel?: string; readOnly?: boolean }) {
   const [data, setData] = useState<AthleteData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [section, setSection] = useState<Section>('mindset')
+  const [roster, setRoster] = useState<{ base: string; ids: string[] } | null>(null)
+
+  useEffect(() => { setRoster(readRoster(backHref.split('?')[0], athleteId)) }, [backHref, athleteId])
 
   useEffect(() => {
     fetch(`/api/athlete/${athleteId}`)
@@ -53,8 +58,32 @@ export default function AthleteDetail({ athleteId, backHref, readOnly }: { athle
       .catch(e => { setError(e.message); setLoading(false) })
   }, [athleteId])
 
-  if (loading) return <p className="text-sm text-fg-4">Loading athlete data…</p>
-  if (error) return <p className="text-sm text-red-400">{error}</p>
+  const idx = roster ? roster.ids.indexOf(athleteId) : -1
+  const prevId = idx > 0 ? roster!.ids[idx - 1] : null
+  const nextId = roster && idx >= 0 && idx < roster.ids.length - 1 ? roster.ids[idx + 1] : null
+  const navBar = (
+    <div className="sticky top-0 z-30 -mx-4 px-4 sm:-mx-6 sm:px-6 py-2 mb-4 bg-page/95 backdrop-blur border-b border-edge flex items-center justify-between gap-3">
+      <Link href={backHref} className="text-cta text-sm font-medium hover:underline shrink-0 py-2">← {backLabel}</Link>
+      {roster && idx >= 0 && (
+        <div className="flex items-center gap-1 text-sm">
+          <span className="text-xs text-fg-4 tabular-nums mr-1">{idx + 1} of {roster.ids.length}</span>
+          <Link
+            href={prevId ? `${roster.base}/athlete/${prevId}` : '#'}
+            aria-disabled={!prevId}
+            className={`btn-ghost ${prevId ? '' : 'pointer-events-none opacity-40'}`}
+          >← Prev</Link>
+          <Link
+            href={nextId ? `${roster.base}/athlete/${nextId}` : '#'}
+            aria-disabled={!nextId}
+            className={`btn-ghost ${nextId ? '' : 'pointer-events-none opacity-40'}`}
+          >Next →</Link>
+        </div>
+      )}
+    </div>
+  )
+
+  if (loading) return <div>{navBar}<p className="text-sm text-fg-4">Loading athlete data…</p></div>
+  if (error) return <div>{navBar}<p className="text-sm text-red-400">{error}</p></div>
   if (!data) return null
 
   const {
@@ -77,9 +106,7 @@ export default function AthleteDetail({ athleteId, backHref, readOnly }: { athle
 
   return (
     <div>
-      <a href={backHref} className="text-brand-500 text-sm hover:underline mb-4 inline-block">
-        ← Back
-      </a>
+      {navBar}
 
       <div className="mb-6">
         <h1 className="page-title">{profile.full_name || profile.email}</h1>
@@ -129,7 +156,7 @@ export default function AthleteDetail({ athleteId, backHref, readOnly }: { athle
                 <div className="space-y-3">
                   {journalEntries.map(e => (
                     <div key={e.id} className="p-3 rounded-xl bg-surface-2/50 border border-edge-muted">
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                         <p className="text-sm font-medium text-fg-2">
                           {format(parseISO(e.entry_date), 'EEEE, MMMM d')}
                         </p>

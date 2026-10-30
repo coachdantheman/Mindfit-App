@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { calcStreak } from '@/lib/streaks'
+import { latestOf } from '@/lib/last-seen'
 
 interface OverviewRow {
   athlete_id: string
@@ -15,12 +16,11 @@ interface OverviewRow {
   baseline_mpi: number | null
 }
 
-function computeFlags(o: OverviewRow): string[] {
+function computeFlags(o: OverviewRow, lastSeenAt: string | null): string[] {
   const flags: string[] = []
   const week = 7 * 24 * 60 * 60 * 1000
-  const journalRecent = o.last_journal_date && Date.now() - new Date(o.last_journal_date).getTime() < week
-  const flowRecent = o.last_flow_at && Date.now() - new Date(o.last_flow_at).getTime() < week
-  if (!journalRecent && !flowRecent) flags.push('inactive_7d')
+  const latest = latestOf(o.last_journal_date, o.last_flow_at, lastSeenAt)
+  if (!latest || Date.now() - new Date(latest).getTime() >= week) flags.push('inactive_7d')
   if (o.avg_confidence_3 !== null && o.avg_confidence_3 <= 4) flags.push('low_confidence')
   if (o.avg_anxiety_3 !== null && o.avg_anxiety_3 >= 7) flags.push('high_anxiety')
   if (o.latest_mpi !== null && o.baseline_mpi !== null && o.latest_mpi <= o.baseline_mpi - 5) flags.push('mpi_drop')
@@ -87,11 +87,14 @@ export async function GET() {
             avg_anxiety_3: o.avg_anxiety_3,
             latest_mpi: o.latest_mpi,
             baseline_mpi: o.baseline_mpi,
-            flags: computeFlags(o),
+            flags: computeFlags(o, p.last_seen_at ?? null),
           }
         : null,
     }
   })
+
+  // Most recently used first; never-used (invited) athletes last.
+  athletes.sort((a: any, b: any) => (b.last_seen_at ? new Date(b.last_seen_at).getTime() : 0) - (a.last_seen_at ? new Date(a.last_seen_at).getTime() : 0))
 
   return NextResponse.json(athletes)
 }

@@ -8,19 +8,27 @@ import DeleteAccountCard from '@/components/settings/DeleteAccountCard'
 import Link from 'next/link'
 import type { UserRole } from '@/types'
 
+type Status = { ok: boolean; msg: string } | null
+
 export default function SettingsPage() {
   const router = useRouter()
   const supabase = createClient()
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<UserRole>('member')
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const [fullName, setFullName] = useState('')
+  const [nameSaving, setNameSaving] = useState(false)
+  const [nameStatus, setNameStatus] = useState<Status>(null)
+  const [newPassword, setNewPassword] = useState('')
+  const [pwSaving, setPwSaving] = useState(false)
+  const [pwStatus, setPwStatus] = useState<Status>(null)
   const [primarySport, setPrimarySport] = useState('')
   const [secondarySport, setSecondarySport] = useState('')
   const [nextGame, setNextGame] = useState('')
   const [nextGameTime, setNextGameTime] = useState('')
-  const [sportsLoaded, setSportsLoaded] = useState(false)
+  const [profileLoaded, setProfileLoaded] = useState(false)
   const [sportsSaving, setSportsSaving] = useState(false)
-  const [sportsStatus, setSportsStatus] = useState<{ ok: boolean; msg: string } | null>(null)
+  const [sportsStatus, setSportsStatus] = useState<Status>(null)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -33,33 +41,64 @@ export default function SettingsPage() {
       .then(p => {
         if (p) {
           setRole(p.role ?? 'member')
+          setFullName(p.full_name ?? '')
           setPrimarySport(p.primary_sport ?? '')
           setSecondarySport(p.secondary_sport ?? '')
           setNextGame(p.next_competition_at?.slice(0, 10) ?? '')
           setNextGameTime(p.next_competition_time?.slice(0, 5) ?? '')
         }
-        setSportsLoaded(true)
+        setProfileLoaded(true)
       })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const patchProfile = async (body: Record<string, unknown>) => {
+    const res = await fetch('/api/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}))
+      throw new Error(j.error || `Save failed (${res.status})`)
+    }
+  }
+
+  const saveName = async () => {
+    setNameSaving(true)
+    setNameStatus(null)
+    try {
+      await patchProfile({ full_name: fullName })
+      setNameStatus({ ok: true, msg: 'Saved' })
+      router.refresh()
+    } catch (e: any) {
+      setNameStatus({ ok: false, msg: e?.message || 'Could not save. Try again.' })
+    } finally {
+      setNameSaving(false)
+    }
+  }
+
+  const savePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPwSaving(true)
+    setPwStatus(null)
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    setPwSaving(false)
+    if (error) { setPwStatus({ ok: false, msg: error.message }); return }
+    setNewPassword('')
+    setPwStatus({ ok: true, msg: 'Password set. Use it next time you sign in.' })
+  }
 
   const saveSports = async () => {
     setSportsSaving(true)
     setSportsStatus(null)
     try {
-      const res = await fetch('/api/profile', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          primary_sport: primarySport,
-          secondary_sport: secondarySport,
-          next_competition_at: nextGame || null,
-          next_competition_time: nextGameTime || null,
-        }),
+      await patchProfile({
+        primary_sport: primarySport,
+        secondary_sport: secondarySport,
+        next_competition_at: nextGame || null,
+        next_competition_time: nextGameTime || null,
       })
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}))
-        throw new Error(j.error || `Save failed (${res.status})`)
-      }
       setSportsStatus({ ok: true, msg: 'Saved' })
     } catch (e: any) {
       setSportsStatus({ ok: false, msg: e?.message || 'Could not save. Try again.' })
@@ -86,6 +125,10 @@ export default function SettingsPage() {
     router.refresh()
   }
 
+  const StatusLine = ({ s }: { s: Status }) => s ? (
+    <p role="status" className={`text-sm ${s.ok ? 'text-green-400' : 'text-red-400'}`}>{s.msg}</p>
+  ) : null
+
   return (
     <div className="max-w-lg">
       <h1 className="page-title mb-6">Settings</h1>
@@ -93,8 +136,59 @@ export default function SettingsPage() {
       <div className="space-y-4">
         {/* Account */}
         <div className="card p-5">
-          <h3 className="font-semibold text-fg-1 mb-3 text-sm">Account</h3>
-          <p className="text-sm text-fg-3">{email}</p>
+          <h3 className="font-semibold text-fg-1 mb-1 text-sm">Account</h3>
+          <p className="text-sm text-fg-3 mb-4 break-all">{email}</p>
+
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="settings-name" className="block text-xs uppercase tracking-wide text-fg-4 mb-1">Name</label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  id="settings-name"
+                  type="text"
+                  autoComplete="name"
+                  value={fullName}
+                  onChange={e => setFullName(e.target.value)}
+                  placeholder="Your name"
+                  className="input-field"
+                  disabled={!profileLoaded}
+                />
+                <button onClick={saveName} disabled={!profileLoaded || nameSaving} className="btn-secondary sm:shrink-0">
+                  {nameSaving ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+              <StatusLine s={nameStatus} />
+            </div>
+
+            <form onSubmit={savePassword}>
+              <label htmlFor="settings-password" className="block text-xs uppercase tracking-wide text-fg-4 mb-1">Set or change password</label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  id="settings-password"
+                  type="password"
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  placeholder="At least 8 characters"
+                  className="input-field"
+                />
+                <button type="submit" disabled={pwSaving || newPassword.length < 8} className="btn-secondary sm:shrink-0">
+                  {pwSaving ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+              <p className="text-xs text-fg-4 mt-1">Signed in from an invite link? Set a password here so you can sign in next time.</p>
+              <StatusLine s={pwStatus} />
+            </form>
+
+            <button
+              onClick={signOut}
+              className="text-red-400 hover:text-red-300 text-sm font-medium transition-colors border border-red-400/20 hover:border-red-400/40 px-4 py-2 rounded-xl"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
 
         {/* Sports */}
@@ -112,7 +206,7 @@ export default function SettingsPage() {
                 onChange={e => setPrimarySport(e.target.value)}
                 placeholder="e.g. Football"
                 className="input-field"
-                disabled={!sportsLoaded}
+                disabled={!profileLoaded}
               />
             </div>
             <div>
@@ -126,10 +220,10 @@ export default function SettingsPage() {
                 onChange={e => setSecondarySport(e.target.value)}
                 placeholder="e.g. Track"
                 className="input-field"
-                disabled={!sportsLoaded}
+                disabled={!profileLoaded}
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label htmlFor="settings-next-game" className="block text-xs uppercase tracking-wide text-fg-4 mb-1">Next game or match</label>
                 <input
@@ -138,7 +232,7 @@ export default function SettingsPage() {
                   value={nextGame}
                   onChange={e => setNextGame(e.target.value)}
                   className="input-field"
-                  disabled={!sportsLoaded}
+                  disabled={!profileLoaded}
                 />
               </div>
               <div>
@@ -149,23 +243,19 @@ export default function SettingsPage() {
                   value={nextGameTime}
                   onChange={e => setNextGameTime(e.target.value)}
                   className="input-field"
-                  disabled={!sportsLoaded}
+                  disabled={!profileLoaded}
                 />
               </div>
             </div>
             <div className="flex items-center gap-3 pt-1">
               <button
                 onClick={saveSports}
-                disabled={!sportsLoaded || sportsSaving}
+                disabled={!profileLoaded || sportsSaving}
                 className="btn-primary"
               >
                 {sportsSaving ? 'Saving…' : 'Save'}
               </button>
-              {sportsStatus && (
-                <p className={`text-sm ${sportsStatus.ok ? 'text-green-400' : 'text-red-400'}`}>
-                  {sportsStatus.msg}
-                </p>
-              )}
+              <StatusLine s={sportsStatus} />
             </div>
           </div>
         </div>
@@ -222,17 +312,6 @@ export default function SettingsPage() {
             <Link href="/privacy" className="text-cta hover:underline">Privacy Policy</Link>
             <Link href="/cookies" className="text-cta hover:underline">Cookie Policy</Link>
           </div>
-        </div>
-
-        {/* Sign out */}
-        <div className="card p-5">
-          <h3 className="font-semibold text-fg-1 mb-3 text-sm">Session</h3>
-          <button
-            onClick={signOut}
-            className="text-red-400 hover:text-red-300 text-sm font-medium transition-colors border border-red-400/20 hover:border-red-400/40 px-4 py-2 rounded-xl"
-          >
-            Sign out
-          </button>
         </div>
 
         <DeleteAccountCard />

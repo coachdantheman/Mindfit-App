@@ -3,19 +3,39 @@ import { useMemo, useState } from 'react'
 import type { ClaimResult, ClaimStatus } from '@/types'
 import { extractEmails } from '@/lib/links'
 
+interface Copy {
+  label: string
+  placeholder: string
+  button: (n: number) => string
+  done: (n: number) => string
+  footnote: string
+}
+
 interface Props {
   onDone: () => void
+  endpoint?: string
+  copy?: Partial<Copy>
+}
+
+const DEFAULT_COPY: Copy = {
+  label: 'Athlete emails',
+  placeholder: 'One per line, comma-separated, or paste a roster CSV.\nJordan Lee, jordan@example.com\nsam@example.com',
+  button: n => `Add ${n || ''} athlete${n === 1 ? '' : 's'}`,
+  done: n => `${n} added to your roster`,
+  footnote: 'New accounts get an email from you with a one-click sign-in link. They can set a password any time under Settings.',
 }
 
 const STATUS_LABEL: Record<ClaimStatus, { label: string; className: string }> = {
   created: { label: 'Account created', className: 'bg-cta/15 text-cta' },
   linked: { label: 'Linked', className: 'bg-green-500/10 text-green-400' },
   already_linked: { label: 'Already yours', className: 'bg-surface-3/60 text-fg-3' },
+  exists: { label: 'Already has an account', className: 'bg-surface-3/60 text-fg-3' },
   invalid: { label: 'Skipped', className: 'bg-orange-500/10 text-orange-400' },
   error: { label: 'Failed', className: 'bg-red-500/10 text-red-400' },
 }
 
-export default function BulkClaimForm({ onDone }: Props) {
+export default function BulkClaimForm({ onDone, endpoint = '/api/coach/athletes/claim', copy }: Props) {
+  const c = { ...DEFAULT_COPY, ...copy }
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -28,7 +48,7 @@ export default function BulkClaimForm({ onDone }: Props) {
     setError('')
     setResults(null)
     setLoading(true)
-    const res = await fetch('/api/coach/athletes/claim', {
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text }),
@@ -45,13 +65,13 @@ export default function BulkClaimForm({ onDone }: Props) {
     <div className="space-y-4">
       <form onSubmit={submit} className="space-y-3">
         <div>
-          <label htmlFor="bulk-athletes" className="block text-xs uppercase tracking-wide text-fg-4 mb-1">Athlete emails</label>
+          <label htmlFor="bulk-athletes" className="block text-xs uppercase tracking-wide text-fg-4 mb-1">{c.label}</label>
           <textarea
             id="bulk-athletes"
             value={text}
             onChange={e => setText(e.target.value)}
-            rows={6}
-            placeholder={'One per line, comma-separated, or paste a roster CSV.\nJordan Lee, jordan@example.com\nsam@example.com'}
+            rows={5}
+            placeholder={c.placeholder}
             className="textarea-field"
             aria-describedby="bulk-athletes-help"
           />
@@ -60,15 +80,15 @@ export default function BulkClaimForm({ onDone }: Props) {
           </p>
         </div>
         {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
-        <button type="submit" disabled={loading || count === 0} className="btn-primary">
-          {loading ? 'Adding…' : `Add ${count || ''} athlete${count === 1 ? '' : 's'}`}
+        <button type="submit" disabled={loading || count === 0} className="btn-primary w-full sm:w-auto">
+          {loading ? 'Sending…' : c.button(count)}
         </button>
       </form>
 
       {results && (
         <div className="card p-4" role="status">
           <p className="text-sm font-semibold text-fg-1 mb-2">
-            {results.filter(r => r.status === 'created' || r.status === 'linked').length} added to your roster
+            {c.done(results.filter(r => r.status === 'created' || r.status === 'linked').length)}
           </p>
           <ul className="divide-y divide-edge-muted">
             {results.map(r => (
@@ -80,9 +100,7 @@ export default function BulkClaimForm({ onDone }: Props) {
               </li>
             ))}
           </ul>
-          <p className="text-xs text-fg-4 mt-3">
-            New accounts get an email from you. They sign in with that address and set a password on first visit.
-          </p>
+          <p className="text-xs text-fg-4 mt-3">{c.footnote}</p>
         </div>
       )}
     </div>

@@ -41,11 +41,16 @@ Push to GitHub → Vercel deploys. Migrations (step 1) must already be applied.
 ## 6. Post-deploy smoke test
 - [ ] New whitelisted email → login → "Email me a sign-in code" → code arrives → signs in → onboarding runs → MPI score shows
 - [ ] Non-whitelisted email → friendly "no access" message
-- [ ] Non-whitelisted Google account → bounced to login with "no access" message
 - [ ] Your existing password login still works
 - [ ] `/admin` → Lessons tab → add a Skool lesson → card appears in the matching app section and on `/learn`
 - [ ] Coach dashboard shows the athlete table (last active, streak, MPI, flags) and CSV export
 - [ ] Phone: browser menu → "Add to Home Screen" → MindFit installs as an app
+
+## 7a. Admin invites + last used (v20, Oct 30 2026)
+1. **Migration**: run `supabase-migration-v20-last-seen.sql` (adds `profiles.last_seen_at`, backfills it). Applied to prod on 2026-10-30.
+2. **Supabase → Authentication → Email → OTP expiry**: raise to 86400 (24 h). Invite emails now carry a one-click sign-in link that expires with this setting; at the default 1 h most athletes open it too late and fall back to "Create account".
+3. Google sign-in was removed from the app (the provider was never enabled in Supabase).
+4. Smoke test: `/admin` → App invite → paste an email → "Account created" → email arrives with "Open MindFit" → lands on onboarding signed in. Athletes tab shows "Last used".
 
 ## 7. Quote of the Day + push notifications (v16, Oct 2026)
 Order matters: migration → env vars → deploy.

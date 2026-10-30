@@ -9,28 +9,18 @@ import Link from 'next/link'
 import Skeleton from '@/components/shared/Skeleton'
 import TabBar from '@/components/shared/TabBar'
 import { useToast } from '@/components/shared/Toast'
-
-const FLAG_LABELS: Record<string, { label: string; className: string }> = {
-  inactive_7d: { label: 'Inactive 7d', className: 'bg-red-500/10 text-red-400' },
-  low_confidence: { label: 'Low confidence', className: 'bg-orange-500/10 text-orange-400' },
-  high_anxiety: { label: 'High anxiety', className: 'bg-orange-500/10 text-orange-400' },
-  mpi_drop: { label: 'MPI dropping', className: 'bg-red-500/10 text-red-400' },
-}
+import { FLAG_LABELS } from '@/components/shared/flag-labels'
+import { formatLastSeen, latestOf } from '@/lib/last-seen'
+import { saveRoster } from '@/components/shared/roster'
 
 function lastActive(a: MemberWithCount): string {
-  const dates = [a.overview?.last_journal_date, a.overview?.last_flow_at].filter(Boolean) as string[]
-  if (dates.length === 0) return '—'
-  const latest = dates.map(d => new Date(d).getTime()).sort((x, y) => y - x)[0]
-  const days = Math.floor((Date.now() - latest) / 86400000)
-  if (days <= 0) return 'Today'
-  if (days === 1) return 'Yesterday'
-  return `${days}d ago`
+  return formatLastSeen(latestOf(a.last_seen_at, a.overview?.last_journal_date, a.overview?.last_flow_at))
 }
 
 function exportCSV(athletes: MemberWithCount[]) {
-  const header = ['Name', 'Email', 'Joined', 'Journal Entries', 'Streak', 'MPI', 'Baseline MPI', 'Avg Confidence (3)', 'Avg Anxiety (3)', 'Flags']
+  const header = ['Name', 'Email', 'Joined', 'Last Active', 'Journal Entries', 'Streak', 'MPI', 'Baseline MPI', 'Avg Confidence (3)', 'Avg Anxiety (3)', 'Flags']
   const rows = athletes.map(a => [
-    a.full_name ?? '', a.email, a.created_at.split('T')[0], a.entry_count,
+    a.full_name ?? '', a.email, a.created_at.split('T')[0], lastActive(a), a.entry_count,
     a.overview?.streak ?? '', a.overview?.latest_mpi ?? '', a.overview?.baseline_mpi ?? '',
     a.overview?.avg_confidence_3 ?? '', a.overview?.avg_anxiety_3 ?? '',
     (a.overview?.flags ?? []).map(f => FLAG_LABELS[f]?.label ?? f).join('; '),
@@ -63,9 +53,11 @@ function AthleteTable({ athletes, onChanged, notify }: { athletes: MemberWithCou
     ...athletes.filter(a => (a.overview?.flags?.length ?? 0) === 0),
   ]
 
+  useEffect(() => { saveRoster('/coach', ordered.map(a => a.id)) }, [ordered])
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         {flagged.length > 0 ? (
           <p className="text-sm text-orange-300 bg-orange-500/10 rounded-lg px-3 py-1.5">
             {flagged.length} athlete{flagged.length > 1 ? 's need' : ' needs'} attention

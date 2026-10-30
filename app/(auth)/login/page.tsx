@@ -5,6 +5,12 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 
 const AUTH_ERROR_MSG = 'Something went wrong signing you in. Please try again.'
+const LINK_EXPIRED_MSG = 'That sign-in link has expired. Create your account or sign in below with the same email.'
+const LAST_EMAIL_KEY = 'mf_last_email'
+
+function rememberEmail(email: string) {
+  try { localStorage.setItem(LAST_EMAIL_KEY, email.toLowerCase().trim()) } catch {}
+}
 
 function LoginForm() {
   const router = useRouter()
@@ -15,24 +21,38 @@ function LoginForm() {
   const [code, setCode] = useState('')
   const [codeSent, setCodeSent] = useState(false)
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [mode, setMode] = useState<'signup' | 'signin' | 'code'>('signup')
-  const [error, setError] = useState(searchParams.get('error') ? AUTH_ERROR_MSG : '')
+  const [error, setError] = useState(() => {
+    const e = searchParams.get('error')
+    return e === 'link_expired' ? LINK_EXPIRED_MSG : e ? AUTH_ERROR_MSG : ''
+  })
   const [loading, setLoading] = useState(false)
-  const [googleLoading, setGoogleLoading] = useState(false)
   const [agreed, setAgreed] = useState(false)
   const needsConsent = mode === 'signup' || mode === 'code'
 
   // A coach's device may still hold the coach's session. Clear it so an
   // athlete creating an account here never writes into the coach's data.
+  // Returning devices open on Sign in with the last email filled in.
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) supabase.auth.signOut()
     })
+    try {
+      const last = localStorage.getItem(LAST_EMAIL_KEY)
+      if (last) { setEmail(last); setMode('signin') }
+    } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const inputClass =
     'w-full border border-edge rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 bg-surface-2 text-fg-1 placeholder:text-fg-4'
+
+  const finish = () => {
+    rememberEmail(email)
+    router.push('/')
+    router.refresh()
+  }
 
   const sendCode = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -81,8 +101,7 @@ function LoginForm() {
       setError('That code is invalid or expired. Try again or resend.')
       setLoading(false)
     } else {
-      router.push('/')
-      router.refresh()
+      finish()
     }
   }
 
@@ -112,8 +131,7 @@ function LoginForm() {
       setMode('signin')
       setLoading(false)
     } else {
-      router.push('/')
-      router.refresh()
+      finish()
     }
   }
 
@@ -129,18 +147,8 @@ function LoginForm() {
       setError('Invalid email or password.')
       setLoading(false)
     } else {
-      router.push('/')
-      router.refresh()
+      finish()
     }
-  }
-
-  const handleGoogle = async () => {
-    if (mode === 'signup' && !agreed) { setError('Please accept the Terms and Privacy Policy.'); return }
-    setGoogleLoading(true)
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback${agreed ? '?terms=1' : ''}` },
-    })
   }
 
   return (
@@ -151,7 +159,7 @@ function LoginForm() {
           <p className="text-fg-4 mt-1">Mental Skills Training</p>
         </div>
 
-        <div className="bg-surface rounded-2xl border border-edge p-8">
+        <div className="bg-surface rounded-2xl border border-edge p-6 sm:p-8">
           {!codeSent && (
             <div className="grid grid-cols-2 gap-1 p-1 mb-6 bg-surface-2 rounded-xl" role="tablist" aria-label="Create account or sign in">
               {(['signup', 'signin'] as const).map(m => (
@@ -220,6 +228,12 @@ function LoginForm() {
             </form>
           ) : (
             <>
+              {mode === 'signup' && (
+                <p className="text-sm text-fg-3 mb-4">
+                  Invited by your coach? Create your account with the email the invite went to.
+                </p>
+              )}
+
               <form
                 onSubmit={mode === 'signup' ? handleSignup : mode === 'signin' ? handlePasswordLogin : sendCode}
                 className="space-y-4"
@@ -241,17 +255,28 @@ function LoginForm() {
                 {mode !== 'code' && (
                   <div>
                     <label htmlFor="login-password" className="block text-sm font-medium text-fg-2 mb-1">Password</label>
-                    <input
-                      id="login-password"
-                      type="password"
-                      required
-                      minLength={mode === 'signup' ? 8 : undefined}
-                      autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      className={inputClass}
-                      placeholder={mode === 'signup' ? 'At least 8 characters' : '••••••••'}
-                    />
+                    <div className="relative">
+                      <input
+                        id="login-password"
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        minLength={mode === 'signup' ? 8 : undefined}
+                        autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        className={`${inputClass} pr-16`}
+                        placeholder={mode === 'signup' ? 'At least 8 characters' : '••••••••'}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(s => !s)}
+                        aria-pressed={showPassword}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        className="absolute inset-y-0 right-3 text-xs font-medium text-fg-4 hover:text-fg-2"
+                      >
+                        {showPassword ? 'Hide' : 'Show'}
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -299,26 +324,6 @@ function LoginForm() {
                   {mode === 'code' ? 'Use password instead' : 'Forgot password? Email me a code'}
                 </button>
               )}
-
-              <div className="flex items-center gap-3 my-5">
-                <div className="flex-1 h-px bg-edge" />
-                <span className="text-xs text-fg-4">or</span>
-                <div className="flex-1 h-px bg-edge" />
-              </div>
-
-              <button
-                onClick={handleGoogle}
-                disabled={googleLoading}
-                className="w-full flex items-center justify-center gap-3 border border-edge rounded-xl px-4 py-3 text-sm font-medium text-fg-2 hover:bg-surface-2 transition-colors disabled:opacity-60"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                </svg>
-                {googleLoading ? 'Redirecting…' : 'Continue with Google'}
-              </button>
 
               <p className="text-center text-sm text-fg-4 mt-6">
                 Part of the{' '}

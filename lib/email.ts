@@ -25,18 +25,28 @@ async function send(to: string, subject: string, html: string, label: string) {
 
 const appUrlOf = () => process.env.NEXT_PUBLIC_APP_URL || 'https://mindfit.academy'
 
-// A coach added this athlete; the account already exists.
-export async function sendCoachInviteEmail(to: string, coachName?: string | null, athleteName?: string | null) {
+// A coach or admin added this athlete; the account already exists.
+export async function sendCoachInviteEmail(to: string, coachName?: string | null, athleteName?: string | null, signInUrl?: string | null) {
   const first = athleteName?.trim().split(/\s+/)[0]
   const coach = coachName?.trim() || 'Your coach'
+  const loginUrl = `${appUrlOf()}/login`
   await send(to, `${coach} added you to MindFit`, emailShell(`
           <h2 style="color:#f3f4f6;font-size:20px;font-weight:600;margin:0 0 16px;">${first ? `${first}, your` : 'Your'} account is ready</h2>
           <p style="color:#9ca3af;font-size:15px;line-height:1.6;margin:0 0 24px;">
-            ${coach} added you to the MindFit athlete development platform. Sign in with this email address to set your password, or use the emailed code.
+            ${coach} added you to the MindFit athlete development platform.${signInUrl
+              ? ' Tap the button and you are in &mdash; no password needed.'
+              : ' Sign in with this email address to set your password, or use the emailed code.'}
           </p>
-          <a href="${appUrlOf()}/login" style="display:inline-block;background:#C4B400;color:#0A0F1A;font-weight:700;padding:14px 28px;border-radius:12px;text-decoration:none;font-size:15px;margin-bottom:32px;">
-            Sign In →
-          </a>`), 'coach invite email')
+          <a href="${signInUrl || loginUrl}" style="display:inline-block;background:#C4B400;color:#0A0F1A;font-weight:700;padding:14px 28px;border-radius:12px;text-decoration:none;font-size:15px;margin-bottom:24px;">
+            ${signInUrl ? 'Open MindFit →' : 'Sign In →'}
+          </a>
+          ${signInUrl ? `
+          <p style="color:#6b7280;font-size:13px;line-height:1.6;margin:0 0 8px;">
+            Link expired or not working? Go to <a href="${loginUrl}" style="color:#C4B400;">${loginUrl}</a> and create your account with this email address.
+          </p>
+          <p style="color:#6b7280;font-size:13px;line-height:1.6;margin:0;">
+            Set a password any time under Settings so you can sign in without a link.
+          </p>` : ''}`), 'coach invite email')
 }
 
 // An athlete wants to share progress with this parent.

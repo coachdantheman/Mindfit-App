@@ -251,5 +251,5 @@ html.light .text-purple-300, html.light .text-purple-400 { color: #9333ea; }
   }
 
   main { padding-top: 1.25rem; }
-  .card.p-5 { padding: 1rem; }
+  .card.p-5, .card.p-6 { padding: 1rem; }
 }

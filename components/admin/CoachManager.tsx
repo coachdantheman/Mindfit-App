@@ -46,13 +46,13 @@ export default function CoachManager() {
       <p className="text-sm text-fg-4 mb-4">Promote members to coach so they can add and monitor their own athletes.</p>
       <div className="space-y-2">
         {nonAdmins.map(m => (
-          <div key={m.id} className="flex items-center justify-between p-3 rounded-xl bg-surface-2/50 border border-edge-muted">
-            <div>
-              <p className="text-sm font-medium text-fg-2">{m.full_name || m.email}</p>
-              {m.full_name && <p className="text-xs text-fg-4">{m.email}</p>}
+          <div key={m.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-surface-2/50 border border-edge-muted">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-fg-2 truncate">{m.full_name || m.email}</p>
+              {m.full_name && <p className="text-xs text-fg-4 truncate">{m.email}</p>}
             </div>
-            <div className="flex items-center gap-3">
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+            <div className="flex items-center gap-3 shrink-0">
+              <span className={`hidden sm:inline px-2 py-0.5 rounded-full text-xs font-medium ${
                 m.role === 'coach'
                   ? 'bg-purple-500/15 text-purple-400'
                   : 'bg-surface-3/60 text-fg-3'

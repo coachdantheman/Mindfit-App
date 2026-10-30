@@ -35,7 +35,7 @@ export default function DeleteAccountCard() {
         <label htmlFor="delete-confirm" className="block text-xs uppercase tracking-wide text-fg-4 mb-1">
           Type DELETE to confirm
         </label>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <input
             id="delete-confirm"
             type="text"
@@ -49,7 +49,7 @@ export default function DeleteAccountCard() {
             type="button"
             onClick={del}
             disabled={busy || confirm !== 'DELETE'}
-            className="shrink-0 text-red-400 hover:text-red-300 text-sm font-medium transition-colors border border-red-400/40 hover:border-red-400/70 px-4 py-2 rounded-xl disabled:opacity-50"
+            className="w-full sm:w-auto sm:shrink-0 text-red-400 hover:text-red-300 text-sm font-medium transition-colors border border-red-400/40 hover:border-red-400/70 px-4 py-2 rounded-xl disabled:opacity-50"
           >
             {busy ? 'Deleting…' : 'Delete my account'}
           </button>

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-client'
 import { createAdminClient } from '@/lib/supabase-server'
 import { UserRole } from '@/types'
+import { touchLastSeen } from '@/lib/last-seen'
 
 interface ApiUser {
   userId: string
@@ -22,6 +23,7 @@ export async function verifyApiUser(...allowedRoles: UserRole[]): Promise<ApiUse
     .single()
 
   const role = (profile?.role as UserRole) ?? 'member'
+  await touchLastSeen(admin, session.user.id)
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

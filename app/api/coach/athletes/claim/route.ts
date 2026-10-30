@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { sendCoachInviteEmail } from '@/lib/email'
 import { extractEmails, extractNames, linkOrQueue, MAX_BULK } from '@/lib/links'
+import { createInvitedAccount, signInLinkFor } from '@/lib/invites'
 import type { ClaimResult } from '@/types'
 
 // Bulk add: every email becomes an athlete linked to this coach right now.
@@ -33,20 +34,12 @@ export async function POST(req: Request) {
         if (userId) return { email, status: outcome === 'linked' ? 'linked' : 'already_linked' }
 
         const full_name = names.get(email) ?? null
-        const { data: created, error } = await admin.auth.admin.createUser({
-          email,
-          email_confirm: true,
-          user_metadata: { full_name, invited_by: auth.userId },
-        })
-        if (error || !created.user) return { email, status: 'error', message: error?.message ?? 'Could not create account.' }
+        const created = await createInvitedAccount(admin, { email, fullName: full_name, invitedBy: auth.userId, notes: 'bulk add' })
+        if ('error' in created) return { email, status: 'error', message: created.error }
 
-        await admin.from('coach_athletes').insert({ coach_id: auth.userId, athlete_id: created.user.id })
-        await admin.from('pending_links').delete().eq('email', email)
-        await admin.from('approved_emails').upsert(
-          { email, added_by: auth.userId, notes: 'bulk add', full_name, registered: true },
-          { onConflict: 'email', ignoreDuplicates: true }
-        )
-        void sendCoachInviteEmail(email, me?.full_name, full_name)
+        await admin.from('coach_athletes').insert({ coach_id: auth.userId, athlete_id: created.userId })
+        const link = await signInLinkFor(admin, email)
+        void sendCoachInviteEmail(email, me?.full_name, full_name, link)
         return { email, status: 'created' }
       } catch (e: any) {
         return { email, status: 'error', message: e?.message ?? 'Failed' }

@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase-client'
 import { createAdminClient } from '@/lib/supabase-server'
 import { maybeSyncToGhl } from '@/lib/ghl'
 import { UserRole } from '@/types'
+import { touchLastSeen } from '@/lib/last-seen'
 
 interface AuthResult {
   userId: string
@@ -58,6 +59,7 @@ export async function getAuthUserCached(): Promise<AuthResult | null> {
   // Un-onboarded profiles bypass the cache so finishing onboarding
   // takes effect immediately instead of after the TTL.
   if (cached && cached.onboardedAt && Date.now() - cached.ts < PROFILE_TTL) {
+    await touchLastSeen(createAdminClient(), session.user.id)
     return {
       userId: session.user.id,
       email: session.user.email ?? '',
@@ -75,6 +77,7 @@ export async function getAuthUserCached(): Promise<AuthResult | null> {
     .maybeSingle()
 
   if (profile && !profile.ghl_synced_at) void maybeSyncToGhl(session.user.id)
+  await touchLastSeen(adminSupabase, session.user.id)
 
   const role = (profile?.role as UserRole) ?? 'member'
   const fullName = profile?.full_name ?? nameFromMetadata(session.user)

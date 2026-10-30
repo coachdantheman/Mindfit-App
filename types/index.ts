@@ -12,6 +12,7 @@ export interface Profile {
   terms_accepted_at: string | null
   invited_by: string | null
   onboarded_at: string | null
+  last_seen_at: string | null
   created_at: string
 }
 
@@ -58,6 +59,8 @@ export interface ApprovedEmail {
   registered: boolean
   added_by: string | null
   added_at: string
+  full_name?: string | null
+  source?: 'manual' | 'skool'
 }
 
 export interface AthleteOverview {
@@ -92,7 +95,7 @@ export interface ParentAthlete {
   created_at: string
 }
 
-export type ClaimStatus = 'created' | 'linked' | 'already_linked' | 'invalid' | 'error'
+export type ClaimStatus = 'created' | 'linked' | 'already_linked' | 'exists' | 'invalid' | 'error'
 export interface ClaimResult {
   email: string
   status: ClaimStatus

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { sendCoachInviteEmail } from '@/lib/email'
+import { signInLinkFor } from '@/lib/invites'
 
 export async function POST(_req: Request, { params }: { params: { athleteId: string } }) {
   const auth = await verifyApiUser('coach', 'admin')
@@ -17,6 +18,7 @@ export async function POST(_req: Request, { params }: { params: { athleteId: str
   if (!athlete) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (athlete.onboarded_at) return NextResponse.json({ error: 'This athlete is already active.' }, { status: 400 })
 
-  await sendCoachInviteEmail(athlete.email, me?.full_name, athlete.full_name)
+  const signInUrl = await signInLinkFor(admin, athlete.email)
+  await sendCoachInviteEmail(athlete.email, me?.full_name, athlete.full_name, signInUrl)
   return NextResponse.json({ ok: true })
 }
