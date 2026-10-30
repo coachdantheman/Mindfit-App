@@ -90,7 +90,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
 
   return (
     <>
-      <nav className="bg-surface/80 backdrop-blur border-b border-edge">
+      <nav className="bg-surface/80 backdrop-blur border-b border-edge pt-safe">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-14">
             {/* Logo lockup */}

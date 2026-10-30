@@ -18,7 +18,7 @@ export default function PublicNav({ email, isAdmin }: PublicNavProps) {
   }
 
   return (
-    <nav className="bg-surface border-b border-edge">
+    <nav className="bg-surface border-b border-edge pt-safe">
       <div className="max-w-2xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-14">
           <Link href="/" className="text-cta font-bold text-lg tracking-widest uppercase">

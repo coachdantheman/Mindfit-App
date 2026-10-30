@@ -62,7 +62,7 @@ export default function AthleteDetail({ athleteId, backHref, backLabel = 'Back',
   const prevId = idx > 0 ? roster!.ids[idx - 1] : null
   const nextId = roster && idx >= 0 && idx < roster.ids.length - 1 ? roster.ids[idx + 1] : null
   const navBar = (
-    <div className="sticky top-0 z-30 -mx-4 px-4 sm:-mx-6 sm:px-6 py-2 mb-4 bg-page/95 backdrop-blur border-b border-edge flex items-center justify-between gap-3">
+    <div className="sticky top-[env(safe-area-inset-top)] z-30 -mx-4 px-4 sm:-mx-6 sm:px-6 py-2 mb-4 bg-page/95 backdrop-blur border-b border-edge flex items-center justify-between gap-3">
       <Link href={backHref} className="text-cta text-sm font-medium hover:underline shrink-0 py-2">← {backLabel}</Link>
       {roster && idx >= 0 && (
         <div className="flex items-center gap-1 text-sm">
