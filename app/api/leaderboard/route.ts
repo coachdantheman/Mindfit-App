@@ -9,7 +9,7 @@ import {
 
 const TOP = 10
 
-// Returns only display name, sport, title, level and points per athlete.
+// Returns only display name, sport, title, level and points per person.
 // No ids, emails, MPI, ratings or logged content ever leave this route.
 export async function GET(req: Request) {
   const auth = await verifyApiUser()
@@ -45,7 +45,7 @@ export async function GET(req: Request) {
   const [{ data: profiles, error: pErr }, { data: rows, error: rErr }] = await Promise.all([
     admin.from('profiles')
       .select('id, full_name, primary_sport, leaderboard_visible, leaderboard_alias')
-      .eq('role', 'member'),
+      .in('role', ['member', 'coach', 'admin']),
     admin.rpc('get_leaderboard_activity', { p_start: bounds.lastStart, p_end: bounds.thisEnd, p_tz: tz })
       // PostgREST caps responses at 1000 rows by default; this is per member per day.
       .limit(20000),
@@ -63,7 +63,8 @@ export async function GET(req: Request) {
     id: string; full_name: string | null; primary_sport: string | null
     leaderboard_visible: boolean; leaderboard_alias: string | null
   }[]
-  const me = auth.role === 'member' ? members.find(m => m.id === auth.userId) ?? null : null
+  // Athletes, coaches and admins are all ranked; parents only view.
+  const me = auth.role !== 'parent' ? members.find(m => m.id === auth.userId) ?? null : null
 
   const toPool = (m: typeof members[number]): PoolMember => ({
     id: m.id, fullName: m.full_name, alias: m.leaderboard_alias, sport: m.primary_sport,
@@ -73,7 +74,7 @@ export async function GET(req: Request) {
   if (scope === 'team') pool = pool.filter(m => teamIds.has(m.id) || m.id === auth.userId)
   const poolMembers = pool.map(toPool)
 
-  const mineIds = auth.role === 'member' ? undefined : teamIds
+  const mineIds = auth.role === 'coach' || auth.role === 'parent' ? teamIds : undefined
   const thisList = rankEntries(thisScores, poolMembers, { meId: auth.userId, mineIds })
   const lastList = rankEntries(lastScores, poolMembers, { meId: auth.userId, mineIds })
   const myLast = lastList.find(e => e.isMe)

@@ -263,7 +263,7 @@ export default function SettingsPage() {
 
         <SharingCard role={role} />
 
-        {role === 'member' && <LeaderboardCard />}
+        {role !== 'parent' && <LeaderboardCard />}
 
         {/* Notifications */}
         <div className="card p-5">

@@ -6,7 +6,7 @@ import { isValidAlias } from '@/lib/leaderboard'
 // Leaderboard privacy settings. Kept apart from /api/profile because its
 // update_user_profile RPC whitelists columns and would drop these.
 export async function GET() {
-  const auth = await verifyApiUser('member')
+  const auth = await verifyApiUser('member', 'coach', 'admin')
   if (auth instanceof NextResponse) return auth
 
   const admin = createAdminClient()
@@ -20,7 +20,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: Request) {
-  const auth = await verifyApiUser('member')
+  const auth = await verifyApiUser('member', 'coach', 'admin')
   if (auth instanceof NextResponse) return auth
 
   const body = await req.json().catch(() => ({}))
