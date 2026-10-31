@@ -10,7 +10,9 @@ import LessonLinks from '@/components/shared/LessonLinks'
 import WorkoutLogList from '@/components/shared/WorkoutLogList'
 import SleepEntriesList from '@/components/shared/SleepEntriesList'
 
+import Link from 'next/link'
 import StatCard from '@/components/dashboard/StatCard'
+import type { MyStatus } from '@/components/leaderboard/types'
 import ReadinessHero from '@/components/dashboard/ReadinessHero'
 
 const RatingChart = dynamic(() => import('@/components/dashboard/RatingChart'), { ssr: false })
@@ -47,6 +49,7 @@ export default function ProgressPage() {
   const [nutritionGoal, setNutritionGoal] = useState<NutritionGoal | null>(null)
   const [assessments, setAssessments] = useState<WeeklyAssessment[]>([])
   const [overview, setOverview] = useState<{ streak: number; latestMpi: number | null; baselineMpi: number | null } | null>(null)
+  const [board, setBoard] = useState<MyStatus | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -74,6 +77,12 @@ export default function ProgressPage() {
       if (stats && typeof stats.streak === 'number') setOverview(stats)
       setLoading(false)
     }).catch(() => setLoading(false))
+    let tz = ''
+    try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone } catch {}
+    fetch(`/api/leaderboard?tz=${encodeURIComponent(tz)}`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d?.me) setBoard(d.me) })
+      .catch(() => {})
   }, [])
 
   const { avgSleep, avgSleepQuality } = calcSleepAverages(sleepEntries)
@@ -93,7 +102,7 @@ export default function ProgressPage() {
       </div>
 
       {overview && (
-        <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
           <StatCard
             label="MPI Score"
             value={overview.latestMpi ?? '—'}
@@ -122,6 +131,17 @@ export default function ProgressPage() {
             context={overview.streak > 0 ? 'Consecutive days of training. Keep it alive.' : 'Log anything today to start a streak.'}
             icon={<span>🔥</span>}
           />
+          {board && (
+            <Link href="/leaderboard" className="block col-span-2 sm:col-span-1 rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-cta">
+              <StatCard
+                label="The Board"
+                value={board.points}
+                unit="pts"
+                context={board.rank ? `${board.title.name} · ${board.level.name} · #${board.rank} of ${board.of}` : `${board.title.name} · ${board.level.name} · log anything to get ranked`}
+                icon={<span>{board.title.emoji}</span>}
+              />
+            </Link>
+          )}
         </div>
       )}
 

@@ -53,11 +53,28 @@ export async function PUT(req: Request) {
 
   const updates: Record<string, any> = {}
   if (progress !== undefined) updates.progress = Math.min(100, Math.max(0, progress))
-  if (is_completed !== undefined) updates.is_completed = is_completed
   if (title !== undefined) updates.title = title
   if (description !== undefined) updates.description = description
 
   const admin = createAdminClient()
+
+  // Stamp completed_at only on the false→true transition so re-saving a
+  // finished goal can't move its leaderboard credit into a new month.
+  if (is_completed !== undefined) {
+    const { data: current } = await admin
+      .from('goals')
+      .select('is_completed')
+      .eq('id', id)
+      .eq('user_id', auth.userId)
+      .single()
+    if (current && current.is_completed !== is_completed) {
+      updates.is_completed = is_completed
+      updates.completed_at = is_completed ? new Date().toISOString() : null
+    }
+  }
+
+  if (Object.keys(updates).length === 0) return NextResponse.json({ ok: true })
+
   const { error } = await admin
     .from('goals')
     .update(updates)

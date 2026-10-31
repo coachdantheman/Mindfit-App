@@ -65,6 +65,7 @@ const tabs = [
   { href: '/sleep', label: 'Sleep', icon: SleepIcon },
   { href: '/progress', label: 'Progress', icon: ProgressIcon },
   { href: '/learn', label: 'Learn', icon: LearnIcon },
+  { href: '/leaderboard', label: 'Board', icon: TrophyIcon },
 ]
 
 export default function Navbar({ email, role, fullName }: NavbarProps) {
@@ -273,6 +274,15 @@ function LearnIcon({ className }: { className?: string }) {
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
       <path d="M4 19.5A2.5 2.5 0 016.5 17H20V4a2 2 0 00-2-2H6.5A2.5 2.5 0 004 4.5v15z" />
       <path d="M4 19.5A2.5 2.5 0 006.5 22H20v-5" />
+    </svg>
+  )
+}
+function TrophyIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 4h8v5a4 4 0 01-8 0V4z" />
+      <path d="M8 6H5a1 1 0 00-1 1 4 4 0 004 4M16 6h3a1 1 0 011 1 4 4 0 01-4 4" />
+      <path d="M12 13v4M9 21h6M10 17h4l1 4H9l1-4z" />
     </svg>
   )
 }

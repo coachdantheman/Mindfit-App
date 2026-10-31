@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase'
 import { useEffect, useState } from 'react'
 import DailyQuoteToggle from '@/components/shared/DailyQuoteToggle'
 import SharingCard from '@/components/settings/SharingCard'
+import LeaderboardCard from '@/components/settings/LeaderboardCard'
 import DeleteAccountCard from '@/components/settings/DeleteAccountCard'
 import Link from 'next/link'
 import type { UserRole } from '@/types'
@@ -261,6 +262,8 @@ export default function SettingsPage() {
         </div>
 
         <SharingCard role={role} />
+
+        {role === 'member' && <LeaderboardCard />}
 
         {/* Notifications */}
         <div className="card p-5">

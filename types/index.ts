@@ -13,6 +13,8 @@ export interface Profile {
   invited_by: string | null
   onboarded_at: string | null
   last_seen_at: string | null
+  leaderboard_visible: boolean
+  leaderboard_alias: string | null
   created_at: string
 }
 
@@ -370,6 +372,7 @@ export interface Goal {
   target_date: string | null
   progress: number
   is_completed: boolean
+  completed_at: string | null
   created_at: string
 }
 
