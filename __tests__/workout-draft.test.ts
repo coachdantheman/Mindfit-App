@@ -5,6 +5,8 @@ import {
 } from '../lib/workout-draft'
 import type { ExerciseLibraryRow } from '../types/exercise'
 
+const NO_RUN = { distance: null, distance_unit: null, duration_sec: null, rest_sec: null }
+
 const library: ExerciseLibraryRow[] = [
   { id: 'lib-bench', user_id: null, slug: 'bench-press', name: 'Bench Press', aliases: ['Barbell Bench Press'], muscle_group: 'chest', equipment: 'barbell', measure: 'weight_reps', standard_key: 'bench', source: 'curated' },
   { id: 'lib-pullup', user_id: null, slug: 'pull-ups', name: 'Pull-Ups', aliases: ['Pull Ups'], muscle_group: 'back', equipment: 'bodyweight', measure: 'reps', standard_key: 'pullup', source: 'curated' },
@@ -70,13 +72,13 @@ test('draftToSessionPayload — target reps are never saved as done; filtering +
   const p = draftToSessionPayload(d, new Date(start.getTime() + 10 * 60000))
   assert.equal(p.exercises.length, 2)
   assert.deepEqual(p.exercises[0].sets, [
-    { set_number: 1, reps: 8, weight: 135, rpe: 7, notes: null },
-    { set_number: 2, reps: null, weight: 135, rpe: null, notes: null },
+    { set_number: 1, reps: 8, weight: 135, rpe: 7, notes: null, ...NO_RUN },
+    { set_number: 2, reps: null, weight: 135, rpe: null, notes: null, ...NO_RUN },
   ])
   assert.equal(p.exercises[0].exercise_id, 'lib-bench')
   assert.equal(p.exercises[1].exercise_name, 'Pull-Ups')
   assert.equal(p.exercises[1].is_bodyweight, true)
-  assert.deepEqual(p.exercises[1].sets, [{ set_number: 1, reps: 6, weight: null, rpe: null, notes: null }])
+  assert.deepEqual(p.exercises[1].sets, [{ set_number: 1, reps: 6, weight: null, rpe: null, notes: null, ...NO_RUN }])
   assert.equal(p.log.notes, 'felt good')
   assert.equal(JSON.stringify(p).includes('8-10'), false, 'plan target never reaches the payload')
 })

@@ -11,6 +11,49 @@ const GOAL_LABELS: Record<GoalType, string> = {
   year: 'Year Goals',
 }
 
+interface GoalFieldsProps {
+  type: GoalType
+  title: string
+  desc: string
+  onType: (t: GoalType) => void
+  onTitle: (v: string) => void
+  onDesc: (v: string) => void
+}
+
+function GoalFields({ type, title, desc, onType, onTitle, onDesc }: GoalFieldsProps) {
+  return (
+    <>
+      <div className="flex gap-2">
+        {(['weekly', 'season', 'year'] as GoalType[]).map(t => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => onType(t)}
+            className={type === t ? 'tab-btn-active text-xs' : 'tab-btn text-xs'}
+          >
+            {t.charAt(0).toUpperCase() + t.slice(1)}
+          </button>
+        ))}
+      </div>
+      <input
+        value={title}
+        onChange={e => onTitle(e.target.value)}
+        aria-label="Goal title"
+        placeholder="Goal title"
+        className="input-field"
+      />
+      <textarea
+        value={desc}
+        onChange={e => onDesc(e.target.value)}
+        aria-label="Goal description"
+        placeholder="Description (optional)"
+        rows={2}
+        className="textarea-field"
+      />
+    </>
+  )
+}
+
 export default function GoalsSection() {
   const notify = useToast()
   const [goals, setGoals] = useState<Goal[]>([])
@@ -20,6 +63,11 @@ export default function GoalsSection() {
   const [formTitle, setFormTitle] = useState('')
   const [formDesc, setFormDesc] = useState('')
   const [saving, setSaving] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editType, setEditType] = useState<GoalType>('weekly')
+  const [editTitle, setEditTitle] = useState('')
+  const [editDesc, setEditDesc] = useState('')
+  const [editSaving, setEditSaving] = useState(false)
 
   useEffect(() => {
     fetch('/api/mindset/goals')
@@ -57,6 +105,34 @@ export default function GoalsSection() {
       body: JSON.stringify({ id, progress, is_completed: completed }),
     })
     setGoals(prev => prev.map(g => g.id === id ? { ...g, progress, is_completed: completed } : g))
+  }
+
+  const startEdit = (g: Goal) => {
+    setEditingId(g.id)
+    setEditType(g.goal_type)
+    setEditTitle(g.title)
+    setEditDesc(g.description ?? '')
+  }
+
+  const saveEdit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingId || !editTitle.trim()) return
+    setEditSaving(true)
+    const title = editTitle.trim()
+    const description = editDesc.trim() || null
+    const res = await fetch('/api/mindset/goals', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: editingId, title, description, goal_type: editType }),
+    })
+    if (res.ok) {
+      setGoals(prev => prev.map(g => g.id === editingId ? { ...g, title, description, goal_type: editType } : g))
+      setEditingId(null)
+      notify('Goal updated ✓')
+    } else {
+      notify('Could not update the goal. Please try again.', 'error')
+    }
+    setEditSaving(false)
   }
 
   const deleteGoal = async (id: string) => {
@@ -97,32 +173,13 @@ export default function GoalsSection() {
 
         {showForm && (
           <form onSubmit={addGoal} className="bg-surface-2/50 rounded-xl border border-edge-muted p-4 mb-5 space-y-3">
-            <div className="flex gap-2">
-              {(['weekly', 'season', 'year'] as GoalType[]).map(t => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setFormType(t)}
-                  className={formType === t ? 'tab-btn-active text-xs' : 'tab-btn text-xs'}
-                >
-                  {t.charAt(0).toUpperCase() + t.slice(1)}
-                </button>
-              ))}
-            </div>
-            <input
-              value={formTitle}
-              onChange={e => setFormTitle(e.target.value)}
-              aria-label="Goal title"
-              placeholder="Goal title"
-              className="input-field"
-            />
-            <textarea
-              value={formDesc}
-              onChange={e => setFormDesc(e.target.value)}
-              aria-label="Goal description"
-              placeholder="Description (optional)"
-              rows={2}
-              className="textarea-field"
+            <GoalFields
+              type={formType}
+              title={formTitle}
+              desc={formDesc}
+              onType={setFormType}
+              onTitle={setFormTitle}
+              onDesc={setFormDesc}
             />
             <SaveButton
               state={saving ? 'saving' : 'idle'}
@@ -148,21 +205,51 @@ export default function GoalsSection() {
             <div key={type} className="mb-5 last:mb-0">
               <h4 className="text-xs uppercase tracking-wider text-fg-4 font-medium mb-3">{GOAL_LABELS[type]}</h4>
               <div className="space-y-2">
-                {items.map(g => (
-                  <div key={g.id} className="p-3 rounded-xl bg-surface-2/50 border border-edge-muted group">
-                    <div className="flex items-start justify-between mb-2">
+                {items.map(g => editingId === g.id ? (
+                  <form key={g.id} onSubmit={saveEdit} className="p-3 rounded-xl bg-surface-2/50 border border-edge-muted space-y-3">
+                    <GoalFields
+                      type={editType}
+                      title={editTitle}
+                      desc={editDesc}
+                      onType={setEditType}
+                      onTitle={setEditTitle}
+                      onDesc={setEditDesc}
+                    />
+                    <div className="flex gap-2">
+                      <SaveButton
+                        state={editSaving ? 'saving' : 'idle'}
+                        idleLabel="Save"
+                        disabled={!editTitle.trim()}
+                        className="sm:w-auto"
+                      />
+                      <button type="button" onClick={() => setEditingId(null)} className="btn-ghost">
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div key={g.id} className="p-3 rounded-xl bg-surface-2/50 border border-edge-muted">
+                    <div className="flex items-start justify-between gap-2 mb-2">
                       <div>
                         <p className={`text-sm font-medium ${g.is_completed ? 'text-green-400 line-through' : 'text-fg-2'}`}>
                           {g.title}
                         </p>
                         {g.description && <p className="text-xs text-fg-4 mt-0.5">{g.description}</p>}
                       </div>
-                      <button
-                        onClick={() => deleteGoal(g.id)}
-                        className="text-xs text-red-400 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 transition-opacity"
-                      >
-                        Delete
-                      </button>
+                      <div className="flex shrink-0 -my-1 -mr-1">
+                        <button
+                          onClick={() => startEdit(g)}
+                          className="text-xs text-cta px-3 min-h-[44px] sm:min-h-0 sm:py-1"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => deleteGoal(g.id)}
+                          className="text-xs text-red-400 px-3 min-h-[44px] sm:min-h-0 sm:py-1"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="flex-1 bg-surface-3 rounded-full h-2 overflow-hidden">

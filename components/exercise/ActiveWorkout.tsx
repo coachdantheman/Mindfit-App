@@ -56,7 +56,7 @@ export default function ActiveWorkout({ draft, library, saving, onChange, onFini
       .then((data: Record<string, LastSets>) => {
         setLast(prev => {
           const next = { ...prev, ...data }
-          for (const k of [...missingIds, ...missingNames]) if (!(k in next)) next[k] = { date: '', workout_log_id: null, sets: [] }
+          for (const k of [...missingIds, ...missingNames]) if (!(k in next)) next[k] = { date: '', workout_log_id: null, sets: [], bestSplit: null }
           return next
         })
       })
@@ -74,7 +74,7 @@ export default function ActiveWorkout({ draft, library, saving, onChange, onFini
     onChange({ ...draft, exercises: [...draft.exercises, exerciseFromLibrary(row)] })
     setPicker(false)
   }
-  const onSetDone = useCallback(() => setRestEndsAt(Date.now() + 90_000), [])
+  const onSetDone = useCallback((restSec?: number | null) => setRestEndsAt(Date.now() + (restSec ?? 90) * 1000), [])
 
   const cancel = () => {
     if (stats.doneSets > 0 && !confirm('Discard this workout? Logged sets will be lost.')) return

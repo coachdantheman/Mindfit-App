@@ -11,7 +11,9 @@ export interface AthleteProfile {
   updated_at: string
 }
 
-export type ExerciseMeasure = 'weight_reps' | 'reps' | 'distance_in' | 'time_sec'
+export type ExerciseMeasure = 'weight_reps' | 'reps' | 'distance_in' | 'time_sec' | 'distance_time'
+
+export type DistanceUnit = 'yd' | 'm' | 'mi' | 'km'
 
 export type StandardKey =
   | 'bench' | 'squat' | 'deadlift' | 'ohp' | 'power_clean' | 'front_squat'
@@ -37,7 +39,14 @@ export interface ExerciseLibraryRow {
 
 export type WorkoutSource = 'custom' | 'prebuilt' | 'program' | 'coach_program' | 'coach_workout'
 
-export type ExerciseLogRow = ExerciseLog & { exercise_id: string | null; is_bodyweight: boolean }
+export type ExerciseLogRow = ExerciseLog & {
+  exercise_id: string | null
+  is_bodyweight: boolean
+  distance: number | null
+  distance_unit: DistanceUnit | null
+  duration_sec: number | null
+  rest_sec: number | null
+}
 
 export type WorkoutLogRow = WorkoutLog & {
   source: WorkoutSource

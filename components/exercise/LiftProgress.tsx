@@ -5,7 +5,8 @@ import { format, parseISO } from 'date-fns'
 import BottomSheet from '@/components/shared/BottomSheet'
 import { TierBadge } from './TierResult'
 import type { LiftEvaluation, SessionPoint } from '@/lib/strength'
-import type { ExerciseLibraryRow, ExerciseMeasure } from '@/types/exercise'
+import type { DistanceUnit, ExerciseLibraryRow, ExerciseMeasure } from '@/types/exercise'
+import { formatTime } from '@/lib/running'
 
 interface ProgressData {
   measure: ExerciseMeasure
@@ -14,6 +15,7 @@ interface ProgressData {
   prs: SessionPoint[]
   tier: LiftEvaluation | null
   exercise: ExerciseLibraryRow | null
+  timed?: { metric: 'split' | 'pace'; unit: DistanceUnit; refDistance: number | null } | null
 }
 
 interface Props {
@@ -22,8 +24,8 @@ interface Props {
   onClose: () => void
 }
 
-const UNIT: Record<ExerciseMeasure, string> = { weight_reps: 'lb', reps: 'reps', distance_in: 'in', time_sec: 'sec' }
-const METRIC: Record<ExerciseMeasure, string> = { weight_reps: 'Est. 1RM', reps: 'Max reps', distance_in: 'Best distance', time_sec: 'Longest hold' }
+const UNIT: Record<ExerciseMeasure, string> = { weight_reps: 'lb', reps: 'reps', distance_in: 'in', time_sec: 'sec', distance_time: 's' }
+const METRIC: Record<ExerciseMeasure, string> = { weight_reps: 'Est. 1RM', reps: 'Max reps', distance_in: 'Best distance', time_sec: 'Longest hold', distance_time: 'Fastest' }
 
 export default function LiftProgress({ exerciseId, name, onClose }: Props) {
   const [data, setData] = useState<ProgressData | null>(null)
@@ -37,6 +39,10 @@ export default function LiftProgress({ exerciseId, name, onClose }: Props) {
   }, [exerciseId, name])
 
   const measure = data?.measure ?? 'weight_reps'
+  const timed = data?.timed ?? null
+  const metricLabel = timed ? (timed.metric === 'pace' ? 'Best pace' : `Fastest ${timed.refDistance} ${timed.unit}`) : METRIC[measure]
+  const unitLabel = timed ? (timed.metric === 'pace' ? `/${timed.unit}` : 's') : UNIT[measure]
+  const fmt = (v: number) => (timed ? formatTime(v) : String(v))
   const chart = (data?.series ?? []).map(p => ({ date: format(parseISO(p.date), 'MMM d'), value: p.e1rm }))
 
   return (
@@ -47,8 +53,8 @@ export default function LiftProgress({ exerciseId, name, onClose }: Props) {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[11px] uppercase tracking-wider text-fg-4">{METRIC[measure]}</p>
-              <p className="text-2xl font-bold text-fg-1 tabular-nums">{data.best || '—'} <span className="text-sm text-fg-4 font-medium">{data.best ? UNIT[measure] : ''}</span></p>
+              <p className="text-[11px] uppercase tracking-wider text-fg-4">{metricLabel}</p>
+              <p className="text-2xl font-bold text-fg-1 tabular-nums">{data.best ? fmt(data.best) : '—'} <span className="text-sm text-fg-4 font-medium">{data.best ? unitLabel : ''}</span></p>
             </div>
             {data.tier && <TierBadge tier={data.tier.tier} />}
           </div>
@@ -58,8 +64,8 @@ export default function LiftProgress({ exerciseId, name, onClose }: Props) {
               <LineChart data={chart} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis dataKey="date" tick={{ fontSize: 11, fill: 'rgb(var(--fg-4))' }} />
-                <YAxis tick={{ fontSize: 11, fill: 'rgb(var(--fg-4))' }} domain={['auto', 'auto']} />
-                <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid var(--border)', background: 'rgb(var(--surface))', color: 'rgb(var(--fg-1))', fontSize: 12 }} formatter={(v: number) => [`${v} ${UNIT[measure]}`, METRIC[measure]]} />
+                <YAxis tick={{ fontSize: 11, fill: 'rgb(var(--fg-4))' }} domain={['auto', 'auto']} reversed={!!timed} tickFormatter={fmt} />
+                <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid var(--border)', background: 'rgb(var(--surface))', color: 'rgb(var(--fg-1))', fontSize: 12 }} formatter={(v: number) => [`${fmt(v)} ${unitLabel}`, metricLabel]} />
                 <Line type="monotone" dataKey="value" stroke="var(--chart-1)" strokeWidth={2} dot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
@@ -83,7 +89,7 @@ export default function LiftProgress({ exerciseId, name, onClose }: Props) {
                   <div key={p.date + p.e1rm} className="flex items-center justify-between py-2 text-sm">
                     <span className="text-fg-3">{format(parseISO(p.date), 'MMM d, yyyy')}</span>
                     <span className="text-fg-1 tabular-nums font-medium">
-                      {p.e1rm} {UNIT[measure]}
+                      {fmt(p.e1rm)} {unitLabel}
                       {p.topSet && measure === 'weight_reps' ? <span className="text-fg-4 font-normal"> · {p.topSet.weight}×{p.topSet.reps}</span> : null}
                     </span>
                   </div>

@@ -48,13 +48,24 @@ export async function PUT(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const { id, progress, is_completed, title, description } = await req.json()
+  const { id, progress, is_completed, title, description, goal_type } = await req.json()
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
   const updates: Record<string, any> = {}
   if (progress !== undefined) updates.progress = Math.min(100, Math.max(0, progress))
-  if (title !== undefined) updates.title = title
-  if (description !== undefined) updates.description = description
+  if (title !== undefined) {
+    if (typeof title !== 'string' || !title.trim()) {
+      return NextResponse.json({ error: 'Title required' }, { status: 400 })
+    }
+    updates.title = title.trim()
+  }
+  if (description !== undefined) updates.description = description || null
+  if (goal_type !== undefined) {
+    if (!['weekly', 'season', 'year'].includes(goal_type)) {
+      return NextResponse.json({ error: 'Invalid goal_type' }, { status: 400 })
+    }
+    updates.goal_type = goal_type
+  }
 
   const admin = createAdminClient()
 

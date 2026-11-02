@@ -2,15 +2,18 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { bestE1rm, bestSetFrom, type BestSet } from '@/lib/strength'
+import { distanceTimeSeries } from '@/lib/running'
+import type { DistanceUnit } from '@/types/exercise'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 interface LastSets {
   date: string
   workout_log_id: string | null
-  sets: { set_number: number; reps: number | null; weight: number | null; rpe: number | null }[]
+  sets: { set_number: number; reps: number | null; weight: number | null; rpe: number | null; distance: number | null; distance_unit: DistanceUnit | null; duration_sec: number | null }[]
   best: number   // best e1RM across the fetched history (0 when none)
   bestSet: BestSet | null   // heaviest set (ties → more reps)
+  bestSplit: { distance: number; unit: DistanceUnit; sec: number; date: string } | null   // fastest time at the most-logged distance
 }
 
 // Most recent session's sets per exercise. Keyed by exercise_id for linked
@@ -25,7 +28,7 @@ export async function GET(req: Request) {
   if (ids.length === 0 && names.length === 0) return NextResponse.json({})
 
   const admin = createAdminClient()
-  const select = 'exercise_id, exercise_name, workout_log_id, set_number, reps, weight, rpe, created_at'
+  const select = 'exercise_id, exercise_name, workout_log_id, set_number, reps, weight, rpe, distance, distance_unit, duration_sec, created_at'
   const [byId, byName] = await Promise.all([
     ids.length
       ? admin.from('exercise_logs').select(select).eq('user_id', auth.userId).in('exercise_id', ids).order('created_at', { ascending: false }).limit(800)
@@ -36,19 +39,21 @@ export async function GET(req: Request) {
   ])
 
   const out: Record<string, LastSets> = {}
-  const history: Record<string, { reps: number | null; weight: number | null; created_at: string }[]> = {}
+  const history: Record<string, { workout_log_id: string | null; reps: number | null; weight: number | null; distance: number | null; distance_unit: DistanceUnit | null; duration_sec: number | null; created_at: string }[]> = {}
   const pick = (rows: any[], keyOf: (r: any) => string) => {
     for (const r of rows) {
       const key = keyOf(r)
       const weight = r.weight == null ? null : Number(r.weight)
-      ;(history[key] ||= []).push({ reps: r.reps, weight, created_at: String(r.created_at) })
+      const distance = r.distance == null ? null : Number(r.distance)
+      const duration_sec = r.duration_sec == null ? null : Number(r.duration_sec)
+      ;(history[key] ||= []).push({ workout_log_id: r.workout_log_id ?? null, reps: r.reps, weight, distance, distance_unit: r.distance_unit ?? null, duration_sec, created_at: String(r.created_at) })
       const sessionKey = r.workout_log_id ?? `day:${String(r.created_at).slice(0, 10)}`
       if (!out[key]) {
-        out[key] = { date: String(r.created_at).slice(0, 10), workout_log_id: r.workout_log_id ?? null, sets: [], best: 0, bestSet: null }
+        out[key] = { date: String(r.created_at).slice(0, 10), workout_log_id: r.workout_log_id ?? null, sets: [], best: 0, bestSet: null, bestSplit: null }
       }
       const curKey = out[key].workout_log_id ?? `day:${out[key].date}`
       if (curKey !== sessionKey) continue
-      out[key].sets.push({ set_number: r.set_number, reps: r.reps, weight, rpe: r.rpe })
+      out[key].sets.push({ set_number: r.set_number, reps: r.reps, weight, rpe: r.rpe, distance, distance_unit: r.distance_unit ?? null, duration_sec })
     }
   }
   pick(byId.data ?? [], r => r.exercise_id)
@@ -57,6 +62,11 @@ export async function GET(req: Request) {
     v.sets.sort((a, b) => a.set_number - b.set_number)
     v.best = bestE1rm(history[k] ?? [])
     v.bestSet = bestSetFrom(history[k] ?? [])
+    const dt = distanceTimeSeries(history[k] ?? [])
+    if (dt && dt.metric === 'split' && dt.series.length) {
+      const fastest = dt.series.reduce((a, b) => (b.value < a.value ? b : a))
+      v.bestSplit = { distance: dt.refDistance!, unit: dt.unit, sec: fastest.value, date: fastest.date }
+    }
   }
 
   return NextResponse.json(out)

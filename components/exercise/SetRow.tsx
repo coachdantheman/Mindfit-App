@@ -1,11 +1,13 @@
 'use client'
 import type { DraftSet } from '@/lib/workout-draft'
-import type { ExerciseMeasure } from '@/types/exercise'
+import type { DistanceUnit, ExerciseMeasure } from '@/types/exercise'
 
 interface Props {
   set: DraftSet
   measure: ExerciseMeasure
+  unit?: DistanceUnit | null
   lastWeight?: number | null
+  lastDistance?: number | null
   onChange: (next: DraftSet) => void
   onRemove?: () => void
 }
@@ -14,11 +16,13 @@ const FIELD = 'w-full bg-surface-2 border border-edge rounded-lg px-2 py-2 text-
 
 // Which columns a set shows, by how the exercise is measured. Seconds ride
 // in `reps`, inches ride in `weight`, so the payload shape never changes.
-export function setFields(measure: ExerciseMeasure): { reps?: string; weight?: string } {
+// distance_time has its own columns (distance + time).
+export function setFields(measure: ExerciseMeasure, unit?: DistanceUnit | null): { reps?: string; weight?: string; distance?: string; time?: string } {
   switch (measure) {
     case 'reps': return { reps: 'reps', weight: '+lb' }
     case 'time_sec': return { reps: 'sec' }
     case 'distance_in': return { weight: 'in' }
+    case 'distance_time': return { distance: unit ?? 'yd', time: 'time' }
     default: return { reps: 'reps', weight: 'lb' }
   }
 }
@@ -28,20 +32,34 @@ function leadingNumber(s: string | null): string {
   return m ? m[0] : ''
 }
 
-export default function SetRow({ set, measure, lastWeight, onChange, onRemove }: Props) {
-  const fields = setFields(measure)
+export default function SetRow({ set, measure, unit, lastWeight, lastDistance, onChange, onRemove }: Props) {
+  const fields = setFields(measure, unit)
   const toggleDone = () => {
     if (set.done) { onChange({ ...set, done: false }); return }
     // Tapping ✓ on an empty row confirms the plan target as performed.
     const reps = set.reps || (fields.reps ? leadingNumber(set.targetReps) : set.reps)
     const weight = set.weight || (fields.weight && lastWeight ? String(lastWeight) : set.weight)
-    onChange({ ...set, reps, weight, done: true })
+    const distance = set.distance || (fields.distance ? leadingNumber(set.targetReps) || (lastDistance ? String(lastDistance) : '') : set.distance)
+    onChange({ ...set, reps, weight, distance, done: true })
   }
 
   return (
     <div className={`flex items-center gap-2 ${set.done ? 'opacity-80' : ''}`}>
       <span className="w-6 text-center text-xs text-fg-4 tabular-nums shrink-0">{set.setNumber}</span>
-      {fields.reps ? (
+      {fields.distance ? (
+        <input
+          type="number"
+          inputMode="decimal"
+          step="any"
+          min="0"
+          value={set.distance}
+          onChange={e => onChange({ ...set, distance: e.target.value })}
+          placeholder={leadingNumber(set.targetReps) || (lastDistance ? String(lastDistance) : fields.distance)}
+          aria-label={`Set ${set.setNumber} distance (${fields.distance})`}
+          className={FIELD}
+          disabled={set.done}
+        />
+      ) : fields.reps ? (
         <input
           type="number"
           inputMode="numeric"
@@ -53,7 +71,18 @@ export default function SetRow({ set, measure, lastWeight, onChange, onRemove }:
           disabled={set.done}
         />
       ) : <span className="flex-1" />}
-      {fields.weight ? (
+      {fields.time ? (
+        <input
+          type="text"
+          inputMode="decimal"
+          value={set.time}
+          onChange={e => onChange({ ...set, time: e.target.value })}
+          placeholder="m:ss or sec"
+          aria-label={`Set ${set.setNumber} time`}
+          className={FIELD}
+          disabled={set.done}
+        />
+      ) : fields.weight ? (
         <input
           type="number"
           inputMode="decimal"

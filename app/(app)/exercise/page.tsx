@@ -7,15 +7,17 @@ import MyPlan from '@/components/exercise/MyPlan'
 import TrackWorkout from '@/components/exercise/TrackWorkout'
 import StrengthStandards from '@/components/exercise/StrengthStandards'
 import PreBuiltWorkouts from '@/components/exercise/PreBuiltWorkouts'
+import PracticeLog from '@/components/exercise/PracticeLog'
 import LessonLinks from '@/components/shared/LessonLinks'
 import { clearDraft, draftFromWorkout, draftStats, loadDraft, saveDraft, type WorkoutDraft } from '@/lib/workout-draft'
 
-type Tab = 'plan' | 'track' | 'strength' | 'prebuilt'
+type Tab = 'plan' | 'track' | 'practice' | 'strength' | 'prebuilt'
 type ToastKind = 'success' | 'error'
 
 const TABS: { key: Tab; label: string }[] = [
   { key: 'plan', label: 'My Plan' },
   { key: 'track', label: 'Track' },
+  { key: 'practice', label: 'Practice' },
   { key: 'strength', label: 'Strength' },
   { key: 'prebuilt', label: 'Pre-Built' },
 ]
@@ -96,6 +98,8 @@ export default function ExercisePage() {
         }))}
         active={tab}
         onSelect={setTab}
+        className="snap-x snap-mandatory"
+        itemClassName="snap-start"
       />
 
       {/* Keep-alive tabs — hidden instead of unmounted so form state survives */}
@@ -115,6 +119,9 @@ export default function ExercisePage() {
           notify={notify}
           refreshKey={historyKey}
         />
+      </div>
+      <div className={tab === 'practice' ? '' : 'hidden'}>
+        <PracticeLog notify={notify} />
       </div>
       <div className={tab === 'strength' ? '' : 'hidden'}>
         <StrengthStandards

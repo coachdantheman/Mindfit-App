@@ -112,7 +112,7 @@ const ROWS: Row[] = [
   ['battle-ropes', 'Battle Ropes', 'conditioning', 'rope', 'time_sec', ['Battle Rope', 'Battling Ropes']],
 
   // ─── conditioning / speed ──────────────────────────────────────────────
-  ['sprint', 'Sprint', 'conditioning', 'none', 'time_sec', ['40-Yard Sprint', '40-Yard Dash', '40 Yard Dash', 'Sprints', 'Hill Sprints', 'Flying 20s', '3-Point Start Sprint', 'Falling Starts', 'Block Starts', 'Ball Drop Sprint', 'Audible Cone Sprint', 'Cone Weave Sprint', 'Wall Drive March']],
+  ['sprint', 'Sprint', 'conditioning', 'none', 'distance_time', ['40-Yard Sprint', '40-Yard Dash', '40 Yard Dash', 'Sprints', 'Hill Sprints', 'Flying 20s', '3-Point Start Sprint', 'Falling Starts', 'Block Starts', 'Ball Drop Sprint', 'Audible Cone Sprint', 'Cone Weave Sprint', 'Wall Drive March']],
   ['shuttle-run', 'Shuttle Run', 'conditioning', 'none', 'time_sec', ['Shuttle Runs', 'Pro Agility (5-10-5)', '5-10-5 Shuttle', 'Pro Agility', '5-10-5']],
   ['t-drill', 'T-Drill', 'conditioning', 'cones', 'time_sec', ['Cone Drills (T-Drill)', 'T Drill', 'Cone Drills']],
   ['ladder-drills', 'Ladder Drills', 'conditioning', 'agility ladder', 'reps', ['Agility Ladder', 'Agility Ladder — Icky Shuffle', 'Agility Ladder — In-Out', 'Ladder Drill']],
@@ -122,8 +122,10 @@ const ROWS: Row[] = [
   ['high-knees', 'High Knees', 'conditioning', 'bodyweight', 'reps', ['High Knee', 'Butt Kicks']],
   ['jumping-jacks', 'Jumping Jacks', 'conditioning', 'bodyweight', 'reps', ['Jumping Jack', 'Star Jumps']],
   ['jump-rope', 'Jump Rope', 'conditioning', 'jump rope', 'time_sec', ['Skipping', 'Skip Rope']],
-  ['tempo-run', 'Tempo Run', 'conditioning', 'none', 'time_sec', ['Tempo Runs', 'Easy Run', 'Distance Run']],
-  ['rowing-machine', 'Rowing Machine', 'conditioning', 'machine', 'time_sec', ['Rower', 'Erg', 'Row Erg']],
+  ['tempo-run', 'Tempo Run', 'conditioning', 'none', 'distance_time', ['Tempo Runs', 'Threshold Run']],
+  ['easy-run', 'Easy Run', 'conditioning', 'none', 'distance_time', ['Run', 'Distance Run', 'Long Run', 'Recovery Run', 'Jog']],
+  ['interval-run', 'Intervals', 'conditioning', 'none', 'distance_time', ['Interval Run', 'Repeats', '400s', '800s', 'Fartlek', 'Track Intervals']],
+  ['rowing-machine', 'Rowing Machine', 'conditioning', 'machine', 'distance_time', ['Rower', 'Erg', 'Row Erg']],
 
   // ─── mobility ──────────────────────────────────────────────────────────
   ['hip-flexor-stretch', 'Hip Flexor Stretch', 'mobility', 'none', 'time_sec', ['Couch Stretch', 'Kneeling Hip Flexor Stretch']],

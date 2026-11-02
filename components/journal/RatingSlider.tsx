@@ -5,7 +5,7 @@ import { UseFormRegisterReturn } from 'react-hook-form'
 interface RatingSliderProps {
   label: string
   value: number
-  registration: UseFormRegisterReturn
+  registration?: UseFormRegisterReturn
   onChange: (val: number) => void
   /** Tailwind bg color class, e.g. 'bg-blue-500' */
   color: string
@@ -120,12 +120,14 @@ export default function RatingSlider({
       </div>
 
       {/* Hidden input keeps react-hook-form registration intact */}
-      <input
-        type="hidden"
-        {...registration}
-        value={value}
-        readOnly
-      />
+      {registration && (
+        <input
+          type="hidden"
+          {...registration}
+          value={value}
+          readOnly
+        />
+      )}
     </div>
   )
 }

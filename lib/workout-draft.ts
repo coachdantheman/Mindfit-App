@@ -1,4 +1,5 @@
-import type { ExerciseLibraryRow, ExerciseMeasure, StartWorkoutInput, WorkoutSource } from '@/types/exercise'
+import type { DistanceUnit, ExerciseLibraryRow, ExerciseMeasure, StartWorkoutInput, WorkoutSource } from '@/types/exercise'
+import { defaultUnit, parseTime } from '@/lib/running'
 import { matchExercise } from '@/lib/exercise-library'
 import { toLocalDateString } from '@/lib/programs'
 
@@ -7,10 +8,13 @@ export const DRAFT_VERSION = 1 as const
 
 export interface DraftSet {
   setNumber: number
-  targetReps: string | null   // plan target, shown as placeholder only
+  targetReps: string | null   // plan target (reps, or distance for runs), shown as placeholder only
   reps: string
   weight: string
   rpe: string
+  distance: string            // distance_time only
+  time: string                // distance_time only, "4.62" / "5:30" / "1:02:10"
+  rest: string                // distance_time only, seconds
   done: boolean
 }
 
@@ -19,6 +23,7 @@ export interface DraftExercise {
   exerciseId: string | null
   name: string
   measure: ExerciseMeasure
+  unit: DistanceUnit | null   // distance_time only
   isBodyweight: boolean
   notes: string
   sets: DraftSet[]
@@ -45,7 +50,7 @@ export function nextKey(): string {
 }
 
 export function emptySet(setNumber: number, targetReps: string | null = null): DraftSet {
-  return { setNumber, targetReps, reps: '', weight: '', rpe: '', done: false }
+  return { setNumber, targetReps, reps: '', weight: '', rpe: '', distance: '', time: '', rest: '', done: false }
 }
 
 // Plan "reps" strings like "8-10", "30 sec", "5 each" are targets, never
@@ -59,6 +64,7 @@ export function exerciseFromPlan(name: string, sets: number, targetReps: string 
     exerciseId: match?.id ?? null,
     name: match?.name ?? name,
     measure,
+    unit: measure === 'distance_time' ? defaultUnit(match?.slug, name) : null,
     isBodyweight: measure !== 'weight_reps',
     notes: '',
     sets: Array.from({ length: count }, (_, i) => emptySet(i + 1, targetReps)),
@@ -78,6 +84,7 @@ export function exerciseFromLibrary(row: ExerciseLibraryRow, sets = 3): DraftExe
     exerciseId: row.id,
     name: row.name,
     measure: row.measure,
+    unit: row.measure === 'distance_time' ? defaultUnit(row.slug, row.name) : null,
     isBodyweight: row.measure !== 'weight_reps',
     notes: '',
     sets: Array.from({ length: sets }, (_, i) => emptySet(i + 1)),
@@ -113,6 +120,10 @@ export interface SessionSetPayload {
   weight: number | null
   rpe: number | null
   notes: string | null
+  distance: number | null
+  distance_unit: DistanceUnit | null
+  duration_sec: number | null
+  rest_sec: number | null
 }
 
 export interface SessionExercisePayload {
@@ -156,17 +167,24 @@ export function draftToSessionPayload(draft: WorkoutDraft, finishedAt: Date = ne
   for (const ex of draft.exercises) {
     if (!ex.name.trim()) continue
     const sets: SessionSetPayload[] = []
+    const timed = ex.measure === 'distance_time'
     for (const s of ex.sets) {
       if (!s.done) continue
-      const reps = toInt(s.reps)
-      const weight = ex.isBodyweight ? toNum(s.weight) : toNum(s.weight)
-      if (reps === null && weight === null) continue
+      const reps = timed ? null : toInt(s.reps)
+      const weight = timed ? null : toNum(s.weight)
+      const distance = timed ? toNum(s.distance) : null
+      const duration_sec = timed ? parseTime(s.time) : null
+      if (reps === null && weight === null && distance === null && duration_sec === null) continue
       sets.push({
         set_number: sets.length + 1,
         reps,
         weight,
         rpe: toInt(s.rpe),
         notes: null,
+        distance,
+        distance_unit: timed && distance !== null ? ex.unit : null,
+        duration_sec,
+        rest_sec: timed ? toInt(s.rest) : null,
       })
     }
     if (sets.length === 0) continue
@@ -218,6 +236,15 @@ export function parseDraft(raw: string | null): WorkoutDraft | null {
   try {
     const d = JSON.parse(raw)
     if (!d || d.version !== DRAFT_VERSION || !Array.isArray(d.exercises) || typeof d.startedAt !== 'string') return null
+    // Drafts saved before runs/sprints lack the distance fields.
+    for (const ex of d.exercises) {
+      if (ex.unit === undefined) ex.unit = ex.measure === 'distance_time' ? defaultUnit(null, ex.name ?? '') : null
+      for (const s of ex.sets ?? []) {
+        s.distance ??= ''
+        s.time ??= ''
+        s.rest ??= ''
+      }
+    }
     return d as WorkoutDraft
   } catch {
     return null

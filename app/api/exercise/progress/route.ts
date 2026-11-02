@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { bestE1rm, evaluateLift, prsFromSeries, sessionMaxSeries, sessionSeries } from '@/lib/strength'
 import type { AthleteProfile, ExerciseLibraryRow } from '@/types/exercise'
+import { distanceTimeSeries, lowsFromSeries } from '@/lib/running'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -22,7 +23,7 @@ export async function GET(req: Request) {
   const admin = createAdminClient()
   let query = admin
     .from('exercise_logs')
-    .select('workout_log_id, set_number, reps, weight, rpe, created_at')
+    .select('workout_log_id, set_number, reps, weight, rpe, distance, distance_unit, duration_sec, created_at')
     .eq('user_id', auth.userId)
     .order('created_at', { ascending: true })
     .limit(3000)
@@ -37,9 +38,24 @@ export async function GET(req: Request) {
   ])
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const rows = (sets ?? []).map(s => ({ ...s, weight: s.weight == null ? null : Number(s.weight) }))
+  const rows = (sets ?? []).map(s => ({
+    ...s,
+    weight: s.weight == null ? null : Number(s.weight),
+    distance: s.distance == null ? null : Number(s.distance),
+    duration_sec: s.duration_sec == null ? null : Number(s.duration_sec),
+  }))
   const lib = exercise as ExerciseLibraryRow | null
-  const measure = lib?.measure ?? 'weight_reps'
+  const measure = lib?.measure ?? (rows.some(r => r.duration_sec != null || r.distance != null) ? 'distance_time' : 'weight_reps')
+
+  // Runs and sprints: lower is better, so the series and PRs come from
+  // lib/running instead of the e1RM helpers.
+  if (measure === 'distance_time') {
+    const dt = distanceTimeSeries(rows)
+    const series = (dt?.series ?? []).map(p => ({ date: p.date, e1rm: p.value, topSet: null, workout_log_id: p.workout_log_id }))
+    const best = series.length ? Math.min(...series.map(p => p.e1rm)) : 0
+    const prs = lowsFromSeries(dt?.series ?? []).map(p => ({ date: p.date, e1rm: p.value, topSet: null, workout_log_id: p.workout_log_id }))
+    return NextResponse.json({ measure, series, best, prs, tier: null, exercise: lib, timed: dt ? { metric: dt.metric, unit: dt.unit, refDistance: dt.refDistance } : null })
+  }
 
   const series = measure === 'weight_reps'
     ? sessionSeries(rows)

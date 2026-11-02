@@ -3,7 +3,8 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { clampNumber, isISODate, optionalString, requireString } from '@/lib/validate'
 import { bestE1rm, detectPrs, prKey, type PrCandidate } from '@/lib/strength'
-import type { WorkoutSource } from '@/types/exercise'
+import type { DistanceUnit, WorkoutSource } from '@/types/exercise'
+import { DISTANCE_UNITS } from '@/lib/running'
 
 const SOURCES: WorkoutSource[] = ['custom', 'prebuilt', 'program', 'coach_program', 'coach_workout']
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -19,7 +20,10 @@ function numOrNull(v: unknown, min: number, max: number): number | null | undefi
   return n
 }
 
-interface CleanSet { set_number: number; reps: number | null; weight: number | null; rpe: number | null; notes: string | null }
+interface CleanSet {
+  set_number: number; reps: number | null; weight: number | null; rpe: number | null; notes: string | null
+  distance: number | null; distance_unit: DistanceUnit | null; duration_sec: number | null; rest_sec: number | null
+}
 interface CleanExercise { exercise_id: string | null; exercise_name: string; is_bodyweight: boolean; sets: CleanSet[] }
 
 export async function POST(req: Request) {
@@ -63,16 +67,24 @@ export async function POST(req: Request) {
       const reps = numOrNull(s?.reps, 0, 500)
       const weight = numOrNull(s?.weight, 0, 2000)
       const rpe = numOrNull(s?.rpe, 1, 10)
-      if (reps === undefined || weight === undefined || rpe === undefined) {
-        return NextResponse.json({ error: `Out-of-range set on ${exercise_name} (reps 0–500, weight 0–2000, RPE 1–10).` }, { status: 400 })
+      const distance = numOrNull(s?.distance, 0, 100000)
+      const duration_sec = numOrNull(s?.duration_sec, 0, 86400)
+      const rest_sec = numOrNull(s?.rest_sec, 0, 3600)
+      if (reps === undefined || weight === undefined || rpe === undefined || distance === undefined || duration_sec === undefined || rest_sec === undefined) {
+        return NextResponse.json({ error: `Out-of-range set on ${exercise_name} (reps 0–500, weight 0–2000, RPE 1–10, distance ≥ 0, time ≤ 24 h).` }, { status: 400 })
       }
-      if (reps === null && weight === null) continue
+      const distance_unit: DistanceUnit | null = distance !== null && DISTANCE_UNITS.includes(s?.distance_unit) ? s.distance_unit : null
+      if (reps === null && weight === null && distance === null && duration_sec === null) continue
       sets.push({
         set_number: sets.length + 1,
         reps: reps === null ? null : Math.round(reps),
         weight: weight === null ? null : Math.round(weight * 100) / 100,
         rpe: rpe === null ? null : Math.round(rpe),
         notes: optionalString(s?.notes, 200),
+        distance: distance === null ? null : Math.round(distance * 100) / 100,
+        distance_unit,
+        duration_sec: duration_sec === null ? null : Math.round(duration_sec * 100) / 100,
+        rest_sec: rest_sec === null ? null : Math.round(rest_sec),
       })
     }
     if (sets.length === 0) continue
@@ -116,6 +128,10 @@ export async function POST(req: Request) {
     weight: s.weight,
     rpe: s.rpe,
     notes: s.notes,
+    distance: s.distance,
+    distance_unit: s.distance_unit,
+    duration_sec: s.duration_sec,
+    rest_sec: s.rest_sec,
   })))
 
   const { data: id, error } = await admin.rpc('log_workout_session', {

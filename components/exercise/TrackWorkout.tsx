@@ -8,6 +8,7 @@ import FinishSummary, { type FinishResult } from './FinishSummary'
 import Skeleton from '@/components/shared/Skeleton'
 import { clearDraft, draftStats, draftToSessionPayload, saveDraft, type WorkoutDraft } from '@/lib/workout-draft'
 import type { DetectedPr } from '@/lib/strength'
+import { formatTime } from '@/lib/running'
 
 interface Props {
   draft: WorkoutDraft | null            // the open workout
@@ -103,7 +104,8 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
       programWorkoutId: log.program_workout_id,
       coachWorkoutId: log.coach_workout_id,
       exercises: groups.map(([name, rows]) => ({ name, sets: rows.length, reps: '', notes: '' })),
-      prefill: groups.map(([name, rows]) => ({ name, reps: rows.map(r => (r.reps != null ? String(r.reps) : null)) })),
+      // Runs and sprints carry last time's distance as the placeholder instead of reps.
+      prefill: groups.map(([name, rows]) => ({ name, reps: rows.map(r => (r.distance != null ? String(Number(r.distance)) : r.reps != null ? String(r.reps) : null)) })),
     })
   }
 
@@ -147,6 +149,22 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
       >
         + Start a custom workout
       </button>
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => onStart({ name: 'Sprint session', categoryName: 'Conditioning', exercises: [{ name: 'Sprint', sets: 6, reps: '40', notes: '' }], source: 'custom' })}
+          className="btn-secondary"
+        >
+          Sprints
+        </button>
+        <button
+          type="button"
+          onClick={() => onStart({ name: 'Run', categoryName: 'Conditioning', exercises: [{ name: 'Easy Run', sets: 1, reps: '', notes: '' }], source: 'custom' })}
+          className="btn-secondary"
+        >
+          Run
+        </button>
+      </div>
 
       {coachWorkouts.length > 0 && (
         <div className="bg-surface rounded-2xl border border-cta/30 p-4">
@@ -216,7 +234,9 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
                               <div className="flex flex-wrap gap-1.5">
                                 {rows.map(s => (
                                   <span key={s.id} className="text-[11px] text-fg-4 bg-surface-3/50 px-1.5 py-0.5 rounded tabular-nums">
-                                    {s.reps ?? '—'}{s.weight ? ` × ${Number(s.weight)}` : ''}{s.rpe ? ` @${s.rpe}` : ''}
+                                    {s.distance != null || s.duration_sec != null
+                                      ? `${s.distance != null ? `${Number(s.distance)} ${s.distance_unit ?? ''}` : ''}${s.duration_sec != null ? `${s.distance != null ? ' · ' : ''}${formatTime(Number(s.duration_sec))}${Number(s.duration_sec) < 60 ? 's' : ''}` : ''}`
+                                      : `${s.reps ?? '—'}${s.weight ? ` × ${Number(s.weight)}` : ''}`}{s.rpe ? ` @${s.rpe}` : ''}
                                   </span>
                                 ))}
                               </div>
