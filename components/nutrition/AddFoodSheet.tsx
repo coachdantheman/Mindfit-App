@@ -124,7 +124,7 @@ export default function AddFoodSheet({ meal, foods, recent, favorites, savedMeal
               <div>
                 <p className="text-[11px] uppercase tracking-wider text-fg-4 mb-1">Foods</p>
                 {favorites.length === 0
-                  ? <p className="text-sm text-fg-4 py-3">Tap ☆ on any food in Search to favorite it.</p>
+                  ? <p className="text-sm text-fg-4 py-3">Tap ☆ on any food in Search, or next to anything already on today&rsquo;s log, to favorite it.</p>
                   : <QuickList
                       items={favorites.map(f => ({ key: f.id, name: f.name, sub: f.serving_size, kcal: f.calories,
                         item: { food_name: f.name, food_id: f.id, serving_size: f.serving_size, servings: 1, calories: f.calories, protein_g: Number(f.protein_g), carbs_g: Number(f.carbs_g), fat_g: Number(f.fat_g) } }))}

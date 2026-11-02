@@ -44,6 +44,11 @@ export default function NutritionPage() {
     })
   }, [favorites])
 
+  // The server already starred it (favorites API with entry_id); just merge.
+  const favoriteSaved = useCallback((food: Food) => {
+    setFavorites(prev => prev.some(f => f.id === food.id) ? prev : [food, ...prev])
+  }, [])
+
   return (
     <div>
       <div className="mb-6">
@@ -65,7 +70,8 @@ export default function NutritionPage() {
           foods={foods}
           favorites={favorites}
           onToggleFavorite={toggleFavorite}
-          onFoodCreated={f => setFoods(prev => [f, ...prev])}
+          onFavoriteSaved={favoriteSaved}
+          onFoodCreated={f => setFoods(prev => prev.some(x => x.id === f.id) ? prev : [f, ...prev])}
           onSetGoal={() => setTab('goals')}
           onOpenGameDay={() => setTab('gameday')}
           notify={notify}

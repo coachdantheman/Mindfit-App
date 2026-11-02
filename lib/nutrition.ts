@@ -143,6 +143,13 @@ export function scaleFood(food: FoodMacros, servings: number): FoodMacros {
   }
 }
 
+// Inverse of scaleFood: recover per-serving macros from a logged entry so
+// a manually entered or AI-estimated item can become a reusable food.
+export function perServingFromEntry(entry: FoodMacros & { servings?: number | string | null }): FoodMacros {
+  const servings = Number(entry.servings) || 1
+  return scaleFood(entry, 1 / servings)
+}
+
 export interface Totals { calories: number; protein: number; carbs: number; fat: number }
 
 type MacroRow = Pick<FoodEntry, 'calories' | 'protein_g' | 'carbs_g' | 'fat_g'>

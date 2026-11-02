@@ -14,13 +14,14 @@ interface Props {
   foods: Food[]
   favorites: Food[]
   onToggleFavorite: (food: Food) => void
+  onFavoriteSaved: (food: Food) => void
   onFoodCreated: (food: Food) => void
   onSetGoal: () => void
   onOpenGameDay: () => void
   notify: (msg: string) => void
 }
 
-export default function TodayView({ goal, foods, favorites, onToggleFavorite, onFoodCreated, onSetGoal, onOpenGameDay, notify }: Props) {
+export default function TodayView({ goal, foods, favorites, onToggleFavorite, onFavoriteSaved, onFoodCreated, onSetGoal, onOpenGameDay, notify }: Props) {
   const [date, setDate] = useState(() => localDateISO(new Date()))
   const [entries, setEntries] = useState<FoodEntry[]>([])
   const [yesterdayMeals, setYesterdayMeals] = useState<Set<string>>(new Set())
@@ -155,6 +156,26 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
     await fetch('/api/nutrition/saved-meals', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: meal.id }) })
   }
 
+  // Star something already on the log. Unstarring only needs the food id;
+  // starring goes through the server so a manual or AI-estimated entry
+  // becomes a reusable food first and the entry gets linked to it.
+  const favoriteIds = new Set(favorites.map(f => f.id))
+  const toggleEntryFavorite = async (entry: FoodEntry) => {
+    const starred = entry.food_id ? favorites.find(f => f.id === entry.food_id) : undefined
+    if (starred) { onToggleFavorite(starred); notify(`Removed ${entry.food_name} from Favorites`); return }
+    const res = await fetch('/api/nutrition/favorites', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entry_id: entry.id }),
+    })
+    const data = await res.json()
+    if (!res.ok || !data?.food) { notify(data?.error ?? 'Could not add to Favorites.'); return }
+    const food: Food = data.food
+    if (!foods.some(f => f.id === food.id)) onFoodCreated(food)
+    onFavoriteSaved(food)
+    if (entry.food_id !== food.id) setEntries(prev => prev.map(e => e.id === entry.id ? { ...e, food_id: food.id } : e))
+    notify(`Saved ${entry.food_name} to Favorites`)
+  }
+
   const totals = sumEntries(entries)
 
   return (
@@ -174,6 +195,8 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
             onAdd={() => setSheetMeal(meal)}
             onCopyYesterday={() => copyYesterday(meal)}
             onSaveMeal={() => setSaveMeal(meal)}
+            favoriteIds={favoriteIds}
+            onToggleFavorite={toggleEntryFavorite}
             onServings={updateServings}
             onDelete={remove}
           />

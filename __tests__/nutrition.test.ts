@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import {
   computeGoalFromQuiz, macrosFromCalories, caloriesFromMacros, splitFromGrams, rebalanceSplit,
   scaleFood, sumEntries, groupEntriesByDay, fillMissingDays, bucketByRange, adherencePct,
-  linearTrend, weeksToTarget, searchFoods, loggingStreak, CALORIE_FLOOR, shiftDate,
+  linearTrend, weeksToTarget, searchFoods, loggingStreak, CALORIE_FLOOR, shiftDate, perServingFromEntry,
 } from '../lib/nutrition'
 import { extractJson, sanitizeEstimate } from '../lib/ai-json'
 
@@ -148,4 +148,16 @@ test('sanitizeEstimate clamps and coerces', () => {
   const r = sanitizeEstimate({ name: ' Burrito ', calories: '9999', protein_g: '45.55', carbs_g: -3, fat_g: 'x', confidence: 'wild' })
   assert.deepEqual(r, { name: 'Burrito', serving_size: '1 serving', servings: 1, calories: 3000, protein_g: 45.6, carbs_g: 0, fat_g: 0, confidence: 'low' })
   assert.equal(sanitizeEstimate({ calories: 100 }), null)
+})
+
+test('perServingFromEntry — recovers single-serving macros from a logged entry', () => {
+  const entry = { servings: 2.5, calories: 500, protein_g: 37.5, carbs_g: 60, fat_g: 12.5 }
+  assert.deepEqual(perServingFromEntry(entry), { calories: 200, protein_g: 15, carbs_g: 24, fat_g: 5 })
+})
+
+test('perServingFromEntry — missing or zero servings reads as one serving', () => {
+  const entry = { calories: 310, protein_g: 20, carbs_g: 30, fat_g: 10 }
+  assert.deepEqual(perServingFromEntry({ ...entry, servings: null }), entry)
+  assert.deepEqual(perServingFromEntry({ ...entry, servings: 0 }), entry)
+  assert.deepEqual(perServingFromEntry({ ...entry, servings: '1' }), entry)
 })

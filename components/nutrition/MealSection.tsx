@@ -10,11 +10,13 @@ interface Props {
   onAdd: () => void
   onCopyYesterday: () => void
   onSaveMeal: () => void
+  favoriteIds: Set<string>
+  onToggleFavorite: (entry: FoodEntry) => void
   onServings: (id: string, servings: number) => void
   onDelete: (id: string) => void
 }
 
-export default function MealSection({ meal, entries, canCopyYesterday, onAdd, onCopyYesterday, onSaveMeal, onServings, onDelete }: Props) {
+export default function MealSection({ meal, entries, canCopyYesterday, onAdd, onCopyYesterday, onSaveMeal, favoriteIds, onToggleFavorite, onServings, onDelete }: Props) {
   const kcal = entries.reduce((s, e) => s + Number(e.calories), 0)
   return (
     <div className="card p-4">
@@ -24,7 +26,16 @@ export default function MealSection({ meal, entries, canCopyYesterday, onAdd, on
       </div>
       {entries.length > 0 && (
         <div className="space-y-1.5 mb-2">
-          {entries.map(e => <FoodEntryRow key={e.id} entry={e} onServings={onServings} onDelete={onDelete} />)}
+          {entries.map(e => (
+            <FoodEntryRow
+              key={e.id}
+              entry={e}
+              isFavorite={!!e.food_id && favoriteIds.has(e.food_id)}
+              onToggleFavorite={onToggleFavorite}
+              onServings={onServings}
+              onDelete={onDelete}
+            />
+          ))}
         </div>
       )}
       <div className="flex items-center gap-4">
