@@ -5,8 +5,12 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), selec
 
 // Dialog behaviour: focus moves inside on open, Tab cycles within, Escape
 // closes, page scroll locks, and focus returns to the opener on close.
+// onClose lives in a ref so the effect runs once per mount: re-running it on
+// every parent render stole focus from inputs and dropped the iOS keyboard.
 export function useFocusTrap<T extends HTMLElement>(onClose: () => void) {
   const ref = useRef<T>(null)
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
 
   useEffect(() => {
     const el = ref.current
@@ -18,7 +22,7 @@ export function useFocusTrap<T extends HTMLElement>(onClose: () => void) {
     ;(first ?? el)?.focus({ preventScroll: true })
 
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.preventDefault(); onClose(); return }
+      if (e.key === 'Escape') { e.preventDefault(); onCloseRef.current(); return }
       if (e.key !== 'Tab' || !el) return
       const items = Array.from(el.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(i => i.offsetParent !== null)
       if (items.length === 0) { e.preventDefault(); return }
@@ -32,7 +36,7 @@ export function useFocusTrap<T extends HTMLElement>(onClose: () => void) {
       document.body.style.overflow = prevOverflow
       opener?.focus?.({ preventScroll: true })
     }
-  }, [onClose])
+  }, [])
 
   return ref
 }

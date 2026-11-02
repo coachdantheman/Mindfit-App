@@ -38,7 +38,7 @@ export default function RestTimer({ endsAt, onChange }: Props) {
   if (!endsAt) return null
 
   return (
-    <div className="fixed left-1/2 -translate-x-1/2 bottom-24 sm:bottom-6 z-40 w-[calc(100%-2rem)] max-w-md">
+    <div className="rest-timer fixed left-1/2 -translate-x-1/2 bottom-24 sm:bottom-6 z-40 w-[calc(100%-2rem)] max-w-md">
       <div className={`card px-3 py-2 flex items-center gap-2 shadow-lift ${remaining === 0 ? 'border-cta/60' : ''}`}>
         <div className="min-w-[64px]">
           <p className="text-[10px] uppercase tracking-wider text-fg-4">Rest</p>

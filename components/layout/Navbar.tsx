@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { useKeyboardInset } from '@/lib/useKeyboardInset'
 import { UserRole } from '@/types'
 
 function StreakChip({ pathname }: { pathname: string }) {
@@ -71,6 +72,7 @@ const tabs = [
 export default function Navbar({ email, role, fullName }: NavbarProps) {
   const router = useRouter()
   const pathname = usePathname()
+  useKeyboardInset()
   const supabase = createClient()
 
   const signOut = async () => {
@@ -198,7 +200,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
       </nav>
 
       {/* Mobile bottom tab bar */}
-      <nav aria-label="Primary" className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-edge pb-safe">
+      <nav aria-label="Primary" className="mobile-tabbar sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-edge pb-safe">
         <div className="flex items-stretch">
           {tabs.map(tab => {
             const Icon = tab.icon

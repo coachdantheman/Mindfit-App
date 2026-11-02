@@ -234,7 +234,8 @@ html.light .text-purple-300, html.light .text-purple-400 { color: #9333ea; }
    ============================== */
 @media (max-width: 639px) {
   html { font-size: 17px; }
-  html, body { overflow-x: hidden; max-width: 100vw; }
+  html { max-width: 100vw; }
+  body { overflow-x: hidden; max-width: 100vw; }
 
   .tab-btn, .tab-btn-active {
     min-height: 44px;
@@ -255,4 +256,15 @@ html.light .text-purple-300, html.light .text-purple-400 { color: #9333ea; }
 
   main { padding-top: 1.25rem; }
   .card.p-5, .card.p-6 { padding: 1rem; }
+
+  /* On-screen keyboard (see lib/useKeyboardInset.ts): --kb is its height,
+     html.kb-open while it is up. iOS never shrinks the layout viewport, so
+     fixed bottom chrome must step aside and sheets shrink to fit above it. */
+  html { scroll-padding-bottom: calc(var(--kb, 0px) + 5rem); }
+  html.kb-open .mobile-tabbar,
+  html.kb-open .rest-timer { visibility: hidden; pointer-events: none; }
+  .bottom-sheet {
+    padding-bottom: var(--kb, 0px);
+    max-height: calc(92dvh - var(--kb, 0px));
+  }
 }

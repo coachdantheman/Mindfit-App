@@ -64,7 +64,7 @@ export default function AddFoodSheet({ meal, foods, recent, favorites, savedMeal
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} aria-hidden="true" />
-      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="add-food-title" tabIndex={-1} className="relative w-full sm:max-w-lg max-h-[92vh] sm:max-h-[85vh] bg-surface border border-edge rounded-t-3xl sm:rounded-3xl flex flex-col pb-safe">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="add-food-title" tabIndex={-1} className="bottom-sheet relative w-full sm:max-w-lg max-h-[92vh] sm:max-h-[85vh] bg-surface border border-edge rounded-t-3xl sm:rounded-3xl flex flex-col pb-safe">
         <div className="flex items-center justify-between px-5 pt-4 pb-2">
           <h3 id="add-food-title" className="font-semibold text-fg-1">Add to {meal}</h3>
           <button type="button" onClick={onClose} className="btn-ghost px-2" aria-label="Close">✕</button>
