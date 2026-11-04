@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  scoreDay, scoreMonth, levelFor, nextLevel, levelProgress, titleFor, rankEntries, neighbours,
+  scoreDay, scoreMonth, levelFor, nextLevel, levelProgress, titleFor, rankEntries, neighbours, activityStreaks,
   displayNameFor, isValidAlias, monthBounds, isoWeekKey, type ActivityRow, type Score,
 } from '../lib/leaderboard'
 import { LEVELS, CLUTCH_DAY_BONUS, MIN_TITLE_POINTS } from '../lib/leaderboard-config'
@@ -142,4 +142,20 @@ test('isoWeekKey', () => {
   assert.equal(isoWeekKey('2026-10-11'), '2026-W41')
   assert.equal(isoWeekKey('2026-10-12'), '2026-W42')
   assert.equal(isoWeekKey('2027-01-01'), '2026-W53')
+})
+
+test('activityStreaks — consecutive active days ending today or yesterday', () => {
+  const r = (user_id: string, day: string, journal = 1) =>
+    ({ user_id, day, food: 0, journal } as any)
+  const rows = [
+    r('a', '2026-11-04'), r('a', '2026-11-03'), r('a', '2026-11-02'), r('a', '2026-10-31'),
+    r('b', '2026-11-03'), r('b', '2026-11-02'),
+    r('c', '2026-11-01'),
+    r('d', '2026-11-04', 0),
+  ]
+  const s = activityStreaks(rows, '2026-11-04')
+  assert.equal(s.get('a'), 3)      // gap on Nov 1 stops it
+  assert.equal(s.get('b'), 2)      // nothing today yet, yesterday counts
+  assert.equal(s.get('c'), 0)      // broken
+  assert.equal(s.has('d'), false)  // a row with zero counts is not active
 })

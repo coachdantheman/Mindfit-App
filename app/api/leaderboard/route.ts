@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import {
   scoreMonth, rankEntries, neighbours, titleFor, levelFor, nextLevel, levelProgress,
-  displayNameFor, monthBounds, isValidTimeZone,
+  displayNameFor, monthBounds, isValidTimeZone, activityStreaks, todayIn,
   type ActivityRow, type PoolMember,
 } from '@/lib/leaderboard'
 
@@ -58,6 +58,8 @@ export async function GET(req: Request) {
   const lastRows = all.filter(r => r.day < bounds.thisStart)
   const thisScores = scoreMonth(thisRows)
   const lastScores = scoreMonth(lastRows)
+  // Streaks look across both months so a run that started last month still counts.
+  const streaks = activityStreaks(all, todayIn(tz))
 
   const members = (profiles ?? []) as {
     id: string; full_name: string | null; primary_sport: string | null
@@ -75,8 +77,8 @@ export async function GET(req: Request) {
   const poolMembers = pool.map(toPool)
 
   const mineIds = auth.role === 'coach' || auth.role === 'parent' ? teamIds : undefined
-  const thisList = rankEntries(thisScores, poolMembers, { meId: auth.userId, mineIds })
-  const lastList = rankEntries(lastScores, poolMembers, { meId: auth.userId, mineIds })
+  const thisList = rankEntries(thisScores, poolMembers, { meId: auth.userId, mineIds, streaks })
+  const lastList = rankEntries(lastScores, poolMembers, { meId: auth.userId, mineIds, streaks })
   const myLast = lastList.find(e => e.isMe)
 
   let meOut = null

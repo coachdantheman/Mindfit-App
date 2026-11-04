@@ -15,6 +15,7 @@ function Row({ e }: { e: Entry }) {
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-fg-1 truncate">
           {e.displayName}{e.isMe && <span className="text-fg-4 font-normal"> (you)</span>}
+          {e.streak > 0 && <span className="ml-1.5 text-[11px] font-medium text-fg-3 tabular-nums" title={`${e.streak}-day streak`}>🔥{e.streak}</span>}
         </p>
         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
           <TitleBadge title={e.title} />

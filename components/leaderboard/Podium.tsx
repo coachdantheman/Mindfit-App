@@ -22,7 +22,10 @@ export default function Podium({ podium, month, myRank, of }: { podium: Entry[];
               <span className={`${first ? 'w-14 h-14 text-base' : 'w-11 h-11 text-sm'} rounded-full bg-gradient-to-br from-cta to-brand-700 text-fg-inverse flex items-center justify-center font-bold`} aria-hidden>
                 {initialsOf(e.displayName)}
               </span>
-              <p className="text-sm font-semibold text-fg-1 mt-2 truncate w-full">{e.displayName}</p>
+              <p className="text-sm font-semibold text-fg-1 mt-2 truncate w-full">
+                {e.displayName}
+                {e.streak > 0 && <span className="ml-1 text-[11px] font-medium text-fg-3 tabular-nums" title={`${e.streak}-day streak`}>🔥{e.streak}</span>}
+              </p>
               <p className="text-xs text-fg-3 tabular-nums">{e.points} pts</p>
               <div className="mt-1"><TitleBadge title={e.title} /></div>
             </div>

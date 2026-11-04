@@ -30,6 +30,7 @@ export interface Entry {
   title: Title
   level: Level
   points: number
+  streak: number
   isMe: boolean
   isMine: boolean
 }
@@ -106,6 +107,35 @@ export function scoreMonth(rows: ActivityRow[]): Map<string, Score> {
   return out
 }
 
+/**
+ * Consecutive active days per user ending today (or yesterday if nothing
+ * yet today). Only spans the rows given, so it is floored by the fetch window.
+ */
+export function activityStreaks(rows: ActivityRow[], today: string): Map<string, number> {
+  const days = new Map<string, Set<string>>()
+  for (const r of rows) {
+    const active = (r.food ?? 0) > 0 || ACTIONS.some(a => (r[a.key] ?? 0) > 0)
+    if (!active) continue
+    let set = days.get(r.user_id)
+    if (!set) { set = new Set(); days.set(r.user_id, set) }
+    set.add(r.day)
+  }
+  const out = new Map<string, number>()
+  for (const [user, set] of days) {
+    let cursor = set.has(today) ? today : shiftDay(today, -1)
+    let n = 0
+    while (set.has(cursor)) { n++; cursor = shiftDay(cursor, -1) }
+    out.set(user, n)
+  }
+  return out
+}
+
+function shiftDay(day: string, by: number): string {
+  const [y, m, d] = day.split('-').map(Number)
+  const dt = new Date(Date.UTC(y, m - 1, d + by))
+  return `${dt.getUTCFullYear()}-${pad(dt.getUTCMonth() + 1)}-${pad(dt.getUTCDate())}`
+}
+
 export function levelFor(points: number): Level {
   let lvl = LEVELS[0]
   for (const l of LEVELS) if (points >= l.min) lvl = l
@@ -170,7 +200,7 @@ export function displayNameFor(fullName: string | null | undefined, alias?: stri
 export function rankEntries(
   scores: Map<string, Score>,
   pool: PoolMember[],
-  opts: { meId?: string | null; mineIds?: Set<string> } = {}
+  opts: { meId?: string | null; mineIds?: Set<string>; streaks?: Map<string, number> } = {}
 ): Entry[] {
   const rows = pool
     .map(m => ({ m, points: scores.get(m.id)?.total ?? 0, score: scores.get(m.id) }))
@@ -189,6 +219,7 @@ export function rankEntries(
       title: titleFor(r.score!.pillars, r.points),
       level: levelFor(r.points),
       points: r.points,
+      streak: opts.streaks?.get(r.m.id) ?? 0,
       isMe: r.m.id === opts.meId,
       isMine: opts.mineIds?.has(r.m.id) ?? false,
     })
@@ -224,6 +255,12 @@ function ymdIn(tz: string, date: Date): { y: number; m: number; d: number } {
 
 const pad = (n: number) => String(n).padStart(2, '0')
 const daysInMonth = (y: number, m: number) => new Date(Date.UTC(y, m, 0)).getUTCDate()
+
+/** Today's YYYY-MM-DD in a timezone. */
+export function todayIn(tz: string, now: Date = new Date()): string {
+  const { y, m, d } = ymdIn(tz, now)
+  return `${y}-${pad(m)}-${pad(d)}`
+}
 
 export function monthBounds(now: Date = new Date(), tz = 'UTC'): MonthBounds {
   const { y, m, d } = ymdIn(tz, now)
