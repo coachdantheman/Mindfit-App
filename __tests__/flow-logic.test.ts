@@ -10,7 +10,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  is4PctZone, calcStreak, calcCompetitionStreak,
+  flowZone, calcStreak, calcCompetitionStreak,
   needsAttention, generateRecommendation,
   avgFlowScore, flowPct, topTrigger, mostCommonStage,
   calcFlowReadiness, ritualStepSkipRate, triggerEffectiveness, stageDistribution,
@@ -65,29 +65,25 @@ function checkin(partial: Partial<FlowStageCheckin>): FlowStageCheckin {
   }
 }
 
-test('is4PctZone — below 1% is too_easy', () => {
-  assert.equal(is4PctZone(5, 5), 'too_easy')       // delta = 0%
-  assert.equal(is4PctZone(7, 10), 'too_easy')      // delta = -30%
+test('flowZone — challenge more than 1 below skill is too_easy', () => {
+  assert.equal(flowZone(5, 7), 'too_easy')
+  assert.equal(flowZone(1, 10), 'too_easy')
 })
 
-test('is4PctZone — 1%–8% is in_zone', () => {
-  assert.equal(is4PctZone(103, 100), 'in_zone')    // delta = 3%
-  assert.equal(is4PctZone(108, 100), 'in_zone')    // delta = 8% (upper edge)
-  assert.equal(is4PctZone(101, 100), 'in_zone')    // delta = 1% (lower edge)
+test('flowZone — within 1 point either way is in_zone', () => {
+  assert.equal(flowZone(6, 6), 'in_zone')
+  assert.equal(flowZone(7, 6), 'in_zone')
+  assert.equal(flowZone(5, 6), 'in_zone')
 })
 
-test('is4PctZone — above 8% is too_hard', () => {
-  assert.equal(is4PctZone(109, 100), 'too_hard')   // delta = 9%
-  assert.equal(is4PctZone(10, 5), 'too_hard')      // delta = 100%
+test('flowZone — challenge more than 1 above skill is too_hard', () => {
+  assert.equal(flowZone(8, 6), 'too_hard')
+  assert.equal(flowZone(10, 5), 'too_hard')
 })
 
-test('is4PctZone — skill 0 is handled', () => {
-  assert.equal(is4PctZone(5, 0), 'too_easy')
-})
-
-test('is4PctZone — decimals (8.0 challenge / 7.6 skill) lands in zone', () => {
-  // delta ≈ 5.26% → in the 1–8% target band
-  assert.equal(is4PctZone(8.0, 7.6), 'in_zone')
+test('flowZone — legacy decimals are rounded first', () => {
+  assert.equal(flowZone(8.0, 7.6), 'in_zone')
+  assert.equal(flowZone(8.0, 6.4), 'too_hard')
 })
 
 test('nextStage — follows the 4-stage cycle and loops back', () => {
@@ -256,7 +252,7 @@ test('generateRecommendation — 3 consecutive struggle triggers cycle message',
     log({ ending_stage: 'struggle', logged_at: iso(2), challenge_level: 6, skill_level: 6 }),
   ]
   // Note: the prior too-easy rule fires first here since challenge=skill. Use balanced.
-  const balancedLogs = logs.map(l => ({ ...l, challenge_level: 103, skill_level: 100 }))
+  const balancedLogs = logs.map(l => ({ ...l, challenge_level: 7, skill_level: 6 }))
   assert.match(generateRecommendation(balancedLogs, []), /completing the cycle/i)
 })
 
@@ -267,7 +263,7 @@ test('generateRecommendation — ACTIVATE skips >3 triggers box breathing messag
     session({ skipped_steps: ['A3'] }),
     session({ skipped_steps: ['A3'] }),
   ]
-  const logs = [log({ ending_stage: 'flow', challenge_level: 103, skill_level: 100 })]
+  const logs = [log({ ending_stage: 'flow', challenge_level: 7, skill_level: 6 })]
   assert.match(generateRecommendation(logs, sessions), /ACTIVATE|box breathing/i)
 })
 
@@ -280,8 +276,8 @@ test('calcFlowReadiness — empty returns 0 with verdict', () => {
 test('calcFlowReadiness — perfect inputs approach 100', () => {
   const logs = Array.from({ length: 10 }, () => log({
     flow_score: 10,
-    challenge_level: 103,
-    skill_level: 100,
+    challenge_level: 7,
+    skill_level: 6,
   }))
   const sessions = Array.from({ length: 10 }, () => session({ skipped_steps: [] }))
   const checkins = [

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { intOrNull } from '@/lib/validate'
 
 export async function GET(req: Request) {
   const auth = await verifyApiUser()
@@ -45,9 +46,9 @@ export async function POST(req: Request) {
       flow_session_id: body.flow_session_id || null,
       logged_at: body.logged_at || new Date().toISOString(),
       sport: body.sport || null,
-      challenge_level: body.challenge_level,
-      skill_level: body.skill_level,
-      flow_score: body.flow_score,
+      challenge_level: intOrNull(body.challenge_level, 1, 10),
+      skill_level: intOrNull(body.skill_level, 1, 10),
+      flow_score: intOrNull(body.flow_score, 1, 10),
       ending_stage: body.ending_stage ?? null,
       triggers_fired: body.triggers_fired || [],
       journal_note: body.journal_note || null,

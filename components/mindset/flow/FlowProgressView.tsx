@@ -5,7 +5,7 @@ import { FlowLog, FlowSession, FlowStageCheckin, FlowStage } from '@/types'
 import {
   avgFlowScore, calcCompetitionStreak, calcFlowReadiness,
   generateRecommendation, needsAttention, ritualStepSkipRate,
-  stageDistribution, triggerEffectiveness, is4PctZone,
+  stageDistribution, triggerEffectiveness, flowZone,
 } from '@/components/mindset/flow-logic'
 import { STAGE_META, TRIGGER_LABEL, FIVE_A_STEPS } from '@/components/mindset/flow/flow-constants'
 import ReadinessHero from '@/components/dashboard/ReadinessHero'
@@ -78,7 +78,7 @@ export default function FlowProgressView() {
   // Sparklines — last 10 logs worth, oldest → newest, normalized 0-1
   const flowSpark = [...logs].slice(0, 10).reverse().map(l => l.flow_score / 10)
   const zoneSpark = [...logs].slice(0, 10).reverse().map(l =>
-    is4PctZone(l.challenge_level, l.skill_level) === 'in_zone' ? 1 : 0.25
+    flowZone(l.challenge_level, l.skill_level) === 'in_zone' ? 1 : 0.25
   )
 
   const flowAvg = avgFlowScore(logs.slice(0, 14))
@@ -89,7 +89,7 @@ export default function FlowProgressView() {
 
   const zoneHit = logs.length > 0
     ? Math.round(
-        (logs.slice(0, 14).filter(l => is4PctZone(l.challenge_level, l.skill_level) === 'in_zone').length /
+        (logs.slice(0, 14).filter(l => flowZone(l.challenge_level, l.skill_level) === 'in_zone').length /
          Math.min(14, logs.length)) * 100,
       )
     : 0
@@ -142,12 +142,12 @@ export default function FlowProgressView() {
           context="Consecutive comps with a 5A ritual"
         />
         <StatCard
-          label="4% Zone"
+          label="Flow Zone"
           value={zoneHit}
           unit="%"
           sparkline={zoneSpark}
           color="var(--success)"
-          context="Challenge slightly above skill"
+          context="Challenge within 1 of skill"
         />
         <StatCard
           label="Ritual Complete"
@@ -204,7 +204,7 @@ function ReadinessBreakdown({ readiness }: { readiness: ReturnType<typeof calcFl
   const parts = [
     { key: 'flow',      label: 'Flow Score',       value: readiness.components.flow,       max: 40, tint: 'bg-cta' },
     { key: 'ritual',    label: '5A Ritual',        value: readiness.components.ritual,     max: 20, tint: 'bg-purple-500' },
-    { key: 'zone',      label: '4% Zone',          value: readiness.components.zone,       max: 20, tint: 'bg-green-500' },
+    { key: 'zone',      label: 'Flow Zone',        value: readiness.components.zone,       max: 20, tint: 'bg-green-500' },
     { key: 'diversity', label: 'Stage Diversity',  value: readiness.components.diversity,  max: 10, tint: 'bg-blue-500' },
     { key: 'activity',  label: 'Comp Activity',    value: readiness.components.activity,   max: 10, tint: 'bg-orange-500' },
   ]

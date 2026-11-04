@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 
-const FIELDS = ['full_name', 'primary_sport', 'secondary_sport', 'next_competition_at', 'next_competition_time', 'terms_accepted_at'] as const
+const FIELDS = ['full_name', 'primary_sport', 'secondary_sport', 'next_competition_at', 'next_competition_time', 'terms_accepted_at', 'default_bedtime', 'default_wake_time'] as const
+const TIME_FIELDS = ['next_competition_time', 'default_bedtime', 'default_wake_time'] as const
 const TIME_RE = /^\d{2}:\d{2}(:\d{2})?$/
 
 function isSchemaCacheError(err: unknown): boolean {
@@ -46,8 +47,10 @@ export async function PATCH(req: Request) {
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'no fields to update' }, { status: 400 })
   }
-  if (updates.next_competition_time != null && !TIME_RE.test(String(updates.next_competition_time))) {
-    return NextResponse.json({ error: 'next_competition_time must be HH:MM' }, { status: 400 })
+  for (const key of TIME_FIELDS) {
+    if (updates[key] != null && !TIME_RE.test(String(updates[key]))) {
+      return NextResponse.json({ error: `${key} must be HH:MM` }, { status: 400 })
+    }
   }
   if (updates.terms_accepted_at !== undefined) updates.terms_accepted_at = new Date().toISOString()
 

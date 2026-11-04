@@ -6,7 +6,7 @@ import RatingSlider from '@/components/journal/RatingSlider'
 import SaveButton, { type SaveState } from '@/components/shared/SaveButton'
 import Skeleton from '@/components/shared/Skeleton'
 import { TRIGGERS } from '@/components/mindset/flow/flow-constants'
-import { is4PctZone, ZONE_COLOR } from '@/components/mindset/flow-logic'
+import { flowZone, ZONE_COLOR } from '@/components/mindset/flow-logic'
 import { clearDraft, draftKey, readDraft, writeDraft } from '@/lib/useDraft'
 import { localDateISO } from '@/lib/dates'
 import type { FlowTrigger } from '@/types'
@@ -85,7 +85,7 @@ function fromEntry(e: Entry, flow: FlowRow | undefined, sport: string): Form {
     wentWell: e.went_well ?? '',
     toImprove: e.to_improve ?? '',
     flowOn: !!flow,
-    skill: flow ? Number(flow.skill_level) : 6,
+    skill: flow ? Math.round(Number(flow.skill_level)) : 6,
     flow: flow ? flow.flow_score : 6,
     triggers: flow?.triggers_fired ?? [],
   }
@@ -197,8 +197,8 @@ export default function PracticeLog({ notify }: Props) {
     }
   }
 
-  const zone = is4PctZone(form.difficulty, form.skill)
-  const delta = form.skill > 0 ? ((form.difficulty - form.skill) / form.skill) * 100 : 0
+  const zone = flowZone(form.difficulty, form.skill)
+  const diff = form.difficulty - form.skill
   const isGame = kind === 'game'
 
   if (loading) return <Skeleton />
@@ -284,13 +284,13 @@ export default function PracticeLog({ notify }: Props) {
           </>
         )}
 
-        {/* Flow thread — ties the difficulty score to the 4% challenge–skill rule */}
+        {/* Flow thread — difficulty is the challenge; flow needs it within 1 of skill */}
         <div className="rounded-xl border border-cta/30 overflow-hidden">
           <button type="button" onClick={() => update({ flowOn: !form.flowOn })} aria-expanded={form.flowOn}
             className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left">
             <div>
               <p className="text-sm font-semibold text-cta">Flow thread</p>
-              <p className="text-xs text-fg-4">Flow lives where the challenge sits just above your skill. Your difficulty is today&apos;s challenge.</p>
+              <p className="text-xs text-fg-4">Flow lives where challenge and skill are within 1 point of each other. Your difficulty is today&apos;s challenge.</p>
             </div>
             <span className={`shrink-0 w-10 h-6 rounded-full border transition-colors relative ${form.flowOn ? 'bg-cta/30 border-cta' : 'bg-surface-2 border-edge'}`} aria-hidden="true">
               <span className={`absolute top-0.5 w-5 h-5 rounded-full transition-all ${form.flowOn ? 'left-[18px] bg-cta' : 'left-0.5 bg-fg-4'}`} />
@@ -298,10 +298,10 @@ export default function PracticeLog({ notify }: Props) {
           </button>
           {form.flowOn && (
             <div className="px-4 pb-4 space-y-4 border-t border-cta/20 pt-4">
-              <Range label="Skill level today" value={form.skill} step={0.1} onChange={v => update({ skill: v })} display={form.skill.toFixed(1)} />
+              <Range label="Skill level today" value={form.skill} step={1} onChange={v => update({ skill: v })} display={String(form.skill)} />
               <div className={`flex items-center justify-between rounded-xl border px-4 py-3 ${ZONE_COLOR[zone].tw}`}>
                 <span className="text-sm font-semibold">{ZONE_COLOR[zone].label}</span>
-                <span className="text-xs tabular-nums">challenge {form.difficulty} vs skill {form.skill.toFixed(1)} · {delta > 0 ? '+' : ''}{delta.toFixed(1)}% (target +1–8%)</span>
+                <span className="text-xs tabular-nums">challenge {form.difficulty} vs skill {form.skill} · {diff > 0 ? '+' : ''}{diff} (flow = within 1)</span>
               </div>
               <Range label="Flow score — how in the zone were you?" value={form.flow} step={1} onChange={v => update({ flow: v })} display={String(form.flow)} />
               <div>

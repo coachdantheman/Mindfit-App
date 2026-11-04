@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { loadOverview } from '@/lib/overview-server'
+import { boardStatusFor } from '@/lib/leaderboard-server'
 
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: { id: string } }) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
   const athleteId = params.id
+  const tz = new URL(req.url).searchParams.get('tz') ?? ''
   const admin = createAdminClient()
 
   // Admins see everyone. A coach needs a coach_athletes link; anyone else
@@ -50,8 +53,10 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     { data: flowLogs },
     { data: flowStageCheckins },
     { data: coachNote },
+    overview,
+    board,
   ] = await Promise.all([
-    admin.from('journal_entries').select('*').eq('user_id', athleteId).order('entry_date', { ascending: false }).limit(30),
+    admin.from('journal_entries').select('*').eq('user_id', athleteId).order('entry_date', { ascending: false }).limit(90),
     admin.from('food_entries').select('*').eq('user_id', athleteId).order('entry_date', { ascending: false }).limit(50),
     admin.from('nutrition_goals').select('*').eq('user_id', athleteId).single(),
     admin.from('workout_logs').select('*, exercise_logs(*)').eq('user_id', athleteId).order('log_date', { ascending: false }).limit(30),
@@ -65,6 +70,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     viewer === 'parent'
       ? Promise.resolve({ data: null })
       : admin.from('flow_coach_notes').select('*').eq('athlete_id', athleteId).eq('coach_id', auth.userId).maybeSingle(),
+    loadOverview(admin, athleteId),
+    boardStatusFor(admin, athleteId, tz),
   ])
 
   return NextResponse.json({
@@ -85,6 +92,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     flowLogs: flowLogs ?? [],
     flowStageCheckins: flowStageCheckins ?? [],
     flowCoachNote: coachNote?.note ?? null,
+    overview,
+    board,
     readOnly: viewer === 'parent',
   })
 }

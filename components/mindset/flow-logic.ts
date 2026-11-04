@@ -2,11 +2,11 @@ import { FlowLog, FlowSession, FlowStage, FlowStageCheckin, FlowTrigger } from '
 
 export type ZoneResult = 'too_easy' | 'in_zone' | 'too_hard'
 
-export function is4PctZone(challenge: number, skill: number): ZoneResult {
-  if (skill <= 0) return 'too_easy'
-  const delta = ((challenge - skill) / skill) * 100
-  if (delta < 1) return 'too_easy'
-  if (delta > 8) return 'too_hard'
+// Whole numbers 1–10. Flow = challenge within one point of skill, either way.
+export function flowZone(challenge: number, skill: number): ZoneResult {
+  const diff = Math.round(challenge) - Math.round(skill)
+  if (diff < -1) return 'too_easy'
+  if (diff > 1) return 'too_hard'
   return 'in_zone'
 }
 
@@ -196,7 +196,7 @@ export function needsAttention(
  * Weights reflect what drives on-demand flow access:
  *   40 — Flow Score avg (how "in the zone" recent competitions went)
  *   20 — 5A Ritual completion (sessions with zero skipped steps)
- *   20 — 4% Zone hit rate (challenge-skill balance)
+ *   20 — Flow Zone hit rate (challenge within 1 of skill)
  *   10 — Stage diversity (have they cycled through Struggle/Release/Flow/Recovery?)
  *   10 — Competition activity (min 10 comps in last 30 days = full credit)
  */
@@ -235,7 +235,7 @@ export function calcFlowReadiness(
   const ritualPoints = ritualPct != null ? (ritualPct / 100) * 20 : 0
 
   const zoneHit = recentLogs.length > 0
-    ? (recentLogs.filter(l => is4PctZone(l.challenge_level, l.skill_level) === 'in_zone').length /
+    ? (recentLogs.filter(l => flowZone(l.challenge_level, l.skill_level) === 'in_zone').length /
        recentLogs.length) * 100
     : null
   const zonePoints = zoneHit != null ? (zoneHit / 100) * 20 : 0
@@ -333,14 +333,14 @@ export function generateRecommendation(logs: FlowLog[], sessions: FlowSession[])
     return 'Start with one 5A Flow Stack today. The habit beats the hack.'
   }
 
-  const tooEasyDays = logs.filter(l => is4PctZone(l.challenge_level, l.skill_level) === 'too_easy').length
-  const tooHardDays = logs.filter(l => is4PctZone(l.challenge_level, l.skill_level) === 'too_hard').length
+  const tooEasyDays = logs.filter(l => flowZone(l.challenge_level, l.skill_level) === 'too_easy').length
+  const tooHardDays = logs.filter(l => flowZone(l.challenge_level, l.skill_level) === 'too_hard').length
 
   if (logs.length >= 3 && tooEasyDays / logs.length > 0.5) {
-    return 'Your workouts are too easy. Ask your coach for a +4% bump.'
+    return 'Your workouts are too easy. Bump the challenge up a level.'
   }
   if (logs.length >= 3 && tooHardDays / logs.length > 0.5) {
-    return 'Challenge is outpacing skill. Pull back by 4–6% until reps feel sharp.'
+    return 'Challenge is outpacing skill. Pull back a level until reps feel sharp.'
   }
 
   const orderedByLogged = [...logs].sort(

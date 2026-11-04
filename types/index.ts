@@ -9,6 +9,8 @@ export interface Profile {
   secondary_sport: string | null
   next_competition_at: string | null
   next_competition_time: string | null   // 'HH:MM:SS' or null
+  default_bedtime: string | null         // 'HH:MM:SS' or null
+  default_wake_time: string | null
   terms_accepted_at: string | null
   invited_by: string | null
   onboarded_at: string | null

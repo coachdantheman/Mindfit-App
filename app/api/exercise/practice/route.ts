@@ -1,19 +1,13 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
-import { clampNumber, isISODate, optionalString } from '@/lib/validate'
+import { intOrNull, isISODate, optionalString } from '@/lib/validate'
 import { TRIGGERS } from '@/components/mindset/flow/flow-constants'
 import type { FlowTrigger } from '@/types'
 
 const KINDS = ['practice', 'game'] as const
 const RESULTS = ['win', 'loss', 'tie'] as const
 const TRIGGER_CODES = new Set<string>(TRIGGERS.map(t => t.code))
-
-function intOrNull(v: unknown, min: number, max: number): number | null {
-  if (v === null || v === undefined || v === '') return null
-  const n = clampNumber(v, min, max)
-  return n === null ? null : Math.round(n)
-}
 
 // GET ?date=YYYY-MM-DD → { entries, journal, flows } for that day.
 // GET ?days=14 → recent entries, newest first.
@@ -111,14 +105,14 @@ export async function POST(req: Request) {
   let flow_log_id: string | null = existing?.flow_log_id ?? null
   const flow = body.flow && typeof body.flow === 'object' ? body.flow : null
   if (flow && difficulty !== null) {
-    const skill = clampNumber(flow.skill_level, 1, 10)
+    const skill = intOrNull(flow.skill_level, 1, 10)
     const score = intOrNull(flow.flow_score, 1, 10)
     if (skill !== null && score !== null) {
       const triggers = (Array.isArray(flow.triggers_fired) ? flow.triggers_fired : []).filter((t: unknown): t is FlowTrigger => typeof t === 'string' && TRIGGER_CODES.has(t))
       const flowRow = {
         sport,
         challenge_level: difficulty,
-        skill_level: Math.round(skill * 10) / 10,
+        skill_level: skill,
         flow_score: score,
         triggers_fired: triggers,
         journal_note: learned,

@@ -12,6 +12,10 @@ import JournalRatingsGrid from '@/components/shared/JournalRatingsGrid'
 import MacroBars from '@/components/shared/MacroBars'
 import WorkoutLogList from '@/components/shared/WorkoutLogList'
 import SleepEntriesList from '@/components/shared/SleepEntriesList'
+import StatCard from '@/components/dashboard/StatCard'
+import EntryList from '@/components/dashboard/EntryList'
+import type { OverviewStats } from '@/lib/overview-server'
+import type { BoardStatus } from '@/lib/leaderboard-server'
 import {
   calcCompetitionStreak, avgFlowScore, needsAttention,
 } from '@/components/mindset/flow-logic'
@@ -36,6 +40,8 @@ interface AthleteData {
   flowLogs: FlowLog[]
   flowStageCheckins: FlowStageCheckin[]
   flowCoachNote: string | null
+  overview: OverviewStats
+  board: BoardStatus | null
   readOnly?: boolean
 }
 
@@ -49,7 +55,9 @@ export default function AthleteDetail({ athleteId, backHref, backLabel = 'Back',
   useEffect(() => { setRoster(readRoster(backHref.split('?')[0], athleteId)) }, [backHref, athleteId])
 
   useEffect(() => {
-    fetch(`/api/athlete/${athleteId}`)
+    let tz = ''
+    try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone } catch {}
+    fetch(`/api/athlete/${athleteId}?tz=${encodeURIComponent(tz)}`)
       .then(async r => {
         if (!r.ok) throw new Error((await r.json()).error)
         return r.json()
@@ -88,7 +96,7 @@ export default function AthleteDetail({ athleteId, backHref, backLabel = 'Back',
 
   const {
     profile, journalEntries, foodEntries, nutritionGoal, workoutLogs, sleepEntries,
-    vizCount, medCount, goalCount, flowSessions, flowLogs, flowStageCheckins, flowCoachNote,
+    vizCount, medCount, goalCount, flowSessions, flowLogs, flowStageCheckins, flowCoachNote, overview, board,
   } = data
   const { avgSleep, avgSleepQuality } = calcSleepAverages(sleepEntries)
 
@@ -113,6 +121,41 @@ export default function AthleteDetail({ athleteId, backHref, backLabel = 'Back',
         <p className="page-subtitle">
           {profile.email} · Joined {format(parseISO(profile.created_at), 'MMM d, yyyy')}
         </p>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+        <StatCard
+          label="MPI Score"
+          value={overview.latestMpi ?? '—'}
+          unit={overview.latestMpi != null ? '/ 100' : undefined}
+          delta={
+            overview.latestMpi != null && overview.baselineMpi != null
+              ? {
+                  value: `${overview.latestMpi - overview.baselineMpi > 0 ? '+' : ''}${overview.latestMpi - overview.baselineMpi} vs baseline`,
+                  direction:
+                    overview.latestMpi > overview.baselineMpi ? 'up'
+                    : overview.latestMpi < overview.baselineMpi ? 'down' : 'flat',
+                }
+              : undefined
+          }
+          context={overview.latestMpi == null ? 'No assessment yet' : 'Mental Performance Index'}
+        />
+        <StatCard
+          label="Streak"
+          value={overview.streak}
+          unit={overview.streak === 1 ? 'day' : 'days'}
+          context={overview.streak > 0 ? 'Consecutive days with any log' : 'Nothing logged recently'}
+          icon={<span>🔥</span>}
+        />
+        <div className="col-span-2 sm:col-span-1">
+          <StatCard
+            label="The Board"
+            value={board?.points ?? 0}
+            unit="pts"
+            context={board?.rank ? `${board.title.name} · ${board.level.name} · #${board.rank} of ${board.of}` : 'Not ranked this month yet'}
+            icon={board ? <span>{board.title.emoji}</span> : undefined}
+          />
+        </div>
       </div>
 
       <OverviewCards
@@ -151,27 +194,7 @@ export default function AthleteDetail({ athleteId, backHref, backLabel = 'Back',
 
               <RatingChart entries={journalEntries} />
 
-              <div className="card p-6">
-                <h3 className="font-semibold text-fg-1 mb-4">Recent Entries</h3>
-                <div className="space-y-3">
-                  {journalEntries.map(e => (
-                    <div key={e.id} className="p-3 rounded-xl bg-surface-2/50 border border-edge-muted">
-                      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                        <p className="text-sm font-medium text-fg-2">
-                          {format(parseISO(e.entry_date), 'EEEE, MMMM d')}
-                        </p>
-                        <div className="flex gap-1.5">
-                          <span className="text-[10px] text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded-full">M:{e.rating_motivation}</span>
-                          <span className="text-[10px] text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded-full">F:{e.rating_focus}</span>
-                          <span className="text-[10px] text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded-full">C:{e.rating_confidence}</span>
-                          <span className="text-[10px] text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded-full">A:{e.rating_anxiety}</span>
-                        </div>
-                      </div>
-                      <p className="text-xs text-fg-3"><span className="text-fg-4">Objective:</span> {e.objective}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <EntryList entries={journalEntries} linked={false} />
             </>
           )}
         </div>

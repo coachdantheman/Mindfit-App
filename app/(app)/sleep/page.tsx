@@ -1,7 +1,7 @@
 'use client'
 import TabBar from '@/components/shared/TabBar'
 import { useState, useEffect } from 'react'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import LessonLinks from '@/components/shared/LessonLinks'
 import Skeleton from '@/components/shared/Skeleton'
 import SaveButton from '@/components/shared/SaveButton'
@@ -16,9 +16,17 @@ const RECOVERY_ACTIVITIES = ['Stretching', 'Foam Rolling', 'Ice Bath', 'Massage'
 
 type Tab = 'track' | 'tips'
 
+const hhmm = (t: string | null | undefined) => (t ? t.slice(0, 5) : '')
+const clock = (t: string) => format(parseISO(`2000-01-01T${t}`), 'h:mm a')
+
 export default function SleepPage() {
   const [tab, setTab] = useState<Tab>('track')
   const today = localDateISO()
+  // Any past night can be logged; drafts only follow today's entry.
+  const [date, setDate] = useState(today)
+  const isToday = date === today
+  const [usual, setUsual] = useState<{ bedtime: string; wakeTime: string } | null>(null)
+  const [savingUsual, setSavingUsual] = useState(false)
 
   // Sleep form state
   const [bedtime, setBedtime] = useState('')
@@ -41,44 +49,72 @@ export default function SleepPage() {
   const recoveryKey = draftKey('recovery')
 
   useEffect(() => {
+    setLoading(true)
     Promise.all([
-      fetch(`/api/sleep/entries?date=${today}`).then(r => r.json()),
-      fetch(`/api/sleep/recovery?date=${today}`).then(r => r.json()),
-    ]).then(([sleepData, recoveryData]) => {
+      fetch(`/api/sleep/entries?date=${date}`).then(r => r.json()),
+      fetch(`/api/sleep/recovery?date=${date}`).then(r => r.json()),
+      fetch('/api/profile').then(r => (r.ok ? r.json() : null)).catch(() => null),
+    ]).then(([sleepData, recoveryData, profile]) => {
+      const u = profile?.default_bedtime && profile?.default_wake_time
+        ? { bedtime: hhmm(profile.default_bedtime), wakeTime: hhmm(profile.default_wake_time) }
+        : null
+      setUsual(u)
+      const draft = isToday ? readDraft<SleepDraft>(sleepKey) : null
       if (sleepData.length > 0) {
         const s = sleepData[0]
-        setBedtime(s.bedtime || '')
-        setWakeTime(s.wake_time || '')
+        setBedtime(hhmm(s.bedtime))
+        setWakeTime(hhmm(s.wake_time))
         setQuality(s.sleep_quality || 7)
         setSleepNotes(s.notes || '')
         setSleepSaved(true)
+      } else if (draft) {
+        setBedtime(draft.bedtime); setWakeTime(draft.wakeTime); setQuality(draft.quality); setSleepNotes(draft.sleepNotes)
+        setSleepSaved(false)
       } else {
-        const d = readDraft<SleepDraft>(sleepKey)
-        if (d) { setBedtime(d.bedtime); setWakeTime(d.wakeTime); setQuality(d.quality); setSleepNotes(d.sleepNotes) }
+        setBedtime(u?.bedtime ?? ''); setWakeTime(u?.wakeTime ?? ''); setQuality(7); setSleepNotes('')
+        setSleepSaved(false)
       }
+      const rDraft = isToday ? readDraft<RecoveryDraft>(recoveryKey) : null
       if (recoveryData.length > 0) {
         const r = recoveryData[0]
         setIsRestDay(r.is_rest_day)
         setActivities(r.activities || [])
         setRecoveryNotes(r.notes || '')
         setRecoverySaved(true)
+      } else if (rDraft) {
+        setIsRestDay(rDraft.isRestDay); setActivities(rDraft.activities); setRecoveryNotes(rDraft.recoveryNotes)
+        setRecoverySaved(false)
       } else {
-        const d = readDraft<RecoveryDraft>(recoveryKey)
-        if (d) { setIsRestDay(d.isRestDay); setActivities(d.activities); setRecoveryNotes(d.recoveryNotes) }
+        setIsRestDay(false); setActivities([]); setRecoveryNotes('')
+        setRecoverySaved(false)
       }
       setLoading(false)
     })
-  }, [today, sleepKey, recoveryKey])
+  }, [date, isToday, sleepKey, recoveryKey])
 
   // Unsaved edits persist across tab switches and reloads.
   useEffect(() => {
-    if (loading || sleepSaved) return
+    if (loading || sleepSaved || !isToday) return
     writeDraft<SleepDraft>(sleepKey, { bedtime, wakeTime, quality, sleepNotes })
-  }, [bedtime, wakeTime, quality, sleepNotes, loading, sleepSaved, sleepKey])
+  }, [bedtime, wakeTime, quality, sleepNotes, loading, sleepSaved, sleepKey, isToday])
   useEffect(() => {
-    if (loading || recoverySaved) return
+    if (loading || recoverySaved || !isToday) return
     writeDraft<RecoveryDraft>(recoveryKey, { isRestDay, activities, recoveryNotes })
-  }, [isRestDay, activities, recoveryNotes, loading, recoverySaved, recoveryKey])
+  }, [isRestDay, activities, recoveryNotes, loading, recoverySaved, recoveryKey, isToday])
+
+  const usualDiffers = !!bedtime && !!wakeTime && (bedtime !== usual?.bedtime || wakeTime !== usual?.wakeTime)
+
+  const saveUsual = async () => {
+    setSavingUsual(true)
+    const res = await fetch('/api/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ default_bedtime: bedtime, default_wake_time: wakeTime }),
+    })
+    if (res.ok) { setUsual({ bedtime, wakeTime }); notify(`Usual times saved: ${clock(bedtime)} – ${clock(wakeTime)}`) }
+    else notify('Could not save your usual times.', 'error')
+    setSavingUsual(false)
+  }
 
   const calcHours = () => {
     if (!bedtime || !wakeTime) return null
@@ -98,7 +134,7 @@ export default function SleepPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        entry_date: today,
+        entry_date: date,
         bedtime: bedtime || null,
         wake_time: wakeTime || null,
         hours_slept: hours ? parseFloat(hours) : null,
@@ -106,7 +142,7 @@ export default function SleepPage() {
         notes: sleepNotes || null,
       }),
     })
-    if (res.ok) { setSleepSaved(true); setJustSaved('sleep'); clearDraft(sleepKey); notify('Sleep log saved') }
+    if (res.ok) { setSleepSaved(true); setJustSaved('sleep'); if (isToday) clearDraft(sleepKey); notify('Sleep log saved') }
     else notify('Could not save your sleep log.', 'error')
     setSaving(null)
   }
@@ -117,13 +153,13 @@ export default function SleepPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        entry_date: today,
+        entry_date: date,
         is_rest_day: isRestDay,
         activities,
         notes: recoveryNotes || null,
       }),
     })
-    if (res.ok) { setRecoverySaved(true); setJustSaved('recovery'); clearDraft(recoveryKey); notify('Recovery saved') }
+    if (res.ok) { setRecoverySaved(true); setJustSaved('recovery'); if (isToday) clearDraft(recoveryKey); notify('Recovery saved') }
     else notify('Could not save your recovery log.', 'error')
     setSaving(null)
   }
@@ -151,7 +187,7 @@ export default function SleepPage() {
     <div>
       <div className="mb-6">
         <h1 className="page-title">Sleep & Recovery</h1>
-        <p className="page-subtitle">{format(new Date(), 'EEEE, MMMM d, yyyy')}</p>
+        <p className="page-subtitle">{format(parseISO(date), 'EEEE, MMMM d, yyyy')}{isToday ? '' : ' · back-logged'}</p>
       </div>
 
       <TabBar label="Sleep sections" tabs={[{ key: 'track' as Tab, label: 'Track' }, { key: 'tips' as Tab, label: 'Tips & Recovery' }]} active={tab} onSelect={setTab} />
@@ -161,7 +197,22 @@ export default function SleepPage() {
         <div className={`space-y-5 ${tab === 'track' ? '' : 'hidden'}`}>
           {/* Sleep Tracking */}
           <div className="card p-6">
-            <h3 className="font-semibold text-fg-1 mb-1">Sleep Log</h3>
+            <div className="flex items-start justify-between gap-3 mb-1">
+              <h3 className="font-semibold text-fg-1">Sleep Log</h3>
+              <div className="flex items-center gap-2">
+                <label htmlFor="sleep-date" className="text-xs text-fg-4">Night of</label>
+                <input id="sleep-date"
+                  type="date"
+                  value={date}
+                  max={today}
+                  onChange={e => { if (e.target.value && e.target.value <= today) setDate(e.target.value) }}
+                  className="bg-surface-2 border border-edge rounded-lg px-2.5 py-1.5 text-xs text-fg-2 focus:ring-2 focus:ring-cta/50"
+                />
+                {!isToday && (
+                  <button type="button" onClick={() => setDate(today)} className="text-xs text-cta hover:underline">Today</button>
+                )}
+              </div>
+            </div>
             <p className="text-sm text-fg-4 mb-5">Champions are built in recovery. Aim for 7–9 hours every night.</p>
 
             <div className="space-y-4">
@@ -188,6 +239,24 @@ export default function SleepPage() {
                   <div className="flex flex-col justify-end">
                     <p className={`text-2xl font-bold ${sleepColor}`}>{hours}h</p>
                   </div>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-fg-4">
+                {usual && (
+                  <>
+                    <span>Usual: {clock(usual.bedtime)} – {clock(usual.wakeTime)}</span>
+                    {(bedtime !== usual.bedtime || wakeTime !== usual.wakeTime) && (
+                      <button type="button" onClick={() => { setBedtime(usual.bedtime); setWakeTime(usual.wakeTime); setSleepSaved(false) }} className="text-cta hover:underline">
+                        Use usual times
+                      </button>
+                    )}
+                  </>
+                )}
+                {usualDiffers && (
+                  <button type="button" onClick={saveUsual} disabled={savingUsual} className="text-cta hover:underline disabled:opacity-50">
+                    {savingUsual ? 'Saving…' : usual ? 'Save these as my usual times' : 'Set as my usual times'}
+                  </button>
                 )}
               </div>
 
@@ -254,7 +323,7 @@ export default function SleepPage() {
                     </svg>
                   )}
                 </div>
-                <span className="text-fg-2 font-medium">Today is a rest day</span>
+                <span className="text-fg-2 font-medium">{isToday ? 'Today is a rest day' : 'Rest day'}</span>
               </label>
 
               <div>

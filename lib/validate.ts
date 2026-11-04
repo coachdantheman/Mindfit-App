@@ -25,3 +25,9 @@ export function clampNumber(value: unknown, min: number, max: number): number | 
 export function isISODate(value: unknown): value is string {
   return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !isNaN(Date.parse(value))
 }
+
+export function intOrNull(value: unknown, min: number, max: number): number | null {
+  if (value === null || value === undefined || value === '') return null
+  const n = clampNumber(value, min, max)
+  return n === null ? null : Math.round(n)
+}

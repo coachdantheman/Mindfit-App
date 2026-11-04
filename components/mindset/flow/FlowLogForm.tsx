@@ -3,7 +3,7 @@ import { useId, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { FlowTrigger } from '@/types'
 import { TRIGGERS } from '@/components/mindset/flow/flow-constants'
-import { is4PctZone, ZONE_COLOR } from '@/components/mindset/flow-logic'
+import { flowZone, ZONE_COLOR } from '@/components/mindset/flow-logic'
 
 export default function FlowLogForm() {
   const router = useRouter()
@@ -32,9 +32,8 @@ export default function FlowLogForm() {
       })
   }, [])
 
-  const zone = is4PctZone(challenge, skill)
-  const delta = skill > 0 ? ((challenge - skill) / skill) * 100 : 0
-  const deltaLabel = `${delta > 0 ? '+' : ''}${delta.toFixed(1)}%`
+  const zone = flowZone(challenge, skill)
+  const diff = challenge - skill
 
   const toggleTrigger = (t: FlowTrigger) => {
     setTriggers(cur => cur.includes(t) ? cur.filter(x => x !== t) : [...cur, t])
@@ -103,13 +102,13 @@ export default function FlowLogForm() {
           />
         </div>
 
-        <DecimalSlider label="Challenge level" value={challenge} onChange={setChallenge} />
-        <DecimalSlider label="Skill level today" value={skill} onChange={setSkill} />
+        <IntSlider label="Challenge level" value={challenge} onChange={setChallenge} />
+        <IntSlider label="Skill level today" value={skill} onChange={setSkill} />
 
         <div className={`flex items-center justify-between rounded-xl border px-4 py-3 ${ZONE_COLOR[zone].tw}`}>
           <span className="text-sm font-semibold">{ZONE_COLOR[zone].label}</span>
-          <span className="text-xs">
-            {deltaLabel} vs skill · 4% Rule target: +1–8%
+          <span className="text-xs tabular-nums">
+            challenge {challenge} vs skill {skill} · {diff > 0 ? '+' : ''}{diff} (flow = within 1)
           </span>
         </div>
 
@@ -152,28 +151,6 @@ export default function FlowLogForm() {
           {saving ? 'Saving…' : 'Save flow log'}
         </button>
       </div>
-    </div>
-  )
-}
-
-function DecimalSlider({ label, value, onChange }: { label: string; value: number; onChange: (n: number) => void }) {
-  const id = useId()
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-1">
-        <label htmlFor={id} className="text-sm text-fg-3">{label}</label>
-        <span className="text-cta font-bold tabular-nums">{value.toFixed(1)}/10</span>
-      </div>
-      <input
-        id={id}
-        type="range"
-        min={1}
-        max={10}
-        step={0.1}
-        value={value}
-        onChange={e => onChange(parseFloat(e.target.value))}
-        className="w-full accent-cta"
-      />
     </div>
   )
 }
