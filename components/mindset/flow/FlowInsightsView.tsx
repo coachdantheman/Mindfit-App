@@ -80,7 +80,7 @@ function BigStat({
 }: { label: string; value: string; small?: boolean; gold?: boolean; emoji?: string }) {
   return (
     <div className="bg-surface rounded-xl border border-edge p-4">
-      <p className="text-[11px] uppercase tracking-wide text-fg-4">{label}</p>
+      <p className="text-xs uppercase tracking-wide text-fg-4">{label}</p>
       <p className={`mt-1 font-bold ${small ? 'text-base' : 'text-3xl'} ${gold ? 'text-cta' : 'text-fg-1'}`}>
         {emoji ? <span className="mr-2">{emoji}</span> : null}{value}
       </p>

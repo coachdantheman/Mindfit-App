@@ -52,7 +52,7 @@ export default function GoalQuiz({ initial, onSave, onCancel }: Props) {
     <div className="card p-5 space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[11px] uppercase tracking-wider text-fg-4 font-mono">Set your goal</p>
+          <p className="text-xs uppercase tracking-wider text-fg-4 font-mono">Set your goal</p>
           <h3 className="font-semibold text-fg-1 mt-0.5">
             {['What are you training for?', 'How active are you right now?', 'What do you weigh?', 'Where do you want to be?'][step]}
           </h3>
@@ -79,7 +79,7 @@ export default function GoalQuiz({ initial, onSave, onCancel }: Props) {
           )}
           {result && (
             <div className="rounded-xl border border-cta/30 bg-cta/5 p-4">
-              <p className="text-[11px] uppercase tracking-wider text-fg-4 font-mono">Your plan</p>
+              <p className="text-xs uppercase tracking-wider text-fg-4 font-mono">Your plan</p>
               <p className="text-2xl font-bold text-fg-1 tabular-nums mt-1">{result.calories.toLocaleString()} <span className="text-sm font-medium text-fg-3">kcal/day</span></p>
               <p className="text-sm text-fg-2 mt-1 tabular-nums">{result.grams.protein_g}g protein · {result.grams.carbs_g}g carbs · {result.grams.fat_g}g fat</p>
               {result.weeks_to_target != null && result.weeks_to_target > 0 && (

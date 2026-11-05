@@ -125,7 +125,7 @@ export default function ActiveWorkout({ draft, library, saving, onChange, onFini
       <button type="button" onClick={onFinish} disabled={saving} className="btn-primary w-full py-3">
         {saving ? 'Saving…' : stats.doneSets === 0 ? 'Finish (no sets logged)' : `Finish workout · ${stats.doneSets} sets`}
       </button>
-      <p className="text-[11px] text-fg-4 text-center pb-16">Saved on this device as you go. Only sets marked ✓ are logged.</p>
+      <p className="text-xs text-fg-4 text-center pb-16">Saved on this device as you go. Only sets marked ✓ are logged.</p>
 
       <RestTimer endsAt={restEndsAt} onChange={setRestEndsAt} />
 

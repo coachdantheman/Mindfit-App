@@ -111,7 +111,7 @@ export default function StrengthStandards({ profile, suggestedBodyweight, librar
                       ))}
                     </tbody>
                   </table>
-                  <p className="text-[11px] text-fg-4 mt-2">
+                  <p className="text-xs text-fg-4 mt-2">
                     Approximate, modeled on published strength standards for {profile.sex === 'male' ? 'men' : 'women'} at {Number(profile.bodyweight_lb)} lb{profile.age < 18 ? `, scaled for age ${profile.age}` : ''}. Not a medical or coaching assessment.
                   </p>
                 </div>

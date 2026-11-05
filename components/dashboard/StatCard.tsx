@@ -26,7 +26,7 @@ export default function StatCard({
   return (
     <div className="card p-4 transition-colors hover:border-fg-4/40">
       <div className="flex items-center justify-between text-fg-4 mb-2.5">
-        <span className="text-[11px] uppercase tracking-wider font-semibold font-mono">
+        <span className="text-xs uppercase tracking-wider font-semibold font-mono">
           {label}
         </span>
         {icon && <span className="w-3.5 h-3.5">{icon}</span>}
@@ -42,7 +42,7 @@ export default function StatCard({
       <div className="flex items-center justify-between mt-2.5">
         {delta && (
           <span
-            className={`inline-flex items-center gap-0.5 text-[11px] font-semibold px-2 py-0.5 rounded-full tabular-nums ${
+            className={`inline-flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-full tabular-nums ${
               delta.direction === 'up'
                 ? 'bg-green-500/10 text-green-400'
                 : delta.direction === 'down'
@@ -58,7 +58,7 @@ export default function StatCard({
           <Sparkline points={sparkline} color={color} />
         )}
       </div>
-      {context && <p className="text-[10.5px] text-fg-4 mt-1.5">{context}</p>}
+      {context && <p className="text-xs text-fg-4 mt-1.5">{context}</p>}
     </div>
   )
 }

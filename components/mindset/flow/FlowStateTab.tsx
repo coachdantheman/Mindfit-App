@@ -165,11 +165,11 @@ function StatCard({
 }: { label: string; value: string; suffix?: string; small?: boolean; gold?: boolean }) {
   return (
     <div className="bg-surface rounded-xl border border-edge p-3">
-      <p className="text-[11px] uppercase tracking-wide text-fg-4">{label}</p>
+      <p className="text-xs uppercase tracking-wide text-fg-4">{label}</p>
       <p className={`${small ? 'text-sm' : 'text-2xl'} font-bold mt-1 ${gold ? 'text-cta' : 'text-fg-1'}`}>
         {value}
       </p>
-      {suffix && <p className="text-[11px] text-fg-4 mt-0.5">{suffix}</p>}
+      {suffix && <p className="text-xs text-fg-4 mt-0.5">{suffix}</p>}
     </div>
   )
 }

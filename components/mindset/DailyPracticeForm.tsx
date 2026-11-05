@@ -103,7 +103,7 @@ export default function DailyPracticeForm({
             />
             <div
               aria-hidden="true"
-              className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-cta ${
+              className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-cta ${
                 completed ? 'bg-cta border-cta' : 'border-edge hover:border-fg-3'
               }`}
             >

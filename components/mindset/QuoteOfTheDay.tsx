@@ -40,7 +40,7 @@ export default function QuoteOfTheDay() {
   return (
     <div className="card p-5 mb-6 relative overflow-hidden">
       <div className="absolute inset-y-0 left-0 w-1 bg-cta" aria-hidden />
-      <p className="text-[11px] uppercase tracking-[0.2em] text-cta mb-2">Quote of the day</p>
+      <p className="text-xs uppercase tracking-[0.2em] text-cta mb-2">Quote of the day</p>
       <blockquote className="font-display text-lg sm:text-xl leading-snug text-fg-1">
         “{quote.text}”
       </blockquote>

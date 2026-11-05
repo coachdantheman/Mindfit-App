@@ -160,7 +160,7 @@ export default function GoalsSection() {
           <h3 className="font-semibold text-fg-1">Goals</h3>
           <button
             onClick={() => setShowForm(!showForm)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
               showForm
                 ? 'text-fg-3 border border-edge hover:text-fg-2'
                 : 'bg-cta/20 text-cta border border-cta/30 hover:bg-cta/30'
@@ -254,7 +254,7 @@ export default function GoalsSection() {
                     <div className="flex items-center gap-3">
                       <div className="flex-1 bg-surface-3 rounded-full h-2 overflow-hidden">
                         <div
-                          className="h-full bg-cta rounded-full transition-all"
+                          className="h-full bg-cta rounded-full transition-[width]"
                           style={{ width: `${g.progress}%` }}
                         />
                       </div>

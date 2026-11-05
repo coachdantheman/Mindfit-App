@@ -24,7 +24,7 @@ const TIER_STYLE: Record<StrengthTier, string> = {
 
 export function TierBadge({ tier, size = 'md' }: { tier: StrengthTier; size?: 'sm' | 'md' }) {
   return (
-    <span className={`inline-flex items-center rounded-full border font-semibold ${size === 'sm' ? 'px-2 py-0.5 text-[11px]' : 'px-3 py-1 text-sm'} ${TIER_STYLE[tier]}`}>
+    <span className={`inline-flex items-center rounded-full border font-semibold ${size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm'} ${TIER_STYLE[tier]}`}>
       {TIER_LABEL[tier]}
     </span>
   )
@@ -60,13 +60,13 @@ export default function TierResult({ result, label, onViewProgress }: Props) {
           <p className="text-2xl font-bold text-fg-1 tabular-nums">
             {result.e1rm} <span className="text-sm font-medium text-fg-4">{unit}</span>
           </p>
-          <p className="text-[11px] text-fg-4">{valueLabel}{result.ratio ? ` · ${result.ratio}× bodyweight` : ''}</p>
+          <p className="text-xs text-fg-4">{valueLabel}{result.ratio ? ` · ${result.ratio}× bodyweight` : ''}</p>
         </div>
         <TierBadge tier={result.tier} />
       </div>
 
       <TierBar tier={result.tier} />
-      <div className="flex justify-between text-[10px] text-fg-4 uppercase tracking-wider">
+      <div className="flex justify-between text-xs text-fg-4 uppercase tracking-wider">
         <span>Beginner</span><span>Elite</span>
       </div>
 
@@ -77,10 +77,10 @@ export default function TierResult({ result, label, onViewProgress }: Props) {
         </p>
         <p className="text-xs text-fg-4">
           ≈ {result.generalPct}% of the general population <span className="italic">(est.)</span>
-          <button type="button" onClick={() => setWhy(w => !w)} aria-label="How this is estimated" className="ml-1 inline-flex w-5 h-5 items-center justify-center rounded-full border border-edge text-[10px] text-fg-3">i</button>
+          <button type="button" onClick={() => setWhy(w => !w)} aria-label="How this is estimated" className="ml-1 inline-flex w-5 h-5 items-center justify-center rounded-full border border-edge text-xs text-fg-3">i</button>
         </p>
         {why && (
-          <ul className="text-[11px] text-fg-4 list-disc pl-4 space-y-0.5 pt-1">
+          <ul className="text-xs text-fg-4 list-disc pl-4 space-y-0.5 pt-1">
             {result.assumptions.map(a => <li key={a}>{a}</li>)}
           </ul>
         )}

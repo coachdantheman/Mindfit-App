@@ -55,7 +55,7 @@ export default function ProgressCompare({ weighIns }: { weighIns: WeighIn[] }) {
             if (!pa && !pb) return null
             return (
               <div key={slot}>
-                <p className="text-[11px] uppercase tracking-wider text-fg-4 mb-1">{slot}</p>
+                <p className="text-xs uppercase tracking-wider text-fg-4 mb-1">{slot}</p>
                 <div className="grid grid-cols-2 gap-3">
                   {[pa, pb].map((p, i) => (
                     <div key={i} className="aspect-[3/4] rounded-xl bg-surface-2 overflow-hidden flex items-center justify-center">
@@ -71,7 +71,7 @@ export default function ProgressCompare({ weighIns }: { weighIns: WeighIn[] }) {
           })}
         </>
       )}
-      <p className="text-[11px] text-fg-4">Private to you.</p>
+      <p className="text-xs text-fg-4">Private to you.</p>
     </div>
   )
 }

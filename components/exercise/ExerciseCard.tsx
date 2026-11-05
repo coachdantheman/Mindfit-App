@@ -150,7 +150,7 @@ export default function ExerciseCard({ exercise, last, onChange, onRemove, onSet
             <p className="text-xs text-fg-4">First time logging this</p>
           )}
           {bestLine ? (
-            <p className="text-[11px] text-fg-4">
+            <p className="text-xs text-fg-4">
               Best: <span className="text-fg-2 tabular-nums">{bestLine}</span>
               {beatingBest && <span className="text-cta font-medium"> · New best ↑</span>}
             </p>
@@ -175,11 +175,11 @@ export default function ExerciseCard({ exercise, last, onChange, onRemove, onSet
               {u}
             </button>
           ))}
-          {live && <span className="ml-auto text-[11px] text-fg-3 tabular-nums text-right">{live}</span>}
+          {live && <span className="ml-auto text-xs text-fg-3 tabular-nums text-right">{live}</span>}
         </div>
       )}
 
-      <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-fg-4">
+      <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-fg-4">
         <span className="w-6 text-center">Set</span>
         <span className="flex-1 text-center">{fields.distance ?? fields.reps ?? ''}</span>
         <span className="flex-1 text-center">{fields.time ?? fields.weight ?? ''}</span>
@@ -212,7 +212,7 @@ export default function ExerciseCard({ exercise, last, onChange, onRemove, onSet
         <div className="space-y-2 pt-1 border-t border-edge-muted">
           {timed && (
             <div>
-              <p className="text-[11px] text-fg-4 mb-1">Rest after each rep (sec) — starts the rest timer</p>
+              <p className="text-xs text-fg-4 mb-1">Rest after each rep (sec) — starts the rest timer</p>
               <div className="flex flex-wrap gap-1.5">
                 {exercise.sets.map((s, i) => (
                   <input key={i} type="number" inputMode="numeric" min="0" value={s.rest}
@@ -225,7 +225,7 @@ export default function ExerciseCard({ exercise, last, onChange, onRemove, onSet
             </div>
           )}
           <div>
-            <p className="text-[11px] text-fg-4 mb-1">RPE per set (1–10)</p>
+            <p className="text-xs text-fg-4 mb-1">RPE per set (1–10)</p>
             <div className="flex flex-wrap gap-1.5">
               {exercise.sets.map((s, i) => (
                 <select key={i} value={s.rpe} onChange={e => updateSet(i, { ...s, rpe: e.target.value })}

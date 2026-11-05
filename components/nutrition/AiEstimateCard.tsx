@@ -50,20 +50,20 @@ export default function AiEstimateCard({ query, onAdd, busy }: Props) {
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-sm font-medium text-fg-1">{est.name}</p>
-          <p className="text-[11px] text-fg-4">per {est.serving_size} · estimate, {est.confidence} confidence</p>
+          <p className="text-xs text-fg-4">per {est.serving_size} · estimate, {est.confidence} confidence</p>
         </div>
-        <span className="text-[10px] uppercase tracking-wider text-cta border border-cta/30 rounded-full px-2 py-0.5">AI</span>
+        <span className="text-xs uppercase tracking-wider text-cta border border-cta/30 rounded-full px-2 py-0.5">AI</span>
       </div>
       <div className="grid grid-cols-4 gap-2">
         {([['calories', 'Cal'], ['protein_g', 'P g'], ['carbs_g', 'C g'], ['fat_g', 'F g']] as const).map(([k, label]) => (
           <div key={k}>
-            <label className="block text-[10px] uppercase tracking-wider text-fg-4 mb-1">{label}</label>
+            <label className="block text-xs uppercase tracking-wider text-fg-4 mb-1">{label}</label>
             <input type="number" inputMode="decimal" min="0" className="input-field px-2 text-center" value={est[k]} onChange={e => set(k, e.target.value)} />
           </div>
         ))}
       </div>
       <ServingStepper value={servings} onChange={setServings} servingSize={est.serving_size} />
-      <p className="text-[11px] text-fg-4">Estimates are approximate — adjust if you know the label.</p>
+      <p className="text-xs text-fg-4">Estimates are approximate — adjust if you know the label.</p>
       <button
         type="button"
         disabled={busy}

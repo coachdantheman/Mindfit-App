@@ -17,7 +17,7 @@ export default function GoalSummaryCard({ goal, onRetake }: { goal: NutritionGoa
     <div className="card p-5 space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] uppercase tracking-wider text-fg-4 font-mono">Your daily plan</p>
+          <p className="text-xs uppercase tracking-wider text-fg-4 font-mono">Your daily plan</p>
           <p className="text-3xl font-bold text-fg-1 tabular-nums mt-1">{goal.calories.toLocaleString()} <span className="text-base font-medium text-fg-3">kcal</span></p>
           {gt && (
             <p className="text-xs text-fg-4 mt-1">
@@ -35,7 +35,7 @@ export default function GoalSummaryCard({ goal, onRetake }: { goal: NutritionGoa
         ].map(m => (
           <div key={m.label} className={`rounded-xl border ${m.color} bg-surface-2/40 py-2 text-center`}>
             <p className="text-lg font-semibold tabular-nums">{m.v}g</p>
-            <p className="text-[10px] uppercase tracking-wider text-fg-4">{m.label}</p>
+            <p className="text-xs uppercase tracking-wider text-fg-4">{m.label}</p>
           </div>
         ))}
       </div>

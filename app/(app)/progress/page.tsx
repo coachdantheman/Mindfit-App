@@ -14,6 +14,7 @@ import Link from 'next/link'
 import StatCard from '@/components/dashboard/StatCard'
 import type { MyStatus } from '@/components/leaderboard/types'
 import ReadinessHero from '@/components/dashboard/ReadinessHero'
+import { FlameIcon } from '@/components/shared/icons'
 
 const RatingChart = dynamic(() => import('@/components/dashboard/RatingChart'), { ssr: false })
 const EntryList = dynamic(() => import('@/components/dashboard/EntryList'), { ssr: false })
@@ -129,7 +130,7 @@ export default function ProgressPage() {
             value={overview.streak}
             unit={overview.streak === 1 ? 'day' : 'days'}
             context={overview.streak > 0 ? 'Consecutive days of training. Keep it alive.' : 'Log anything today to start a streak.'}
-            icon={<span>🔥</span>}
+            icon={<FlameIcon className="w-5 h-5 text-cta" />}
           />
           {board && (
             <Link href="/leaderboard" className="block col-span-2 sm:col-span-1 rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-cta">
@@ -305,7 +306,7 @@ function WeeklyAssessmentTrends({ assessments }: { assessments: WeeklyAssessment
               <span className="text-xs text-fg-3 w-24 shrink-0">{label}</span>
               <div className="flex-1 h-2 bg-surface-2 rounded-full overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all ${
+                  className={`h-full rounded-full transition-[width] ${
                     current <= 3 ? 'bg-red-500/80' : current <= 5 ? 'bg-yellow-500/80' : current <= 7 ? 'bg-cta/60' : 'bg-green-500/80'
                   }`}
                   style={{ width: `${(current / 10) * 100}%` }}
@@ -343,10 +344,10 @@ function WeeklyAssessmentTrends({ assessments }: { assessments: WeeklyAssessment
             })}
           </div>
           <div className="flex justify-between mt-1">
-            <span className="text-[10px] text-fg-4">
+            <span className="text-xs text-fg-4">
               {assessments.length > 1 ? new Date(assessments[Math.min(assessments.length - 1, 11)].week_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}
             </span>
-            <span className="text-[10px] text-fg-4">
+            <span className="text-xs text-fg-4">
               {new Date(assessments[0].week_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </span>
           </div>

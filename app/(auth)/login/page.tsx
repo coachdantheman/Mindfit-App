@@ -286,7 +286,7 @@ function LoginForm() {
                       type="checkbox"
                       checked={agreed}
                       onChange={e => setAgreed(e.target.checked)}
-                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-edge bg-surface-2 accent-[#C4B400]"
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-edge bg-surface-2 accent-cta"
                     />
                     <span>
                       I agree to the{' '}

@@ -18,9 +18,9 @@ export default function MacroPercentageSlider({ totalCalories, split, onChange }
   return (
     <div className="space-y-4">
       <div className="h-3 rounded-full overflow-hidden flex">
-        <div className="bg-chart-2 transition-all" style={{ width: `${split.protein_pct}%` }} />
-        <div className="bg-chart-4 transition-all" style={{ width: `${split.carbs_pct}%` }} />
-        <div className="bg-chart-5 transition-all" style={{ width: `${split.fat_pct}%` }} />
+        <div className="bg-chart-2 transition-[width]" style={{ width: `${split.protein_pct}%` }} />
+        <div className="bg-chart-4 transition-[width]" style={{ width: `${split.carbs_pct}%` }} />
+        <div className="bg-chart-5 transition-[width]" style={{ width: `${split.fat_pct}%` }} />
       </div>
       {sliders.map(s => (
         <div key={s.key}>

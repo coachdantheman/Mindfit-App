@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { useKeyboardInset } from '@/lib/useKeyboardInset'
 import { UserRole } from '@/types'
+import { FlameIcon } from '@/components/shared/icons'
 
 function StreakChip({ pathname }: { pathname: string }) {
   const [streak, setStreak] = useState<number | null>(null)
@@ -35,7 +36,7 @@ function StreakChip({ pathname }: { pathname: string }) {
       className="flex items-center gap-1 px-2.5 py-1.5 sm:px-2 sm:py-1 rounded-full bg-cta/10 text-cta text-xs font-semibold tabular-nums"
       title={`${streak}-day training streak`}
     >
-      🔥 {streak}
+      <FlameIcon className="w-3.5 h-3.5" /> {streak}
     </Link>
   )
 }
@@ -68,6 +69,9 @@ const tabs = [
   { href: '/learn', label: 'Learn', icon: LearnIcon },
   { href: '/leaderboard', label: 'Board', icon: TrophyIcon },
 ]
+
+// Phone bar holds six; Learn moves to the top bar
+const mobileTabs = tabs.filter(t => t.href !== '/learn')
 
 export default function Navbar({ email, role, fullName }: NavbarProps) {
   const router = useRouter()
@@ -152,6 +156,19 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
             {/* Right cluster */}
             <div className="flex items-center gap-2">
               <StreakChip pathname={pathname} />
+              <Link
+                href="/learn"
+                aria-current={isActive('/learn') ? 'page' : undefined}
+                className={`sm:hidden p-2.5 rounded-md transition-colors ${
+                  isActive('/learn')
+                    ? 'text-cta bg-cta/10'
+                    : 'text-fg-3 hover:text-fg-1 hover:bg-surface-2'
+                }`}
+                title="Learn"
+                aria-label="Learn"
+              >
+                <LearnIcon className="w-5 h-5" />
+              </Link>
               {roleLink && (
                 <Link
                   href={roleLink.href}
@@ -182,7 +199,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
               </Link>
               <Link
                 href="/settings"
-                className="w-8 h-8 rounded-full items-center justify-center text-[11px] font-bold text-fg-inverse bg-gradient-to-br from-[#e8dc70] to-mindfit-gold hidden sm:flex ring-1 ring-transparent hover:ring-cta/50 transition-shadow"
+                className="w-8 h-8 rounded-full items-center justify-center text-xs font-bold text-fg-inverse bg-gradient-to-br from-[var(--gold-light)] to-mindfit-gold hidden sm:flex ring-1 ring-transparent hover:ring-cta/50 transition-shadow"
                 title={fullName || email}
                 aria-label="Profile settings"
               >
@@ -202,7 +219,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
       {/* Mobile bottom tab bar */}
       <nav aria-label="Primary" className="mobile-tabbar sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-edge pb-safe">
         <div className="flex items-stretch">
-          {tabs.map(tab => {
+          {mobileTabs.map(tab => {
             const Icon = tab.icon
             const active = isActive(tab.href)
             return (
@@ -210,7 +227,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
                 key={tab.href}
                 href={tab.href}
                 aria-current={active ? 'page' : undefined}
-                className={`flex-1 flex flex-col items-center justify-center gap-1 py-2.5 min-h-[56px] text-[11px] font-medium transition-colors ${
+                className={`flex-1 flex flex-col items-center justify-center gap-1 py-2.5 min-h-[56px] text-xs font-medium transition-colors ${
                   active ? 'text-cta' : 'text-fg-4'
                 }`}
               >
@@ -221,6 +238,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
           })}
         </div>
       </nav>
+
     </>
   )
 }

@@ -37,7 +37,7 @@ export default function GoalEditor({ goal, onSave }: Props) {
       <div>
         <div className="flex items-center justify-between mb-1">
           <label htmlFor="goal-calories" className="text-xs text-fg-4">Daily calories</label>
-          <span className="text-[11px] text-fg-4">macros follow automatically</span>
+          <span className="text-xs text-fg-4">macros follow automatically</span>
         </div>
         <div className="flex items-center gap-3">
           <input type="range" aria-label="Daily calories slider" min={1200} max={CALORIE_CEILING} step={50} value={calories} onChange={e => setCalories(parseInt(e.target.value))} className="flex-1 h-2 rounded-full appearance-none bg-surface-3 accent-cta" />
@@ -49,7 +49,7 @@ export default function GoalEditor({ goal, onSave }: Props) {
         {[['Protein', grams.protein_g, split.protein_pct], ['Carbs', grams.carbs_g, split.carbs_pct], ['Fat', grams.fat_g, split.fat_pct]].map(([l, g, p]) => (
           <div key={l} className="rounded-xl bg-surface-2 py-2">
             <p className="text-lg font-semibold text-fg-1 tabular-nums">{g}g</p>
-            <p className="text-[10px] uppercase tracking-wider text-fg-4">{l} · {p}%</p>
+            <p className="text-xs uppercase tracking-wider text-fg-4">{l} · {p}%</p>
           </div>
         ))}
       </div>

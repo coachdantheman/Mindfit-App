@@ -29,7 +29,7 @@ export default function DateStrip({ date, onChange }: { date: string; onChange: 
                 active ? 'bg-cta/20 text-cta border border-cta/30' : 'text-fg-4 hover:text-fg-2 border border-transparent'
               }`}
             >
-              <span className="text-[10px]">{DAY[dow]}</span>
+              <span className="text-xs">{DAY[dow]}</span>
               <span className="font-semibold tabular-nums">{Number(dd)}</span>
             </button>
           )

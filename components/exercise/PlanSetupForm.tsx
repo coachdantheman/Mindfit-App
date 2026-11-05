@@ -36,7 +36,7 @@ interface Props {
 }
 
 const chip = (on: boolean) =>
-  `px-3 min-h-[44px] rounded-full text-xs font-medium border transition-all ${on ? 'bg-cta/20 text-cta border-cta/30' : 'bg-surface-2 text-fg-3 border-edge hover:border-fg-4'}`
+  `px-3 min-h-[44px] rounded-full text-xs font-medium border transition-colors ${on ? 'bg-cta/20 text-cta border-cta/30' : 'bg-surface-2 text-fg-3 border-edge hover:border-fg-4'}`
 
 export default function PlanSetupForm({ mode, setup, onChange, error }: Props) {
   const set = <K extends keyof PlanSetup>(k: K, v: PlanSetup[K]) => onChange({ ...setup, [k]: v })
@@ -103,7 +103,7 @@ export default function PlanSetupForm({ mode, setup, onChange, error }: Props) {
           <div>
             <label className="text-xs text-fg-4 block mb-1">Days per week: {setup.daysPerWeek}</label>
             <input type="range" min={3} max={6} value={setup.daysPerWeek} onChange={e => set('daysPerWeek', parseInt(e.target.value))} className="w-full h-2 rounded-full appearance-none bg-surface-3 accent-cta" />
-            <div className="flex justify-between text-[10px] text-fg-4 mt-1"><span>3</span><span>4</span><span>5</span><span>6</span></div>
+            <div className="flex justify-between text-xs text-fg-4 mt-1"><span>3</span><span>4</span><span>5</span><span>6</span></div>
           </div>
         </>
       )}
@@ -130,7 +130,7 @@ export default function PlanSetupForm({ mode, setup, onChange, error }: Props) {
       <div>
         <label className="text-xs text-fg-4 block mb-1" htmlFor="ps-start">Start date</label>
         <input id="ps-start" type="date" value={setup.startDate} onChange={e => set('startDate', e.target.value)} className="input-field" />
-        <p className="text-[11px] text-fg-4 mt-1">Week 1 is the Monday–Sunday week containing this date.</p>
+        <p className="text-xs text-fg-4 mt-1">Week 1 is the Monday–Sunday week containing this date.</p>
       </div>
 
       {error && <p className="text-xs text-red-400">{error}</p>}

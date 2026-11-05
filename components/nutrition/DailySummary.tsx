@@ -20,12 +20,12 @@ export default function DailySummary({ totals, goal, onSetGoal }: { totals: Tota
               stroke={remaining < 0 ? 'var(--chart-5)' : 'var(--cta)'}
               strokeWidth="8" strokeLinecap="round"
               strokeDasharray={c} strokeDashoffset={c * (1 - pct)}
-              className="transition-all duration-500"
+              className="transition-[stroke-dashoffset] duration-500"
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
             <span className="text-2xl font-bold text-fg-1 tabular-nums">{Math.abs(Math.round(remaining))}</span>
-            <span className="text-[10px] uppercase tracking-wider text-fg-4 mt-1">{remaining < 0 ? 'over' : 'left'}</span>
+            <span className="text-xs uppercase tracking-wider text-fg-4 mt-1">{remaining < 0 ? 'over' : 'left'}</span>
           </div>
         </div>
         <div className="flex-1 space-y-3 min-w-0">

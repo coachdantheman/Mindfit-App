@@ -22,6 +22,7 @@ import {
 import { STAGE_META } from '@/components/mindset/flow/flow-constants'
 import { formatDistanceToNow } from 'date-fns'
 import { localDateISO } from '@/lib/dates'
+import { FlameIcon } from '@/components/shared/icons'
 
 const RatingChart = dynamic(() => import('@/components/dashboard/RatingChart'), { ssr: false })
 const FlowBarChart = dynamic(() => import('@/components/mindset/flow/FlowBarChart'), { ssr: false })
@@ -145,7 +146,7 @@ export default function AthleteDetail({ athleteId, backHref, backLabel = 'Back',
           value={overview.streak}
           unit={overview.streak === 1 ? 'day' : 'days'}
           context={overview.streak > 0 ? 'Consecutive days with any log' : 'Nothing logged recently'}
-          icon={<span>🔥</span>}
+          icon={<FlameIcon className="w-5 h-5 text-cta" />}
         />
         <div className="col-span-2 sm:col-span-1">
           <StatCard
@@ -256,7 +257,7 @@ export default function AthleteDetail({ athleteId, backHref, backLabel = 'Back',
                       <p className="text-xs text-fg-3 mb-1">{l.workout_name} — {l.log_date}</p>
                       <div className="flex flex-wrap gap-1">
                         {l.exercise_logs!.map(el => (
-                          <span key={el.id} className="text-[10px] text-fg-4 bg-surface-3/50 px-1.5 py-0.5 rounded">
+                          <span key={el.id} className="text-xs text-fg-4 bg-surface-3/50 px-1.5 py-0.5 rounded">
                             {el.exercise_name} S{el.set_number}: {el.reps ?? '-'}r{el.weight ? ` @${el.weight}lbs` : ''}{el.rpe ? ` RPE${el.rpe}` : ''}
                           </span>
                         ))}

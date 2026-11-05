@@ -200,13 +200,13 @@ function MacroRow({
         <span className="text-fg-3">{label}</span>
         <span className="text-fg-2 font-medium tabular-nums">
           {current} / {target} {unit}
-          <span className={`ml-2 text-[10px] ${onTrack ? 'text-green-400' : diff > 0 ? 'text-orange-400' : 'text-red-400'}`}>
+          <span className={`ml-2 text-xs ${onTrack ? 'text-green-400' : diff > 0 ? 'text-orange-400' : 'text-red-400'}`}>
             {diff > 0 ? '+' : ''}{diff}
           </span>
         </span>
       </div>
       <div className="bg-surface-3 rounded-full h-2 overflow-hidden">
-        <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
+        <div className={`h-full rounded-full transition-[width] ${color}`} style={{ width: `${pct}%` }} />
       </div>
     </div>
   )

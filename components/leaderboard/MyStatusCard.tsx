@@ -14,7 +14,7 @@ export default function MyStatusCard({ me, daysLeft }: { me: MyStatus; daysLeft:
       <div className="flex items-start gap-4">
         <span className="text-4xl leading-none" aria-hidden>{me.title.emoji}</span>
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] uppercase tracking-wider font-semibold font-mono text-fg-4">Your identity this month</p>
+          <p className="text-xs uppercase tracking-wider font-semibold font-mono text-fg-4">Your identity this month</p>
           <h2 className="text-2xl font-bold text-fg-1 leading-tight">
             {me.title.key === 'warming_up' ? 'Warming Up' : `You're a ${me.title.name}`}
           </h2>
@@ -33,7 +33,7 @@ export default function MyStatusCard({ me, daysLeft }: { me: MyStatus; daysLeft:
           </span>
         </div>
         <div className="h-2.5 rounded-full bg-surface-3 overflow-hidden" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(me.progress * 100)} aria-label="Progress to next level">
-          <div className="h-full bg-cta rounded-full transition-all" style={{ width: `${Math.max(2, me.progress * 100)}%` }} />
+          <div className="h-full bg-cta rounded-full transition-[width]" style={{ width: `${Math.max(2, me.progress * 100)}%` }} />
         </div>
         <p className="text-xs text-fg-4 mt-1.5">
           {me.nextLevel

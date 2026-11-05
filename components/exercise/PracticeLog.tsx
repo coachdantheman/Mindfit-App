@@ -293,7 +293,7 @@ export default function PracticeLog({ notify }: Props) {
               <p className="text-xs text-fg-4">Flow lives where challenge and skill are within 1 point of each other. Your difficulty is today&apos;s challenge.</p>
             </div>
             <span className={`shrink-0 w-10 h-6 rounded-full border transition-colors relative ${form.flowOn ? 'bg-cta/30 border-cta' : 'bg-surface-2 border-edge'}`} aria-hidden="true">
-              <span className={`absolute top-0.5 w-5 h-5 rounded-full transition-all ${form.flowOn ? 'left-[18px] bg-cta' : 'left-0.5 bg-fg-4'}`} />
+              <span className={`absolute top-0.5 w-5 h-5 rounded-full transition-[left,background-color] ${form.flowOn ? 'left-[18px] bg-cta' : 'left-0.5 bg-fg-4'}`} />
             </span>
           </button>
           {form.flowOn && (
@@ -317,7 +317,7 @@ export default function PracticeLog({ notify }: Props) {
                   ))}
                 </div>
               </div>
-              <p className="text-[11px] text-fg-4">Saved to Mindset → Flow State as a flow log, so your insights include {isGame ? 'games' : 'practices'}.</p>
+              <p className="text-xs text-fg-4">Saved to Mindset → Flow State as a flow log, so your insights include {isGame ? 'games' : 'practices'}.</p>
             </div>
           )}
         </div>
@@ -351,7 +351,7 @@ export default function PracticeLog({ notify }: Props) {
               <div key={e.id} className="bg-surface rounded-xl border border-edge p-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0 flex items-center gap-2">
-                    <span className={`shrink-0 text-[10px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded ${e.kind === 'game' ? 'bg-cta/15 text-cta' : 'bg-surface-3/60 text-fg-3'}`}>
+                    <span className={`shrink-0 text-xs uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded ${e.kind === 'game' ? 'bg-cta/15 text-cta' : 'bg-surface-3/60 text-fg-3'}`}>
                       {e.kind}
                     </span>
                     <p className="text-sm font-medium text-fg-2 truncate">
@@ -382,7 +382,7 @@ function Check({ checked, onChange, label }: { checked: boolean; onChange: (v: b
   return (
     <label className="flex items-center gap-3 cursor-pointer min-h-[44px]">
       <input type="checkbox" checked={checked} onChange={() => onChange(!checked)} className="sr-only peer" />
-      <div aria-hidden="true" className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-cta ${
+      <div aria-hidden="true" className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-cta ${
         checked ? 'bg-cta border-cta' : 'border-edge hover:border-fg-3'
       }`}>
         {checked && (

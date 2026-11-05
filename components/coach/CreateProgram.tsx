@@ -238,7 +238,7 @@ export default function CreateProgram() {
               <button
                 key={w}
                 onClick={() => setDurationWeeks(w)}
-                className={`flex-1 py-2 rounded-lg text-xs font-medium border transition-all ${
+                className={`flex-1 py-2 rounded-lg text-xs font-medium border transition-colors ${
                   durationWeeks === w
                     ? 'bg-cta/20 text-cta border-cta/30'
                     : 'bg-surface-2 text-fg-3 border-edge hover:border-fg-4/40'

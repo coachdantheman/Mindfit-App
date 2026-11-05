@@ -53,7 +53,7 @@ export default function LiftProgress({ exerciseId, name, onClose }: Props) {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[11px] uppercase tracking-wider text-fg-4">{metricLabel}</p>
+              <p className="text-xs uppercase tracking-wider text-fg-4">{metricLabel}</p>
               <p className="text-2xl font-bold text-fg-1 tabular-nums">{data.best ? fmt(data.best) : '—'} <span className="text-sm text-fg-4 font-medium">{data.best ? unitLabel : ''}</span></p>
             </div>
             {data.tier && <TierBadge tier={data.tier.tier} />}

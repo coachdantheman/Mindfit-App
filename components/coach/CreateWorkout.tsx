@@ -166,8 +166,8 @@ export default function CreateWorkout() {
           {exercises.map((ex, idx) => (
             <div key={idx} className="flex items-center gap-2 bg-surface-2/50 rounded-lg p-2">
               <div className="flex flex-col gap-0.5">
-                <button type="button" onClick={() => moveExercise(idx, -1)} className="text-[10px] text-fg-4 hover:text-fg-2 leading-none">▲</button>
-                <button type="button" onClick={() => moveExercise(idx, 1)} className="text-[10px] text-fg-4 hover:text-fg-2 leading-none">▼</button>
+                <button type="button" onClick={() => moveExercise(idx, -1)} className="text-xs text-fg-4 hover:text-fg-2 leading-none">▲</button>
+                <button type="button" onClick={() => moveExercise(idx, 1)} className="text-xs text-fg-4 hover:text-fg-2 leading-none">▼</button>
               </div>
               <input
                 value={ex.name}
@@ -231,7 +231,7 @@ export default function CreateWorkout() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${
                       w.is_completed ? 'bg-green-500/15 text-green-400' : 'bg-yellow-500/15 text-yellow-400'
                     }`}>
                       {w.is_completed ? 'Completed' : 'Pending'}

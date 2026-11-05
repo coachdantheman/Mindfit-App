@@ -20,7 +20,7 @@ export default function FoodEntryRow({ entry, isFavorite, onToggleFavorite, onSe
         <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} className="flex-1 flex items-center justify-between gap-3 pl-3 py-2.5 text-left min-w-0">
           <div className="min-w-0">
             <p className="text-sm text-fg-1 truncate">{entry.food_name}</p>
-            <p className="text-[11px] text-fg-4">
+            <p className="text-xs text-fg-4">
               {servings !== 1 || entry.serving_size ? `${servings} × ${entry.serving_size ?? 'serving'} · ` : ''}
               {Math.round(Number(entry.protein_g))}P · {Math.round(Number(entry.carbs_g))}C · {Math.round(Number(entry.fat_g))}F
             </p>

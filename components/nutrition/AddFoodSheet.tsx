@@ -99,7 +99,7 @@ export default function AddFoodSheet({ meal, foods, recent, favorites, savedMeal
           {tab === 'favorites' && (
             <div className="space-y-4">
               <div>
-                <p className="text-[11px] uppercase tracking-wider text-fg-4 mb-1">Meals</p>
+                <p className="text-xs uppercase tracking-wider text-fg-4 mb-1">Meals</p>
                 {savedMeals.length === 0
                   ? <p className="text-sm text-fg-4 py-3">Save a logged meal to re-add it in one tap.</p>
                   : <div className="divide-y divide-edge-muted">
@@ -110,7 +110,7 @@ export default function AddFoodSheet({ meal, foods, recent, favorites, savedMeal
                             <button type="button" disabled={busy} onClick={() => addMeal(m)} className="flex-1 flex items-center justify-between py-2.5 text-left disabled:opacity-50 min-w-0">
                               <div className="min-w-0">
                                 <p className="text-sm text-fg-1 truncate">{m.name}</p>
-                                <p className="text-[11px] text-fg-4 truncate">{m.items.length} item{m.items.length === 1 ? '' : 's'} · {m.items.map(i => i.food_name).join(', ')}</p>
+                                <p className="text-xs text-fg-4 truncate">{m.items.length} item{m.items.length === 1 ? '' : 's'} · {m.items.map(i => i.food_name).join(', ')}</p>
                               </div>
                               <span className="text-sm font-semibold text-fg-2 tabular-nums ml-3 shrink-0">+ {kcal}</span>
                             </button>
@@ -122,7 +122,7 @@ export default function AddFoodSheet({ meal, foods, recent, favorites, savedMeal
                     </div>}
               </div>
               <div>
-                <p className="text-[11px] uppercase tracking-wider text-fg-4 mb-1">Foods</p>
+                <p className="text-xs uppercase tracking-wider text-fg-4 mb-1">Foods</p>
                 {favorites.length === 0
                   ? <p className="text-sm text-fg-4 py-3">Tap ☆ on any food in Search, or next to anything already on today&rsquo;s log, to favorite it.</p>
                   : <QuickList
@@ -146,7 +146,7 @@ function QuickList({ items, busy, onPick }: { items: { key: string; name: string
         <button key={x.key} type="button" disabled={busy} onClick={() => onPick(x.item)} className="w-full flex items-center justify-between py-2.5 text-left disabled:opacity-50">
           <div className="min-w-0">
             <p className="text-sm text-fg-1 truncate">{x.name}</p>
-            <p className="text-[11px] text-fg-4">{x.sub}</p>
+            <p className="text-xs text-fg-4">{x.sub}</p>
           </div>
           <span className="text-sm font-semibold text-fg-2 tabular-nums ml-3 shrink-0">+ {x.kcal}</span>
         </button>

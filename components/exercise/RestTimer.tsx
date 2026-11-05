@@ -41,7 +41,7 @@ export default function RestTimer({ endsAt, onChange }: Props) {
     <div className="rest-timer fixed left-1/2 -translate-x-1/2 bottom-24 sm:bottom-6 z-40 w-[calc(100%-2rem)] max-w-md">
       <div className={`card px-3 py-2 flex items-center gap-2 shadow-lift ${remaining === 0 ? 'border-cta/60' : ''}`}>
         <div className="min-w-[64px]">
-          <p className="text-[10px] uppercase tracking-wider text-fg-4">Rest</p>
+          <p className="text-xs uppercase tracking-wider text-fg-4">Rest</p>
           <p className={`text-xl font-bold tabular-nums leading-none ${remaining === 0 ? 'text-cta' : 'text-fg-1'}`}>
             {remaining === 0 ? 'Go' : fmt(remaining)}
           </p>

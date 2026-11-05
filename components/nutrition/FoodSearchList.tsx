@@ -37,7 +37,7 @@ export default function FoodSearchList({ foods, favoriteIds, onToggleFavorite, o
           {[['kcal', scaled.calories], ['P', scaled.protein_g], ['C', scaled.carbs_g], ['F', scaled.fat_g]].map(([l, v]) => (
             <div key={l} className="rounded-xl bg-surface-2 py-2">
               <p className="text-lg font-semibold text-fg-1 tabular-nums">{v}</p>
-              <p className="text-[10px] uppercase tracking-wider text-fg-4">{l}</p>
+              <p className="text-xs uppercase tracking-wider text-fg-4">{l}</p>
             </div>
           ))}
         </div>
@@ -72,7 +72,7 @@ export default function FoodSearchList({ foods, favoriteIds, onToggleFavorite, o
               <button type="button" onClick={() => { setSelected(f); setServings(1) }} aria-label={`${f.name}${f.brand ? `, ${f.brand}` : ''}, ${f.calories} kcal per ${f.serving_size}`} className="flex-1 flex items-center justify-between py-2.5 text-left min-w-0">
                 <div className="min-w-0">
                   <p className="text-sm text-fg-1 truncate">{f.name}</p>
-                  <p className="text-[11px] text-fg-4 truncate">{f.serving_size} · {Math.round(Number(f.protein_g))}P · {Math.round(Number(f.carbs_g))}C · {Math.round(Number(f.fat_g))}F</p>
+                  <p className="text-xs text-fg-4 truncate">{f.serving_size} · {Math.round(Number(f.protein_g))}P · {Math.round(Number(f.carbs_g))}C · {Math.round(Number(f.fat_g))}F</p>
                 </div>
                 <span className="text-sm font-semibold text-fg-2 tabular-nums ml-3 shrink-0">{f.calories}</span>
               </button>

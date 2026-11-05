@@ -12,6 +12,7 @@ import { useToast } from '@/components/shared/Toast'
 import { FLAG_LABELS } from '@/components/shared/flag-labels'
 import { formatLastSeen, latestOf } from '@/lib/last-seen'
 import { saveRoster } from '@/components/shared/roster'
+import { FlameIcon } from '@/components/shared/icons'
 
 function lastActive(a: MemberWithCount): string {
   return formatLastSeen(latestOf(a.last_seen_at, a.overview?.last_journal_date, a.overview?.last_flow_at))
@@ -100,7 +101,7 @@ function AthleteTable({ athletes, onChanged, notify }: { athletes: MemberWithCou
                 </td>
                 <td className="px-2 py-3 text-fg-3">{lastActive(a)}</td>
                 <td className="px-2 py-3 text-right tabular-nums text-fg-2">
-                  {a.overview?.streak ? `🔥 ${a.overview.streak}` : '—'}
+                  {a.overview?.streak ? <span className="inline-flex items-center gap-1"><FlameIcon className="w-3.5 h-3.5 text-cta" />{a.overview.streak}</span> : '—'}
                 </td>
                 <td className="px-2 py-3 text-right tabular-nums">
                   {a.overview?.latest_mpi != null ? (
@@ -112,12 +113,12 @@ function AthleteTable({ athletes, onChanged, notify }: { athletes: MemberWithCou
                 <td className="px-2 py-3">
                   <div className="flex flex-wrap gap-1">
                     {a.status === 'invited' ? (
-                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-cta/15 text-cta">Invited</span>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-cta/15 text-cta">Invited</span>
                     ) : (a.overview?.flags ?? []).length === 0 ? (
                       <span className="text-xs text-green-400/80">On track</span>
                     ) : (
                       (a.overview?.flags ?? []).map(f => (
-                        <span key={f} className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${FLAG_LABELS[f]?.className ?? 'bg-surface-2/60 text-fg-3'}`}>
+                        <span key={f} className={`text-xs font-semibold px-2 py-0.5 rounded-full ${FLAG_LABELS[f]?.className ?? 'bg-surface-2/60 text-fg-3'}`}>
                           {FLAG_LABELS[f]?.label ?? f}
                         </span>
                       ))

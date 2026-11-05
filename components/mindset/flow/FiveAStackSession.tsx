@@ -156,7 +156,7 @@ export default function FiveAStackSession() {
             {mm}:{ss}
           </div>
           <div className="w-full h-1 bg-surface-3/60 rounded-full overflow-hidden">
-            <div className="h-full bg-cta transition-all duration-1000 linear" style={{ width: `${progress}%` }} />
+            <div className="h-full bg-cta transition-[width] duration-1000 linear" style={{ width: `${progress}%` }} />
           </div>
 
           <div className="mt-6">

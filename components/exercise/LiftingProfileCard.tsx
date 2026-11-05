@@ -50,12 +50,12 @@ export default function LiftingProfileCard({ profile, suggestedBodyweight, onSav
     return (
       <div className="card p-4 flex items-center justify-between gap-3">
         <div>
-          <p className="text-[11px] uppercase tracking-wider text-fg-4">Lifting profile</p>
+          <p className="text-xs uppercase tracking-wider text-fg-4">Lifting profile</p>
           <p className="text-sm text-fg-1">
             {profile.sex === 'male' ? 'Male' : 'Female'} · {Number(profile.bodyweight_lb)} lb · {profile.age} yrs
           </p>
           {suggestedBodyweight && Math.abs(suggestedBodyweight - Number(profile.bodyweight_lb)) >= 3 && (
-            <p className="text-[11px] text-fg-4">Latest weigh-in: {suggestedBodyweight} lb</p>
+            <p className="text-xs text-fg-4">Latest weigh-in: {suggestedBodyweight} lb</p>
           )}
         </div>
         <button type="button" onClick={() => { setBw(String(profile.bodyweight_lb)); setAge(String(profile.age)); setSex(profile.sex); setEditing(true) }} className="btn-ghost">Edit</button>
@@ -84,7 +84,7 @@ export default function LiftingProfileCard({ profile, suggestedBodyweight, onSav
         <div>
           <label className="text-xs text-fg-4 block mb-1.5" htmlFor="lp-bw">Bodyweight (lb)</label>
           <input id="lp-bw" type="number" inputMode="decimal" value={bw} onChange={e => setBw(e.target.value)} placeholder="e.g. 165" className="input-field" />
-          {suggestedBodyweight && !profile && <p className="text-[11px] text-fg-4 mt-1">From your latest weigh-in</p>}
+          {suggestedBodyweight && !profile && <p className="text-xs text-fg-4 mt-1">From your latest weigh-in</p>}
         </div>
         <div>
           <label className="text-xs text-fg-4 block mb-1.5" htmlFor="lp-age">Age</label>

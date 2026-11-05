@@ -1,5 +1,6 @@
 'use client'
 import type { DetectedPr } from '@/lib/strength'
+import { TrophyIcon } from '@/components/shared/icons'
 
 export interface FinishResult {
   name: string
@@ -14,7 +15,7 @@ export default function FinishSummary({ result, onClose }: { result: FinishResul
   return (
     <div className="card p-5 space-y-4 border-cta/40">
       <div>
-        <p className="text-[11px] uppercase tracking-wider text-cta font-semibold">Workout saved</p>
+        <p className="text-xs uppercase tracking-wider text-cta font-semibold">Workout saved</p>
         <h3 className="font-bold text-fg-1 text-lg mt-0.5">{result.name}</h3>
       </div>
       <div className="grid grid-cols-3 gap-2">
@@ -28,7 +29,7 @@ export default function FinishSummary({ result, onClose }: { result: FinishResul
           <div className="flex flex-wrap gap-1.5">
             {result.prs.map(pr => (
               <span key={pr.exercise_id ?? pr.exercise_name} className="inline-flex items-center gap-1 bg-cta/15 text-cta border border-cta/30 rounded-full px-2.5 py-1 text-xs font-semibold">
-                🏆 {pr.exercise_name} · {pr.e1rm} lb
+                <TrophyIcon className="w-3.5 h-3.5" /> {pr.exercise_name} · {pr.e1rm} lb
                 {pr.previous ? <span className="text-fg-4 font-normal">(was {pr.previous})</span> : null}
               </span>
             ))}
@@ -44,7 +45,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="bg-surface-2/60 rounded-xl p-3 text-center">
       <p className="text-lg font-bold text-fg-1 tabular-nums">{value}</p>
-      <p className="text-[11px] text-fg-4">{label}</p>
+      <p className="text-xs text-fg-4">{label}</p>
     </div>
   )
 }

@@ -7,6 +7,7 @@ import ProgramView from './ProgramView'
 import PlanBuilder from './PlanBuilder'
 import Skeleton from '@/components/shared/Skeleton'
 import { currentWeek, DAY_NAMES, isoDayOfWeek, nextWorkout, parseLocalDate, todaysWorkout, workoutsForWeek } from '@/lib/programs'
+import { DumbbellIcon } from '@/components/shared/icons'
 
 interface Props {
   library: ExerciseLibraryRow[]
@@ -63,7 +64,7 @@ export default function MyPlan({ library, onStart, onCreateExercise, notify, ref
   if (!program && coachPrograms.length === 0) {
     return (
       <div className="text-center py-16">
-        <div className="text-4xl mb-3">🏋️</div>
+        <DumbbellIcon className="w-10 h-10 mx-auto mb-3 text-fg-4" />
         <p className="font-medium text-fg-2">No plan yet</p>
         <p className="text-sm text-fg-4 mt-1 mb-4">Generate one from your sport and goals, or build your own week.</p>
         <button type="button" onClick={() => setBuilding(true)} className="btn-primary px-6">Create a plan</button>
@@ -144,7 +145,7 @@ function ThisWeekCard({ program, title, subtitle, accent, onStart, actions }: {
     <div className={`card p-4 space-y-3 ${accent ? 'border-cta/30' : ''}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className={`text-[11px] uppercase tracking-wider font-semibold ${accent ? 'text-cta' : 'text-fg-4'}`}>
+          <p className={`text-xs uppercase tracking-wider font-semibold ${accent ? 'text-cta' : 'text-fg-4'}`}>
             {status === 'upcoming' && start ? `Starts ${format(start, 'MMM d')}` : status === 'complete' ? 'Plan complete' : `Week ${week} of ${program.duration_weeks}`}
           </p>
           <h3 className="font-bold text-fg-1 truncate">{title}</h3>
@@ -160,7 +161,7 @@ function ThisWeekCard({ program, title, subtitle, accent, onStart, actions }: {
       {todays ? (
         <div className="rounded-xl bg-cta/10 border border-cta/30 p-3 flex items-center justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-[11px] uppercase tracking-wider text-cta font-semibold">Today</p>
+            <p className="text-xs uppercase tracking-wider text-cta font-semibold">Today</p>
             <p className="text-sm font-semibold text-fg-1 truncate">{todays.name}</p>
             <p className="text-xs text-fg-4">{(todays.exercises as WorkoutExercise[]).length} exercises</p>
           </div>
@@ -169,7 +170,7 @@ function ThisWeekCard({ program, title, subtitle, accent, onStart, actions }: {
       ) : next && status !== 'complete' ? (
         <div className="rounded-xl bg-surface-2/60 p-3 flex items-center justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-[11px] uppercase tracking-wider text-fg-4 font-semibold">
+            <p className="text-xs uppercase tracking-wider text-fg-4 font-semibold">
               {status === 'active' ? 'Rest day · next up' : 'First up'}
             </p>
             <p className="text-sm font-semibold text-fg-1 truncate">{DAY_NAMES[next.workout.day_of_week]} — {next.workout.name}</p>

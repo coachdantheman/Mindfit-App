@@ -313,7 +313,7 @@ export default function SleepPage() {
                 />
                 <div
                   aria-hidden="true"
-                  className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-cta ${
+                  className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-cta ${
                     isRestDay ? 'bg-cta border-cta' : 'border-edge hover:border-fg-4'
                   }`}
                 >
@@ -335,7 +335,7 @@ export default function SleepPage() {
                       <button
                         key={act}
                         onClick={() => toggleActivity(act)}
-                        className={`px-3 py-2.5 sm:py-1.5 rounded-lg text-sm sm:text-xs font-medium transition-all ${
+                        className={`px-3 py-2.5 sm:py-1.5 rounded-lg text-sm sm:text-xs font-medium transition-colors ${
                           selected ? 'bg-cta/20 text-cta border border-cta/30' : 'text-fg-4 border border-edge hover:text-fg-2'
                         }`}
                       >

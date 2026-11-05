@@ -94,7 +94,7 @@ export default function BulkClaimForm({ onDone, endpoint = '/api/coach/athletes/
             {results.map(r => (
               <li key={r.email} className="flex items-center justify-between gap-3 py-2 text-sm">
                 <span className="text-fg-2 truncate">{r.email}{r.message ? <span className="text-fg-4 text-xs"> · {r.message}</span> : null}</span>
-                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${STATUS_LABEL[r.status].className}`}>
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${STATUS_LABEL[r.status].className}`}>
                   {STATUS_LABEL[r.status].label}
                 </span>
               </li>

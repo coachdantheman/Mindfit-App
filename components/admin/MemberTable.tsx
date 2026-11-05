@@ -13,14 +13,14 @@ function lastUsed(a: MemberWithCount): string {
 
 function StatusChips({ a }: { a: MemberWithCount }) {
   if (a.status === 'invited') {
-    return <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-cta/15 text-cta whitespace-nowrap">Invited</span>
+    return <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-cta/15 text-cta whitespace-nowrap">Invited</span>
   }
   const flags = a.overview?.flags ?? []
   if (flags.length === 0) return <span className="text-xs text-green-400/80 whitespace-nowrap">On track</span>
   return (
     <div className="flex flex-wrap gap-1 justify-end sm:justify-start">
       {flags.map(f => (
-        <span key={f} className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${FLAG_LABELS[f]?.className ?? 'bg-surface-2/60 text-fg-3'}`}>
+        <span key={f} className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${FLAG_LABELS[f]?.className ?? 'bg-surface-2/60 text-fg-3'}`}>
           {FLAG_LABELS[f]?.label ?? f}
         </span>
       ))}

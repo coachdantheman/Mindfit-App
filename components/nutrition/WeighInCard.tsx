@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, R
 import { WeighIn } from '@/types'
 import { linearTrend, localDateISO } from '@/lib/nutrition'
 import ProgressPhotoSheet from './ProgressPhotoSheet'
+import { CameraIcon } from '@/components/shared/icons'
 
 interface Props {
   weighIns: WeighIn[]
@@ -90,10 +91,10 @@ export default function WeighInCard({ weighIns, targetWeight, onSaved }: Props) 
               <button
                 type="button"
                 onClick={() => setPhotoFor(w)}
-                className={`py-1 px-2 rounded-lg ${w.photo_slots?.length ? 'text-cta' : 'text-fg-4 hover:text-fg-2'}`}
+                className={`inline-flex items-center gap-1 py-1 px-2 rounded-lg ${w.photo_slots?.length ? 'text-cta' : 'text-fg-4 hover:text-fg-2'}`}
                 aria-label="Progress photos"
               >
-                📷{w.photo_slots?.length ? ` ${w.photo_slots.length}` : ''}
+                <CameraIcon className="w-4 h-4" />{w.photo_slots?.length ? w.photo_slots.length : ''}
               </button>
               <button type="button" onClick={() => remove(w.id)} className="text-fg-4 hover:text-red-400">Remove</button>
             </div>

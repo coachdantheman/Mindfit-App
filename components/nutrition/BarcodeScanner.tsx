@@ -121,7 +121,7 @@ export default function BarcodeScanner({ onAdd, onFoodCreated, onNotFound, busy 
           {[['kcal', scaled.calories], ['P', scaled.protein_g], ['C', scaled.carbs_g], ['F', scaled.fat_g]].map(([l, v]) => (
             <div key={l} className="rounded-xl bg-surface-2 py-2">
               <p className="text-lg font-semibold text-fg-1 tabular-nums">{v}</p>
-              <p className="text-[10px] uppercase tracking-wider text-fg-4">{l}</p>
+              <p className="text-xs uppercase tracking-wider text-fg-4">{l}</p>
             </div>
           ))}
         </div>

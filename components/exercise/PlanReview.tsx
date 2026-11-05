@@ -24,11 +24,11 @@ export default function PlanReview({ setup, blocks, templates, isEdit, saving, e
         <h3 className="font-bold text-fg-1">{setup.title || 'My plan'}</h3>
         {setup.description && <p className="text-xs text-fg-4 mt-1">{setup.description}</p>}
         <div className="flex flex-wrap gap-2 mt-3">
-          {setup.sport && <span className="text-[11px] bg-cta/20 text-cta px-2 py-0.5 rounded-full">{setup.sport}</span>}
-          <span className="text-[11px] bg-surface-2 text-fg-3 px-2 py-0.5 rounded-full">{setup.durationWeeks} weeks</span>
-          <span className="text-[11px] bg-surface-2 text-fg-3 px-2 py-0.5 rounded-full">{trainingDays} days / week</span>
+          {setup.sport && <span className="text-xs bg-cta/20 text-cta px-2 py-0.5 rounded-full">{setup.sport}</span>}
+          <span className="text-xs bg-surface-2 text-fg-3 px-2 py-0.5 rounded-full">{setup.durationWeeks} weeks</span>
+          <span className="text-xs bg-surface-2 text-fg-3 px-2 py-0.5 rounded-full">{trainingDays} days / week</span>
           {start && end && (
-            <span className="text-[11px] bg-surface-2 text-fg-3 px-2 py-0.5 rounded-full">
+            <span className="text-xs bg-surface-2 text-fg-3 px-2 py-0.5 rounded-full">
               {format(start, 'MMM d')} – {format(end, 'MMM d, yyyy')}
             </span>
           )}
@@ -57,7 +57,7 @@ export default function PlanReview({ setup, blocks, templates, isEdit, saving, e
       ))}
 
       {isEdit && (
-        <p className="text-[11px] text-fg-4">
+        <p className="text-xs text-fg-4">
           Saving replaces the schedule. Workouts you already logged keep their name and date in history but are no longer linked to a plan day.
         </p>
       )}

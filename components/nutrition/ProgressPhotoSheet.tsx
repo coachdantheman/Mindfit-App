@@ -100,7 +100,7 @@ export default function ProgressPhotoSheet({ weighIn, onChange, onClose }: Props
               )
             })}
           </div>
-          <p className="text-[11px] text-fg-4">Only you can see these. Coaches can’t. Same spot, same lighting, same time of day gives the truest comparison.</p>
+          <p className="text-xs text-fg-4">Only you can see these. Coaches can’t. Same spot, same lighting, same time of day gives the truest comparison.</p>
         </div>
       </div>
     </div>

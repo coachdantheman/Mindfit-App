@@ -42,13 +42,13 @@ export default function CustomFoodForm({ initialName = '', onAdd, busy }: Props)
           { label: 'F g', v: f, set: setF, ph: '0' },
         ].map(x => (
           <div key={x.label}>
-            <label htmlFor={`custom-food-${x.label}`} className="block text-[10px] uppercase tracking-wider text-fg-4 mb-1">{x.label}</label>
+            <label htmlFor={`custom-food-${x.label}`} className="block text-xs uppercase tracking-wider text-fg-4 mb-1">{x.label}</label>
             <input id={`custom-food-${x.label}`} type="number" inputMode="decimal" min="0" className="input-field px-2 text-center" placeholder={x.ph} value={x.v} onChange={e => x.set(e.target.value)} />
           </div>
         ))}
       </div>
-      {!cal && calc > 0 && <p className="text-[11px] text-fg-4">Calories auto-filled from macros ({calc}).</p>}
-      {mismatch && <p className="text-[11px] text-amber-400">Macros add up to {calc} kcal, not {calories}.</p>}
+      {!cal && calc > 0 && <p className="text-xs text-fg-4">Calories auto-filled from macros ({calc}).</p>}
+      {mismatch && <p className="text-xs text-amber-400">Macros add up to {calc} kcal, not {calories}.</p>}
       <label className="flex items-center gap-2 text-xs text-fg-3">
         <input type="checkbox" checked={save} onChange={e => setSave(e.target.checked)} className="accent-cta" />
         Save to my foods so I can log it again fast

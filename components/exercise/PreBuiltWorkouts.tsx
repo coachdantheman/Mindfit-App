@@ -2,14 +2,20 @@
 import { useState, useEffect } from 'react'
 import { WorkoutCategory, Workout, WorkoutExercise } from '@/types'
 import Skeleton from '@/components/shared/Skeleton'
+import { BalanceIcon, BodyweightIcon, BoltIcon, BurstIcon, DumbbellIcon, StretchIcon } from '@/components/shared/icons'
 
-const CATEGORY_ICONS: Record<string, string> = {
-  Speed: '⚡',
-  Explosiveness: '💥',
-  Strength: '🏋️',
-  Flexibility: '🧘',
-  Calisthenics: '🤸',
-  Balance: '⚖️',
+const CATEGORY_ICONS: Record<string, (p: { className?: string }) => JSX.Element> = {
+  Speed: BoltIcon,
+  Explosiveness: BurstIcon,
+  Strength: DumbbellIcon,
+  Flexibility: StretchIcon,
+  Calisthenics: BodyweightIcon,
+  Balance: BalanceIcon,
+}
+
+function CategoryIcon({ name, className }: { name: string; className?: string }) {
+  const Icon = CATEGORY_ICONS[name] ?? DumbbellIcon
+  return <Icon className={className} />
 }
 
 interface Props {
@@ -76,7 +82,7 @@ export default function PreBuiltWorkouts({ onStartWorkout, notify }: Props) {
           ← All categories
         </button>
         <h2 className="text-lg font-bold text-fg-1 mb-4">
-          {CATEGORY_ICONS[selectedCategory.name] || '💪'} {selectedCategory.name}
+          <CategoryIcon name={selectedCategory.name} className="w-5 h-5 inline-block align-[-3px] mr-1.5 text-cta" />{selectedCategory.name}
         </h2>
 
         {workouts.length === 0 ? (
@@ -164,7 +170,7 @@ export default function PreBuiltWorkouts({ onStartWorkout, notify }: Props) {
           onClick={() => openCategory(cat)}
           className="card p-5 text-left hover:border-cta/30 transition-colors group"
         >
-          <p className="text-2xl mb-2">{CATEGORY_ICONS[cat.name] || '💪'}</p>
+          <CategoryIcon name={cat.name} className="w-7 h-7 mb-2 text-cta" />
           <p className="font-semibold text-fg-1 group-hover:text-cta transition-colors">{cat.name}</p>
           {cat.description && <p className="text-xs text-fg-4 mt-1">{cat.description}</p>}
           <p className="text-xs text-fg-4 mt-2">{cat.workout_count} workouts</p>

@@ -233,7 +233,7 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
                               <p className="text-xs font-medium text-fg-2 mb-1">{name}</p>
                               <div className="flex flex-wrap gap-1.5">
                                 {rows.map(s => (
-                                  <span key={s.id} className="text-[11px] text-fg-4 bg-surface-3/50 px-1.5 py-0.5 rounded tabular-nums">
+                                  <span key={s.id} className="text-xs text-fg-4 bg-surface-3/50 px-1.5 py-0.5 rounded tabular-nums">
                                     {s.distance != null || s.duration_sec != null
                                       ? `${s.distance != null ? `${Number(s.distance)} ${s.distance_unit ?? ''}` : ''}${s.duration_sec != null ? `${s.distance != null ? ' · ' : ''}${formatTime(Number(s.duration_sec))}${Number(s.duration_sec) < 60 ? 's' : ''}` : ''}`
                                       : `${s.reps ?? '—'}${s.weight ? ` × ${Number(s.weight)}` : ''}`}{s.rpe ? ` @${s.rpe}` : ''}

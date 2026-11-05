@@ -137,7 +137,7 @@ export default function WeeklyAssessment({ mode = 'weekly', onComplete }: Weekly
                   <div className="absolute inset-y-0 left-0 right-0 flex items-center">
                     <div className="w-full h-2 rounded-full bg-surface-2 overflow-hidden">
                       <div
-                        className={`h-full rounded-full transition-all ${getScoreColor(scores[key])}`}
+                        className={`h-full rounded-full transition-[width] ${getScoreColor(scores[key])}`}
                         style={{ width: `${(scores[key] / 10) * 100}%` }}
                       />
                     </div>

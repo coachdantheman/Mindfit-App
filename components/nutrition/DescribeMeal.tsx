@@ -58,7 +58,7 @@ export default function DescribeMeal({ meal, onAddMany, busy }: Props) {
                 <input type="checkbox" checked={it.checked} onChange={e => update(i, { checked: e.target.checked })} className="accent-cta mt-1" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-fg-1">{it.name}</p>
-                  <p className="text-[11px] text-fg-4">
+                  <p className="text-xs text-fg-4">
                     {scaleFood(it, it.servings).calories} kcal · {Math.round(it.protein_g * it.servings)}P · {Math.round(it.carbs_g * it.servings)}C · {Math.round(it.fat_g * it.servings)}F
                   </p>
                 </div>
@@ -70,7 +70,7 @@ export default function DescribeMeal({ meal, onAddMany, busy }: Props) {
               )}
             </div>
           ))}
-          <p className="text-[11px] text-fg-4">AI estimates — edit servings or uncheck anything that's off.</p>
+          <p className="text-xs text-fg-4">AI estimates — edit servings or uncheck anything that's off.</p>
           <button
             type="button"
             disabled={busy || chosen.length === 0}

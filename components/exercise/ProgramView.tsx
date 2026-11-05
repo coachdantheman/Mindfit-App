@@ -55,7 +55,7 @@ export default function ProgramView({ program, currentWeek, onStartWorkout }: Pr
                         <span className={`text-xs uppercase tracking-wider font-medium ${isCurrent ? 'text-cta' : 'text-fg-4'}`}>
                           Week {weekNum}{isCurrent ? ' · this week' : ''}
                         </span>
-                        <span className="text-fg-4 text-[10px]">{open ? '▲' : '▼'}</span>
+                        <span className="text-fg-4 text-xs">{open ? '▲' : '▼'}</span>
                       </button>
                       {open && (
                         <div className="space-y-2">
@@ -83,7 +83,7 @@ export default function ProgramView({ program, currentWeek, onStartWorkout }: Pr
                                     {(workout.exercises as WorkoutExercise[]).map((ex, i) => (
                                       <div key={i} className="flex items-center justify-between gap-2 p-1.5 rounded bg-surface-3/30">
                                         <p className="text-xs text-fg-2 truncate">{ex.name}</p>
-                                        <p className="text-[11px] text-fg-4 shrink-0">
+                                        <p className="text-xs text-fg-4 shrink-0">
                                           {ex.sets} × {ex.reps}
                                           {ex.notes ? ` · ${ex.notes}` : ''}
                                         </p>

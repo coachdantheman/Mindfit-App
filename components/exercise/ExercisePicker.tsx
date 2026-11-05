@@ -74,7 +74,7 @@ export default function ExercisePicker({ library, onPick, onCreate, onClose, tit
             <button key={e.id} type="button" onClick={() => onPick(e)} className="w-full flex items-center justify-between py-3 text-left min-h-[44px]">
               <div className="min-w-0">
                 <p className="text-sm text-fg-1 truncate">{e.name}</p>
-                <p className="text-[11px] text-fg-4">
+                <p className="text-xs text-fg-4">
                   {MUSCLE_GROUP_LABELS[e.muscle_group]} · {e.equipment}{e.source === 'user' ? ' · custom' : ''}
                 </p>
               </div>

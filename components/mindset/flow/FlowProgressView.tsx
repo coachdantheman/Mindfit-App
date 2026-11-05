@@ -220,7 +220,7 @@ function ReadinessBreakdown({ readiness }: { readiness: ReturnType<typeof calcFl
             <span className="text-xs text-fg-3 w-28 shrink-0">{p.label}</span>
             <div className="flex-1 h-2 bg-surface-2 rounded-full overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all ${p.tint}`}
+                className={`h-full rounded-full transition-[width] ${p.tint}`}
                 style={{ width: `${(p.value / p.max) * 100}%` }}
               />
             </div>
@@ -255,7 +255,7 @@ function StageDistributionCard({ stages, total }: { stages: { stage: FlowStage; 
                 </span>
                 <div className="flex-1 h-2.5 bg-surface-2 rounded-full overflow-hidden">
                   <div
-                    className="h-full rounded-full transition-all"
+                    className="h-full rounded-full transition-[width]"
                     style={{ width: `${s.pct}%`, backgroundColor: meta.hex }}
                   />
                 </div>
@@ -297,9 +297,9 @@ function RitualAdherenceCard({
                   : 'border-orange-500/50 text-orange-400 bg-orange-500/10'
               return (
                 <div key={step.code} className={`rounded-lg border p-2 text-center ${tint}`}>
-                  <p className="text-[10px] uppercase tracking-wide font-mono">{step.code}</p>
+                  <p className="text-xs uppercase tracking-wide font-mono">{step.code}</p>
                   <p className="text-sm font-bold mt-0.5">{skip}%</p>
-                  <p className="text-[9px] opacity-70 mt-0.5">skipped</p>
+                  <p className="text-xs opacity-70 mt-0.5">skipped</p>
                 </div>
               )
             })}
@@ -339,13 +339,13 @@ function TriggerEffectivenessCard({
             </span>
             <div className="flex-1 h-2 bg-surface-2 rounded-full overflow-hidden">
               <div
-                className="h-full rounded-full transition-all bg-cta"
+                className="h-full rounded-full transition-[width] bg-cta"
                 style={{ width: `${(s.avgFlow / max) * 100}%` }}
               />
             </div>
             <span className="text-sm font-semibold text-fg-2 w-14 text-right tabular-nums">
               {s.avgFlow.toFixed(1)}
-              <span className="text-fg-4 text-[10px] ml-0.5">×{s.firedCount}</span>
+              <span className="text-fg-4 text-xs ml-0.5">×{s.firedCount}</span>
             </span>
           </div>
         ))}

@@ -27,8 +27,8 @@ export default function ReadinessHero({
           <svg className="-rotate-90" width={200} height={200} viewBox="0 0 200 200">
             <defs>
               <linearGradient id="mf-readiness-grad" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#e8dc70" />
-                <stop offset="100%" stopColor="#9A8B00" />
+                <stop offset="0%" style={{ stopColor: 'var(--gold-light)' }} />
+                <stop offset="100%" style={{ stopColor: 'var(--brand-500)' }} />
               </linearGradient>
             </defs>
             <circle cx={100} cy={100} r={r} fill="none" stroke="var(--border-muted)" strokeWidth={14} />
@@ -49,7 +49,7 @@ export default function ReadinessHero({
             <div className="text-[52px] font-extrabold tracking-tight text-fg-1 leading-none tabular-nums">
               {score}
             </div>
-            <div className="text-[10px] text-cta uppercase tracking-[0.18em] font-semibold font-mono mt-1">
+            <div className="text-xs text-cta uppercase tracking-[0.18em] font-semibold font-mono mt-1">
               Readiness
             </div>
           </div>
@@ -70,9 +70,9 @@ export default function ReadinessHero({
               {pills.map((p, i) => (
                 <span
                   key={i}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-2/60 border border-edge text-[11px] text-fg-2 font-medium"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-2/60 border border-edge text-xs text-fg-2 font-medium"
                 >
-                  <span className="text-[10px] text-fg-4">{p.label}</span>
+                  <span className="text-xs text-fg-4">{p.label}</span>
                   <span className="font-bold text-fg-1 tabular-nums">{p.value}</span>
                   {p.delta && (
                     <span

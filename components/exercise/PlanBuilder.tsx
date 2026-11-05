@@ -209,9 +209,9 @@ export default function PlanBuilder({ program, library, onCreateExercise, onSave
           <div className="card p-4 space-y-2">
             <p className="text-sm font-medium text-fg-2">Building your plan…</p>
             <div className="w-full bg-surface-3 rounded-full h-2 overflow-hidden">
-              <div className="bg-cta h-2 rounded-full transition-all duration-500" style={{ width: `${aiProgress}%` }} />
+              <div className="bg-cta h-2 rounded-full transition-[width] duration-500" style={{ width: `${aiProgress}%` }} />
             </div>
-            <p className="text-[11px] text-fg-4">Usually 15–30 seconds.</p>
+            <p className="text-xs text-fg-4">Usually 15–30 seconds.</p>
           </div>
         )}
         <button type="button" onClick={continueFromSetup} disabled={busy} className="btn-primary w-full py-3">

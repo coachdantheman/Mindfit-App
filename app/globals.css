@@ -23,6 +23,11 @@
   --accent-3:   #ded886;
   --gold-deep:  #aa8113;
   --gold-soft:  #dfcf8b;
+  --gold-light: #e8dc70;
+  --medal-bronze: #c07a45;
+  --flame-core: #FFD23F;
+  --flame-mid:  #FF8A1F;
+  --flame-edge: #E8401C;
 
   --ink-900:    #0A0F1A;
   --ink-800:    #111827;
@@ -141,6 +146,7 @@ html.light {
   --flow-release:  #5a3f80;
   --flow-flow:     #9A8B00;
   --flow-recovery: #2f7359;
+  --medal-bronze: #9a5a2c;
 }
 
 @layer components {
@@ -168,10 +174,10 @@ html.light {
     background: var(--danger-bg);
   }
   .tab-btn {
-    @apply px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all text-fg-4 border border-edge hover:text-fg-2;
+    @apply px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors text-fg-4 border border-edge hover:text-fg-2;
   }
   .tab-btn-active {
-    @apply px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all bg-cta/15 text-cta border border-cta/40;
+    @apply px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors bg-cta/15 text-cta border border-cta/40;
   }
   .page-title {
     @apply text-2xl font-bold text-fg-1;
@@ -201,6 +207,16 @@ html.light {
     border-color: rgb(var(--cta-rgb));
   }
   .sr-only:not(:focus):not(:active) { clip: rect(0 0 0 0); }
+
+  /* Honor the OS "reduce motion" setting app-wide. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
 @layer utilities {
@@ -248,11 +264,6 @@ html.light .text-purple-300, html.light .text-purple-400 { color: #9333ea; }
   /* 16px+ in form fields stops Safari zooming the page on focus. */
   .input-field, .textarea-field, input, select, textarea { font-size: max(16px, 1em); }
   .input-field, .textarea-field { min-height: 48px; }
-
-  /* Arbitrary micro-sizes used for labels/captions floor at 12px. */
-  [class~="text-[9px]"], [class~="text-[10px]"], [class~="text-[10.5px]"], [class~="text-[11px]"] {
-    font-size: 12px;
-  }
 
   main { padding-top: 1.25rem; }
   .card.p-5, .card.p-6 { padding: 1rem; }
