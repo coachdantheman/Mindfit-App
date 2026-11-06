@@ -26,7 +26,7 @@ export interface LeaderboardResponse {
   team: string | null
   teams: { id: string; name: string }[]
   me: MyStatus | null
-  thisMonth: { top: Entry[]; around: Entry[] | null; of: number }
+  thisMonth: { entries: Entry[]; page: number; pages: number; myPage: number | null; of: number }
   lastMonth: { podium: Entry[]; myRank: number | null; of: number }
 }
 

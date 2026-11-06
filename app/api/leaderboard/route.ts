@@ -2,12 +2,10 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import {
-  scoreMonth, rankEntries, neighbours, titleFor, levelFor, nextLevel, levelProgress,
+  scoreMonth, rankEntries, pageOf, titleFor, levelFor, nextLevel, levelProgress,
   displayNameFor, monthBounds, isValidTimeZone, activityStreaks, todayIn, multiplierFor,
   type ActivityRow, type PoolMember,
 } from '@/lib/leaderboard'
-
-const TOP = 10
 
 // Returns only display name, sport, title, level and points per person.
 // No ids, emails, MPI, ratings or logged content ever leave this route.
@@ -19,6 +17,7 @@ export async function GET(req: Request) {
   const tzParam = url.searchParams.get('tz') ?? ''
   const tz = isValidTimeZone(tzParam) ? tzParam : 'America/New_York'
   const teamParam = url.searchParams.get('team')
+  const pageParam = Number(url.searchParams.get('page') ?? 1)
   const bounds = monthBounds(new Date(), tz)
 
   const admin = createAdminClient()
@@ -133,7 +132,7 @@ export async function GET(req: Request) {
     team: team?.id ?? null,
     teams,
     me: meOut,
-    thisMonth: { top: thisList.slice(0, TOP), around: neighbours(thisList, TOP), of: thisList.length },
+    thisMonth: { ...pageOf(thisList, pageParam), of: thisList.length },
     lastMonth: { podium: lastList.slice(0, 3), myRank: myLast?.rank ?? null, of: lastList.length },
   })
 }

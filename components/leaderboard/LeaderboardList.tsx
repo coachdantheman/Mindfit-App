@@ -29,16 +29,10 @@ function Row({ e }: { e: Entry }) {
   )
 }
 
-export default function LeaderboardList({ top, around }: { top: Entry[]; around: Entry[] | null }) {
+export default function LeaderboardList({ entries }: { entries: Entry[] }) {
   return (
     <ol className="space-y-1">
-      {top.map(e => <Row key={`${e.rank}-${e.displayName}`} e={e} />)}
-      {around && around.length > 0 && (
-        <>
-          <li className="text-center text-fg-4 text-sm py-1" aria-hidden>···</li>
-          {around.map(e => <Row key={`${e.rank}-${e.displayName}`} e={e} />)}
-        </>
-      )}
+      {entries.map(e => <Row key={`${e.rank}-${e.displayName}`} e={e} />)}
     </ol>
   )
 }

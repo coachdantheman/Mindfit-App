@@ -252,12 +252,21 @@ export function rankEntries(
 }
 
 /** Two above and two below me when I'm outside the top `top`; otherwise null. */
-export function neighbours(list: Entry[], top = 10): Entry[] | null {
-  const i = list.findIndex(e => e.isMe)
-  if (i < 0 || i < top) return null
-  const from = Math.max(top, i - 2)
-  const to = Math.min(list.length, i + 3)
-  return list.slice(from, to)
+export const PAGE_SIZE = 20
+
+export interface Page { entries: Entry[]; page: number; pages: number; myPage: number | null }
+
+/** One page of the ranked list (1-based, clamped). `myPage` is where the viewer sits. */
+export function pageOf(list: Entry[], page: number, size = PAGE_SIZE): Page {
+  const pages = Math.max(1, Math.ceil(list.length / size))
+  const p = Math.min(pages, Math.max(1, Math.floor(page) || 1))
+  const mine = list.findIndex(e => e.isMe)
+  return {
+    entries: list.slice((p - 1) * size, p * size),
+    page: p,
+    pages,
+    myPage: mine < 0 ? null : Math.floor(mine / size) + 1,
+  }
 }
 
 export interface MonthBounds {

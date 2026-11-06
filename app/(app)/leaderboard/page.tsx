@@ -11,6 +11,7 @@ import { monthLabel, type LeaderboardResponse } from '@/components/leaderboard/t
 
 export default function LeaderboardPage() {
   const [team, setTeam] = useState('')
+  const [page, setPage] = useState(1)
   const [data, setData] = useState<LeaderboardResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [sheet, setSheet] = useState<'earn' | 'titles' | null>(null)
@@ -19,7 +20,7 @@ export default function LeaderboardPage() {
     let tz = ''
     try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone } catch {}
     setError(null)
-    fetch(`/api/leaderboard?team=${encodeURIComponent(team)}&tz=${encodeURIComponent(tz)}`)
+    fetch(`/api/leaderboard?team=${encodeURIComponent(team)}&page=${page}&tz=${encodeURIComponent(tz)}`)
       .then(async r => {
         const body = await r.json().catch(() => null)
         if (!r.ok) throw new Error(body?.error || 'Could not load the board.')
@@ -27,7 +28,7 @@ export default function LeaderboardPage() {
       })
       .then(setData)
       .catch(e => setError(e.message))
-  }, [team])
+  }, [team, page])
 
   return (
     <div>
@@ -54,7 +55,7 @@ export default function LeaderboardPage() {
             {data.teams.length > 0 && (
               <div className="mb-4">
                 <label htmlFor="board-team" className="sr-only">Show</label>
-                <select id="board-team" value={team} onChange={e => setTeam(e.target.value)} className="input-field sm:w-72">
+                <select id="board-team" value={team} onChange={e => { setTeam(e.target.value); setPage(1) }} className="input-field sm:w-72">
                   <option value="">Everyone</option>
                   {data.teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
@@ -68,7 +69,21 @@ export default function LeaderboardPage() {
               {data.thisMonth.of === 0 ? (
                 <EmptyState title="Nobody on the board yet" subtitle="Log a journal, workout, meal or sleep to claim the top spot." />
               ) : (
-                <LeaderboardList top={data.thisMonth.top} around={data.thisMonth.around} />
+                <>
+                  <LeaderboardList entries={data.thisMonth.entries} />
+                  {data.thisMonth.pages > 1 && (
+                    <nav aria-label="Leaderboard pages" className="flex items-center justify-between gap-2 pt-3 mt-2 border-t border-edge-muted">
+                      <button type="button" onClick={() => setPage(data.thisMonth.page - 1)} disabled={data.thisMonth.page <= 1} className="btn-ghost text-sm disabled:opacity-40">← Prev</button>
+                      <div className="flex items-center gap-2 text-xs text-fg-3 tabular-nums">
+                        <span>Page {data.thisMonth.page} of {data.thisMonth.pages}</span>
+                        {data.thisMonth.myPage && data.thisMonth.myPage !== data.thisMonth.page && (
+                          <button type="button" onClick={() => setPage(data.thisMonth.myPage!)} className="text-cta font-medium">Find me</button>
+                        )}
+                      </div>
+                      <button type="button" onClick={() => setPage(data.thisMonth.page + 1)} disabled={data.thisMonth.page >= data.thisMonth.pages} className="btn-ghost text-sm disabled:opacity-40">Next →</button>
+                    </nav>
+                  )}
+                </>
               )}
             </div>
           </div>

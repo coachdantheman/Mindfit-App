@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  scoreDay, scoreMonth, levelFor, nextLevel, levelProgress, titleFor, rankEntries, neighbours, activityStreaks, multiplierFor,
+  scoreDay, scoreMonth, levelFor, nextLevel, levelProgress, titleFor, rankEntries, pageOf, activityStreaks, multiplierFor,
   displayNameFor, isValidAlias, monthBounds, isoWeekKey, type ActivityRow, type Score,
 } from '../lib/leaderboard'
 import { LEVELS, CLUTCH_DAY_BONUS, MIN_TITLE_POINTS } from '../lib/leaderboard-config'
@@ -94,16 +94,20 @@ test('rankEntries — competition ranking, zero points unranked', () => {
   assert.ok(!list.some(e => e.displayName === 'Eve E.'))
 })
 
-test('neighbours — null inside top 10, two above/below otherwise, clamped', () => {
-  const pool = Array.from({ length: 15 }, (_, i) => member(`u${i}`, `User ${i}`))
+test('pageOf — 20 per page, clamped, knows my page', () => {
+  const pool = Array.from({ length: 45 }, (_, i) => member(`u${i}`, `User ${i}`))
   const sc = scores(Object.fromEntries(pool.map((m, i) => [m.id, 1000 - i * 10])))
-  assert.equal(neighbours(rankEntries(sc, pool, { meId: 'u3' })), null)
-  const mid = neighbours(rankEntries(sc, pool, { meId: 'u12' }))!
-  assert.deepEqual(mid.map(e => e.rank), [11, 12, 13, 14, 15])
-  const last = neighbours(rankEntries(sc, pool, { meId: 'u14' }))!
-  assert.deepEqual(last.map(e => e.rank), [13, 14, 15])
-  const tenth = neighbours(rankEntries(sc, pool, { meId: 'u10' }))!
-  assert.deepEqual(tenth.map(e => e.rank), [11, 12, 13])
+  const list = rankEntries(sc, pool, { meId: 'u24' })
+  const first = pageOf(list, 1)
+  assert.equal(first.entries.length, 20)
+  assert.equal(first.pages, 3)
+  assert.equal(first.myPage, 2)
+  const last = pageOf(list, 3)
+  assert.deepEqual(last.entries.map(e => e.rank), [41, 42, 43, 44, 45])
+  assert.equal(pageOf(list, 99).page, 3)
+  assert.equal(pageOf(list, 0).page, 1)
+  assert.equal(pageOf([], 1).pages, 1)
+  assert.equal(pageOf(rankEntries(sc, pool, {}), 1).myPage, null)
 })
 
 test('displayNameFor — first name + last initial, alias wins', () => {
