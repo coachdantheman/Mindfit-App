@@ -1,4 +1,5 @@
 'use client'
+import CollapsibleList from '@/components/shared/CollapsibleList'
 import { useState, useEffect } from 'react'
 import { CoachWorkout } from '@/types'
 import Skeleton from '@/components/shared/Skeleton'
@@ -205,8 +206,7 @@ export default function CreateWorkout() {
       {assigned.length > 0 && (
         <div>
           <h4 className="text-sm font-semibold text-fg-1 mb-3">Assigned Workouts</h4>
-          <div className="space-y-2">
-            {assigned.map(w => (
+          <CollapsibleList className="space-y-2" items={assigned} visible={5} noun="older workouts" render={w => (
               <div key={w.id} className="p-3 rounded-xl bg-surface-2/50 border border-edge">
                 <div className="flex items-center justify-between">
                   <div>
@@ -227,8 +227,7 @@ export default function CreateWorkout() {
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
+            )} />
         </div>
       )}
     </div>

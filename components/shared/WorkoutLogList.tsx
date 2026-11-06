@@ -1,3 +1,4 @@
+import CollapsibleList from '@/components/shared/CollapsibleList'
 import { WorkoutLog } from '@/types'
 
 export default function WorkoutLogList({ logs }: { logs: WorkoutLog[] }) {
@@ -28,8 +29,7 @@ export default function WorkoutLogList({ logs }: { logs: WorkoutLog[] }) {
 
       <div className="card p-5">
         <h3 className="font-semibold text-fg-1 mb-3 text-sm">Recent Workouts</h3>
-        <div className="space-y-2">
-          {logs.slice(0, 20).map(log => (
+        <CollapsibleList className="space-y-2" items={logs.slice(0, 20)} visible={5} noun="older workouts" render={log => (
             <div key={log.id} className="flex items-center justify-between p-2 rounded-lg bg-surface-2/30">
               <div>
                 <p className="text-sm text-fg-2">{log.workout_name}</p>
@@ -37,8 +37,7 @@ export default function WorkoutLogList({ logs }: { logs: WorkoutLog[] }) {
               </div>
               <span className="text-xs text-fg-4">{log.log_date}</span>
             </div>
-          ))}
-        </div>
+          )} />
       </div>
     </div>
   )

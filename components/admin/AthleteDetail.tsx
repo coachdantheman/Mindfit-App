@@ -1,4 +1,5 @@
 'use client'
+import CollapsibleList from '@/components/shared/CollapsibleList'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { readRoster } from '@/components/shared/roster'
@@ -223,8 +224,7 @@ export default function AthleteDetail({ athleteId, backHref, backLabel = 'Back',
               {nutritionGoal && <MacroBars totals={foodTotals} goal={nutritionGoal} title="Today&apos;s Macros" />}
               <div className="card p-5">
                 <h3 className="font-semibold text-fg-1 mb-3 text-sm">Recent Food Log</h3>
-                <div className="space-y-2">
-                  {foodEntries.slice(0, 20).map(entry => (
+                <CollapsibleList className="space-y-2" items={foodEntries.slice(0, 20)} visible={5} noun="older entries" render={entry => (
                     <div key={entry.id} className="flex items-center justify-between p-2 rounded-lg bg-surface-2/30">
                       <div>
                         <p className="text-sm text-fg-2">{entry.food_name}</p>
@@ -234,8 +234,7 @@ export default function AthleteDetail({ athleteId, backHref, backLabel = 'Back',
                       </div>
                       <span className="text-xs text-fg-4">{entry.entry_date}</span>
                     </div>
-                  ))}
-                </div>
+                  )} />
               </div>
             </>
           )}
@@ -354,7 +353,7 @@ function FlowSectionPanel({
           <div className="text-sm">
             <span className="text-fg-4">Current stage: </span>
             <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-white"
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${STAGE_META[latestCheckin.stage].fg}`}
               style={{ backgroundColor: STAGE_META[latestCheckin.stage].hex }}
             >
               {STAGE_META[latestCheckin.stage].emoji} {STAGE_META[latestCheckin.stage].label}

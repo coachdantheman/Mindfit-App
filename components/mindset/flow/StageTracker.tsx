@@ -80,7 +80,7 @@ export default function StageTracker() {
           <div className="text-sm">
             <span className="text-fg-4">Last check-in: </span>
             <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-white"
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${STAGE_META[latest.stage].fg}`}
               style={{ backgroundColor: STAGE_META[latest.stage].hex }}
             >
               {STAGE_META[latest.stage].emoji} {STAGE_META[latest.stage].label}
@@ -112,7 +112,7 @@ export default function StageTracker() {
               style={active ? { backgroundColor: STAGE_META[s].hex, borderColor: STAGE_META[s].hex } : undefined}
               className={`px-3 py-2.5 rounded-xl text-sm font-semibold border transition-colors disabled:opacity-60 ${
                 active
-                  ? 'text-white'
+                  ? STAGE_META[s].fg
                   : isSuggested
                     ? 'border-cta/50 text-cta hover:bg-cta/10'
                     : 'border-edge text-fg-2 hover:border-fg-4'

@@ -1,4 +1,5 @@
 'use client'
+import CollapsibleList from '@/components/shared/CollapsibleList'
 import { useCallback, useEffect, useId, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { format, parseISO } from 'date-fns'
@@ -349,8 +350,7 @@ export default function PracticeLog({ notify }: Props) {
         {recent.length === 0 ? (
           <p className="text-sm text-fg-4 text-center py-6">Nothing logged yet. Your first practice goes above.</p>
         ) : (
-          <div className="space-y-2">
-            {recent.map(e => (
+          <CollapsibleList className="space-y-2" items={recent} visible={3} noun="older logs" render={e => (
               <div key={e.id} className="bg-surface rounded-xl border border-edge p-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0 flex items-center gap-2">
@@ -373,8 +373,7 @@ export default function PracticeLog({ notify }: Props) {
                 </p>
                 {(e.trained || e.went_well) && <p className="text-xs text-fg-3 mt-1 line-clamp-2">{e.kind === 'game' ? e.went_well : e.trained}</p>}
               </div>
-            ))}
-          </div>
+            )} />
         )}
       </div>
     </div>

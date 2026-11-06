@@ -94,7 +94,7 @@ export default function RatingSlider({
             style={{ width: `${pct}%` }}
           />
           <div
-            className="absolute top-1/2 w-5 h-5 rounded-full bg-white border-[3px] border-page -translate-x-1/2 -translate-y-1/2 shadow-md transition-transform"
+            className="absolute top-1/2 w-5 h-5 rounded-full bg-white border-[3px] border-cta -translate-x-1/2 -translate-y-1/2 shadow-md transition-transform"
             style={{ left: `${pct}%` }}
           />
         </div>

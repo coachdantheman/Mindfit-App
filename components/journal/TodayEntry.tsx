@@ -1,10 +1,10 @@
 import { JournalEntry } from '@/types'
 
 const ratingColors: Record<string, string> = {
-  motivation: 'bg-blue-500',
-  focus: 'bg-purple-500',
-  confidence: 'bg-green-500',
-  anxiety: 'bg-orange-500',
+  motivation: 'bg-blue-600',
+  focus: 'bg-purple-600',
+  confidence: 'bg-green-600',
+  anxiety: 'bg-orange-600',
 }
 
 function RatingBadge({ label, value, color }: { label: string; value: number; color: string }) {

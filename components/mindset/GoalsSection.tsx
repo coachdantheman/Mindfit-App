@@ -1,4 +1,5 @@
 'use client'
+import CollapsibleList from '@/components/shared/CollapsibleList'
 import { useState, useEffect } from 'react'
 import SaveButton from '@/components/shared/SaveButton'
 import { useToast } from '@/components/shared/Toast'
@@ -147,11 +148,12 @@ export default function GoalsSection() {
 
   if (loading) return <Skeleton />
 
-  const grouped = {
-    weekly: goals.filter(g => g.goal_type === 'weekly'),
-    season: goals.filter(g => g.goal_type === 'season'),
-    year: goals.filter(g => g.goal_type === 'year'),
+  // Active goals first; completed ones fold behind "Show N completed".
+  const byType = (t: GoalType) => {
+    const list = goals.filter(g => g.goal_type === t)
+    return [...list.filter(g => !g.is_completed), ...list.filter(g => g.is_completed)]
   }
+  const grouped = { weekly: byType('weekly'), season: byType('season'), year: byType('year') }
 
   return (
     <div className="space-y-5">
@@ -204,8 +206,7 @@ export default function GoalsSection() {
           return (
             <div key={type} className="mb-5 last:mb-0">
               <h4 className="text-xs uppercase tracking-wider text-fg-4 font-medium mb-3">{GOAL_LABELS[type]}</h4>
-              <div className="space-y-2">
-                {items.map(g => editingId === g.id ? (
+              <CollapsibleList className="space-y-2" items={items} visible={Math.max(1, items.filter(g => !g.is_completed).length)} noun="completed" render={g => editingId === g.id ? (
                   <form key={g.id} onSubmit={saveEdit} className="p-3 rounded-xl bg-surface-2/50 border border-edge-muted space-y-3">
                     <GoalFields
                       type={editType}
@@ -270,8 +271,7 @@ export default function GoalsSection() {
                       />
                     </div>
                   </div>
-                ))}
-              </div>
+                )} />
             </div>
           )
         })}

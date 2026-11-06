@@ -102,7 +102,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
           <div className="flex items-center justify-between h-14">
             {/* Logo lockup */}
             <Link href="/mindset" className="flex items-center gap-2.5">
-              <span className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-page flex items-center justify-center ring-1 ring-cta/25 shadow-[0_0_12px_rgba(196,180,0,0.18)]">
+              <span className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-page flex items-center justify-center ring-1 ring-cta/25 shadow-[0_0_12px_rgb(var(--cta-rgb)/0.18)]">
                 <Image
                   src="/brand/logo-color.png"
                   alt="MindFit"
@@ -133,7 +133,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
                   >
                     {tab.label}
                     {active && (
-                      <span className="absolute left-2 right-2 -bottom-px h-0.5 bg-cta rounded-full shadow-[0_0_8px_rgba(196,180,0,0.5)]" />
+                      <span className="absolute left-2 right-2 -bottom-px h-0.5 bg-cta rounded-full shadow-[0_0_8px_rgb(var(--cta-rgb)/0.5)]" />
                     )}
                   </Link>
                 )

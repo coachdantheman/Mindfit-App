@@ -1,4 +1,5 @@
 'use client'
+import CollapsibleList from '@/components/shared/CollapsibleList'
 import { useState } from 'react'
 import { useFocusTrap } from '@/lib/useFocusTrap'
 import TabBar from '@/components/shared/TabBar'
@@ -139,8 +140,7 @@ export default function AddFoodSheet({ meal, foods, recent, favorites, savedMeal
 
 function SavedMealList({ meals, busy, onPick, onDelete }: { meals: SavedMeal[]; busy: boolean; onPick: (m: SavedMeal) => void; onDelete: (m: SavedMeal) => void }) {
   return (
-    <div className="divide-y divide-edge-muted">
-      {meals.map(m => {
+    <CollapsibleList className="divide-y divide-edge-muted" items={meals} visible={6} noun="more meals" render={m => {
         const kcal = m.items.reduce((s, i) => s + Number(i.calories), 0)
         return (
           <div key={m.id} className="flex items-center gap-2">
@@ -155,15 +155,13 @@ function SavedMealList({ meals, busy, onPick, onDelete }: { meals: SavedMeal[]; 
               aria-label={`Remove ${m.name}`} className="btn-ghost px-2 text-fg-4 shrink-0">✕</button>
           </div>
         )
-      })}
-    </div>
+      }} />
   )
 }
 
 function QuickList({ items, busy, onPick }: { items: { key: string; name: string; sub: string; kcal: number; item: AddItem }[]; busy: boolean; onPick: (i: AddItem) => void }) {
   return (
-    <div className="divide-y divide-edge-muted">
-      {items.map(x => (
+    <CollapsibleList className="divide-y divide-edge-muted" items={items} visible={8} noun="more" render={x => (
         <button key={x.key} type="button" disabled={busy} onClick={() => onPick(x.item)} className="w-full flex items-center justify-between py-2.5 text-left disabled:opacity-50">
           <div className="min-w-0">
             <p className="text-sm text-fg-1 truncate">{x.name}</p>
@@ -171,7 +169,6 @@ function QuickList({ items, busy, onPick }: { items: { key: string; name: string
           </div>
           <span className="text-sm font-semibold text-fg-2 tabular-nums ml-3 shrink-0">+ {x.kcal}</span>
         </button>
-      ))}
-    </div>
+      )} />
   )
 }

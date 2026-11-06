@@ -56,11 +56,12 @@ export const FIVE_A_STEPS: StepConfig[] = [
 export const TOTAL_SESSION_SEC = FIVE_A_STEPS.reduce((acc, s) => acc + s.durationSec, 0)
 
 // hex values are var() references so light mode can deepen them (globals.css)
-export const STAGE_META: Record<FlowStage, { label: string; hex: string; tw: string; emoji: string }> = {
-  struggle: { label: 'Struggle', hex: 'var(--flow-struggle)', tw: 'bg-[var(--flow-struggle)]', emoji: '🔥' },
-  release:  { label: 'Release',  hex: 'var(--flow-release)',  tw: 'bg-[var(--flow-release)]',  emoji: '🌊' },
-  flow:     { label: 'Flow',     hex: 'var(--flow-flow)',     tw: 'bg-cta',                    emoji: '🌟' },
-  recovery: { label: 'Recovery', hex: 'var(--flow-recovery)', tw: 'bg-[var(--flow-recovery)]', emoji: '🌱' },
+// fg: text color that stays readable on the stage color in both themes.
+export const STAGE_META: Record<FlowStage, { label: string; hex: string; tw: string; emoji: string; fg: string }> = {
+  struggle: { label: 'Struggle', hex: 'var(--flow-struggle)', tw: 'bg-[var(--flow-struggle)]', emoji: '🔥', fg: 'text-white' },
+  release:  { label: 'Release',  hex: 'var(--flow-release)',  tw: 'bg-[var(--flow-release)]',  emoji: '🌊', fg: 'text-white' },
+  flow:     { label: 'Flow',     hex: 'var(--flow-flow)',     tw: 'bg-cta',                    emoji: '🌟', fg: 'text-fg-inverse' },
+  recovery: { label: 'Recovery', hex: 'var(--flow-recovery)', tw: 'bg-[var(--flow-recovery)]', emoji: '🌱', fg: 'text-white' },
 }
 
 export const FLOW_STAGES: FlowStage[] = ['struggle', 'release', 'flow', 'recovery']

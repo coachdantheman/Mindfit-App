@@ -231,7 +231,7 @@ function StageBadge({ stage }: { stage: NonNullable<FlowLog['ending_stage']> }) 
   const meta = STAGE_META[stage]
   return (
     <span
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold text-white"
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${meta.fg}`}
       style={{ backgroundColor: meta.hex }}
     >
       <span>{meta.emoji}</span>

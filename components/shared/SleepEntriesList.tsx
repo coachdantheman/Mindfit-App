@@ -1,3 +1,4 @@
+import CollapsibleList from '@/components/shared/CollapsibleList'
 import { SleepEntry } from '@/types'
 
 export default function SleepEntriesList({ entries, avgSleep, avgSleepQuality }: {
@@ -29,8 +30,7 @@ export default function SleepEntriesList({ entries, avgSleep, avgSleepQuality }:
 
       <div className="card p-5">
         <h3 className="font-semibold text-fg-1 mb-3 text-sm">Recent Nights</h3>
-        <div className="space-y-2">
-          {entries.slice(0, 14).map(entry => (
+        <CollapsibleList className="space-y-2" items={entries.slice(0, 14)} visible={5} noun="older nights" render={entry => (
             <div key={entry.id} className="flex items-center justify-between p-2 rounded-lg bg-surface-2/30">
               <div>
                 <p className="text-sm text-fg-2">{entry.entry_date}</p>
@@ -43,8 +43,7 @@ export default function SleepEntriesList({ entries, avgSleep, avgSleepQuality }:
                 Number(entry.hours_slept) >= 7 ? 'bg-green-500' : Number(entry.hours_slept) > 0 ? 'bg-orange-500' : 'bg-surface-3'
               }`} />
             </div>
-          ))}
-        </div>
+          )} />
       </div>
     </div>
   )

@@ -105,16 +105,18 @@
 }
 
 html.light {
-  --bg:        245 245 244; /* stone-50 */
+  /* Page a step darker than cards and inputs a step darker than cards, so
+     every layer reads as its own surface. */
+  --bg:        241 240 238;
   --surface:   255 255 255;
-  --surface-2: 245 245 244;
-  --surface-3: 231 229 228; /* stone-100 */
+  --surface-2: 244 243 241;
+  --surface-3: 228 226 224;
   --fg-1:      28 25 23;
   --fg-2:      68 64 60;
   --fg-3:      87 83 78;
   --fg-4:      120 113 108;
-  --border:       rgba(0,0,0,0.18);
-  --border-muted: rgba(0,0,0,0.08);
+  --border:       rgba(0,0,0,0.16);
+  --border-muted: rgba(0,0,0,0.10);
 
   /* Gold text on white needs a deep olive to reach 4.5:1 (#C4B400 is 2.1:1).
      Buttons on that olive flip to white text. */
@@ -128,7 +130,8 @@ html.light {
   --danger-bg: rgba(254,226,226,0.9);
   --shadow-ring-cta: 0 0 0 2px rgba(107,98,0,0.55);
 
-  --shadow-card: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.05), 0 2px 8px rgba(0,0,0,0.05);
+  --shadow-lift: 0 8px 24px rgba(0,0,0,0.12);
 
   /* Chart / rating hues darkened for contrast on light surfaces */
   --rating-motivation: #2563eb;
@@ -144,7 +147,7 @@ html.light {
 
   --flow-struggle: #b32e2e;
   --flow-release:  #5a3f80;
-  --flow-flow:     #9A8B00;
+  --flow-flow:     #6B6200;
   --flow-recovery: #2f7359;
   --medal-bronze: #9a5a2c;
 }
@@ -238,7 +241,10 @@ html.light .text-red-300, html.light .text-red-400 { color: #b91c1c; }
 html.light .text-orange-300, html.light .text-orange-400 { color: #c2410c; }
 html.light .text-green-300, html.light .text-green-400 { color: #15803d; }
 html.light .text-yellow-300, html.light .text-yellow-400 { color: #854d0e; }
-html.light .text-amber-300, html.light .text-amber-400 { color: #d97706; }
+html.light .text-amber-300, html.light .text-amber-400 { color: #b45309; }
+html.light .text-green-400\/80 { color: rgb(21 128 61 / 0.9); }
+html.light .text-red-400\/80 { color: rgb(185 28 28 / 0.9); }
+html.light .text-white.bg-cta, html.light .bg-cta .text-white { color: rgb(var(--fg-inverse)); }
 html.light .text-blue-300, html.light .text-blue-400 { color: #2563eb; }
 html.light .text-purple-300, html.light .text-purple-400 { color: #9333ea; }
 

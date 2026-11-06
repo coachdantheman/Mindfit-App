@@ -117,7 +117,7 @@ export default function SettingsPage() {
     } else {
       document.documentElement.classList.remove('light')
     }
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', next === 'light' ? '#f5f5f4' : '#0A0F1A')
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', next === 'light' ? '#F1F0EE' : '#0A0F1A')
   }
 
   const signOut = async () => {

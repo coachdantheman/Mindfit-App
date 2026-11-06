@@ -1,4 +1,5 @@
 'use client'
+import CollapsibleList from '@/components/shared/CollapsibleList'
 import { useMemo } from 'react'
 import { groupEntriesByDay, fillMissingDays as fillDays } from '@/lib/nutrition'
 import { FoodEntry, NutritionGoal } from '@/types'
@@ -170,8 +171,7 @@ export default function NutritionProgressView({ entries, goal }: Props) {
       {/* Recent entries across days */}
       <div className="card p-5">
         <h3 className="font-semibold text-fg-1 mb-3 text-sm">Recent Food Log</h3>
-        <div className="space-y-2">
-          {entries.slice(0, 25).map(e => (
+        <CollapsibleList className="space-y-2" items={entries.slice(0, 25)} visible={5} noun="older entries" render={e => (
             <div key={e.id} className="flex items-center justify-between p-2 rounded-lg bg-surface-2/30">
               <div>
                 <p className="text-sm text-fg-2">{e.food_name}</p>
@@ -181,8 +181,7 @@ export default function NutritionProgressView({ entries, goal }: Props) {
               </div>
               <span className="text-xs text-fg-4">{format(parseISO(e.entry_date), 'MMM d')}</span>
             </div>
-          ))}
-        </div>
+          )} />
       </div>
     </div>
   )
