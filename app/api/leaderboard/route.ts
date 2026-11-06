@@ -18,29 +18,51 @@ export async function GET(req: Request) {
   const url = new URL(req.url)
   const tzParam = url.searchParams.get('tz') ?? ''
   const tz = isValidTimeZone(tzParam) ? tzParam : 'America/New_York'
-  let scope = url.searchParams.get('scope') === 'team' ? 'team' : 'all'
+  const teamParam = url.searchParams.get('team')
   const bounds = monthBounds(new Date(), tz)
 
   const admin = createAdminClient()
 
-  // Team = athletes linked to the same coach(es). Admins have no team view.
-  let teamIds = new Set<string>()
-  if (auth.role === 'member') {
-    const { data: myCoaches } = await admin.from('coach_athletes').select('coach_id').eq('athlete_id', auth.userId)
-    const coachIds = (myCoaches ?? []).map((r: any) => r.coach_id)
-    if (coachIds.length) {
-      const { data: mates } = await admin.from('coach_athletes').select('athlete_id').in('coach_id', coachIds)
-      teamIds = new Set((mates ?? []).map((r: any) => r.athlete_id))
+  // Team filters: coaches see their teams, athletes the teams they joined,
+  // admins every team. Parents get one "My athletes" filter.
+  let teams: { id: string; name: string }[] = []
+  if (auth.role === 'parent') {
+    teams = [{ id: 'family', name: 'My athletes' }]
+  } else {
+    let q = admin.from('teams').select('id, name').order('name')
+    let none = false
+    if (auth.role === 'coach') q = q.eq('coach_id', auth.userId)
+    else if (auth.role === 'member') {
+      const { data: mine } = await admin.from('team_members').select('team_id').eq('athlete_id', auth.userId)
+      const ids = (mine ?? []).map(r => r.team_id)
+      none = ids.length === 0
+      q = q.in('id', ids)
     }
-  } else if (auth.role === 'coach') {
-    const { data } = await admin.from('coach_athletes').select('athlete_id').eq('coach_id', auth.userId)
-    teamIds = new Set((data ?? []).map((r: any) => r.athlete_id))
-  } else if (auth.role === 'parent') {
+    teams = none ? [] : (await q).data ?? []
+  }
+
+  const team = teams.find(t => t.id === teamParam) ?? null
+  let teamIds = new Set<string>()
+  if (team?.id === 'family') {
     const { data } = await admin.from('parent_athletes').select('athlete_id').eq('parent_id', auth.userId)
     teamIds = new Set((data ?? []).map((r: any) => r.athlete_id))
+  } else if (team) {
+    const [{ data: members }, { data: t }] = await Promise.all([
+      admin.from('team_members').select('athlete_id').eq('team_id', team.id),
+      admin.from('teams').select('coach_id').eq('id', team.id).single(),
+    ])
+    teamIds = new Set([...(members ?? []).map((r: any) => r.athlete_id), ...(t ? [t.coach_id] : [])])
   }
-  const teamAvailable = teamIds.size > 0 && (auth.role !== 'member' || teamIds.size > 1)
-  if (!teamAvailable) scope = 'all'
+
+  // Coaches and parents see their own athletes highlighted.
+  let mineIds: Set<string> | undefined
+  if (auth.role === 'coach') {
+    const { data } = await admin.from('coach_athletes').select('athlete_id').eq('coach_id', auth.userId)
+    mineIds = new Set((data ?? []).map((r: any) => r.athlete_id))
+  } else if (auth.role === 'parent') {
+    const { data } = await admin.from('parent_athletes').select('athlete_id').eq('parent_id', auth.userId)
+    mineIds = new Set((data ?? []).map((r: any) => r.athlete_id))
+  }
 
   const [{ data: profiles, error: pErr }, { data: rows, error: rErr }] = await Promise.all([
     admin.from('profiles')
@@ -73,10 +95,9 @@ export async function GET(req: Request) {
   })
   // Hidden athletes are only ever in their own list.
   let pool = members.filter(m => m.leaderboard_visible || m.id === auth.userId)
-  if (scope === 'team') pool = pool.filter(m => teamIds.has(m.id) || m.id === auth.userId)
+  if (team) pool = pool.filter(m => teamIds.has(m.id) || m.id === auth.userId)
   const poolMembers = pool.map(toPool)
 
-  const mineIds = auth.role === 'coach' || auth.role === 'parent' ? teamIds : undefined
   const thisList = rankEntries(thisScores, poolMembers, { meId: auth.userId, mineIds, streaks })
   const lastList = rankEntries(lastScores, poolMembers, { meId: auth.userId, mineIds, streaks })
   const myLast = lastList.find(e => e.isMe)
@@ -106,8 +127,8 @@ export async function GET(req: Request) {
 
   return NextResponse.json({
     period: { month: bounds.month, daysLeft: bounds.daysLeft, lastMonth: bounds.lastMonth },
-    scope,
-    teamAvailable,
+    team: team?.id ?? null,
+    teams,
     me: meOut,
     thisMonth: { top: thisList.slice(0, TOP), around: neighbours(thisList, TOP), of: thisList.length },
     lastMonth: { podium: lastList.slice(0, 3), myRank: myLast?.rank ?? null, of: lastList.length },

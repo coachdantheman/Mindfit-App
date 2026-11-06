@@ -6,11 +6,13 @@ import InvitePanel from '@/components/admin/InvitePanel'
 import MemberTable from '@/components/admin/MemberTable'
 import CoachManager from '@/components/admin/CoachManager'
 import LessonManager from '@/components/admin/LessonManager'
+import TeamsManager from '@/components/coach/TeamsManager'
 
 const tabs = [
   { key: 'athletes', label: 'Athletes' },
   { key: 'invite', label: 'App invite' },
   { key: 'coaches', label: 'Coaches' },
+  { key: 'teams', label: 'Teams' },
   { key: 'lessons', label: 'Lessons' },
 ] as const
 type TabKey = typeof tabs[number]['key']
@@ -48,6 +50,7 @@ function AdminContent() {
         {activeTab === 'athletes' && <MemberTable />}
         {activeTab === 'invite' && <InvitePanel />}
         {activeTab === 'coaches' && <CoachManager />}
+        {activeTab === 'teams' && <TeamsManager isAdmin athleteHref={id => `/admin/athlete/${id}`} />}
         {activeTab === 'lessons' && <LessonManager />}
       </div>
     </div>

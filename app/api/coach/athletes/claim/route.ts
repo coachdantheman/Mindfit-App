@@ -4,11 +4,13 @@ import { verifyApiUser } from '@/lib/api-auth'
 import { sendCoachInviteEmail } from '@/lib/email'
 import { extractEmails, extractNames, linkOrQueue, MAX_BULK } from '@/lib/links'
 import { createInvitedAccount, signInLinkFor } from '@/lib/invites'
+import { addToTeam, managedTeam } from '@/lib/teams'
 import type { ClaimResult } from '@/types'
 
 // Bulk add: every email becomes an athlete linked to this coach right now.
 // Accounts that don't exist are created (the athlete claims them at first
-// sign-in); existing ones are linked in place.
+// sign-in); existing ones are linked in place. With a team_id they also go
+// on that team, linked to the team's coach (how admins add for a coach).
 export async function POST(req: Request) {
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
@@ -20,7 +22,11 @@ export async function POST(req: Request) {
   if (emails.length === 0) return NextResponse.json({ error: 'No email addresses found.' }, { status: 400 })
 
   const admin = createAdminClient()
-  const { data: me } = await admin.from('profiles').select('full_name').eq('id', auth.userId).single()
+  const team = typeof body.team_id === 'string' ? await managedTeam(admin, auth, body.team_id) : null
+  if (typeof body.team_id === 'string' && !team) return NextResponse.json({ error: 'Team not found.' }, { status: 404 })
+  if (auth.role === 'admin' && !team) return NextResponse.json({ error: 'Pick the team these athletes belong to.' }, { status: 400 })
+  const coachId = team?.coach_id ?? auth.userId
+  const { data: me } = await admin.from('profiles').select('full_name').eq('id', coachId).single()
 
   const results: ClaimResult[] = []
   const chunks: string[][] = []
@@ -30,14 +36,18 @@ export async function POST(req: Request) {
     const settled = await Promise.all(chunk.map(async (email): Promise<ClaimResult> => {
       if (email === auth.email.toLowerCase()) return { email, status: 'invalid', message: 'That is your own email.' }
       try {
-        const { outcome, userId } = await linkOrQueue(admin, { email, requesterId: auth.userId, kind: 'coach' })
-        if (userId) return { email, status: outcome === 'linked' ? 'linked' : 'already_linked' }
+        const { outcome, userId } = await linkOrQueue(admin, { email, requesterId: coachId, kind: 'coach' })
+        if (userId) {
+          const joined = team ? await addToTeam(admin, team, userId) : null
+          return { email, status: outcome === 'linked' || joined === 'joined' ? 'linked' : 'already_linked' }
+        }
 
         const full_name = names.get(email) ?? null
-        const created = await createInvitedAccount(admin, { email, fullName: full_name, invitedBy: auth.userId, notes: 'bulk add' })
+        const created = await createInvitedAccount(admin, { email, fullName: full_name, invitedBy: coachId, notes: 'bulk add' })
         if ('error' in created) return { email, status: 'error', message: created.error }
 
-        await admin.from('coach_athletes').insert({ coach_id: auth.userId, athlete_id: created.userId })
+        if (team) await addToTeam(admin, team, created.userId)
+        else await admin.from('coach_athletes').insert({ coach_id: coachId, athlete_id: created.userId })
         const link = await signInLinkFor(admin, email)
         void sendCoachInviteEmail(email, me?.full_name, full_name, link)
         return { email, status: 'created' }

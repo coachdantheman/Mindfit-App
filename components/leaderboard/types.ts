@@ -21,8 +21,8 @@ export interface MyStatus {
 
 export interface LeaderboardResponse {
   period: { month: string; daysLeft: number; lastMonth: string }
-  scope: 'all' | 'team'
-  teamAvailable: boolean
+  team: string | null
+  teams: { id: string; name: string }[]
   me: MyStatus | null
   thisMonth: { top: Entry[]; around: Entry[] | null; of: number }
   lastMonth: { podium: Entry[]; myRank: number | null; of: number }

@@ -2,8 +2,10 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import type { UserRole } from '@/types'
+import JoinTeamForm from '@/components/shared/JoinTeamForm'
 
 interface Person { linkId: string; id: string; full_name: string | null; email: string }
+interface MyTeam { id: string; name: string; sport: string | null; coach_name: string | null }
 interface Links { coaches: Person[]; parents: Person[]; pendingParents: { linkId: string; email: string }[]; athletes: Person[] }
 
 export default function SharingCard({ role }: { role: UserRole }) {
@@ -12,7 +14,12 @@ export default function SharingCard({ role }: { role: UserRole }) {
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null)
 
-  const load = () => fetch('/api/me/links').then(r => r.ok ? r.json() : null).then(setLinks)
+  const [teams, setTeams] = useState<MyTeam[] | null>(null)
+  const [teamMsg, setTeamMsg] = useState('')
+  const load = () => {
+    fetch('/api/me/links').then(r => r.ok ? r.json() : null).then(setLinks)
+    fetch('/api/me/teams').then(r => r.ok ? r.json() : []).then(setTeams)
+  }
   useEffect(() => { load() }, [])
 
   const share = async (e: React.FormEvent) => {
@@ -49,12 +56,38 @@ export default function SharingCard({ role }: { role: UserRole }) {
 
   const name = (p: Person) => p.full_name || p.email
 
+  const leave = async (t: MyTeam) => {
+    if (!confirm(`Leave ${t.name}? ${t.coach_name ?? 'The coach'} stops seeing your progress unless you're on another of their teams.`)) return
+    await fetch('/api/me/teams', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ team_id: t.id }) })
+    load()
+  }
+
   return (
     <div className="card p-5">
       <h3 className="font-semibold text-fg-1 mb-1 text-sm">Sharing</h3>
       <p className="text-sm text-fg-4 mb-4">Who can see your progress. You can remove anyone at any time.</p>
 
       <div className="space-y-4">
+        <div>
+          <p className="text-xs uppercase tracking-wide text-fg-4 mb-1">Teams</p>
+          {teams && teams.length > 0 && (
+            <ul className="divide-y divide-edge-muted mb-3">
+              {teams.map(t => (
+                <li key={t.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                  <span className="min-w-0">
+                    <span className="block text-fg-2 truncate">{t.name}</span>
+                    {t.coach_name && <span className="block text-xs text-fg-4 truncate">Coach {t.coach_name}</span>}
+                  </span>
+                  <button type="button" onClick={() => leave(t)} className="text-xs text-fg-4 hover:text-red-400 shrink-0">Leave</button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <JoinTeamForm onJoined={teamName => { setTeamMsg(`You joined ${teamName}.`); load() }} />
+          {teamMsg && <p role="status" className="text-sm mt-2 text-green-400">{teamMsg}</p>}
+          <p className="text-xs text-fg-4 mt-2">Got a code from your coach? Joining shares your progress with them and puts you on your team&rsquo;s Board.</p>
+        </div>
+
         <div>
           <p className="text-xs uppercase tracking-wide text-fg-4 mb-1">Coaches</p>
           {!links ? <p className="text-sm text-fg-4">Loading…</p> : links.coaches.length === 0 ? (

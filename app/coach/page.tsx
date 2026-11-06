@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { format, parseISO } from 'date-fns'
 import { MemberWithCount } from '@/types'
-import BulkClaimForm from '@/components/coach/BulkClaimForm'
+import TeamsManager from '@/components/coach/TeamsManager'
 import CreateWorkout from '@/components/coach/CreateWorkout'
 import CreateProgram from '@/components/coach/CreateProgram'
 import Link from 'next/link'
@@ -143,14 +143,20 @@ function AthleteTable({ athletes, onChanged, notify }: { athletes: MemberWithCou
 export default function CoachPage() {
   const [athletes, setAthletes] = useState<MemberWithCount[]>([])
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<'athletes' | 'add' | 'workouts' | 'programs'>('athletes')
+  const [tab, setTab] = useState<'athletes' | 'teams' | 'workouts' | 'programs'>('athletes')
+  const [teams, setTeams] = useState<{ id: string; name: string; members: { id: string }[] }[]>([])
+  const [teamFilter, setTeamFilter] = useState('')
   const notify = useToast()
 
   const fetchAthletes = useCallback(async () => {
-    const res = await fetch('/api/coach/athletes')
+    const [res, teamRes] = await Promise.all([fetch('/api/coach/athletes'), fetch('/api/coach/teams')])
     if (res.ok) setAthletes(await res.json())
+    if (teamRes.ok) setTeams(await teamRes.json())
     setLoading(false)
   }, [])
+
+  const filterTeam = teams.find(t => t.id === teamFilter)
+  const shown = filterTeam ? athletes.filter(a => filterTeam.members.some(m => m.id === a.id)) : athletes
 
   useEffect(() => { fetchAthletes() }, [fetchAthletes])
 
@@ -165,7 +171,7 @@ export default function CoachPage() {
         label="Coach sections"
         tabs={[
           { key: 'athletes' as const, label: 'My Athletes' },
-          { key: 'add' as const, label: 'Add Athletes' },
+          { key: 'teams' as const, label: 'Teams' },
           { key: 'workouts' as const, label: 'Workouts' },
           { key: 'programs' as const, label: 'Programs' },
         ]}
@@ -176,12 +182,8 @@ export default function CoachPage() {
       <div className="card p-6">
         {tab === 'programs' ? (
           <CreateProgram />
-        ) : tab === 'add' ? (
-          <div>
-            <h3 className="font-semibold text-fg-1 mb-1">Add Athletes</h3>
-            <p className="text-sm text-fg-4 mb-3">Paste your roster. Each athlete gets an account and shows up in My Athletes right away.</p>
-            <BulkClaimForm onDone={fetchAthletes} />
-          </div>
+        ) : tab === 'teams' ? (
+          <TeamsManager onChanged={fetchAthletes} />
         ) : tab === 'workouts' ? (
           <CreateWorkout />
         ) : loading ? (
@@ -189,16 +191,27 @@ export default function CoachPage() {
         ) : athletes.length === 0 ? (
           <div className="text-center py-12 text-fg-3">
             <p className="font-medium">No athletes yet</p>
-            <p className="text-sm mt-1">Add athlete emails to get started.</p>
+            <p className="text-sm mt-1">Create a team and share its code, or add athletes by email.</p>
             <button
-              onClick={() => setTab('add')}
+              onClick={() => setTab('teams')}
               className="mt-4 bg-cta hover:bg-brand-600 text-fg-inverse font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors"
             >
-              Add Your First Athlete
+              Create Your First Team
             </button>
           </div>
         ) : (
-          <AthleteTable athletes={athletes} onChanged={fetchAthletes} notify={notify} />
+          <>
+            {teams.length > 0 && (
+              <div className="mb-4">
+                <label htmlFor="athlete-team-filter" className="sr-only">Filter by team</label>
+                <select id="athlete-team-filter" value={teamFilter} onChange={e => setTeamFilter(e.target.value)} className="input-field sm:w-64">
+                  <option value="">All athletes ({athletes.length})</option>
+                  {teams.map(t => <option key={t.id} value={t.id}>{t.name} ({t.members.length})</option>)}
+                </select>
+              </div>
+            )}
+            <AthleteTable athletes={shown} onChanged={fetchAthletes} notify={notify} />
+          </>
         )}
       </div>
     </div>

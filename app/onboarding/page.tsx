@@ -1,8 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import WeeklyAssessment from '@/components/mindset/WeeklyAssessment'
 import { mpiVerdict } from '@/lib/mpi'
+import { clearPendingTeamCode, joinTeam, readPendingTeamCode } from '@/lib/team-code'
 
 const SPORTS = [
   'Basketball', 'Football', 'Soccer', 'Baseball', 'Softball', 'Volleyball',
@@ -19,9 +20,21 @@ export default function OnboardingPage() {
   const [sport, setSport] = useState('')
   const [saving, setSaving] = useState(false)
   const [mpi, setMpi] = useState<number | null>(null)
+  const [teamCode, setTeamCode] = useState('')
+  const [teamError, setTeamError] = useState('')
+  const [teamName, setTeamName] = useState<string | null>(null)
+
+  useEffect(() => { setTeamCode(readPendingTeamCode() ?? '') }, [])
 
   const startAssessment = async () => {
     setSaving(true)
+    setTeamError('')
+    if (teamCode && !teamName) {
+      const r = await joinTeam(teamCode)
+      if (!r.ok) { setTeamError(r.error); setSaving(false); return }
+      clearPendingTeamCode()
+      setTeamName(r.teamName)
+    }
     if (sport) {
       await fetch('/api/profile', {
         method: 'PATCH',
@@ -91,6 +104,23 @@ export default function OnboardingPage() {
               </button>
             ))}
           </div>
+
+          <label htmlFor="onboarding-team" className="block text-sm font-medium text-fg-2 mb-2">
+            Team code <span className="text-fg-4 font-normal">(optional, from your coach)</span>
+          </label>
+          <input
+            id="onboarding-team"
+            value={teamCode}
+            onChange={e => { setTeamCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6)); setTeamError('') }}
+            disabled={!!teamName}
+            autoCapitalize="characters"
+            autoComplete="off"
+            placeholder="ABC123"
+            className="w-full border border-edge rounded-xl px-4 py-3 text-sm font-mono tracking-widest focus:ring-2 focus:ring-brand-500 bg-surface-2 text-fg-1 placeholder:text-fg-4 mb-2"
+          />
+          {teamError && <p role="alert" className="text-sm text-red-400 mb-2">{teamError}</p>}
+          {teamName && <p role="status" className="text-sm text-green-400 mb-2">You joined {teamName}.</p>}
+          <div className="mb-6" />
 
           <button
             onClick={startAssessment}

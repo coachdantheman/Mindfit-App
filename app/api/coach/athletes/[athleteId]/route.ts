@@ -14,5 +14,9 @@ export async function DELETE(_req: Request, { params }: { params: { athleteId: s
     .eq('coach_id', auth.userId)
     .eq('athlete_id', params.athleteId)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  const { data: myTeams } = await admin.from('teams').select('id').eq('coach_id', auth.userId)
+  if (myTeams?.length) {
+    await admin.from('team_members').delete().eq('athlete_id', params.athleteId).in('team_id', myTeams.map(t => t.id))
+  }
   return NextResponse.json({ ok: true })
 }

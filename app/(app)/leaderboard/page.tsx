@@ -1,6 +1,5 @@
 'use client'
 import { useEffect, useState } from 'react'
-import TabBar from '@/components/shared/TabBar'
 import Skeleton from '@/components/shared/Skeleton'
 import EmptyState from '@/components/shared/EmptyState'
 import MyStatusCard from '@/components/leaderboard/MyStatusCard'
@@ -10,10 +9,8 @@ import HowToEarnSheet from '@/components/leaderboard/HowToEarnSheet'
 import TitlesGuideSheet from '@/components/leaderboard/TitlesGuideSheet'
 import { monthLabel, type LeaderboardResponse } from '@/components/leaderboard/types'
 
-type Scope = 'all' | 'team'
-
 export default function LeaderboardPage() {
-  const [scope, setScope] = useState<Scope>('all')
+  const [team, setTeam] = useState('')
   const [data, setData] = useState<LeaderboardResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [sheet, setSheet] = useState<'earn' | 'titles' | null>(null)
@@ -22,7 +19,7 @@ export default function LeaderboardPage() {
     let tz = ''
     try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone } catch {}
     setError(null)
-    fetch(`/api/leaderboard?scope=${scope}&tz=${encodeURIComponent(tz)}`)
+    fetch(`/api/leaderboard?team=${encodeURIComponent(team)}&tz=${encodeURIComponent(tz)}`)
       .then(async r => {
         const body = await r.json().catch(() => null)
         if (!r.ok) throw new Error(body?.error || 'Could not load the board.')
@@ -30,7 +27,7 @@ export default function LeaderboardPage() {
       })
       .then(setData)
       .catch(e => setError(e.message))
-  }, [scope])
+  }, [team])
 
   return (
     <div>
@@ -54,14 +51,14 @@ export default function LeaderboardPage() {
           {data.me && <MyStatusCard me={data.me} daysLeft={data.period.daysLeft} />}
 
           <div>
-            {data.teamAvailable && (
-              <TabBar<Scope>
-                label="Leaderboard scope"
-                tabs={[{ key: 'all', label: 'Everyone' }, { key: 'team', label: 'My Team' }]}
-                active={scope}
-                onSelect={setScope}
-                className="mb-4"
-              />
+            {data.teams.length > 0 && (
+              <div className="mb-4">
+                <label htmlFor="board-team" className="sr-only">Show</label>
+                <select id="board-team" value={team} onChange={e => setTeam(e.target.value)} className="input-field sm:w-72">
+                  <option value="">Everyone</option>
+                  {data.teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+              </div>
             )}
             <div className="card p-3 sm:p-4">
               <div className="flex items-baseline justify-between px-2 mb-2">

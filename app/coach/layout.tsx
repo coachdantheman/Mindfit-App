@@ -6,7 +6,7 @@ import { ToastProvider } from '@/components/shared/Toast'
 export default async function CoachLayout({ children }: { children: React.ReactNode }) {
   const user = await getAuthUserCached()
   if (!user) redirect('/')
-  if (user.role !== 'coach') redirect('/')
+  if (user.role !== 'coach' && user.role !== 'admin') redirect('/')
 
   return (
     <ToastProvider>

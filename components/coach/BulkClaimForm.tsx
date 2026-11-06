@@ -1,5 +1,5 @@
 'use client'
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 import type { ClaimResult, ClaimStatus } from '@/types'
 import { extractEmails } from '@/lib/links'
 
@@ -15,6 +15,7 @@ interface Props {
   onDone: () => void
   endpoint?: string
   copy?: Partial<Copy>
+  extraBody?: Record<string, string>
 }
 
 const DEFAULT_COPY: Copy = {
@@ -34,7 +35,7 @@ const STATUS_LABEL: Record<ClaimStatus, { label: string; className: string }> = 
   error: { label: 'Failed', className: 'bg-red-500/10 text-red-400' },
 }
 
-export default function BulkClaimForm({ onDone, endpoint = '/api/coach/athletes/claim', copy }: Props) {
+export default function BulkClaimForm({ onDone, endpoint = '/api/coach/athletes/claim', copy, extraBody }: Props) {
   const c = { ...DEFAULT_COPY, ...copy }
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
@@ -42,6 +43,7 @@ export default function BulkClaimForm({ onDone, endpoint = '/api/coach/athletes/
   const [results, setResults] = useState<ClaimResult[] | null>(null)
 
   const count = useMemo(() => extractEmails(text).length, [text])
+  const fieldId = useId()
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -51,7 +53,7 @@ export default function BulkClaimForm({ onDone, endpoint = '/api/coach/athletes/
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ ...extraBody, text }),
     })
     const data = await res.json().catch(() => ({}))
     setLoading(false)
@@ -65,17 +67,17 @@ export default function BulkClaimForm({ onDone, endpoint = '/api/coach/athletes/
     <div className="space-y-4">
       <form onSubmit={submit} className="space-y-3">
         <div>
-          <label htmlFor="bulk-athletes" className="block text-xs uppercase tracking-wide text-fg-4 mb-1">{c.label}</label>
+          <label htmlFor={fieldId} className="block text-xs uppercase tracking-wide text-fg-4 mb-1">{c.label}</label>
           <textarea
-            id="bulk-athletes"
+            id={fieldId}
             value={text}
             onChange={e => setText(e.target.value)}
             rows={5}
             placeholder={c.placeholder}
             className="textarea-field"
-            aria-describedby="bulk-athletes-help"
+            aria-describedby={`${fieldId}-help`}
           />
-          <p id="bulk-athletes-help" className="text-xs text-fg-4 mt-1">
+          <p id={`${fieldId}-help`} className="text-xs text-fg-4 mt-1">
             {count === 0 ? 'Names next to emails are used for the athlete’s profile.' : `${count} email${count === 1 ? '' : 's'} detected · max 200 per batch`}
           </p>
         </div>
