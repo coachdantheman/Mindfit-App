@@ -8,6 +8,7 @@ import SaveButton from '@/components/shared/SaveButton'
 import { useToast } from '@/components/shared/Toast'
 import { clearDraft, draftKey, readDraft, writeDraft } from '@/lib/useDraft'
 import { localDateISO } from '@/lib/dates'
+import { shiftDate } from '@/lib/nutrition'
 
 interface SleepDraft { bedtime: string; wakeTime: string; quality: number; sleepNotes: string }
 interface RecoveryDraft { isRestDay: boolean; activities: { type: string; duration_min: number }[]; recoveryNotes: string }
@@ -22,9 +23,12 @@ const clock = (t: string) => format(parseISO(`2000-01-01T${t}`), 'h:mm a')
 export default function SleepPage() {
   const [tab, setTab] = useState<Tab>('track')
   const today = localDateISO()
-  // Any past night can be logged; drafts only follow today's entry.
-  const [date, setDate] = useState(today)
-  const isToday = date === today
+  // Athletes log in the morning, so the default is last night. Recovery
+  // belongs to the day they woke up (the day after the night).
+  const lastNight = shiftDate(today, -1)
+  const [date, setDate] = useState(lastNight)
+  const recoveryDate = shiftDate(date, 1)
+  const isDefault = date === lastNight
   const [usual, setUsual] = useState<{ bedtime: string; wakeTime: string } | null>(null)
   const [savingUsual, setSavingUsual] = useState(false)
 
@@ -52,14 +56,14 @@ export default function SleepPage() {
     setLoading(true)
     Promise.all([
       fetch(`/api/sleep/entries?date=${date}`).then(r => r.json()),
-      fetch(`/api/sleep/recovery?date=${date}`).then(r => r.json()),
+      fetch(`/api/sleep/recovery?date=${recoveryDate}`).then(r => r.json()),
       fetch('/api/profile').then(r => (r.ok ? r.json() : null)).catch(() => null),
     ]).then(([sleepData, recoveryData, profile]) => {
       const u = profile?.default_bedtime && profile?.default_wake_time
         ? { bedtime: hhmm(profile.default_bedtime), wakeTime: hhmm(profile.default_wake_time) }
         : null
       setUsual(u)
-      const draft = isToday ? readDraft<SleepDraft>(sleepKey) : null
+      const draft = isDefault ? readDraft<SleepDraft>(sleepKey) : null
       if (sleepData.length > 0) {
         const s = sleepData[0]
         setBedtime(hhmm(s.bedtime))
@@ -74,7 +78,7 @@ export default function SleepPage() {
         setBedtime(u?.bedtime ?? ''); setWakeTime(u?.wakeTime ?? ''); setQuality(7); setSleepNotes('')
         setSleepSaved(false)
       }
-      const rDraft = isToday ? readDraft<RecoveryDraft>(recoveryKey) : null
+      const rDraft = isDefault ? readDraft<RecoveryDraft>(recoveryKey) : null
       if (recoveryData.length > 0) {
         const r = recoveryData[0]
         setIsRestDay(r.is_rest_day)
@@ -90,17 +94,17 @@ export default function SleepPage() {
       }
       setLoading(false)
     })
-  }, [date, isToday, sleepKey, recoveryKey])
+  }, [date, recoveryDate, isDefault, sleepKey, recoveryKey])
 
   // Unsaved edits persist across tab switches and reloads.
   useEffect(() => {
-    if (loading || sleepSaved || !isToday) return
+    if (loading || sleepSaved || !isDefault) return
     writeDraft<SleepDraft>(sleepKey, { bedtime, wakeTime, quality, sleepNotes })
-  }, [bedtime, wakeTime, quality, sleepNotes, loading, sleepSaved, sleepKey, isToday])
+  }, [bedtime, wakeTime, quality, sleepNotes, loading, sleepSaved, sleepKey, isDefault])
   useEffect(() => {
-    if (loading || recoverySaved || !isToday) return
+    if (loading || recoverySaved || !isDefault) return
     writeDraft<RecoveryDraft>(recoveryKey, { isRestDay, activities, recoveryNotes })
-  }, [isRestDay, activities, recoveryNotes, loading, recoverySaved, recoveryKey, isToday])
+  }, [isRestDay, activities, recoveryNotes, loading, recoverySaved, recoveryKey, isDefault])
 
   const usualDiffers = !!bedtime && !!wakeTime && (bedtime !== usual?.bedtime || wakeTime !== usual?.wakeTime)
 
@@ -142,7 +146,7 @@ export default function SleepPage() {
         notes: sleepNotes || null,
       }),
     })
-    if (res.ok) { setSleepSaved(true); setJustSaved('sleep'); if (isToday) clearDraft(sleepKey); notify('Sleep log saved') }
+    if (res.ok) { setSleepSaved(true); setJustSaved('sleep'); if (isDefault) clearDraft(sleepKey); notify('Sleep log saved') }
     else notify('Could not save your sleep log.', 'error')
     setSaving(null)
   }
@@ -153,13 +157,13 @@ export default function SleepPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        entry_date: date,
+        entry_date: recoveryDate,
         is_rest_day: isRestDay,
         activities,
         notes: recoveryNotes || null,
       }),
     })
-    if (res.ok) { setRecoverySaved(true); setJustSaved('recovery'); if (isToday) clearDraft(recoveryKey); notify('Recovery saved') }
+    if (res.ok) { setRecoverySaved(true); setJustSaved('recovery'); if (isDefault) clearDraft(recoveryKey); notify('Recovery saved') }
     else notify('Could not save your recovery log.', 'error')
     setSaving(null)
   }
@@ -187,7 +191,7 @@ export default function SleepPage() {
     <div>
       <div className="mb-6">
         <h1 className="page-title">Sleep & Recovery</h1>
-        <p className="page-subtitle">{format(parseISO(date), 'EEEE, MMMM d, yyyy')}{isToday ? '' : ' · back-logged'}</p>
+        <p className="page-subtitle">Night of {format(parseISO(date), 'EEEE, MMMM d')}{isDefault ? ' (last night)' : ' · back-logged'}</p>
       </div>
 
       <TabBar label="Sleep sections" tabs={[{ key: 'track' as Tab, label: 'Track' }, { key: 'tips' as Tab, label: 'Tips & Recovery' }]} active={tab} onSelect={setTab} />
@@ -204,12 +208,12 @@ export default function SleepPage() {
                 <input id="sleep-date"
                   type="date"
                   value={date}
-                  max={today}
-                  onChange={e => { if (e.target.value && e.target.value <= today) setDate(e.target.value) }}
+                  max={lastNight}
+                  onChange={e => { if (e.target.value && e.target.value <= lastNight) setDate(e.target.value) }}
                   className="bg-surface-2 border border-edge rounded-lg px-2.5 py-1.5 text-xs text-fg-2 focus:ring-2 focus:ring-cta/50"
                 />
-                {!isToday && (
-                  <button type="button" onClick={() => setDate(today)} className="text-xs text-cta hover:underline">Today</button>
+                {!isDefault && (
+                  <button type="button" onClick={() => setDate(lastNight)} className="text-xs text-cta hover:underline">Last night</button>
                 )}
               </div>
             </div>
@@ -323,7 +327,7 @@ export default function SleepPage() {
                     </svg>
                   )}
                 </div>
-                <span className="text-fg-2 font-medium">{isToday ? 'Today is a rest day' : 'Rest day'}</span>
+                <span className="text-fg-2 font-medium">{isDefault ? 'Today is a rest day' : 'Rest day'}</span>
               </label>
 
               <div>

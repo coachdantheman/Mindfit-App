@@ -32,10 +32,15 @@ export default function MemberTable() {
   const [rows, setRows] = useState<MemberWithCount[]>([])
   const [loading, setLoading] = useState(true)
   const [notice, setNotice] = useState('')
+  const [coachCounts, setCoachCounts] = useState<Map<string, number>>(new Map())
 
   const load = useCallback(async () => {
-    const res = await fetch('/api/coach/athletes')
+    const [res, coachRes] = await Promise.all([fetch('/api/coach/athletes'), fetch('/api/admin/coaches')])
     if (res.ok) setRows(await res.json())
+    if (coachRes.ok) {
+      const list: { id: string; athlete_count: number }[] = await coachRes.json()
+      setCoachCounts(new Map(list.map(c => [c.id, c.athlete_count])))
+    }
     setLoading(false)
   }, [])
 
@@ -43,6 +48,7 @@ export default function MemberTable() {
 
   const athletes = rows.filter(r => r.role === 'member')
   const parents = rows.filter(r => r.role === 'parent')
+  const coaches = rows.filter(r => r.role === 'coach')
 
   useEffect(() => { if (athletes.length) saveRoster('/admin', athletes.map(a => a.id)) }, [athletes])
 
@@ -53,6 +59,17 @@ export default function MemberTable() {
     if (!res.ok) { setNotice(data.error || 'Delete failed'); return }
     setRows(prev => prev.filter(x => x.id !== m.id))
     setNotice(`Deleted ${m.email}`)
+  }
+
+  const demote = async (m: MemberWithCount) => {
+    if (!confirm(`Remove coach access from ${m.full_name || m.email}? They become an athlete again.`)) return
+    const res = await fetch('/api/admin/coaches', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: m.id, newRole: 'member' }),
+    })
+    if (!res.ok) { setNotice('Could not update role'); return }
+    setRows(prev => prev.map(x => x.id === m.id ? { ...x, role: 'member' } : x))
+    setNotice(`${m.full_name || m.email} is an athlete again`)
   }
 
   const resend = async (m: MemberWithCount) => {
@@ -141,6 +158,30 @@ export default function MemberTable() {
             </table>
           </div>
         </>
+      )}
+
+      {coaches.length > 0 && (
+        <div className="mt-8">
+          <h4 className="text-xs uppercase tracking-wide text-fg-4 mb-2">Coaches ({coaches.length})</h4>
+          <ul className="divide-y divide-edge-muted">
+            {coaches.map(c => {
+              const n = coachCounts.get(c.id) ?? 0
+              return (
+                <li key={c.id} className="flex items-center justify-between gap-3 py-2.5">
+                  <div className="min-w-0">
+                    <Link href={`/admin/athlete/${c.id}`} className="block text-sm text-fg-2 hover:text-cta truncate">{c.full_name || c.email}</Link>
+                    {c.full_name && <p className="text-xs text-fg-4 truncate">{c.email}</p>}
+                    <p className="text-xs text-fg-4">{n} athlete{n === 1 ? '' : 's'} · Last used {lastUsed(c)}</p>
+                  </div>
+                  <div className="shrink-0 flex items-center gap-3">
+                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-cta/15 text-cta">coach</span>
+                    <button type="button" onClick={() => demote(c)} className="text-xs text-fg-4 hover:text-red-400">Remove coach</button>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
       )}
 
       {parents.length > 0 && (

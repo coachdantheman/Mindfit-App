@@ -23,27 +23,30 @@ export default function LearnPage() {
       <div className="mb-6">
         <h1 className="page-title">Learn</h1>
         <p className="page-subtitle">
-          The full MindFit curriculum lives in the Locker Room. Each lesson opens in the Skool classroom.
+          The complete MindFit course is live in the Locker Room, our Skool community. Every lesson is there and ready.
         </p>
+      </div>
+
+      <div className="card p-6 mb-8">
+        <p className="text-sm text-fg-2 mb-1 font-semibold">The full course, in one place</p>
+        <p className="text-sm text-fg-3 mb-4">
+          Lessons teach the why. This app is where you put it into practice every day.
+        </p>
+        <a
+          href="https://www.skool.com/mindfit"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block bg-cta text-fg-inverse font-semibold px-6 py-3 rounded-xl text-sm"
+        >
+          Open the course in Skool →
+        </a>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <div className="w-8 h-8 border-2 border-cta/30 border-t-cta rounded-full animate-spin" />
         </div>
-      ) : lessons.length === 0 ? (
-        <div className="card p-10 text-center">
-          <p className="text-fg-3 mb-4">Lessons are coming soon.</p>
-          <a
-            href="https://www.skool.com/mindfit"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block bg-cta text-fg-inverse font-semibold px-6 py-3 rounded-xl text-sm"
-          >
-            Visit the Locker Room →
-          </a>
-        </div>
-      ) : (
+      ) : lessons.length === 0 ? null : (
         <div className="space-y-8">
           {Object.entries(modules).map(([moduleName, moduleLessons]) => (
             <section key={moduleName}>

@@ -35,7 +35,10 @@ export default function CoachManager() {
 
   if (loading) return <Skeleton />
 
-  const nonAdmins = members.filter(m => m.role !== 'admin')
+  // Coaches first so a newly promoted coach never gets lost in the list.
+  const nonAdmins = members
+    .filter(m => m.role === 'coach' || m.role === 'member')
+    .sort((a, b) => Number(b.role === 'coach') - Number(a.role === 'coach'))
 
   if (nonAdmins.length === 0) {
     return <p className="text-sm text-fg-4">No members to manage.</p>

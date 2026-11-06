@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { calcActivityStreak } from '@/lib/streaks'
 import { calcMPI } from '@/lib/mpi'
+import { shiftDate } from '@/lib/nutrition'
 
 export interface OverviewStats { streak: number; latestMpi: number | null; baselineMpi: number | null }
 
@@ -31,8 +32,10 @@ export async function loadOverview(admin: SupabaseClient, userId: string): Promi
     admin.from('weekly_assessments').select('*').eq('user_id', userId).order('week_date', { ascending: false }),
   ])
 
+  // Sleep is logged for the night before, so it counts on the wake-up day.
+  const sleepWakeDays = sleep.map(d => shiftDate(d, 1))
   const streak = calcActivityStreak([
-    journal, flow, food, sleep, workouts, recovery, visualization, meditation, affirmations, goals, weighIns,
+    journal, flow, food, sleepWakeDays, workouts, recovery, visualization, meditation, affirmations, goals, weighIns,
     assessments.data?.filter(a => a.week_date >= sinceDate).map(a => a.week_date),
   ])
 

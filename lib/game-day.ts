@@ -80,8 +80,7 @@ export function gameDayWindows(gameTime: string | null | undefined, bodyWeightLb
   const when = (key: WindowKey, fallback: string) => {
     if (start === null) return fallback
     const [a, b] = WINDOW_OFFSETS[key]
-    if (key === 'during') return `${formatClock(start + a)} start`
-    if (key === 'after') return `by ${formatClock(start + 120 + b)}`
+    if (key === 'after') return `${formatClock(start + 120 + a)}–${formatClock(start + 120 + b)}`
     return `${formatClock(start + a)}–${formatClock(start + b)}`
   }
   return [

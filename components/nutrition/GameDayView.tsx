@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { currentWindow, daysUntil, gameDayGuide, gameDayPhase, gameDayWindows, type WindowKey } from '@/lib/game-day'
+import { currentWindow, daysUntil, formatClock, gameDayGuide, gameDayPhase, gameDayWindows, parseTime } from '@/lib/game-day'
 import { localDateISO } from '@/lib/nutrition'
 
 interface Props {
@@ -8,12 +8,25 @@ interface Props {
   notify: (msg: string) => void
 }
 
+interface Step {
+  key: string
+  title: string
+  when: string
+  eat: string
+  drink: string
+  details: { heading?: string; items: string[] }[]
+}
+
+const prettyDate = (iso: string) =>
+  new Date(`${iso}T12:00:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+
 export default function GameDayView({ bodyWeightLb, notify }: Props) {
   const [loaded, setLoaded] = useState(false)
   const [gameDate, setGameDate] = useState('')
   const [gameTime, setGameTime] = useState('')
   const [saving, setSaving] = useState(false)
-  const [showNightBefore, setShowNightBefore] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [openKey, setOpenKey] = useState<string | null>(null)
   const [now, setNow] = useState(() => new Date())
 
   useEffect(() => {
@@ -33,94 +46,119 @@ export default function GameDayView({ bodyWeightLb, notify }: Props) {
       body: JSON.stringify({ next_competition_at: gameDate || null, next_competition_time: gameTime || null }),
     })
     setSaving(false)
+    if (res.ok) setEditing(false)
     notify(res.ok ? 'Game saved' : 'Could not save')
   }
 
   const today = localDateISO(now)
   const phase = gameDayPhase(gameDate || null, today)
   const days = daysUntil(gameDate || null, today)
-  const windows = gameDayWindows(gameTime || null, bodyWeightLb)
-  const active: WindowKey | null = phase === 'game_day' ? currentWindow(gameTime || null, now.getHours() * 60 + now.getMinutes()) : null
-  const nightBefore = gameDayGuide('night_before', bodyWeightLb)
-  const nightOpen = phase === 'night_before' || showNightBefore
+  const upcoming = !!gameDate && days !== null && days >= 0
+  const start = parseTime(gameTime || null)
 
-  let headline = 'Set your next game to see a fueling plan with exact times.'
-  if (gameDate) {
-    if (phase === 'game_day') headline = gameTime ? `Game day · starts ${windows[2].when.replace(' start', '')}` : 'Game day'
-    else if (phase === 'night_before') headline = 'Tomorrow is game day. Fuel tonight.'
-    else if (days !== null && days < 0) headline = 'Your last game has passed. Set the next one.'
-    else headline = `Next game in ${days} day${days === 1 ? '' : 's'}`
+  const night = gameDayGuide('night_before', bodyWeightLb)
+  const steps: Step[] = [
+    {
+      key: 'night',
+      title: 'Night before',
+      when: 'Dinner + evening',
+      eat: night.blocks[0].items[0],
+      drink: night.blocks[1].items[0],
+      details: night.blocks.map(b => ({ heading: b.heading, items: b.items })),
+    },
+    ...gameDayWindows(gameTime || null, bodyWeightLb).map(w => ({
+      key: w.key, title: w.title, when: w.when, eat: w.eat, drink: w.drink, details: [{ items: [w.tip] }],
+    })),
+  ]
+
+  let activeIdx = -1
+  if (phase === 'night_before') activeIdx = 0
+  else if (phase === 'game_day') {
+    const win = currentWindow(gameTime || null, now.getHours() * 60 + now.getMinutes())
+    activeIdx = win ? steps.findIndex(s => s.key === win) : 1
   }
+
+  let headline = 'Set your next game to get a fueling plan with exact times.'
+  if (upcoming) {
+    if (phase === 'game_day') headline = start !== null ? `Game day · starts ${formatClock(start)}` : 'Game day'
+    else if (phase === 'night_before') headline = 'Tomorrow is game day. Fuel tonight.'
+    else headline = `Next game in ${days} day${days === 1 ? '' : 's'}`
+  } else if (gameDate) headline = 'Your last game has passed. Set the next one.'
+
+  const showForm = loaded && (editing || !upcoming)
 
   return (
     <div className="space-y-4">
       <div className="card p-4 space-y-3">
-        <div>
-          <p className="font-semibold text-fg-1 text-sm">{headline}</p>
-          <p className="text-xs text-fg-4">The time of your game sets when to eat. Without it, you get relative windows.</p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2 items-end">
-          <div>
-            <label htmlFor="gameday-date" className="block text-xs uppercase tracking-wide text-fg-4 mb-1">Game date</label>
-            <input id="gameday-date" type="date" value={gameDate} onChange={e => setGameDate(e.target.value)} className="input-field" disabled={!loaded} />
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="font-semibold text-fg-1 text-sm">{headline}</p>
+            {upcoming && !showForm && (
+              <p className="text-xs text-fg-3">{prettyDate(gameDate)}{start !== null ? ` · ${formatClock(start)}` : ' · add a start time for exact windows'}</p>
+            )}
           </div>
-          <div>
-            <label htmlFor="gameday-time" className="block text-xs uppercase tracking-wide text-fg-4 mb-1">Start time</label>
-            <input id="gameday-time" type="time" value={gameTime} onChange={e => setGameTime(e.target.value)} className="input-field" disabled={!loaded} />
-          </div>
-          <button type="button" onClick={save} disabled={!loaded || saving} className="btn-primary">{saving ? 'Saving…' : 'Save'}</button>
+          {upcoming && !showForm && (
+            <button type="button" onClick={() => setEditing(true)} className="btn-ghost text-xs px-2 shrink-0">Edit</button>
+          )}
         </div>
+        {showForm && (
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2 items-end">
+            <div>
+              <label htmlFor="gameday-date" className="block text-xs uppercase tracking-wide text-fg-4 mb-1">Game date</label>
+              <input id="gameday-date" type="date" value={gameDate} onChange={e => setGameDate(e.target.value)} className="input-field" />
+            </div>
+            <div>
+              <label htmlFor="gameday-time" className="block text-xs uppercase tracking-wide text-fg-4 mb-1">Start time</label>
+              <input id="gameday-time" type="time" value={gameTime} onChange={e => setGameTime(e.target.value)} className="input-field" />
+            </div>
+            <button type="button" onClick={save} disabled={saving} className="btn-primary">{saving ? 'Saving…' : 'Save'}</button>
+          </div>
+        )}
       </div>
 
       <section aria-labelledby="gameday-plan-heading">
-        <h3 id="gameday-plan-heading" className="text-sm font-semibold text-fg-1 mb-3">Game-day plan</h3>
-        <ol className="relative space-y-3">
-          {windows.map(w => {
-            const isActive = active === w.key
+        <h3 id="gameday-plan-heading" className="text-sm font-semibold text-fg-1 mb-3">Your fueling timeline</h3>
+        <ol className="space-y-2">
+          {steps.map((s, i) => {
+            const isActive = i === activeIdx
+            const isPast = activeIdx > 0 && i < activeIdx
+            const open = openKey === s.key
             return (
               <li
-                key={w.key}
+                key={s.key}
                 aria-current={isActive ? 'step' : undefined}
-                className={`card p-4 ${isActive ? 'border-cta/50 shadow-[0_0_0_1px_rgba(196,180,0,0.25)]' : ''}`}
+                className={`card p-4 ${isActive ? 'border-cta/50' : ''} ${isPast ? 'opacity-50' : ''}`}
               >
                 <div className="flex items-baseline justify-between gap-3 mb-2">
-                  <p className={`font-semibold text-sm ${isActive ? 'text-cta' : 'text-fg-1'}`}>{w.title}</p>
-                  <p className="text-xs text-fg-3 tabular-nums shrink-0">{w.when}{isActive ? ' · now' : ''}</p>
+                  <p className={`font-semibold text-sm ${isActive ? 'text-cta' : 'text-fg-1'}`}>
+                    <span className="text-fg-4 tabular-nums mr-2">{i + 1}</span>{s.title}
+                  </p>
+                  <p className="text-xs text-fg-3 tabular-nums shrink-0">{isActive ? 'Now · ' : ''}{s.when}</p>
                 </div>
                 <dl className="space-y-1.5 text-sm">
-                  <div className="flex gap-2"><dt className="w-12 shrink-0 text-xs uppercase tracking-wide text-fg-4 pt-0.5">Eat</dt><dd className="text-fg-2">{w.eat}</dd></div>
-                  <div className="flex gap-2"><dt className="w-12 shrink-0 text-xs uppercase tracking-wide text-fg-4 pt-0.5">Drink</dt><dd className="text-fg-2">{w.drink}</dd></div>
-                  <div className="flex gap-2"><dt className="w-12 shrink-0 text-xs uppercase tracking-wide text-fg-4 pt-0.5">Tip</dt><dd className="text-fg-3">{w.tip}</dd></div>
+                  <div className="flex gap-2"><dt className="w-12 shrink-0 text-xs uppercase tracking-wide text-fg-4 pt-0.5">Eat</dt><dd className="text-fg-2 min-w-0">{s.eat}</dd></div>
+                  <div className="flex gap-2"><dt className="w-12 shrink-0 text-xs uppercase tracking-wide text-fg-4 pt-0.5">Drink</dt><dd className="text-fg-2 min-w-0">{s.drink}</dd></div>
                 </dl>
+                <button type="button" onClick={() => setOpenKey(open ? null : s.key)} aria-expanded={open}
+                  className="mt-2 text-xs text-fg-4 hover:text-fg-2 min-h-[32px]">
+                  {open ? 'Hide tips ▲' : 'Tips ▼'}
+                </button>
+                {open && (
+                  <div className="space-y-2 pt-2 border-t border-edge-muted">
+                    {s.details.map((d, j) => (
+                      <div key={j}>
+                        {d.heading && <p className="text-xs uppercase tracking-wider text-fg-4 mb-1">{d.heading}</p>}
+                        <ul className="space-y-1">
+                          {d.items.map((it, k) => <li key={k} className="text-sm text-fg-3">{it}</li>)}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </li>
             )
           })}
         </ol>
-      </section>
-
-      <section className="card p-4">
-        <button
-          type="button"
-          onClick={() => setShowNightBefore(o => !o)}
-          aria-expanded={nightOpen}
-          className="w-full flex items-center justify-between text-left min-h-[44px]"
-        >
-          <span className={`font-semibold text-sm ${phase === 'night_before' ? 'text-cta' : 'text-fg-1'}`}>{nightBefore.title}</span>
-          <span className="text-xs text-fg-4">{nightOpen ? 'Hide' : 'Show'}</span>
-        </button>
-        {nightOpen && (
-          <div className="space-y-3 pt-3 mt-2 border-t border-edge-muted">
-            <p className="text-xs text-fg-3">{nightBefore.summary}</p>
-            {nightBefore.blocks.map(b => (
-              <div key={b.heading}>
-                <p className="text-xs uppercase tracking-wider text-fg-4 mb-1">{b.heading}</p>
-                <ul className="space-y-1">
-                  {b.items.map((it, i) => <li key={i} className="text-sm text-fg-2 pl-3 relative before:content-[''] before:absolute before:left-0 before:top-[0.55em] before:w-1.5 before:h-px before:bg-cta">{it}</li>)}
-                </ul>
-              </div>
-            ))}
-          </div>
-        )}
       </section>
     </div>
   )

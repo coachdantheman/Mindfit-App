@@ -40,7 +40,10 @@ export default function AddFoodSheet({ meal, foods, recent, favorites, savedMeal
   const [tab, setTab] = useState<SheetTab>('search')
   const [busy, setBusy] = useState(false)
   const [scanMiss, setScanMiss] = useState(false)
+  const [showRecentMeals, setShowRecentMeals] = useState(false)
   const favoriteIds = new Set(favorites.map(f => f.id))
+  const starredMeals = savedMeals.filter(m => !m.auto_saved)
+  const recentMeals = savedMeals.filter(m => m.auto_saved)
 
   const dialogRef = useFocusTrap<HTMLDivElement>(onClose)
 
@@ -89,37 +92,32 @@ export default function AddFoodSheet({ meal, foods, recent, favorites, savedMeal
             />
           )}
           {tab === 'recent' && (
-            recent.length === 0
+            recent.length === 0 && recentMeals.length === 0
               ? <p className="text-sm text-fg-4 text-center py-8">Foods you log show up here for one-tap re-adding.</p>
-              : <QuickList
-                  items={recent.map(r => ({ key: r.food_name, name: r.food_name, sub: `${r.servings} × ${r.serving_size ?? 'serving'}`, kcal: scaleFood(r, r.servings).calories,
-                    item: { food_name: r.food_name, food_id: r.food_id, serving_size: r.serving_size, servings: r.servings, ...scaleFood(r, r.servings) } }))}
-                  busy={busy} onPick={i => add([i])} />
+              : <div className="space-y-3">
+                  {recentMeals.length > 0 && (
+                    <div className="border border-edge-muted rounded-xl">
+                      <button type="button" onClick={() => setShowRecentMeals(v => !v)} aria-expanded={showRecentMeals}
+                        className="w-full flex items-center justify-between px-3 py-2.5 text-left">
+                        <span className="text-sm text-fg-2">Recent meals <span className="text-fg-4">({recentMeals.length})</span></span>
+                        <span className="text-fg-4 text-xs">{showRecentMeals ? '▲' : '▼'}</span>
+                      </button>
+                      {showRecentMeals && <div className="px-3"><SavedMealList meals={recentMeals} busy={busy} onPick={addMeal} onDelete={onDeleteSavedMeal} /></div>}
+                    </div>
+                  )}
+                  <QuickList
+                    items={recent.map(r => ({ key: r.food_name, name: r.food_name, sub: `${r.servings} × ${r.serving_size ?? 'serving'}`, kcal: scaleFood(r, r.servings).calories,
+                      item: { food_name: r.food_name, food_id: r.food_id, serving_size: r.serving_size, servings: r.servings, ...scaleFood(r, r.servings) } }))}
+                    busy={busy} onPick={i => add([i])} />
+                </div>
           )}
           {tab === 'favorites' && (
             <div className="space-y-4">
               <div>
                 <p className="text-xs uppercase tracking-wider text-fg-4 mb-1">Meals</p>
-                {savedMeals.length === 0
-                  ? <p className="text-sm text-fg-4 py-3">Save a logged meal to re-add it in one tap.</p>
-                  : <div className="divide-y divide-edge-muted">
-                      {savedMeals.map(m => {
-                        const kcal = m.items.reduce((s, i) => s + Number(i.calories), 0)
-                        return (
-                          <div key={m.id} className="flex items-center gap-2">
-                            <button type="button" disabled={busy} onClick={() => addMeal(m)} className="flex-1 flex items-center justify-between py-2.5 text-left disabled:opacity-50 min-w-0">
-                              <div className="min-w-0">
-                                <p className="text-sm text-fg-1 truncate">{m.name}</p>
-                                <p className="text-xs text-fg-4 truncate">{m.items.length} item{m.items.length === 1 ? '' : 's'} · {m.items.map(i => i.food_name).join(', ')}</p>
-                              </div>
-                              <span className="text-sm font-semibold text-fg-2 tabular-nums ml-3 shrink-0">+ {kcal}</span>
-                            </button>
-                            <button type="button" onClick={() => { if (confirm(`Remove "${m.name}" from saved meals?`)) onDeleteSavedMeal(m) }}
-                              aria-label={`Remove ${m.name}`} className="btn-ghost px-2 text-fg-4 shrink-0">✕</button>
-                          </div>
-                        )
-                      })}
-                    </div>}
+                {starredMeals.length === 0
+                  ? <p className="text-sm text-fg-4 py-3">Tap &ldquo;Save to Favorites&rdquo; on a logged meal to re-add it in one tap.</p>
+                  : <SavedMealList meals={starredMeals} busy={busy} onPick={addMeal} onDelete={onDeleteSavedMeal} />}
               </div>
               <div>
                 <p className="text-xs uppercase tracking-wider text-fg-4 mb-1">Foods</p>
@@ -135,6 +133,29 @@ export default function AddFoodSheet({ meal, foods, recent, favorites, savedMeal
           {tab === 'describe' && <DescribeMeal meal={meal} busy={busy} onAddMany={items => add(items, true)} />}
         </div>
       </div>
+    </div>
+  )
+}
+
+function SavedMealList({ meals, busy, onPick, onDelete }: { meals: SavedMeal[]; busy: boolean; onPick: (m: SavedMeal) => void; onDelete: (m: SavedMeal) => void }) {
+  return (
+    <div className="divide-y divide-edge-muted">
+      {meals.map(m => {
+        const kcal = m.items.reduce((s, i) => s + Number(i.calories), 0)
+        return (
+          <div key={m.id} className="flex items-center gap-2">
+            <button type="button" disabled={busy} onClick={() => onPick(m)} className="flex-1 flex items-center justify-between py-2.5 text-left disabled:opacity-50 min-w-0">
+              <div className="min-w-0">
+                <p className="text-sm text-fg-1 truncate">{m.name}</p>
+                <p className="text-xs text-fg-4 truncate">{m.items.length} item{m.items.length === 1 ? '' : 's'} · {m.items.map(i => i.food_name).join(', ')}</p>
+              </div>
+              <span className="text-sm font-semibold text-fg-2 tabular-nums ml-3 shrink-0">+ {kcal}</span>
+            </button>
+            <button type="button" onClick={() => { if (confirm(`Remove "${m.name}"?`)) onDelete(m) }}
+              aria-label={`Remove ${m.name}`} className="btn-ghost px-2 text-fg-4 shrink-0">✕</button>
+          </div>
+        )
+      })}
     </div>
   )
 }

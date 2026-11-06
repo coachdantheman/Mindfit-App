@@ -14,7 +14,15 @@ export async function GET() {
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+
+  const ids = (data ?? []).map(c => c.id)
+  const { data: links } = ids.length
+    ? await admin.from('coach_athletes').select('coach_id').in('coach_id', ids)
+    : { data: [] as { coach_id: string }[] }
+  const counts = new Map<string, number>()
+  for (const l of links ?? []) counts.set(l.coach_id, (counts.get(l.coach_id) ?? 0) + 1)
+
+  return NextResponse.json((data ?? []).map(c => ({ ...c, athlete_count: counts.get(c.id) ?? 0 })))
 }
 
 export async function POST(req: Request) {
