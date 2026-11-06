@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { resolveAssignees } from '@/lib/teams'
 
 export async function GET() {
   const auth = await verifyApiUser('coach', 'admin')
@@ -17,40 +18,30 @@ export async function GET() {
   return NextResponse.json(data)
 }
 
+// Assign one workout to whole teams and/or single athletes at once.
 export async function POST(req: Request) {
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json()
-  if (!body.athlete_id || !body.name?.trim()) {
-    return NextResponse.json({ error: 'Athlete and workout name are required' }, { status: 400 })
-  }
+  const body = await req.json().catch(() => ({}))
+  if (!body.name?.trim()) return NextResponse.json({ error: 'Workout name is required' }, { status: 400 })
 
-  // Verify coach-athlete relationship
   const admin = createAdminClient()
-  const { data: link } = await admin
-    .from('coach_athletes')
-    .select('id')
-    .eq('coach_id', auth.userId)
-    .eq('athlete_id', body.athlete_id)
-    .single()
-
-  if (!link) {
-    return NextResponse.json({ error: 'Athlete not linked to your account' }, { status: 403 })
-  }
+  const picked = Array.isArray(body.athlete_ids) ? body.athlete_ids : typeof body.athlete_id === 'string' ? [body.athlete_id] : []
+  const ids = await resolveAssignees(admin, auth, body.team_ids, picked)
+  if (ids.length === 0) return NextResponse.json({ error: 'Pick a team or at least one athlete.' }, { status: 400 })
 
   const { data, error } = await admin
     .from('coach_workouts')
-    .insert({
+    .insert(ids.map(athlete_id => ({
       coach_id: auth.userId,
-      athlete_id: body.athlete_id,
+      athlete_id,
       name: body.name.trim(),
       description: body.description || null,
       exercises: body.exercises || [],
       assigned_date: body.assigned_date || null,
-    })
-    .select()
-    .single()
+    })))
+    .select('*, athlete:profiles!coach_workouts_athlete_id_fkey(full_name, email)')
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data, { status: 201 })

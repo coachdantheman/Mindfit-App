@@ -1,9 +1,10 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { MemberWithCount, CoachWorkout } from '@/types'
+import { CoachWorkout } from '@/types'
 import Skeleton from '@/components/shared/Skeleton'
 import { SortableList, SortableRow } from '@/components/exercise/Sortable'
 import { nextKey } from '@/lib/workout-draft'
+import AssignPicker, { type Assignees } from '@/components/coach/AssignPicker'
 
 interface ExerciseRow {
   id: string
@@ -14,12 +15,12 @@ interface ExerciseRow {
 }
 
 export default function CreateWorkout() {
-  const [athletes, setAthletes] = useState<MemberWithCount[]>([])
   const [assigned, setAssigned] = useState<(CoachWorkout & { athlete?: { full_name: string | null; email: string } })[]>([])
   const [loading, setLoading] = useState(true)
 
   // Form state
-  const [athleteId, setAthleteId] = useState('')
+  const [assignees, setAssignees] = useState<Assignees>({ teamIds: [], athleteIds: [] })
+  const [error, setError] = useState('')
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [assignedDate, setAssignedDate] = useState('')
@@ -30,11 +31,7 @@ export default function CreateWorkout() {
   const [success, setSuccess] = useState(false)
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/coach/athletes').then(r => r.json()),
-      fetch('/api/coach/workouts').then(r => r.json()),
-    ]).then(([aths, wks]) => {
-      if (Array.isArray(aths)) setAthletes(aths)
+    fetch('/api/coach/workouts').then(r => r.json()).then(wks => {
       if (Array.isArray(wks)) setAssigned(wks)
       setLoading(false)
     })
@@ -54,11 +51,14 @@ export default function CreateWorkout() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!athleteId || !name.trim() || exercises.every(ex => !ex.name.trim())) return
+    const nobody = assignees.teamIds.length === 0 && assignees.athleteIds.length === 0
+    if (nobody || !name.trim() || exercises.every(ex => !ex.name.trim())) return
     setSaving(true)
+    setError('')
 
     const payload = {
-      athlete_id: athleteId,
+      team_ids: assignees.teamIds,
+      athlete_ids: assignees.athleteIds,
       name: name.trim(),
       description: description.trim() || null,
       assigned_date: assignedDate || null,
@@ -78,9 +78,10 @@ export default function CreateWorkout() {
       body: JSON.stringify(payload),
     })
 
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) setError(data.error || 'Could not assign the workout.')
     if (res.ok) {
-      const data = await res.json()
-      setAssigned(prev => [data, ...prev])
+      setAssigned(prev => [...(Array.isArray(data) ? data : [data]), ...prev])
       setName('')
       setDescription('')
       setAssignedDate('')
@@ -108,20 +109,9 @@ export default function CreateWorkout() {
       <form onSubmit={submit} className="space-y-4">
         <h3 className="font-semibold text-fg-1">Create & Assign Workout</h3>
 
+        <AssignPicker value={assignees} onChange={setAssignees} />
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label htmlFor="createworkout-athlete" className="text-xs text-fg-4 block mb-1">Athlete</label>
-            <select id="createworkout-athlete"
-              value={athleteId}
-              onChange={e => setAthleteId(e.target.value)}
-              className="w-full bg-surface-2 border border-edge rounded-lg px-3 py-2 text-sm text-fg-1 focus:ring-2 focus:ring-cta/50"
-            >
-              <option value="">Select athlete...</option>
-              {athletes.map(a => (
-                <option key={a.id} value={a.id}>{a.full_name || a.email}</option>
-              ))}
-            </select>
-          </div>
           <div>
             <label htmlFor="createworkout-assigned-date-optional" className="text-xs text-fg-4 block mb-1">Assigned Date (optional)</label>
             <input id="createworkout-assigned-date-optional"
@@ -201,9 +191,10 @@ export default function CreateWorkout() {
           </button>
         </div>
 
+        {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
         <button
           type="submit"
-          disabled={saving || !athleteId || !name.trim()}
+          disabled={saving || (assignees.teamIds.length === 0 && assignees.athleteIds.length === 0) || !name.trim()}
           className="bg-cta hover:bg-brand-600 text-fg-inverse font-semibold px-4 py-2 rounded-xl text-sm transition-colors disabled:opacity-50"
         >
           {saving ? 'Assigning...' : success ? 'Assigned!' : 'Assign Workout'}

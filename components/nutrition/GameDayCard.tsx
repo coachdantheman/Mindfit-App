@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { currentWindow, daysUntil, gameDayPhase, gameDayWindows } from '@/lib/game-day'
+import { loadNextGame } from '@/lib/team-schedule'
 
 interface Props {
   today: string
@@ -12,11 +13,8 @@ export default function GameDayCard({ today, onOpenGameDay }: Props) {
   const [profile, setProfile] = useState<{ date: string | null; time: string | null } | undefined>(undefined)
 
   useEffect(() => {
-    fetch('/api/profile').then(r => r.ok ? r.json() : null).then(p => setProfile({
-      date: p?.next_competition_at?.slice(0, 10) ?? null,
-      time: p?.next_competition_time?.slice(0, 5) ?? null,
-    }))
-  }, [])
+    loadNextGame(today).then(g => setProfile({ date: g?.date ?? null, time: g?.time ?? null }))
+  }, [today])
 
   if (profile === undefined) return null
 

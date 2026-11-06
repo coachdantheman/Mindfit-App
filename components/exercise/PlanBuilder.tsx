@@ -19,6 +19,8 @@ interface Props {
   onSaved: () => void
   onCancel: () => void
   notify: (msg: string, kind?: 'success' | 'error') => void
+  // 'coach' saves to the coach's plan library (no start date; set when assigning).
+  target?: 'self' | 'coach'
 }
 
 function templatesFromBlocks(blocks: PlanBlockInput[]): DayTemplate[][] {
@@ -39,7 +41,7 @@ function fitBlocks(blocks: PlanBlockInput[], duration: number): PlanBlockInput[]
   return kept.map((b, i) => (i === kept.length - 1 ? { ...b, week_end: duration } : { ...b, week_end: Math.min(b.week_end, duration) }))
 }
 
-const defaultSetup = (p: TrainingProgramRow | null): PlanSetup => ({
+const defaultSetup = (p: TrainingProgramRow | null, coach = false): PlanSetup => ({
   title: p?.title ?? '',
   description: p?.description ?? '',
   sport: p?.sport ?? '',
@@ -47,13 +49,14 @@ const defaultSetup = (p: TrainingProgramRow | null): PlanSetup => ({
   experience: 'intermediate',
   daysPerWeek: 4,
   durationWeeks: p?.duration_weeks ?? 8,
-  startDate: p?.start_date ?? toLocalDateString(new Date()),
+  startDate: coach ? '' : p?.start_date ?? toLocalDateString(new Date()),
 })
 
-export default function PlanBuilder({ program, library, onCreateExercise, onSaved, onCancel, notify }: Props) {
+export default function PlanBuilder({ program, library, onCreateExercise, onSaved, onCancel, notify, target = 'self' }: Props) {
+  const coach = target === 'coach'
   const [step, setStep] = useState<Step>('choose')
   const [mode, setMode] = useState<BuilderMode>('generate')
-  const [setup, setSetup] = useState<PlanSetup>(() => defaultSetup(null))
+  const [setup, setSetup] = useState<PlanSetup>(() => defaultSetup(null, coach))
   const [blocks, setBlocks] = useState<PlanBlockInput[]>([])
   const [templates, setTemplates] = useState<DayTemplate[][]>([])
   const [error, setError] = useState('')
@@ -63,14 +66,14 @@ export default function PlanBuilder({ program, library, onCreateExercise, onSave
   const choose = (m: BuilderMode) => {
     setMode(m)
     setError('')
-    setSetup(m === 'edit' ? defaultSetup(program) : defaultSetup(null))
+    setSetup(m === 'edit' ? defaultSetup(program, coach) : defaultSetup(null, coach))
     setStep('setup')
   }
 
   const continueFromSetup = async () => {
     setError('')
     const duration = setup.durationWeeks
-    if (!setup.startDate) { setError('Pick a start date.'); return }
+    if (!coach && !setup.startDate) { setError('Pick a start date.'); return }
     if ((mode === 'generate' || mode === 'ai') && (!setup.sport.trim() || setup.goals.length === 0)) {
       setError('Pick a sport and at least one goal.')
       return
@@ -151,8 +154,11 @@ export default function PlanBuilder({ program, library, onCreateExercise, onSave
       source: mode === 'ai' ? 'ai' : 'self',
       blocks: finalBlocks,
     }
+    const url = coach ? '/api/coach/programs' : '/api/exercise/programs'
     try {
-      const res = mode === 'edit' && program
+      const res = coach
+        ? await fetch(url, { method: mode === 'edit' && program ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(mode === 'edit' && program ? { id: program.id, ...body } : body) })
+        : mode === 'edit' && program
         ? await fetch('/api/exercise/programs', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: program.id, ...body }) })
         : await fetch('/api/exercise/programs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       if (!res.ok) {
@@ -179,10 +185,10 @@ export default function PlanBuilder({ program, library, onCreateExercise, onSave
 
   if (step === 'choose') {
     const options: { m: BuilderMode; title: string; sub: string; show: boolean }[] = [
-      { m: 'generate', title: 'Generate', sub: 'Instant periodized plan from your sport and goals', show: true },
+      { m: 'generate', title: 'Generate', sub: `Instant periodized plan from ${coach ? 'the' : 'your'} sport and goals`, show: true },
       { m: 'ai', title: 'Generate with AI', sub: 'More tailored, takes ~20 seconds', show: true },
       { m: 'scratch', title: 'Build from scratch', sub: 'Pick your own days and exercises', show: true },
-      { m: 'edit', title: 'Edit current plan', sub: program ? `Change ${program.title}` : '', show: !!program },
+      { m: 'edit', title: coach ? 'Edit this plan' : 'Edit current plan', sub: program ? `Change ${program.title}` : '', show: !!program },
     ]
     return (
       <div className="space-y-3">
@@ -204,7 +210,7 @@ export default function PlanBuilder({ program, library, onCreateExercise, onSave
     return (
       <div className="space-y-4">
         {header(mode === 'edit' ? 'Edit plan' : 'Set up', () => setStep('choose'))}
-        <PlanSetupForm mode={mode} setup={setup} onChange={setSetup} error={error} />
+        <PlanSetupForm mode={mode} setup={setup} onChange={setSetup} error={error} hideStartDate={coach} />
         {busy && mode === 'ai' && (
           <div className="card p-4 space-y-2">
             <p className="text-sm font-medium text-fg-2">Building your plan…</p>

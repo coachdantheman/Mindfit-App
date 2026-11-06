@@ -8,6 +8,10 @@ import PlanBuilder from './PlanBuilder'
 import Skeleton from '@/components/shared/Skeleton'
 import { currentWeek, DAY_NAMES, isoDayOfWeek, nextWorkout, parseLocalDate, todaysWorkout, workoutsForWeek } from '@/lib/programs'
 import { DumbbellIcon } from '@/components/shared/icons'
+import { loadMySchedule, type MyEvent } from '@/lib/team-schedule'
+import { trainingDayKind } from '@/lib/schedule'
+import { formatClock, parseTime } from '@/lib/game-day'
+import { toLocalDateString } from '@/lib/programs'
 
 interface Props {
   library: ExerciseLibraryRow[]
@@ -23,6 +27,10 @@ export default function MyPlan({ library, onStart, onCreateExercise, notify, ref
   const [loading, setLoading] = useState(true)
   const [building, setBuilding] = useState(false)
   const [showAll, setShowAll] = useState(false)
+  const [schedule, setSchedule] = useState<MyEvent[]>([])
+
+  useEffect(() => { loadMySchedule().then(setSchedule) }, [])
+  const gameDates = schedule.filter(e => e.kind === 'game').map(e => e.event_date)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -63,19 +71,24 @@ export default function MyPlan({ library, onStart, onCreateExercise, notify, ref
 
   if (!program && coachPrograms.length === 0) {
     return (
+      <div className="space-y-4">
+      <TeamScheduleCard events={schedule} />
       <div className="text-center py-16">
         <DumbbellIcon className="w-10 h-10 mx-auto mb-3 text-fg-4" />
         <p className="font-medium text-fg-2">No plan yet</p>
         <p className="text-sm text-fg-4 mt-1 mb-4">Generate one from your sport and goals, or build your own week.</p>
         <button type="button" onClick={() => setBuilding(true)} className="btn-primary px-6">Create a plan</button>
       </div>
+      </div>
     )
   }
 
   return (
     <div className="space-y-4">
+      <TeamScheduleCard events={schedule} />
       {program && (
         <ThisWeekCard
+          gameDates={gameDates}
           program={program}
           title={program.title}
           subtitle={[program.sport, `${program.duration_weeks} weeks`].filter(Boolean).join(' · ')}
@@ -92,6 +105,7 @@ export default function MyPlan({ library, onStart, onCreateExercise, notify, ref
       {coachPrograms.map(cp => (
         <ThisWeekCard
           key={cp.id}
+          gameDates={gameDates}
           program={cp}
           title={cp.label}
           subtitle={`From ${cp.coach_name}`}
@@ -125,8 +139,9 @@ export default function MyPlan({ library, onStart, onCreateExercise, notify, ref
   )
 }
 
-function ThisWeekCard({ program, title, subtitle, accent, onStart, actions }: {
+function ThisWeekCard({ program, title, subtitle, accent, onStart, actions, gameDates }: {
   program: TrainingProgramRow
+  gameDates: string[]
   title: string
   subtitle?: string
   accent?: boolean
@@ -140,6 +155,7 @@ function ThisWeekCard({ program, title, subtitle, accent, onStart, actions }: {
   const weekWorkouts = workoutsForWeek(program, week)
   const dow = isoDayOfWeek(today)
   const start = program.start_date ? parseLocalDate(program.start_date) : null
+  const dayKind = trainingDayKind(toLocalDateString(today), gameDates)
 
   return (
     <div className={`card p-4 space-y-3 ${accent ? 'border-cta/30' : ''}`}>
@@ -158,7 +174,20 @@ function ThisWeekCard({ program, title, subtitle, accent, onStart, actions }: {
         <p className="text-sm text-fg-4">No workouts scheduled this week.</p>
       )}
 
-      {todays ? (
+      {todays && dayKind ? (
+        <div className="rounded-xl bg-surface-2/60 border border-edge p-3 space-y-2">
+          <p className="text-xs uppercase tracking-wider text-cta font-semibold">{dayKind === 'game' ? 'Game day' : 'Game tomorrow'}</p>
+          <p className="text-sm text-fg-2">
+            {dayKind === 'game'
+              ? 'Skip today’s lift. A 10-minute warm-up and activation is plenty — the game is the workout.'
+              : 'Keep today light: mobility and a few fast, crisp reps. Nothing heavy, so your legs are fresh tomorrow.'}
+          </p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs text-fg-4 truncate">Planned: {todays.name}</p>
+            <button type="button" onClick={() => onStart(todays)} className="btn-ghost text-xs shrink-0">Start anyway</button>
+          </div>
+        </div>
+      ) : todays ? (
         <div className="rounded-xl bg-cta/10 border border-cta/30 p-3 flex items-center justify-between gap-2">
           <div className="min-w-0">
             <p className="text-xs uppercase tracking-wider text-cta font-semibold">Today</p>
@@ -214,6 +243,48 @@ function CoachAllWeeks({ program, onStart }: { program: CoachProgramRow; onStart
         <div className="mt-2">
           <ProgramView program={program} currentWeek={currentWeek(program.start_date, program.duration_weeks).week} onStartWorkout={onStart} />
         </div>
+      )}
+    </div>
+  )
+}
+
+const eventDate = (iso: string) => new Date(`${iso}T12:00:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+const eventTime = (t: string | null) => { const m = parseTime(t); return m === null ? '' : ` · ${formatClock(m)}` }
+const eventTitle = (e: MyEvent) => e.kind === 'game'
+  ? `${e.home_away === 'away' ? '@ ' : e.home_away === 'home' ? 'vs ' : ''}${e.opponent ?? 'Game'}`
+  : 'Practice'
+
+// The athlete's team games and practices, next game first.
+function TeamScheduleCard({ events }: { events: MyEvent[] }) {
+  const [open, setOpen] = useState(false)
+  const today = toLocalDateString(new Date())
+  const upcoming = events.filter(e => e.event_date >= today)
+  if (upcoming.length === 0) return null
+  const game = upcoming.find(e => e.kind === 'game')
+  const rest = upcoming.slice(0, 20)
+  return (
+    <div className="card p-4">
+      <p className="text-xs uppercase tracking-wider text-fg-4 font-semibold">Team schedule</p>
+      {game ? (
+        <p className="text-sm text-fg-1 mt-1">
+          <span className="font-semibold">Next game: {eventTitle(game)}</span>
+          <span className="text-fg-3"> · {game.event_date === today ? 'Today' : eventDate(game.event_date)}{eventTime(game.start_time)}</span>
+        </p>
+      ) : (
+        <p className="text-sm text-fg-3 mt-1">No games on the schedule yet.</p>
+      )}
+      <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} className="mt-2 text-xs text-fg-4 hover:text-fg-2 min-h-[32px]">
+        {open ? 'Hide schedule ▲' : `Upcoming (${upcoming.length}) ▼`}
+      </button>
+      {open && (
+        <ul className="divide-y divide-edge-muted mt-1">
+          {rest.map(e => (
+            <li key={e.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+              <span className={`truncate ${e.kind === 'game' ? 'text-fg-1 font-medium' : 'text-fg-3'}`}>{eventTitle(e)}</span>
+              <span className="text-xs text-fg-4 shrink-0">{eventDate(e.event_date)}{eventTime(e.start_time)}</span>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   )

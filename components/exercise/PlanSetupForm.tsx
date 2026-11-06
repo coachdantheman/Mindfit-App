@@ -33,12 +33,13 @@ interface Props {
   setup: PlanSetup
   onChange: (next: PlanSetup) => void
   error?: string
+  hideStartDate?: boolean
 }
 
 const chip = (on: boolean) =>
   `px-3 min-h-[44px] rounded-full text-xs font-medium border transition-colors ${on ? 'bg-cta/20 text-cta border-cta/30' : 'bg-surface-2 text-fg-3 border-edge hover:border-fg-4'}`
 
-export default function PlanSetupForm({ mode, setup, onChange, error }: Props) {
+export default function PlanSetupForm({ mode, setup, onChange, error, hideStartDate }: Props) {
   const set = <K extends keyof PlanSetup>(k: K, v: PlanSetup[K]) => onChange({ ...setup, [k]: v })
   const needsSportGoals = mode === 'generate' || mode === 'ai'
   const showTitle = mode === 'scratch' || mode === 'edit'
@@ -127,11 +128,11 @@ export default function PlanSetupForm({ mode, setup, onChange, error }: Props) {
         </div>
       </div>
 
-      <div>
+      {!hideStartDate && <div>
         <label className="text-xs text-fg-4 block mb-1" htmlFor="ps-start">Start date</label>
         <input id="ps-start" type="date" value={setup.startDate} onChange={e => set('startDate', e.target.value)} className="input-field" />
         <p className="text-xs text-fg-4 mt-1">Week 1 is the Monday–Sunday week containing this date.</p>
-      </div>
+      </div>}
 
       {error && <p className="text-xs text-red-400">{error}</p>}
     </div>

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { currentWindow, daysUntil, formatClock, gameDayGuide, gameDayPhase, gameDayWindows, parseTime } from '@/lib/game-day'
 import { localDateISO } from '@/lib/nutrition'
+import { loadNextGame, type UpcomingGame } from '@/lib/team-schedule'
 
 interface Props {
   bodyWeightLb?: number | null
@@ -28,11 +29,13 @@ export default function GameDayView({ bodyWeightLb, notify }: Props) {
   const [editing, setEditing] = useState(false)
   const [openKey, setOpenKey] = useState<string | null>(null)
   const [now, setNow] = useState(() => new Date())
+  const [teamGame, setTeamGame] = useState<UpcomingGame | null>(null)
 
   useEffect(() => {
-    fetch('/api/profile').then(r => r.ok ? r.json() : null).then(p => {
-      setGameDate(p?.next_competition_at?.slice(0, 10) ?? '')
-      setGameTime(p?.next_competition_time?.slice(0, 5) ?? '')
+    loadNextGame(localDateISO(new Date())).then(g => {
+      setGameDate(g?.date ?? '')
+      setGameTime(g?.time ?? '')
+      setTeamGame(g?.fromSchedule ? g : null)
       setLoaded(true)
     })
     const id = setInterval(() => setNow(new Date()), 60_000)
@@ -46,7 +49,7 @@ export default function GameDayView({ bodyWeightLb, notify }: Props) {
       body: JSON.stringify({ next_competition_at: gameDate || null, next_competition_time: gameTime || null }),
     })
     setSaving(false)
-    if (res.ok) setEditing(false)
+    if (res.ok) { setEditing(false); setTeamGame(null) }
     notify(res.ok ? 'Game saved' : 'Could not save')
   }
 
@@ -94,7 +97,10 @@ export default function GameDayView({ bodyWeightLb, notify }: Props) {
           <div className="min-w-0">
             <p className="font-semibold text-fg-1 text-sm">{headline}</p>
             {upcoming && !showForm && (
-              <p className="text-xs text-fg-3">{prettyDate(gameDate)}{start !== null ? ` · ${formatClock(start)}` : ' · add a start time for exact windows'}</p>
+              <p className="text-xs text-fg-3">
+                {prettyDate(gameDate)}{start !== null ? ` · ${formatClock(start)}` : ' · add a start time for exact windows'}
+                {teamGame && <>{teamGame.opponent ? ` · vs ${teamGame.opponent}` : ''} · from the {teamGame.teamName} schedule</>}
+              </p>
             )}
           </div>
           {upcoming && !showForm && (

@@ -4,7 +4,8 @@ import { format, parseISO } from 'date-fns'
 import { MemberWithCount } from '@/types'
 import TeamsManager from '@/components/coach/TeamsManager'
 import CreateWorkout from '@/components/coach/CreateWorkout'
-import CreateProgram from '@/components/coach/CreateProgram'
+import CoachPrograms from '@/components/coach/CoachPrograms'
+import ScheduleManager from '@/components/coach/ScheduleManager'
 import Link from 'next/link'
 import Skeleton from '@/components/shared/Skeleton'
 import TabBar from '@/components/shared/TabBar'
@@ -143,7 +144,7 @@ function AthleteTable({ athletes, onChanged, notify }: { athletes: MemberWithCou
 export default function CoachPage() {
   const [athletes, setAthletes] = useState<MemberWithCount[]>([])
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<'athletes' | 'teams' | 'workouts' | 'programs'>('athletes')
+  const [tab, setTab] = useState<'athletes' | 'teams' | 'schedule' | 'workouts' | 'programs'>('athletes')
   const [teams, setTeams] = useState<{ id: string; name: string; members: { id: string }[] }[]>([])
   const [teamFilter, setTeamFilter] = useState('')
   const notify = useToast()
@@ -172,8 +173,9 @@ export default function CoachPage() {
         tabs={[
           { key: 'athletes' as const, label: 'My Athletes' },
           { key: 'teams' as const, label: 'Teams' },
+          { key: 'programs' as const, label: 'Plans' },
+          { key: 'schedule' as const, label: 'Schedule' },
           { key: 'workouts' as const, label: 'Workouts' },
-          { key: 'programs' as const, label: 'Programs' },
         ]}
         active={tab}
         onSelect={setTab}
@@ -181,7 +183,9 @@ export default function CoachPage() {
 
       <div className="card p-6">
         {tab === 'programs' ? (
-          <CreateProgram />
+          <CoachPrograms />
+        ) : tab === 'schedule' ? (
+          <ScheduleManager />
         ) : tab === 'teams' ? (
           <TeamsManager onChanged={fetchAthletes} />
         ) : tab === 'workouts' ? (

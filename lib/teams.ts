@@ -73,3 +73,38 @@ export async function newJoinCode(admin: SupabaseClient, teamId: string): Promis
   }
   throw new Error('Could not create a unique team code. Try again.')
 }
+
+// Turns a coach's picks (whole teams and/or single athletes) into the
+// athlete ids they're allowed to assign to: members of teams they manage
+// plus athletes on their own roster. Admins can assign anyone.
+export async function resolveAssignees(
+  admin: SupabaseClient,
+  user: { userId: string; role: string },
+  teamIds: unknown,
+  athleteIds: unknown,
+): Promise<string[]> {
+  const ids = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string').slice(0, 200) : [])
+  const teams = ids(teamIds)
+  const picked = ids(athleteIds)
+  const out = new Set<string>()
+
+  if (teams.length) {
+    let q = admin.from('teams').select('id').in('id', teams)
+    if (user.role !== 'admin') q = q.eq('coach_id', user.userId)
+    const { data: ok } = await q
+    const okIds = (ok ?? []).map(t => t.id)
+    if (okIds.length) {
+      const { data: members } = await admin.from('team_members').select('athlete_id').in('team_id', okIds)
+      for (const m of members ?? []) out.add(m.athlete_id)
+    }
+  }
+  if (picked.length) {
+    if (user.role === 'admin') picked.forEach(id => out.add(id))
+    else {
+      const { data: roster } = await admin.from('coach_athletes').select('athlete_id').eq('coach_id', user.userId).in('athlete_id', picked)
+      for (const r of roster ?? []) out.add(r.athlete_id)
+    }
+  }
+  out.delete(user.userId)
+  return [...out]
+}

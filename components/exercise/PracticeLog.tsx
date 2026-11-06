@@ -10,6 +10,7 @@ import { flowZone, ZONE_COLOR } from '@/components/mindset/flow-logic'
 import { clearDraft, draftKey, readDraft, writeDraft } from '@/lib/useDraft'
 import { localDateISO } from '@/lib/dates'
 import type { FlowTrigger } from '@/types'
+import { loadMySchedule } from '@/lib/team-schedule'
 
 type Kind = 'practice' | 'game'
 type Result = '' | 'win' | 'loss' | 'tie'
@@ -118,11 +119,13 @@ export default function PracticeLog({ notify }: Props) {
     Promise.all([
       fetch('/api/profile').then(r => (r.ok ? r.json() : null)).catch(() => null),
       fetch(`/api/exercise/practice?date=${today}`).then(r => (r.ok ? r.json() : null)).catch(() => null),
-    ]).then(([profile, day]) => {
+      loadMySchedule(),
+    ]).then(([profile, day, schedule]) => {
       const list = [profile?.primary_sport, profile?.secondary_sport].filter((s): s is string => !!s)
       setSports(list)
       defaultSport = list[0] ?? ''
-      if (profile?.next_competition_at?.slice(0, 10) === today) setKind('game')
+      const teamGame = schedule.find(e => e.kind === 'game' && e.event_date === today)
+      if (teamGame || profile?.next_competition_at?.slice(0, 10) === today) setKind('game')
 
       const entries: Entry[] = day?.entries ?? []
       const flows: FlowRow[] = day?.flows ?? []
@@ -137,7 +140,7 @@ export default function PracticeLog({ notify }: Props) {
           nextSaved[k] = true
         } else {
           const draft = readDraft<Form>(draftKey(`practice-log:${k}`))
-          next[k] = draft ? { ...EMPTY, ...draft } : { ...EMPTY, sport: defaultSport }
+          next[k] = draft ? { ...EMPTY, ...draft } : { ...EMPTY, sport: defaultSport, opponent: k === 'game' ? teamGame?.opponent ?? '' : '' }
         }
       }
       setForms(next)
