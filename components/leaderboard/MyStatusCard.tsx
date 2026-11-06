@@ -35,6 +35,14 @@ export default function MyStatusCard({ me, daysLeft }: { me: MyStatus; daysLeft:
         <div className="h-2.5 rounded-full bg-surface-3 overflow-hidden" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(me.progress * 100)} aria-label="Progress to next level">
           <div className="h-full bg-cta rounded-full transition-[width]" style={{ width: `${Math.max(2, me.progress * 100)}%` }} />
         </div>
+        {me.streak > 0 && (
+          <p className="text-xs text-fg-3 mt-1.5">
+            <span aria-hidden>🔥</span> {me.streak}-day streak
+            {me.multiplier > 1
+              ? <> · <span className="font-semibold text-cta">×{me.multiplier} points</span> today</>
+              : <> · ×1.25 points at 7 days</>}
+          </p>
+        )}
         <p className="text-xs text-fg-4 mt-1.5">
           {me.nextLevel
             ? <><span className="font-semibold text-fg-2">{toNext} pts</span> to {me.nextLevel.name} · {daysLeft} day{daysLeft === 1 ? '' : 's'} left this month</>

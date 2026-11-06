@@ -4,7 +4,7 @@ import { verifyApiUser } from '@/lib/api-auth'
 import { requireString } from '@/lib/validate'
 
 const SECTIONS = [
-  'journal', 'weekly_assessment', 'flow_state', 'visualization',
+  'journal', 'gratitude', 'weekly_assessment', 'flow_state', 'visualization',
   'meditation', 'affirmations', 'goals', 'exercise', 'nutrition',
   'sleep', 'progress', 'general',
 ]

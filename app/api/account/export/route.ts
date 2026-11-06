@@ -5,7 +5,7 @@ import { verifyApiUser } from '@/lib/api-auth'
 const USER_TABLES = [
   'journal_entries', 'weekly_assessments', 'nutrition_goals', 'food_entries', 'food_favorites',
   'weigh_ins', 'workout_logs', 'exercise_logs', 'custom_workouts', 'training_programs', 'athlete_profiles',
-  'sleep_entries', 'recovery_entries', 'visualization_entries', 'meditation_entries',
+  'sleep_entries', 'recovery_entries', 'visualization_entries', 'meditation_entries', 'gratitude_entries',
   'affirmations', 'goals', 'flow_sessions', 'flow_logs', 'flow_cue_words', 'flow_stage_checkins',
   'push_subscriptions',
 ]

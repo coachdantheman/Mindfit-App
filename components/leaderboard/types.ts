@@ -17,6 +17,8 @@ export interface MyStatus {
   rank: number | null
   of: number
   visible: boolean
+  streak: number
+  multiplier: number
 }
 
 export interface LeaderboardResponse {

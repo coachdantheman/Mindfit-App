@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import {
   scoreMonth, rankEntries, neighbours, titleFor, levelFor, nextLevel, levelProgress,
-  displayNameFor, monthBounds, isValidTimeZone, activityStreaks, todayIn,
+  displayNameFor, monthBounds, isValidTimeZone, activityStreaks, todayIn, multiplierFor,
   type ActivityRow, type PoolMember,
 } from '@/lib/leaderboard'
 
@@ -68,7 +68,8 @@ export async function GET(req: Request) {
     admin.from('profiles')
       .select('id, full_name, primary_sport, leaderboard_visible, leaderboard_alias')
       .in('role', ['member', 'coach', 'admin']),
-    admin.rpc('get_leaderboard_activity', { p_start: bounds.lastStart, p_end: bounds.thisEnd, p_tz: tz })
+    // 30 extra days before last month so streak multipliers see the whole run.
+    admin.rpc('get_leaderboard_activity', { p_start: shiftISO(bounds.lastStart, -30), p_end: bounds.thisEnd, p_tz: tz })
       // PostgREST caps responses at 1000 rows by default; this is per member per day.
       .limit(20000),
   ])
@@ -77,9 +78,9 @@ export async function GET(req: Request) {
 
   const all = (rows ?? []) as ActivityRow[]
   const thisRows = all.filter(r => r.day >= bounds.thisStart)
-  const lastRows = all.filter(r => r.day < bounds.thisStart)
-  const thisScores = scoreMonth(thisRows)
-  const lastScores = scoreMonth(lastRows)
+  const lastRows = all.filter(r => r.day >= bounds.lastStart && r.day < bounds.thisStart)
+  const thisScores = scoreMonth(thisRows, all)
+  const lastScores = scoreMonth(lastRows, all)
   // Streaks look across both months so a run that started last month still counts.
   const streaks = activityStreaks(all, todayIn(tz))
 
@@ -122,6 +123,8 @@ export async function GET(req: Request) {
       rank: mine?.rank ?? null,
       of: thisList.length,
       visible: me.leaderboard_visible,
+      streak: streaks.get(me.id) ?? 0,
+      multiplier: multiplierFor(streaks.get(me.id) ?? 0),
     }
   }
 
@@ -133,4 +136,9 @@ export async function GET(req: Request) {
     thisMonth: { top: thisList.slice(0, TOP), around: neighbours(thisList, TOP), of: thisList.length },
     lastMonth: { podium: lastList.slice(0, 3), myRank: myLast?.rank ?? null, of: lastList.length },
   })
+}
+
+function shiftISO(iso: string, days: number): string {
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10)
 }

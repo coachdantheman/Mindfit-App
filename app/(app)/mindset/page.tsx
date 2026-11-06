@@ -14,12 +14,14 @@ const AffirmationsList = dynamic(() => import('@/components/mindset/Affirmations
 const GoalsSection = dynamic(() => import('@/components/mindset/GoalsSection'))
 const WeeklyAssessment = dynamic(() => import('@/components/mindset/WeeklyAssessment'))
 const FlowStateTab = dynamic(() => import('@/components/mindset/flow/FlowStateTab'))
+const GratitudeTab = dynamic(() => import('@/components/mindset/GratitudeTab'))
 
-const tabs = ['Journal', 'Weekly Assessment', 'Flow State', 'Visualization', 'Meditation', 'Affirmations', 'Goals'] as const
+const tabs = ['Journal', 'Gratitude', 'Weekly Assessment', 'Flow State', 'Visualization', 'Meditation', 'Affirmations', 'Goals'] as const
 type Tab = typeof tabs[number]
 
 const tabSections: Record<Tab, LessonSection> = {
   'Journal': 'journal',
+  'Gratitude': 'gratitude',
   'Weekly Assessment': 'weekly_assessment',
   'Flow State': 'flow_state',
   'Visualization': 'visualization',
@@ -53,6 +55,7 @@ function MindsetContent() {
 
   const tabContent: Record<Tab, React.ReactNode> = {
     'Journal': <JournalTab />,
+    'Gratitude': <GratitudeTab />,
     'Weekly Assessment': <WeeklyAssessment />,
     'Flow State': <FlowStateTab />,
     'Visualization': <VisualizationForm />,

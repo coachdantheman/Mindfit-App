@@ -5,8 +5,8 @@
 export type Pillar = 'mind' | 'body' | 'fuel' | 'rest'
 
 export const PILLARS: { key: Pillar; name: string; emoji: string; blurb: string }[] = [
-  { key: 'mind', name: 'Mind', emoji: '🧠', blurb: 'Journal, flow, visualization, meditation, goals' },
-  { key: 'body', name: 'Body', emoji: '💪', blurb: 'Workouts and sets' },
+  { key: 'mind', name: 'Mind', emoji: '🧠', blurb: 'Journal, gratitude, flow, visualization, meditation, goals, MPI growth' },
+  { key: 'body', name: 'Body', emoji: '💪', blurb: 'Workouts, sets, PRs and strength tiers' },
   { key: 'fuel', name: 'Fuel', emoji: '🍽️', blurb: 'Meals logged' },
   { key: 'rest', name: 'Rest', emoji: '😴', blurb: 'Sleep and recovery check-ins' },
 ]
@@ -16,6 +16,7 @@ export type ActionKey =
   | 'journal' | 'assessments' | 'flow_sessions' | 'flow_logs' | 'flow_checkins'
   | 'visualization' | 'meditation' | 'affirmations' | 'goals_done'
   | 'workouts' | 'sets' | 'sleep' | 'recovery'
+  | 'gratitude' | 'baseline' | 'mpi_gain' | 'prs' | 'tier_ups'
 
 export interface ActionRule {
   key: ActionKey
@@ -29,7 +30,10 @@ export interface ActionRule {
 
 export const ACTIONS: ActionRule[] = [
   { key: 'journal',       pillar: 'mind', label: 'Daily journal',            points: 10, cap: 1 },
+  { key: 'gratitude',     pillar: 'mind', label: '3 things I’m grateful for', points: 10, cap: 1 },
+  { key: 'baseline',      pillar: 'mind', label: 'First MPI assessment',     points: 50, cap: 1 },
   { key: 'assessments',   pillar: 'mind', label: 'Weekly assessment',        points: 25, cap: 1, per: 'week' },
+  { key: 'mpi_gain',      pillar: 'mind', label: 'Each MPI point gained',    points: 2,  cap: 10, per: 'week' },
   { key: 'flow_sessions', pillar: 'mind', label: 'Flow State session',       points: 20, cap: 1 },
   { key: 'flow_logs',     pillar: 'mind', label: 'Post-competition flow log', points: 15, cap: 1 },
   { key: 'flow_checkins', pillar: 'mind', label: 'Flow stage check-in',      points: 5,  cap: 3 },
@@ -39,6 +43,8 @@ export const ACTIONS: ActionRule[] = [
   { key: 'goals_done',    pillar: 'mind', label: 'Goal completed',           points: 20, cap: 2 },
   { key: 'workouts',      pillar: 'body', label: 'Workout logged',           points: 25, cap: 2 },
   { key: 'sets',          pillar: 'body', label: 'Each set logged',          points: 1,  cap: 10 },
+  { key: 'prs',           pillar: 'body', label: 'New personal record',      points: 10, cap: 3 },
+  { key: 'tier_ups',      pillar: 'body', label: 'Strength tier up',         points: 50, cap: 1 },
   { key: 'sleep',         pillar: 'rest', label: 'Sleep logged',             points: 10, cap: 1 },
   { key: 'recovery',      pillar: 'rest', label: 'Recovery check-in',        points: 5,  cap: 1 },
 ]
@@ -53,6 +59,17 @@ export const FUEL = {
 
 /** All four pillars active on the same day. */
 export const CLUTCH_DAY_BONUS = 20
+
+/**
+ * Streak multipliers on a day's points (daily actions only; weekly actions
+ * and the Clutch Day bonus are not multiplied). The streak is the run of
+ * consecutive active days ending on that day. Highest matching tier wins.
+ */
+export const STREAK_MULTIPLIERS: { days: number; x: number }[] = [
+  { days: 30, x: 2 },
+  { days: 14, x: 1.5 },
+  { days: 7, x: 1.25 },
+]
 
 export interface Level { key: string; name: string; min: number }
 

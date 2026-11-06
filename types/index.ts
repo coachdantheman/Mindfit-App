@@ -500,7 +500,7 @@ export interface FlowInsights {
 }
 
 export type LessonSection =
-  | 'journal' | 'weekly_assessment' | 'flow_state' | 'visualization'
+  | 'journal' | 'gratitude' | 'weekly_assessment' | 'flow_state' | 'visualization'
   | 'meditation' | 'affirmations' | 'goals' | 'exercise' | 'nutrition'
   | 'sleep' | 'progress' | 'general'
 

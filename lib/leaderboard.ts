@@ -1,7 +1,7 @@
 // Pure leaderboard logic: no Supabase, no React. Tunables are in
 // lib/leaderboard-config.ts; this file only applies them.
 import {
-  ACTIONS, FUEL, CLUTCH_DAY_BONUS, LEVELS, MIN_TITLE_POINTS, TITLE_RULES, TITLES,
+  ACTIONS, FUEL, CLUTCH_DAY_BONUS, LEVELS, MIN_TITLE_POINTS, STREAK_MULTIPLIERS, TITLE_RULES, TITLES,
   type ActionKey, type Level, type Pillar, type Title,
 } from './leaderboard-config'
 
@@ -62,9 +62,39 @@ export function scoreDay(row: ActivityRow): Omit<PillarPoints, 'bonus'> {
   return p
 }
 
-/** Aggregate raw rows into one Score per user. */
-export function scoreMonth(rows: ActivityRow[]): Map<string, Score> {
+const isActive = (r: ActivityRow) => (r.food ?? 0) > 0 || ACTIONS.some(a => (r[a.key] ?? 0) > 0)
+
+function activeDaysByUser(rows: ActivityRow[]): Map<string, Set<string>> {
+  const days = new Map<string, Set<string>>()
+  for (const r of rows) {
+    if (!isActive(r)) continue
+    let set = days.get(r.user_id)
+    if (!set) { set = new Set(); days.set(r.user_id, set) }
+    set.add(r.day)
+  }
+  return days
+}
+
+/** Consecutive active days ending on `day` (0 when `day` itself is inactive). */
+function streakOn(set: Set<string> | undefined, day: string): number {
+  let n = 0
+  let cursor = day
+  while (set?.has(cursor)) { n++; cursor = shiftDay(cursor, -1) }
+  return n
+}
+
+export function multiplierFor(streak: number): number {
+  return STREAK_MULTIPLIERS.find(m => streak >= m.days)?.x ?? 1
+}
+
+/**
+ * Aggregate raw rows into one Score per user. `history` (rows from before
+ * the period, may overlap `rows`) only feeds the streak multiplier, so a
+ * run that started last month keeps its multiplier.
+ */
+export function scoreMonth(rows: ActivityRow[], history: ActivityRow[] = []): Map<string, Score> {
   const out = new Map<string, Score>()
+  const active = activeDaysByUser([...history, ...rows])
   const weekly = new Map<string, Map<string, number>>() // user -> weekKey -> count
   const weeklyRules = ACTIONS.filter(a => a.per === 'week')
 
@@ -73,10 +103,11 @@ export function scoreMonth(rows: ActivityRow[]): Map<string, Score> {
     if (!s) { s = { total: 0, pillars: emptyPillars(), clutchDays: 0, activeDays: 0 }; out.set(row.user_id, s) }
 
     const day = scoreDay(row)
-    s.pillars.mind += day.mind
-    s.pillars.body += day.body
-    s.pillars.fuel += day.fuel
-    s.pillars.rest += day.rest
+    const x = multiplierFor(streakOn(active.get(row.user_id), row.day))
+    s.pillars.mind += Math.round(day.mind * x)
+    s.pillars.body += Math.round(day.body * x)
+    s.pillars.fuel += Math.round(day.fuel * x)
+    s.pillars.rest += Math.round(day.rest * x)
     if (day.mind > 0 && day.body > 0 && day.fuel > 0 && day.rest > 0) {
       s.pillars.bonus += CLUTCH_DAY_BONUS
       s.clutchDays += 1
@@ -112,14 +143,7 @@ export function scoreMonth(rows: ActivityRow[]): Map<string, Score> {
  * yet today). Only spans the rows given, so it is floored by the fetch window.
  */
 export function activityStreaks(rows: ActivityRow[], today: string): Map<string, number> {
-  const days = new Map<string, Set<string>>()
-  for (const r of rows) {
-    const active = (r.food ?? 0) > 0 || ACTIONS.some(a => (r[a.key] ?? 0) > 0)
-    if (!active) continue
-    let set = days.get(r.user_id)
-    if (!set) { set = new Set(); days.set(r.user_id, set) }
-    set.add(r.day)
-  }
+  const days = activeDaysByUser(rows)
   const out = new Map<string, number>()
   for (const [user, set] of days) {
     let cursor = set.has(today) ? today : shiftDay(today, -1)

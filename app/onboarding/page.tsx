@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import WeeklyAssessment from '@/components/mindset/WeeklyAssessment'
 import { mpiVerdict } from '@/lib/mpi'
+import { ACTIONS } from '@/lib/leaderboard-config'
 import { clearPendingTeamCode, joinTeam, readPendingTeamCode } from '@/lib/team-code'
 
 const SPORTS = [
@@ -160,11 +161,26 @@ export default function OnboardingPage() {
             This is your starting point. The journal, flow training, and weekly
             assessments in here are how you move it.
           </p>
+          <div className="rounded-xl border border-cta/30 bg-cta/5 p-4 mb-6 text-left">
+            <p className="text-sm font-semibold text-fg-1">
+              You&rsquo;re on The Board: +{ACTIONS.find(a => a.key === 'baseline')?.points ?? 0} pts
+            </p>
+            <p className="text-xs text-fg-3 mt-0.5">
+              Your first MPI just put you on the monthly leaderboard{teamName ? ` with ${teamName}` : ''}. Show up every day to climb it.
+            </p>
+          </div>
           <button
             onClick={finish}
             className="w-full bg-cta hover:bg-brand-600 text-fg-inverse font-semibold py-3 rounded-xl transition-colors"
           >
             Start Training →
+          </button>
+          <button
+            type="button"
+            onClick={() => { router.push('/leaderboard'); router.refresh() }}
+            className="w-full mt-2 text-sm text-cta py-2"
+          >
+            See The Board
           </button>
         </div>
       )}

@@ -5,6 +5,7 @@ import Skeleton from '@/components/shared/Skeleton'
 
 const SECTIONS: { value: LessonSection; label: string }[] = [
   { value: 'journal', label: 'Journal' },
+  { value: 'gratitude', label: 'Gratitude' },
   { value: 'weekly_assessment', label: 'Weekly Assessment' },
   { value: 'flow_state', label: 'Flow State' },
   { value: 'visualization', label: 'Visualization' },

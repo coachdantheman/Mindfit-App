@@ -7,8 +7,14 @@ import {
   calcCompetitionStreak, topTrigger,
 } from '@/components/mindset/flow-logic'
 import { STAGE_META, TRIGGER_LABEL } from '@/components/mindset/flow/flow-constants'
-import { format, parseISO, differenceInCalendarDays } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import Skeleton from '@/components/shared/Skeleton'
+import { flowZone, ZONE_COLOR } from '@/components/mindset/flow-logic'
+import { flowFindings, type FlowContext } from '@/components/mindset/flow-findings'
+import { loadNextGame, type UpcomingGame } from '@/lib/team-schedule'
+import { formatClock, parseTime } from '@/lib/game-day'
+import { localDateISO } from '@/lib/dates'
+import { shiftDate } from '@/lib/nutrition'
 
 const FlowBarChart = dynamic(() => import('@/components/mindset/flow/FlowBarChart'), { ssr: false })
 const StageTracker = dynamic(() => import('@/components/mindset/flow/StageTracker'), { ssr: false })
@@ -26,6 +32,9 @@ export default function FlowStateTab() {
   const [profile, setProfile] = useState<FlowProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [staleCache, setStaleCache] = useState(false)
+  const [context, setContext] = useState<FlowContext>({ sleep: [], practice: [] })
+  const [game, setGame] = useState<UpcomingGame | null>(null)
+  const [showStats, setShowStats] = useState(false)
 
   useEffect(() => {
     const readJsonOrArray = async (r: Response): Promise<any> => {
@@ -38,10 +47,14 @@ export default function FlowStateTab() {
       fetch('/api/mindset/flow-state/sessions?all=1').then(readJsonOrArray),
       fetch('/api/mindset/flow-state/logs?all=1').then(readJsonOrArray),
       fetch('/api/profile').then(r => r.ok ? r.json() : null),
-    ]).then(([s, l, p]) => {
+      fetch('/api/mindset/flow-state/context').then(r => r.ok ? r.json() : null).catch(() => null),
+      loadNextGame(localDateISO()),
+    ]).then(([s, l, p, ctx, g]) => {
       setSessions(Array.isArray(s) ? s : [])
       setLogs(Array.isArray(l) ? l : [])
       setProfile(p)
+      if (ctx) setContext(ctx)
+      setGame(g)
       setLoading(false)
     })
   }, [])
@@ -52,13 +65,9 @@ export default function FlowStateTab() {
   const lastLog = logs[0] ?? null
   const top = topTrigger(logs)
 
-  let compBanner: string | null = null
-  if (profile?.next_competition_at) {
-    const days = differenceInCalendarDays(parseISO(profile.next_competition_at), new Date())
-    if (days > 0) compBanner = `Next competition in ${days} day${days === 1 ? '' : 's'}`
-    else if (days === 0) compBanner = 'Competition today — run your stack.'
-  }
-
+  const findings = flowFindings(logs, context)
+  const lastZone = lastLog ? flowZone(lastLog.challenge_level, lastLog.skill_level) : null
+  const routine = gameRoutine(game)
   const showSportHint = profile && !profile.primary_sport
 
   return (
@@ -67,97 +76,141 @@ export default function FlowStateTab() {
         <div className="bg-yellow-500/10 border border-yellow-500/40 rounded-xl px-4 py-3 text-sm">
           <p className="font-semibold text-yellow-400 mb-1">Supabase schema cache is stale</p>
           <p className="text-xs text-fg-2">
-            Your Flow State data is there, but Supabase's API server hasn't picked up the latest
-            migration yet. Fix:
-            <br />
-            1. Open <span className="text-fg-1">Supabase Dashboard → Project Settings → API</span> and click
-            <span className="text-fg-1"> Restart server</span>, <em>or</em>
-            <br />
-            2. Run <code className="text-cta">NOTIFY pgrst, 'reload schema';</code> in the SQL Editor.
-            <br />
-            Then reload this page.
+            Your Flow State data is there, but Supabase&apos;s API server hasn&apos;t picked up the latest
+            migration yet. Run <code className="text-cta">NOTIFY pgrst, &apos;reload schema&apos;;</code> in the SQL Editor, then reload.
           </p>
         </div>
       )}
-      {compBanner && (
-        <div className="bg-cta/10 border border-cta/30 rounded-xl px-4 py-3 text-sm text-cta font-medium">
-          {compBanner}
+
+      {routine && (
+        <div className="rounded-2xl border border-cta/40 bg-cta/10 p-4 space-y-2">
+          <p className="text-xs uppercase tracking-wider font-semibold text-cta">{routine.label}</p>
+          <p className="text-sm text-fg-1 font-medium">{routine.headline}</p>
+          <ul className="text-sm text-fg-2 space-y-1">
+            {routine.steps.map((step, i) => <li key={i}>{i + 1}. {step}</li>)}
+          </ul>
+          {routine.cta && (
+            <button type="button" onClick={() => router.push(routine.cta!.href)} className="btn-primary text-sm mt-1">{routine.cta.label}</button>
+          )}
         </div>
       )}
+
+      <div className="card p-5 space-y-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs uppercase tracking-wider text-fg-4">Last session</p>
+            {lastLog ? (
+              <p className="text-sm text-fg-2 mt-0.5">
+                {format(parseISO(lastLog.logged_at), 'EEE, MMM d')} · flow score <span className="text-cta font-semibold">{lastLog.flow_score}/10</span>
+              </p>
+            ) : (
+              <p className="text-sm text-fg-3 mt-0.5">Run the stack before your next practice or game, then log how it went.</p>
+            )}
+          </div>
+          {lastZone && (
+            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border shrink-0 ${ZONE_COLOR[lastZone].tw}`}>{ZONE_COLOR[lastZone].label}</span>
+          )}
+        </div>
+        <button onClick={() => router.push('/mindset/flow-state/session')} className="btn-primary text-base py-3 w-full">
+          Start 5-A Flow Stack · ~4.5 min
+        </button>
+        <button onClick={() => router.push('/mindset/flow-state/log')} className="btn-secondary w-full">
+          Log a practice or game
+        </button>
+      </div>
+
+      <div className="card p-5">
+        <h3 className="font-semibold text-fg-1 mb-2">What gets you into flow</h3>
+        {findings.length > 0 ? (
+          <ul className="space-y-2">
+            {findings.map((f, i) => <li key={i} className="text-sm text-fg-2">{f}</li>)}
+          </ul>
+        ) : (
+          <p className="text-sm text-fg-4">
+            {logs.length < 4
+              ? `Log ${4 - logs.length} more session${4 - logs.length === 1 ? '' : 's'} and this shows what puts you in the zone: sleep, the 5-A Stack, games vs practice.`
+              : 'No clear pattern yet. Keep logging after practices and games.'}
+          </p>
+        )}
+        <button onClick={() => router.push('/mindset/flow-state/insights')} className="text-sm text-cta hover:underline mt-3">
+          Weekly insights →
+        </button>
+      </div>
 
       {showSportHint && (
         <div className="bg-surface border border-edge rounded-xl px-4 py-3 text-sm text-fg-3 flex items-center justify-between gap-3">
           <span>Set your sport in Settings so sessions autofill it.</span>
-          <button
-            onClick={() => router.push('/settings')}
-            className="text-cta text-sm font-medium hover:underline whitespace-nowrap"
-          >
-            Go to Settings →
-          </button>
+          <button onClick={() => router.push('/settings')} className="text-cta text-sm font-medium hover:underline whitespace-nowrap">Settings →</button>
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <button
-          onClick={() => router.push('/mindset/flow-state/session')}
-          className="btn-primary text-base py-3 px-6 flex-1"
-        >
-          Start 5A Flow Stack · ~4.5 min
+      <div className="card">
+        <button type="button" onClick={() => setShowStats(v => !v)} aria-expanded={showStats} className="w-full flex items-center justify-between px-5 py-4 text-left">
+          <span className="font-semibold text-fg-1 text-sm">Stats, chart and stages</span>
+          <span className="text-xs text-fg-4">{showStats ? '▲' : '▼'}</span>
         </button>
-        <button
-          onClick={() => router.push('/mindset/flow-state/log')}
-          className="px-5 py-3 rounded-xl text-sm font-semibold border border-cta/40 text-cta hover:bg-cta/10 transition-colors flex-1 sm:flex-none"
-        >
-          Log Flow Session
-        </button>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard
-          label="Competition streak"
-          value={streak > 0 ? `${streak}` : '—'}
-          suffix={streak > 0 ? (streak === 1 ? 'competition' : 'competitions') : 'run stack next comp'}
-          gold
-        />
-        <StatCard label="Competitions" value={logs.length.toString()} />
-        <StatCard label="5A sessions" value={sessions.length.toString()} />
-        <StatCard label="Top trigger" value={top ? TRIGGER_LABEL[top] : '—'} small />
-      </div>
-
-      <FlowBarChart logs={logs} />
-
-      <StageTracker />
-
-      <div className="card p-6">
-        <h3 className="font-semibold text-fg-1 mb-3">Last flow session</h3>
-        {!lastLog ? (
-          <p className="text-sm text-fg-4">No flow logs yet. Run the stack and log your first session.</p>
-        ) : (
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div>
-              <p className="text-sm text-fg-2">
-                {format(parseISO(lastLog.logged_at), 'EEEE, MMM d · h:mma')}
-              </p>
-              <p className="text-xs text-fg-4 mt-1">
-                {lastLog.sport || profile?.primary_sport || '—'} · flow score{' '}
-                <span className="text-cta font-semibold">{lastLog.flow_score}/10</span>
-              </p>
+        {showStats && (
+          <div className="px-5 pb-5 space-y-5">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <StatCard label="Competition streak" value={streak > 0 ? `${streak}` : '—'}
+                suffix={streak > 0 ? (streak === 1 ? 'competition' : 'competitions') : 'run stack next comp'} gold />
+              <StatCard label="Competitions" value={logs.length.toString()} />
+              <StatCard label="5A sessions" value={sessions.length.toString()} />
+              <StatCard label="Top trigger" value={top ? TRIGGER_LABEL[top] : '—'} small />
             </div>
-            {lastLog.ending_stage && <StageBadge stage={lastLog.ending_stage} />}
+            <FlowBarChart logs={logs} />
+            <StageTracker />
+            {lastLog?.ending_stage && (
+              <div className="flex items-center gap-2 text-sm text-fg-3">Last ending stage <StageBadge stage={lastLog.ending_stage} /></div>
+            )}
           </div>
         )}
       </div>
-
-      <div className="flex justify-end">
-        <button
-          onClick={() => router.push('/mindset/flow-state/insights')}
-          className="text-sm text-cta hover:underline"
-        >
-          View weekly insights →
-        </button>
-      </div>
     </div>
   )
+}
+
+interface Routine { label: string; headline: string; steps: string[]; cta?: { label: string; href: string } }
+
+// Pre-game routine from the team schedule (or the athlete's own game date).
+function gameRoutine(game: UpcomingGame | null, now = new Date()): Routine | null {
+  if (!game) return null
+  const today = localDateISO(now)
+  const vs = game.opponent ? ` vs ${game.opponent}` : ''
+  const start = parseTime(game.time)
+  if (game.date === shiftDate(today, 1)) {
+    return {
+      label: 'Game tomorrow',
+      headline: `Tomorrow${vs}${start !== null ? ` at ${formatClock(start)}` : ''}. Set up flow tonight.`,
+      steps: [
+        'Visualize your first three plays going right — two minutes, eyes closed.',
+        'Pick the cue word you’ll use when it gets loud.',
+        'Lights out on time. Sleep is the strongest flow trigger you control.',
+      ],
+    }
+  }
+  if (game.date !== today) return null
+  const nowMin = now.getHours() * 60 + now.getMinutes()
+  if (start !== null && nowMin >= start + 90) {
+    return {
+      label: 'After the game',
+      headline: 'Log it while it’s fresh. Two minutes now makes next game easier.',
+      steps: ['Rate challenge and skill honestly.', 'Note which triggers fired.'],
+      cta: { label: 'Log this game', href: '/mindset/flow-state/log' },
+    }
+  }
+  return {
+    label: 'Game day',
+    headline: start !== null
+      ? `Game${vs} at ${formatClock(start)}. Run your 5-A Stack around ${formatClock(start - 60)}.`
+      : `Game day${vs}. Run your 5-A Stack about an hour before the start.`,
+    steps: [
+      'Run the 5-A Stack 45–60 minutes before warm-ups.',
+      'Lock in your cue word during warm-ups.',
+      'After the game, log your flow.',
+    ],
+    cta: { label: 'Start 5-A Stack', href: '/mindset/flow-state/session' },
+  }
 }
 
 function StatCard({

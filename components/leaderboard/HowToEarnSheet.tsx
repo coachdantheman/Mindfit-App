@@ -1,6 +1,6 @@
 'use client'
 import BottomSheet from '@/components/shared/BottomSheet'
-import { ACTIONS, FUEL, CLUTCH_DAY_BONUS, LEVELS, PILLARS } from '@/lib/leaderboard-config'
+import { ACTIONS, FUEL, CLUTCH_DAY_BONUS, LEVELS, PILLARS, STREAK_MULTIPLIERS } from '@/lib/leaderboard-config'
 
 export default function HowToEarnSheet({ onClose }: { onClose: () => void }) {
   return (
@@ -38,6 +38,18 @@ export default function HowToEarnSheet({ onClose }: { onClose: () => void }) {
             </div>
           )
         })}
+        <div>
+          <p className="text-xs uppercase tracking-wide text-fg-4 mb-1.5">🔥 Streak multiplier</p>
+          <p className="text-sm text-fg-2 mb-1.5">Log something every day and each day&rsquo;s points grow:</p>
+          <ul className="divide-y divide-edge-muted">
+            {[...STREAK_MULTIPLIERS].reverse().map(m => (
+              <li key={m.days} className="flex items-center justify-between py-1.5 text-sm">
+                <span className="text-fg-2">{m.days}+ days in a row</span>
+                <span className="font-semibold text-fg-1 tabular-nums">×{m.x}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
         <div>
           <p className="text-xs uppercase tracking-wide text-fg-4 mb-1.5">⭐ Clutch Day</p>
           <p className="text-sm text-fg-2">Hit all four pillars on the same day: <span className="font-semibold text-fg-1">+{CLUTCH_DAY_BONUS}</span> bonus.</p>

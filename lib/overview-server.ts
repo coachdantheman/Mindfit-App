@@ -17,7 +17,7 @@ export async function loadOverview(admin: SupabaseClient, userId: string): Promi
   const byDate = (table: string, col: string) => dates(table, col, sinceDate)
   const byTimestamp = (table: string, col: string) => dates(table, col, since.toISOString())
 
-  const [journal, flow, food, sleep, workouts, recovery, visualization, meditation, affirmations, goals, weighIns, assessments] = await Promise.all([
+  const [journal, flow, food, sleep, workouts, recovery, visualization, meditation, affirmations, goals, weighIns, assessments, gratitude] = await Promise.all([
     byDate('journal_entries', 'entry_date'),
     byTimestamp('flow_sessions', 'started_at'),
     byDate('food_entries', 'entry_date'),
@@ -30,12 +30,13 @@ export async function loadOverview(admin: SupabaseClient, userId: string): Promi
     byTimestamp('goals', 'created_at'),
     byDate('weigh_ins', 'entry_date'),
     admin.from('weekly_assessments').select('*').eq('user_id', userId).order('week_date', { ascending: false }),
+    byDate('gratitude_entries', 'entry_date'),
   ])
 
   // Sleep is logged for the night before, so it counts on the wake-up day.
   const sleepWakeDays = sleep.map(d => shiftDate(d, 1))
   const streak = calcActivityStreak([
-    journal, flow, food, sleepWakeDays, workouts, recovery, visualization, meditation, affirmations, goals, weighIns,
+    journal, flow, food, sleepWakeDays, workouts, recovery, visualization, meditation, affirmations, goals, weighIns, gratitude,
     assessments.data?.filter(a => a.week_date >= sinceDate).map(a => a.week_date),
   ])
 
