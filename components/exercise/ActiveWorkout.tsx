@@ -4,6 +4,7 @@ import ExerciseCard, { type LastSets } from './ExerciseCard'
 import ExercisePicker from './ExercisePicker'
 import RestTimer from './RestTimer'
 import LiftProgress from './LiftProgress'
+import { SortableList, SortableRow } from './Sortable'
 import { draftStats, exerciseFromLibrary, type DraftExercise, type WorkoutDraft } from '@/lib/workout-draft'
 import type { ExerciseLibraryRow, MuscleGroup } from '@/types/exercise'
 
@@ -101,17 +102,25 @@ export default function ActiveWorkout({ draft, library, saving, onChange, onFini
         <p className="text-sm text-fg-4 text-center py-6">Add your first exercise to start logging.</p>
       )}
 
-      {draft.exercises.map((ex, i) => (
-        <ExerciseCard
-          key={ex.key}
-          exercise={ex}
-          last={last[ex.exerciseId ?? ex.name.trim()] ?? null}
-          onChange={next => updateExercise(i, next)}
-          onRemove={() => removeExercise(i)}
-          onSetDone={onSetDone}
-          onViewProgress={() => setProgressFor(ex)}
-        />
-      ))}
+      <SortableList items={draft.exercises} ids={draft.exercises.map(e => e.key)} onReorder={exercises => onChange({ ...draft, exercises })}>
+        <div className="space-y-4">
+          {draft.exercises.map((ex, i) => (
+            <SortableRow key={ex.key} id={ex.key}>
+              {handle => (
+                <ExerciseCard
+                  exercise={ex}
+                  last={last[ex.exerciseId ?? ex.name.trim()] ?? null}
+                  onChange={next => updateExercise(i, next)}
+                  onRemove={() => removeExercise(i)}
+                  onSetDone={onSetDone}
+                  onViewProgress={() => setProgressFor(ex)}
+                  dragHandle={draft.exercises.length > 1 ? handle : null}
+                />
+              )}
+            </SortableRow>
+          ))}
+        </div>
+      </SortableList>
 
       <button type="button" onClick={() => setPicker(true)} className="btn-secondary w-full">+ Add exercise</button>
 

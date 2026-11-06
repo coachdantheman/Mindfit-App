@@ -2,8 +2,11 @@
 import { useState, useEffect } from 'react'
 import { MemberWithCount, CoachWorkout } from '@/types'
 import Skeleton from '@/components/shared/Skeleton'
+import { SortableList, SortableRow } from '@/components/exercise/Sortable'
+import { nextKey } from '@/lib/workout-draft'
 
 interface ExerciseRow {
+  id: string
   name: string
   sets: string
   reps: string
@@ -21,7 +24,7 @@ export default function CreateWorkout() {
   const [description, setDescription] = useState('')
   const [assignedDate, setAssignedDate] = useState('')
   const [exercises, setExercises] = useState<ExerciseRow[]>([
-    { name: '', sets: '3', reps: '10', notes: '' },
+    { id: nextKey(), name: '', sets: '3', reps: '10', notes: '' },
   ])
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -38,7 +41,7 @@ export default function CreateWorkout() {
   }, [])
 
   const addExercise = () => {
-    setExercises(prev => [...prev, { name: '', sets: '3', reps: '10', notes: '' }])
+    setExercises(prev => [...prev, { id: nextKey(), name: '', sets: '3', reps: '10', notes: '' }])
   }
 
   const removeExercise = (idx: number) => {
@@ -47,16 +50,6 @@ export default function CreateWorkout() {
 
   const updateExercise = (idx: number, field: keyof ExerciseRow, value: string) => {
     setExercises(prev => prev.map((ex, i) => i === idx ? { ...ex, [field]: value } : ex))
-  }
-
-  const moveExercise = (idx: number, dir: -1 | 1) => {
-    const newIdx = idx + dir
-    if (newIdx < 0 || newIdx >= exercises.length) return
-    setExercises(prev => {
-      const arr = [...prev]
-      ;[arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]]
-      return arr
-    })
   }
 
   const submit = async (e: React.FormEvent) => {
@@ -91,7 +84,7 @@ export default function CreateWorkout() {
       setName('')
       setDescription('')
       setAssignedDate('')
-      setExercises([{ name: '', sets: '3', reps: '10', notes: '' }])
+      setExercises([{ id: nextKey(), name: '', sets: '3', reps: '10', notes: '' }])
       setSuccess(true)
       setTimeout(() => setSuccess(false), 2000)
     }
@@ -163,12 +156,12 @@ export default function CreateWorkout() {
         {/* Exercise rows */}
         <div className="space-y-2">
           <label className="text-xs text-fg-4 block">Exercises</label>
+          <SortableList items={exercises} ids={exercises.map(ex => ex.id)} onReorder={setExercises}>
+          <div className="space-y-2">
           {exercises.map((ex, idx) => (
-            <div key={idx} className="flex items-center gap-2 bg-surface-2/50 rounded-lg p-2">
-              <div className="flex flex-col gap-0.5">
-                <button type="button" onClick={() => moveExercise(idx, -1)} className="text-xs text-fg-4 hover:text-fg-2 leading-none">▲</button>
-                <button type="button" onClick={() => moveExercise(idx, 1)} className="text-xs text-fg-4 hover:text-fg-2 leading-none">▼</button>
-              </div>
+            <SortableRow key={ex.id} id={ex.id} className="flex items-center gap-2 bg-surface-2/50 rounded-lg p-2">
+              {handle => (<>
+              {exercises.length > 1 && handle}
               <input
                 value={ex.name}
                 onChange={e => updateExercise(idx, 'name', e.target.value)}
@@ -198,8 +191,11 @@ export default function CreateWorkout() {
               {exercises.length > 1 && (
                 <button type="button" onClick={() => removeExercise(idx)} className="text-red-400 hover:text-red-300 text-xs px-1">x</button>
               )}
-            </div>
+              </>)}
+            </SortableRow>
           ))}
+          </div>
+          </SortableList>
           <button type="button" onClick={addExercise} className="text-xs text-cta hover:underline">
             + Add Exercise
           </button>

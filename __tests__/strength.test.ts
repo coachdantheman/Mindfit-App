@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import {
   epley, brzycki, e1rm, isReliableReps, interpolateRow, thresholdsFor, tierFor,
   liftersPercentile, generalPopulationPercentile, evaluateLift, bestE1rm, bestSetFrom, sessionSeries, detectPrs, prKey,
+  standardValue, sessionTier, tierRank,
 } from '../lib/strength'
 import { STRENGTH_STANDARDS, AGE_FACTOR, ageFactor, TIER_PERCENTILES } from '../lib/data/strength-standards'
 import type { StandardKey } from '../types/exercise'
@@ -158,4 +159,26 @@ test('bestSetFrom — heaviest wins, ties by reps, reps-only fallback', () => {
   assert.deepEqual(bestSetFrom([{ reps: 10, weight: null, created_at: '2026-02-01' }, { reps: 14, weight: 0, created_at: '2026-02-03' }]), { weight: 0, reps: 14, date: '2026-02-03' })
   assert.equal(bestSetFrom([]), null)
   assert.equal(bestSetFrom([{ reps: null, weight: null }]), null)
+})
+
+test('standardValue / sessionTier — tier-up only against a previous best', () => {
+  const profile = { sex: 'male' as const, bodyweight_lb: 180, age: 17 }
+  const th = thresholdsFor('bench', 'male', 180, 17)
+  const below = Math.floor(th[1]) - 5
+  const above = Math.ceil(th[2]) + 5
+  const lift = { exercise_id: 'b', exercise_name: 'Bench Press', key: 'bench' as const, sets: [{ reps: 1, weight: above }] }
+  const up = sessionTier(lift, [{ reps: 1, weight: below }], profile)!
+  assert.equal(up.evaluation.tier, tierFor(above, th))
+  assert.equal(up.previousTier, tierFor(below, th))
+  assert.equal(up.tierUp, true)
+  const first = sessionTier(lift, [], profile)!
+  assert.equal(first.previousTier, null)
+  assert.equal(first.tierUp, false)
+  const same = sessionTier(lift, [{ reps: 1, weight: above + 1 }], profile)!
+  assert.equal(same.tierUp, false)
+  assert.equal(sessionTier({ ...lift, sets: [{ reps: null, weight: null }] }, [], profile), null)
+  assert.equal(standardValue('pullup', [{ reps: 8, weight: null }, { reps: 12, weight: null }]), 12)
+  assert.equal(standardValue('vertical_jump', [{ reps: 1, weight: 24.5 }]), 24.5)
+  assert.equal(tierRank('untrained'), 0)
+  assert.equal(tierRank('elite'), 5)
 })

@@ -325,4 +325,58 @@ export function prKey(exerciseId: string | null, name: string): string {
   return exerciseId ? `id:${exerciseId}` : `name:${name.trim().toLowerCase()}`
 }
 
+// The number a standard is judged on: e1RM for barbell lifts, max reps for
+// pull-ups/push-ups, max inches (stored in weight) for jumps.
+export function standardValue(key: StandardKey, sets: SetLike[]): number {
+  const unit = STANDARD_UNITS[key]
+  if (unit === 'lb') return bestE1rm(sets)
+  let best = 0
+  for (const s of sets) {
+    const v = Number(unit === 'in' ? s.weight : s.reps) || 0
+    if (v > best) best = v
+  }
+  return best
+}
+
+export function tierRank(tier: StrengthTier): number {
+  return tier === 'untrained' ? 0 : TIER_NAMES.indexOf(tier as typeof TIER_NAMES[number]) + 1
+}
+
+export interface SessionTier {
+  exercise_id: string | null
+  exercise_name: string
+  evaluation: LiftEvaluation
+  previousTier: StrengthTier | null
+  tierUp: boolean
+}
+
+export interface ProfileLike { sex: Sex; bodyweight_lb: number; age: number | null }
+
+function evaluateValue(key: StandardKey, value: number, p: ProfileLike): LiftEvaluation {
+  return isBodyweightKey(key)
+    ? evaluateLift({ key, sex: p.sex, bodyweight_lb: Number(p.bodyweight_lb), age: p.age, value })
+    : evaluateLift({ key, sex: p.sex, bodyweight_lb: Number(p.bodyweight_lb), age: p.age, weight: value, reps: 1 })
+}
+
+// Tier for this session's best on a standard lift, against the best before
+// it. A first-ever ranked session has no previous tier and is not a tier-up.
+export function sessionTier(
+  lift: { exercise_id: string | null; exercise_name: string; key: StandardKey; sets: SetLike[] },
+  previousSets: SetLike[],
+  profile: ProfileLike,
+): SessionTier | null {
+  const value = standardValue(lift.key, lift.sets)
+  if (value <= 0) return null
+  const evaluation = evaluateValue(lift.key, value, profile)
+  const prevValue = standardValue(lift.key, previousSets)
+  const previousTier = prevValue > 0 ? evaluateValue(lift.key, prevValue, profile).tier : null
+  return {
+    exercise_id: lift.exercise_id,
+    exercise_name: lift.exercise_name,
+    evaluation,
+    previousTier,
+    tierUp: previousTier !== null && tierRank(evaluation.tier) > tierRank(previousTier),
+  }
+}
+
 export { TIER_NAMES, TIER_PERCENTILES, TRAINED_SHARE }

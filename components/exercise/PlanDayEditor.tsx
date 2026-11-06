@@ -1,6 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { arrayMove } from '@dnd-kit/sortable'
 import ExercisePicker from './ExercisePicker'
+import { SortableList, SortableRow } from './Sortable'
+import { nextKey } from '@/lib/workout-draft'
 import { DAY_NAMES, DAY_NAMES_LONG, type DayTemplate, type PlanBlockInput } from '@/lib/programs'
 import type { WorkoutExercise } from '@/types'
 import type { ExerciseLibraryRow, MuscleGroup } from '@/types/exercise'
@@ -25,6 +28,19 @@ export default function PlanDayEditor({ blocks, templates, onChange, library, on
   const days = templates[bi] ?? []
   const current = days.find(d => d.day_of_week === day) ?? null
 
+  // Plan exercises carry no id, so drag rows get stable local ids per
+  // block+day, kept in step with add / remove / reorder.
+  const rowIds = useRef(new Map<string, string[]>())
+  const idsKey = `${bi}:${day}`
+  const idsFor = (n: number) => {
+    let ids = rowIds.current.get(idsKey) ?? []
+    if (ids.length < n) ids = [...ids, ...Array.from({ length: n - ids.length }, nextKey)]
+    else if (ids.length > n) ids = ids.slice(0, n)
+    rowIds.current.set(idsKey, ids)
+    return ids
+  }
+  const ids = idsFor(current?.exercises.length ?? 0)
+
   const setDays = (next: DayTemplate[]) => onChange(templates.map((t, i) => (i === bi ? next : t)))
   const upsertDay = (patch: Partial<DayTemplate>) => {
     const existing = current ?? { day_of_week: day, name: '', description: '', exercises: [] }
@@ -37,7 +53,12 @@ export default function PlanDayEditor({ blocks, templates, onChange, library, on
   }
   const removeExercise = (ei: number) => {
     if (!current) return
+    rowIds.current.set(idsKey, ids.filter((_, i) => i !== ei))
     upsertDay({ exercises: current.exercises.filter((_, i) => i !== ei) })
+  }
+  const reorder = (next: WorkoutExercise[], from: number, to: number) => {
+    rowIds.current.set(idsKey, arrayMove(ids, from, to))
+    upsertDay({ exercises: next })
   }
   const addExercise = (row: ExerciseLibraryRow) => {
     const reps = row.measure === 'time_sec' ? '30 sec' : row.measure === 'distance_in' ? '5' : row.measure === 'reps' ? '10' : '8-10'
@@ -91,10 +112,13 @@ export default function PlanDayEditor({ blocks, templates, onChange, library, on
               aria-label="Workout name"
               className="input-field"
             />
+            <SortableList items={current.exercises} ids={ids} onReorder={reorder}>
             <div className="space-y-2">
               {current.exercises.map((ex, ei) => (
-                <div key={ei} className="bg-surface-2/50 rounded-xl p-2.5 space-y-2">
+                <SortableRow key={ids[ei]} id={ids[ei]} className="bg-surface-2/50 rounded-xl p-2.5 space-y-2">
+                  {handle => (<>
                   <div className="flex items-center justify-between gap-2">
+                    {current.exercises.length > 1 && handle}
                     <input value={ex.name} onChange={e => updateExercise(ei, { name: e.target.value })} aria-label="Exercise name"
                       className="flex-1 min-w-0 bg-transparent text-sm text-fg-1 font-medium" />
                     <button type="button" onClick={() => removeExercise(ei)} aria-label="Remove exercise" className="btn-ghost px-2">✕</button>
@@ -107,9 +131,11 @@ export default function PlanDayEditor({ blocks, templates, onChange, library, on
                     <input value={ex.notes ?? ''} onChange={e => updateExercise(ei, { notes: e.target.value })} placeholder="Notes"
                       aria-label="Notes" className="flex-1 min-w-0 bg-surface-2 border border-edge rounded-lg px-2 py-2 text-xs text-fg-1 placeholder:text-fg-4 focus:ring-2 focus:ring-cta/50" />
                   </div>
-                </div>
+                  </>)}
+                </SortableRow>
               ))}
             </div>
+            </SortableList>
           </>
         )}
 

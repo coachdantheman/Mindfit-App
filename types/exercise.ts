@@ -78,3 +78,21 @@ export interface SessionPr {
   e1rm: number
   previous: number | null
 }
+
+export interface CustomWorkoutSet {
+  set_number: number
+  reps: number | null
+  weight: number | null
+  distance: number | null
+  distance_unit: DistanceUnit | null
+  duration_sec: number | null
+}
+
+export interface CustomWorkoutRow {
+  id: string
+  name: string
+  category: string
+  exercises: { exercise_id: string | null; exercise_name: string; is_bodyweight: boolean; sets: CustomWorkoutSet[] }[]
+  times_done: number
+  last_done_at: string
+}

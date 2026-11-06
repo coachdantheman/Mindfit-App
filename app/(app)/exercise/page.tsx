@@ -118,6 +118,7 @@ export default function ExercisePage() {
           onCreateExercise={createExercise}
           notify={notify}
           refreshKey={historyKey}
+          onAddBodyweight={() => { setTab('strength'); window.scrollTo({ top: 0 }) }}
         />
       </div>
       <div className={tab === 'practice' ? '' : 'hidden'}>

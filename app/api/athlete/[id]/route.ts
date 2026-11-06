@@ -82,7 +82,8 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     workoutLogs: (workoutLogs ?? []).map((l: any) => ({
       ...l,
       exercise_logs: (l.exercise_logs ?? []).sort((a: any, b: any) =>
-        String(a.created_at).localeCompare(String(b.created_at)) || a.set_number - b.set_number),
+        (a.exercise_order ?? Number.MAX_SAFE_INTEGER) - (b.exercise_order ?? Number.MAX_SAFE_INTEGER)
+        || String(a.created_at).localeCompare(String(b.created_at)) || a.set_number - b.set_number),
     })),
     sleepEntries: sleepEntries ?? [],
     vizCount: (vizEntries ?? []).length,

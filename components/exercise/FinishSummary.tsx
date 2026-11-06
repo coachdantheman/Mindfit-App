@@ -1,6 +1,7 @@
 'use client'
-import type { DetectedPr } from '@/lib/strength'
+import type { DetectedPr, SessionTier } from '@/lib/strength'
 import { TrophyIcon } from '@/components/shared/icons'
+import { TierBadge, TierBar, TIER_LABEL } from './TierResult'
 
 export interface FinishResult {
   name: string
@@ -9,9 +10,11 @@ export interface FinishResult {
   durationMin: number | null
   exercises: number
   prs: DetectedPr[]
+  tiers: SessionTier[]
+  needsProfile: boolean
 }
 
-export default function FinishSummary({ result, onClose }: { result: FinishResult; onClose: () => void }) {
+export default function FinishSummary({ result, onClose, onAddBodyweight }: { result: FinishResult; onClose: () => void; onAddBodyweight: () => void }) {
   return (
     <div className="card p-5 space-y-4 border-cta/40">
       <div>
@@ -35,6 +38,39 @@ export default function FinishSummary({ result, onClose }: { result: FinishResul
             ))}
           </div>
         </div>
+      )}
+      {result.tiers.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-fg-2">Strength rank</p>
+          {result.tiers.map(t => {
+            const unit = t.evaluation.unit === 'lb' ? 'lb' : t.evaluation.unit === 'in' ? 'in' : 'reps'
+            return (
+              <div key={t.exercise_id ?? t.exercise_name} className={`rounded-xl p-3 space-y-2 ${t.tierUp ? 'bg-cta/15 border border-cta/40' : 'bg-surface-2/60'}`}>
+                {t.tierUp && (
+                  <p className="text-xs uppercase tracking-wider text-cta font-bold">
+                    Tier up! {TIER_LABEL[t.previousTier!]} → {TIER_LABEL[t.evaluation.tier]}
+                  </p>
+                )}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-fg-1 truncate">{t.exercise_name}</p>
+                    <p className="text-xs text-fg-4 tabular-nums">
+                      {t.evaluation.e1rm} {unit}{t.evaluation.unit === 'lb' ? ' est. 1RM' : ''}
+                      {t.evaluation.nextTier ? ` · ${TIER_LABEL[t.evaluation.nextTier.tier]} at ${t.evaluation.nextTier.value}` : ''}
+                    </p>
+                  </div>
+                  <TierBadge tier={t.evaluation.tier} size="sm" />
+                </div>
+                <TierBar tier={t.evaluation.tier} />
+              </div>
+            )
+          })}
+        </div>
+      )}
+      {result.needsProfile && (
+        <button type="button" onClick={onAddBodyweight} className="w-full text-left text-sm text-cta font-medium min-h-[44px]">
+          Add bodyweight to see your rank →
+        </button>
       )}
       <button type="button" onClick={onClose} className="btn-primary w-full">Done</button>
     </div>

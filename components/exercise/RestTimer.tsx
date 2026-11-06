@@ -6,7 +6,7 @@ interface Props {
   onChange: (endsAt: number | null) => void
 }
 
-export const REST_PRESETS = [60, 90, 120]
+export const REST_PRESETS = [60, 120, 180]
 
 function fmt(sec: number): string {
   const m = Math.floor(sec / 60)
@@ -50,7 +50,7 @@ export default function RestTimer({ endsAt, onChange }: Props) {
           {REST_PRESETS.map(p => (
             <button key={p} type="button" onClick={() => onChange(Date.now() + p * 1000)}
               className="h-9 min-w-[38px] px-2 rounded-lg text-xs font-medium border border-edge text-fg-3 hover:text-fg-1">
-              {p}
+              {p / 60}m
             </button>
           ))}
           <button type="button" onClick={() => onChange((endsAt > Date.now() ? endsAt : Date.now()) + 15000)}

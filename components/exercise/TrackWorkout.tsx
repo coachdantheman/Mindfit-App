@@ -2,12 +2,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import type { CoachWorkout } from '@/types'
-import type { ExerciseLibraryRow, ExerciseLogRow, MuscleGroup, StartWorkoutInput, WorkoutLogRow } from '@/types/exercise'
+import type { CustomWorkoutRow, ExerciseLibraryRow, ExerciseLogRow, MuscleGroup, StartWorkoutInput, WorkoutLogRow } from '@/types/exercise'
 import ActiveWorkout from './ActiveWorkout'
 import FinishSummary, { type FinishResult } from './FinishSummary'
 import Skeleton from '@/components/shared/Skeleton'
 import { clearDraft, draftStats, draftToSessionPayload, saveDraft, type WorkoutDraft } from '@/lib/workout-draft'
-import type { DetectedPr } from '@/lib/strength'
+import type { DetectedPr, SessionTier } from '@/lib/strength'
 import { formatTime } from '@/lib/running'
 
 interface Props {
@@ -21,10 +21,13 @@ interface Props {
   onCreateExercise: (name: string, muscle_group: MuscleGroup) => Promise<ExerciseLibraryRow | null>
   notify: (msg: string, kind?: 'success' | 'error') => void
   refreshKey: number
+  onAddBodyweight: () => void
 }
 
-export default function TrackWorkout({ draft, savedDraft, library, onDraftChange, onResume, onDiscardSaved, onStart, onCreateExercise, notify, refreshKey }: Props) {
+export default function TrackWorkout({ draft, savedDraft, library, onDraftChange, onResume, onDiscardSaved, onStart, onCreateExercise, notify, refreshKey, onAddBodyweight }: Props) {
   const [logs, setLogs] = useState<WorkoutLogRow[]>([])
+  const [saved, setSaved] = useState<CustomWorkoutRow[]>([])
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<string | null>(null)
   const [coachWorkouts, setCoachWorkouts] = useState<CoachWorkout[]>([])
@@ -33,8 +36,15 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
 
   const fetchHistory = useCallback(async () => {
     setLoading(true)
-    const res = await fetch('/api/exercise/logs?include=sets')
+    const [res, mine] = await Promise.all([
+      fetch('/api/exercise/logs?include=sets'),
+      fetch('/api/exercise/custom-workouts').catch(() => null),
+    ])
     if (res.ok) setLogs(await res.json())
+    if (mine?.ok) {
+      const data = await mine.json()
+      if (Array.isArray(data)) setSaved(data)
+    }
     setLoading(false)
   }, [])
 
@@ -68,7 +78,7 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
         notify(err.error || "Couldn't save the workout. Your sets are still here.", 'error')
         return
       }
-      const data = (await res.json()) as { id: string; prs: DetectedPr[] }
+      const data = (await res.json()) as { id: string; prs: DetectedPr[]; tiers?: SessionTier[]; needsProfile?: boolean }
       clearDraft()
       onDraftChange(null)
       setFinished({
@@ -78,8 +88,11 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
         durationMin: payload.log.duration_min,
         exercises: payload.exercises.length,
         prs: data.prs ?? [],
+        tiers: data.tiers ?? [],
+        needsProfile: !!data.needsProfile,
       })
-      notify(data.prs?.length ? `Workout saved · ${data.prs.length} PR${data.prs.length > 1 ? 's' : ''}!` : 'Workout saved')
+      const ups = (data.tiers ?? []).filter(t => t.tierUp).length
+      notify(ups ? `Workout saved · Tier up!` : data.prs?.length ? `Workout saved · ${data.prs.length} PR${data.prs.length > 1 ? 's' : ''}!` : 'Workout saved')
       fetchHistory()
       fetchCoach()
     } catch {
@@ -102,10 +115,24 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
       source: log.source ?? 'custom',
       workoutId: log.workout_id,
       programWorkoutId: log.program_workout_id,
-      coachWorkoutId: log.coach_workout_id,
+      // A repeat is a new session, so it never re-completes the coach's assignment.
+      coachWorkoutId: null,
       exercises: groups.map(([name, rows]) => ({ name, sets: rows.length, reps: '', notes: '' })),
       // Runs and sprints carry last time's distance as the placeholder instead of reps.
       prefill: groups.map(([name, rows]) => ({ name, reps: rows.map(r => (r.distance != null ? String(Number(r.distance)) : r.reps != null ? String(r.reps) : null)) })),
+    })
+  }
+
+  const doAgain = (w: CustomWorkoutRow) => {
+    onStart({
+      name: w.name,
+      categoryName: w.category,
+      source: 'custom',
+      exercises: w.exercises.map(e => ({ name: e.exercise_name, sets: e.sets.length, reps: '', notes: '' })),
+      prefill: w.exercises.map(e => ({
+        name: e.exercise_name,
+        reps: e.sets.map(r => (r.distance != null ? String(Number(r.distance)) : r.reps != null ? String(r.reps) : null)),
+      })),
     })
   }
 
@@ -125,7 +152,7 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
 
   return (
     <div className="space-y-4">
-      {finished && <FinishSummary result={finished} onClose={() => setFinished(null)} />}
+      {finished && <FinishSummary result={finished} onClose={() => setFinished(null)} onAddBodyweight={() => { setFinished(null); onAddBodyweight() }} />}
 
       {savedDraft && (
         <div className="card p-4 border-cta/40 flex items-center justify-between gap-3">
@@ -190,14 +217,43 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
         </div>
       )}
 
-      <div>
-        <h4 className="text-sm font-semibold text-fg-1 mb-3">Workout history</h4>
-        {loading ? (
-          <Skeleton />
-        ) : logs.length === 0 ? (
-          <p className="text-sm text-fg-4 text-center py-8">No workouts logged yet. Start one above or from My Plan.</p>
-        ) : (
+      {saved.length > 0 && (
+        <div>
+          <h4 className="text-sm font-semibold text-fg-1 mb-3">My Workouts</h4>
           <div className="space-y-2">
+            {saved.map(w => (
+              <div key={w.id} className="flex items-center justify-between gap-2 bg-surface rounded-xl border border-edge p-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-fg-2 truncate">{w.name}</p>
+                  <p className="text-xs text-fg-4">
+                    {w.exercises.length} exercise{w.exercises.length === 1 ? '' : 's'} · done {w.times_done}× · last {format(parseISO(w.last_done_at), 'MMM d')}
+                  </p>
+                </div>
+                <button type="button" onClick={() => doAgain(w)} className="btn-secondary shrink-0 px-3 py-2">Do again</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div>
+        <button
+          type="button"
+          onClick={() => setHistoryOpen(o => !o)}
+          aria-expanded={historyOpen}
+          className="w-full flex items-center justify-between gap-2 min-h-[44px] text-left"
+        >
+          <span className="text-sm font-semibold text-fg-1">
+            Workout history{logs.length ? <span className="text-fg-4 font-normal"> · {logs.length}</span> : null}
+          </span>
+          <span className={`text-fg-4 text-xs transition-transform ${historyOpen ? 'rotate-180' : ''}`} aria-hidden>▼</span>
+        </button>
+        {!loading && logs.length === 0 ? (
+          <p className="text-sm text-fg-4 text-center py-8">No workouts logged yet. Start one above or from My Plan.</p>
+        ) : !historyOpen ? null : loading ? (
+          <Skeleton />
+        ) : (
+          <div className="space-y-2 mt-2">
             {logs.map(log => {
               const sets = log.exercise_logs ?? []
               const open = expanded === log.id

@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { clampNumber, isISODate, optionalString, requireString } from '@/lib/validate'
-import { bestE1rm, detectPrs, prKey, type PrCandidate } from '@/lib/strength'
-import type { DistanceUnit, WorkoutSource } from '@/types/exercise'
+import { bestE1rm, detectPrs, prKey, sessionTier, type PrCandidate, type SessionTier } from '@/lib/strength'
+import type { AthleteProfile, DistanceUnit, StandardKey, WorkoutSource } from '@/types/exercise'
 import { DISTANCE_UNITS } from '@/lib/running'
 
 const SOURCES: WorkoutSource[] = ['custom', 'prebuilt', 'program', 'coach_program', 'coach_workout']
@@ -93,16 +93,20 @@ export async function POST(req: Request) {
 
   const admin = createAdminClient()
 
-  // Previous best e1RM per exercise, for PR detection.
+  // Previous sets per exercise, for PR and tier detection.
   const ids = exercises.map(e => e.exercise_id).filter((v): v is string => !!v)
   const names = exercises.filter(e => !e.exercise_id).map(e => e.exercise_name)
-  const [byId, byName] = await Promise.all([
+  const [byId, byName, libRes, profileRes] = await Promise.all([
     ids.length
       ? admin.from('exercise_logs').select('exercise_id, exercise_name, reps, weight').eq('user_id', auth.userId).in('exercise_id', ids).limit(5000)
       : Promise.resolve({ data: [] as any[] }),
     names.length
       ? admin.from('exercise_logs').select('exercise_id, exercise_name, reps, weight').eq('user_id', auth.userId).is('exercise_id', null).in('exercise_name', names).limit(5000)
       : Promise.resolve({ data: [] as any[] }),
+    ids.length
+      ? admin.from('exercise_library').select('id, standard_key').in('id', ids).not('standard_key', 'is', null)
+      : Promise.resolve({ data: [] as any[] }),
+    admin.from('athlete_profiles').select('sex, bodyweight_lb, age').eq('user_id', auth.userId).maybeSingle(),
   ])
   const previous = new Map<string, number>()
   const grouped = new Map<string, { reps: number | null; weight: number | null }[]>()
@@ -119,10 +123,28 @@ export async function POST(req: Request) {
     .map(e => ({ exercise_id: e.exercise_id, exercise_name: e.exercise_name, sets: e.sets }))
   const prs = detectPrs(candidates, previous)
 
-  const p_sets = exercises.flatMap(e => e.sets.map(s => ({
+  // Strength tier per standard lift, against the best before this session.
+  const standardKeys = new Map<string, StandardKey>((libRes.data ?? []).map((r: any) => [r.id, r.standard_key]))
+  const profile = profileRes.data as Pick<AthleteProfile, 'sex' | 'bodyweight_lb' | 'age'> | null
+  const ranked = exercises.filter(e => e.exercise_id && standardKeys.has(e.exercise_id))
+  const tiers: SessionTier[] = []
+  if (profile) {
+    for (const e of ranked) {
+      const t = sessionTier(
+        { exercise_id: e.exercise_id, exercise_name: e.exercise_name, key: standardKeys.get(e.exercise_id!)!, sets: e.sets },
+        grouped.get(prKey(e.exercise_id, e.exercise_name)) ?? [],
+        profile,
+      )
+      if (t) tiers.push(t)
+    }
+  }
+  const tierUps = tiers.filter(t => t.tierUp).length
+
+  const p_sets = exercises.flatMap((e, order) => e.sets.map(s => ({
     exercise_id: e.exercise_id,
     exercise_name: e.exercise_name,
     is_bodyweight: e.is_bodyweight,
+    exercise_order: order,
     set_number: s.set_number,
     reps: s.reps,
     weight: s.weight,
@@ -136,7 +158,7 @@ export async function POST(req: Request) {
 
   const { data: id, error } = await admin.rpc('log_workout_session', {
     p_user_id: auth.userId,
-    p_log: log,
+    p_log: { ...log, pr_count: prs.length, tier_ups: tierUps },
     p_sets,
   })
 
@@ -145,5 +167,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Couldn't save the workout. Nothing was written — try again." }, { status: 500 })
   }
 
-  return NextResponse.json({ id, prs }, { status: 201 })
+  // One saved workout per name. The session is already logged, so a
+  // failure here only costs the My Workouts row.
+  if (source === 'custom' && exercises.length > 0) {
+    const { error: saveErr } = await admin.rpc('save_custom_workout', {
+      p_user_id: auth.userId,
+      p_name: workout_name,
+      p_category: log.category_name,
+      p_exercises: exercises,
+    })
+    if (saveErr) console.error('save_custom_workout failed:', saveErr.message)
+  }
+
+  return NextResponse.json({ id, prs, tiers, needsProfile: !profile && ranked.length > 0 }, { status: 201 })
 }

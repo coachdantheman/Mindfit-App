@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import SetRow, { setFields } from './SetRow'
 import { format, parseISO } from 'date-fns'
 import { emptySet, type DraftExercise, type DraftSet } from '@/lib/workout-draft'
@@ -22,6 +22,7 @@ interface Props {
   onRemove: () => void
   onSetDone: (restSec?: number | null) => void
   onViewProgress: () => void
+  dragHandle?: ReactNode
 }
 
 function summarizeLast(last: LastSets, exercise: DraftExercise): string {
@@ -66,7 +67,7 @@ function liveLine(exercise: DraftExercise): string | null {
   return `Fastest ${formatTime(best)}s · ${pairs.length} rep${pairs.length === 1 ? '' : 's'}`
 }
 
-export default function ExerciseCard({ exercise, last, onChange, onRemove, onSetDone, onViewProgress }: Props) {
+export default function ExerciseCard({ exercise, last, onChange, onRemove, onSetDone, onViewProgress, dragHandle }: Props) {
   const [more, setMore] = useState(false)
   const fields = setFields(exercise.measure, exercise.unit)
   const timed = exercise.measure === 'distance_time'
@@ -137,7 +138,8 @@ export default function ExerciseCard({ exercise, last, onChange, onRemove, onSet
   return (
     <div className="card p-4 space-y-3">
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
+        {dragHandle}
+        <div className="min-w-0 flex-1">
           <button type="button" onClick={onViewProgress} className="text-left">
             <p className="font-semibold text-fg-1 truncate">{exercise.name}</p>
           </button>

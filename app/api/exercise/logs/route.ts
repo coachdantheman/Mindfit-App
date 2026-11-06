@@ -20,9 +20,11 @@ export async function GET(req: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (includeSets) {
+    // Sets logged before v26 have no exercise_order; they keep insert order.
+    const ord = (r: any) => r.exercise_order ?? Number.MAX_SAFE_INTEGER
     for (const log of data as any[]) {
       log.exercise_logs = (log.exercise_logs ?? []).sort((a: any, b: any) =>
-        a.created_at.localeCompare(b.created_at) || a.set_number - b.set_number)
+        ord(a) - ord(b) || a.created_at.localeCompare(b.created_at) || a.set_number - b.set_number)
     }
   }
   return NextResponse.json(data)
