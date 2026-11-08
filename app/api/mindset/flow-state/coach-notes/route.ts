@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 
@@ -37,7 +38,7 @@ export async function PUT(req: Request) {
   if (auth instanceof NextResponse) return auth
 
   const body = await req.json()
-  if (!body.athlete_id || typeof body.note !== 'string') {
+  if (!body.athlete_id || typeof body.note !== 'string' || body.note.length > 4000) {
     return NextResponse.json({ error: 'athlete_id and note required' }, { status: 400 })
   }
 
@@ -64,6 +65,6 @@ export async function PUT(req: Request) {
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json(data)
 }

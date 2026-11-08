@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { sendWelcomeEmail } from '@/lib/email'
@@ -16,7 +17,7 @@ export async function GET() {
       .select('*')
       .eq('added_by', auth.userId)
       .order('added_at', { ascending: false })
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return dbError(error)
     return NextResponse.json(data)
   }
 
@@ -24,7 +25,7 @@ export async function GET() {
     .from('approved_emails')
     .select('*')
     .order('added_at', { ascending: false })
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json(data)
 }
 
@@ -50,7 +51,7 @@ export async function POST(req: Request) {
     if (error.code === '23505') {
       return NextResponse.json({ error: 'This email is already on the list.' }, { status: 409 })
     }
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return dbError(error)
   }
 
   sendWelcomeEmail(email.toLowerCase().trim())
@@ -77,6 +78,6 @@ export async function DELETE(req: Request) {
   }
 
   const { error } = await admin.from('approved_emails').delete().eq('id', id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json({ ok: true })
 }

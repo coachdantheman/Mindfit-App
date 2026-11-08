@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import type { RecentFood } from '@/types'
@@ -17,7 +18,7 @@ export async function GET() {
     .order('created_at', { ascending: false })
     .limit(150)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
 
   const seen = new Set<string>()
   const recent: RecentFood[] = []

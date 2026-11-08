@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { timingSafeEqual } from 'crypto'
 import { createAdminClient } from '@/lib/supabase-server'
 import { sendWelcomeEmail } from '@/lib/email'
@@ -50,7 +51,7 @@ export async function POST(req: Request) {
       )
     if (error) {
       console.error('skool webhook: whitelist upsert failed', email, error.message)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return dbError(error)
     }
 
     await sendWelcomeEmail(email, name || undefined)

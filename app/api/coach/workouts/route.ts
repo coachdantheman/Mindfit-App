@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { resolveAssignees } from '@/lib/teams'
@@ -14,7 +15,7 @@ export async function GET() {
     .eq('coach_id', auth.userId)
     .order('created_at', { ascending: false })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json(data)
 }
 
@@ -43,7 +44,7 @@ export async function POST(req: Request) {
     })))
     .select('*, athlete:profiles!coach_workouts_athlete_id_fkey(full_name, email)')
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json(data, { status: 201 })
 }
 
@@ -60,6 +61,6 @@ export async function DELETE(req: Request) {
     .eq('id', id)
     .eq('coach_id', auth.userId)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json({ ok: true })
 }

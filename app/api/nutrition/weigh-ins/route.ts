@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { clampNumber, isISODate, optionalString } from '@/lib/validate'
@@ -19,7 +20,7 @@ export async function GET(req: Request) {
     .gte('entry_date', shiftDate(localDateISO(new Date()), -days))
     .order('entry_date', { ascending: true })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json((data ?? []).map(({ progress_photos, ...row }) => ({
     ...row,
     photo_slots: (progress_photos as { slot: string }[] | null)?.map(p => p.slot) ?? [],
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
 
   // Keep the goal's current weight in step with the latest weigh-in.
   const { data: latest } = await admin
@@ -81,6 +82,6 @@ export async function DELETE(req: Request) {
     .eq('id', id)
     .eq('user_id', auth.userId)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json({ ok: true })
 }

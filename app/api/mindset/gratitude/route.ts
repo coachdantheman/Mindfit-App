@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { isISODate, optionalString, requireString } from '@/lib/validate'
@@ -14,7 +15,7 @@ export async function GET(req: Request) {
   let q = admin.from('gratitude_entries').select(COLS).eq('user_id', auth.userId).order('entry_date', { ascending: false })
   if (date && isISODate(date)) q = q.eq('entry_date', date)
   const { data, error } = await q.limit(90)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json(data)
 }
 
@@ -32,6 +33,6 @@ export async function POST(req: Request) {
     user_id: auth.userId, entry_date: body.entry_date,
     item_1: first, item_2: items[1] ?? null, item_3: items[2] ?? null, updated_at: new Date().toISOString(),
   }, { onConflict: 'user_id,entry_date' }).select(COLS).single()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json(data)
 }

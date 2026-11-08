@@ -2,15 +2,19 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { requireString } from '@/lib/validate'
+import { rateLimit } from '@/lib/rate-limit'
 import { pushConfigured, sendPush } from '@/lib/push'
 import { getQuoteOfTheDay } from '@/lib/data/quotes'
+
+// Only real browser push services, so the server never posts to an arbitrary URL.
+const PUSH_HOSTS = ['fcm.googleapis.com', 'push.apple.com', 'push.services.mozilla.com', 'notify.windows.com']
 
 function parseEndpoint(value: unknown): string | null {
   const endpoint = requireString(value, 2000)
   if (!endpoint) return null
   try {
     const u = new URL(endpoint)
-    return u.protocol === 'https:' ? endpoint : null
+    return u.protocol === 'https:' && PUSH_HOSTS.some(h => u.hostname === h || u.hostname.endsWith(`.${h}`)) ? endpoint : null
   } catch {
     return null
   }
@@ -39,6 +43,8 @@ export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
   if (!pushConfigured()) return NextResponse.json({ error: 'Push is not configured on the server' }, { status: 503 })
+  const limited = await rateLimit(`push-sub:${auth.userId}`, 10, 3600)
+  if (limited) return limited
 
   const body = await req.json().catch(() => null)
   const endpoint = parseEndpoint(body?.endpoint)
@@ -61,7 +67,10 @@ export async function POST(req: Request) {
       },
       { onConflict: 'endpoint' }
     )
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('push subscription error:', error.message)
+    return NextResponse.json({ error: 'Could not save. Please try again.' }, { status: 500 })
+  }
 
   // Confirmation push so the user sees it work immediately.
   const quote = getQuoteOfTheDay()
@@ -92,6 +101,9 @@ export async function DELETE(req: Request) {
     .delete()
     .eq('user_id', auth.userId)
     .eq('endpoint', endpoint)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('push subscription error:', error.message)
+    return NextResponse.json({ error: 'Could not save. Please try again.' }, { status: 500 })
+  }
   return NextResponse.json({ ok: true })
 }

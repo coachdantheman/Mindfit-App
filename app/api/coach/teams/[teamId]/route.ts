@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { optionalString } from '@/lib/validate'
@@ -19,7 +20,7 @@ export async function PATCH(req: Request, { params }: { params: { teamId: string
   if ('sport' in body) patch.sport = optionalString(body.sport, 40)
   if (Object.keys(patch).length) {
     const { error } = await admin.from('teams').update(patch).eq('id', team.id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return dbError(error)
   }
   const join_code = body.new_code === true ? await newJoinCode(admin, team.id) : team.join_code
   return NextResponse.json({ ...team, ...patch, join_code })
@@ -33,6 +34,6 @@ export async function DELETE(_req: Request, { params }: { params: { teamId: stri
   const team = await managedTeam(admin, auth, params.teamId)
   if (!team) return NextResponse.json({ error: 'Team not found' }, { status: 404 })
   const { error } = await admin.from('teams').delete().eq('id', team.id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json({ ok: true })
 }

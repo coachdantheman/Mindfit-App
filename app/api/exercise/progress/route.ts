@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { bestE1rm, evaluateLift, prsFromSeries, sessionMaxSeries, sessionSeries } from '@/lib/strength'
@@ -36,7 +37,7 @@ export async function GET(req: Request) {
       : Promise.resolve({ data: null as ExerciseLibraryRow | null }),
     admin.from('athlete_profiles').select('*').eq('user_id', auth.userId).maybeSingle(),
   ])
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
 
   const rows = (sets ?? []).map(s => ({
     ...s,

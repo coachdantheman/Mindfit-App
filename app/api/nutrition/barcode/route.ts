@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { isValidBarcode, lookupCandidates, normalizeOffProduct } from '@/lib/barcode'
@@ -51,6 +52,6 @@ export async function GET(req: Request) {
     .insert({ user_id: auth.userId, ...product, category: 'other', source: 'barcode', barcode: matched })
     .select()
     .single()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json(data, { status: 201 })
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 
@@ -13,7 +14,7 @@ export async function GET() {
     .eq('role', 'coach')
     .order('created_at', { ascending: false })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
 
   const ids = (data ?? []).map(c => c.id)
   const { data: links } = ids.length
@@ -50,6 +51,6 @@ export async function POST(req: Request) {
     .update({ role: newRole })
     .eq('id', userId)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json({ ok: true })
 }

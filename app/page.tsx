@@ -1,13 +1,10 @@
 import { redirect } from 'next/navigation'
-import { createServerSupabaseClient } from '@/lib/supabase-client'
+import { getVerifiedUser } from '@/lib/supabase-client'
 import JournalForm from '@/components/journal/JournalForm'
 import PublicNav from '@/components/layout/PublicNav'
 
 export default async function HomePage() {
-  const supabase = await createServerSupabaseClient()
-  const { data: { session } } = await supabase.auth.getSession()
-
-  if (session) redirect('/mindset')
+  if (await getVerifiedUser()) redirect('/mindset')
 
   return (
     <div className="min-h-screen flex flex-col bg-page">

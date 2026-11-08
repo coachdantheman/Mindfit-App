@@ -3,11 +3,14 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { findConsentByToken, grantConsent } from '@/lib/consent'
 import { deleteUserCompletely } from '@/lib/account-delete'
 import { sendParentInviteEmail } from '@/lib/email'
+import { clientIp, rateLimit } from '@/lib/rate-limit'
 
 const RELATIONSHIPS = ['parent', 'legal_guardian'] as const
 
 // No session: the emailed token is the credential.
 export async function POST(req: Request) {
+  const limited = await rateLimit(`consent:ip:${clientIp(req)}`, 20, 3600)
+  if (limited) return limited
   const body = await req.json().catch(() => ({}))
   const admin = createAdminClient()
   const row = await findConsentByToken(admin, typeof body.token === 'string' ? body.token : '')

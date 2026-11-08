@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { isValidAlias } from '@/lib/leaderboard'
@@ -16,7 +17,7 @@ export async function GET() {
     .select('leaderboard_visible, leaderboard_alias')
     .eq('id', auth.userId)
     .single()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json(data)
 }
 
@@ -46,6 +47,6 @@ export async function PATCH(req: Request) {
     .eq('id', auth.userId)
     .select('leaderboard_visible, leaderboard_alias')
     .single()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json(data)
 }

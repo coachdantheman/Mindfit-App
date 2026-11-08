@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { addToTeam, normalizeCode } from '@/lib/teams'
+import { clientIp, rateLimit } from '@/lib/rate-limit'
 
 async function findTeam(code: string) {
   const admin = createAdminClient()
@@ -14,6 +15,8 @@ async function findTeam(code: string) {
 // Public lookup so the /join page can say which team the link is for.
 // Returns only the team name, sport and coach's name.
 export async function GET(req: Request) {
+  const limited = await rateLimit(`join-lookup:ip:${clientIp(req)}`, 30, 3600)
+  if (limited) return limited
   const code = normalizeCode(new URL(req.url).searchParams.get('code'))
   if (!code) return NextResponse.json({ error: 'That code isn’t valid.' }, { status: 400 })
   const { team, coachName } = await findTeam(code)
@@ -25,6 +28,8 @@ export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
   if (auth.role === 'parent') return NextResponse.json({ error: 'Parent accounts follow athletes instead of joining teams.' }, { status: 403 })
+  const limited = await rateLimit(`join:${auth.userId}`, 20, 3600)
+  if (limited) return limited
 
   const body = await req.json().catch(() => ({}))
   const code = normalizeCode(body.code)

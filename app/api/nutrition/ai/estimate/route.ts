@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { verifyApiUser } from '@/lib/api-auth'
+import { aiQuota } from '@/lib/rate-limit'
 import { optionalString, requireString } from '@/lib/validate'
 import { extractJson, sanitizeEstimate } from '@/lib/ai-json'
 import { consentFlags } from '@/lib/consent-flags'
@@ -10,7 +11,7 @@ export const maxDuration = 30
 
 const anthropic = new Anthropic()
 
-const SYSTEM = `You are a sports dietitian estimating nutrition for a high-school athlete's food log.
+const SYSTEM = `You are a sports nutrition assistant estimating nutrition for a high-school athlete's food log.
 Return ONLY valid JSON with this exact shape:
 {"name": string, "serving_size": string, "calories": number, "protein_g": number, "carbs_g": number, "fat_g": number, "confidence": "low"|"medium"|"high"}
 Use the serving the user gives; otherwise a typical single serving. Use USDA-typical values for generic foods and the brand's published label for branded items. Round calories to the nearest 5 and grams to the nearest 1. confidence reflects how sure you are of the values.`
@@ -19,6 +20,8 @@ Use the serving the user gives; otherwise a typical single serving. Use USDA-typ
 export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
+  const overQuota = await aiQuota(auth.userId, 'estimate', 60)
+  if (overQuota) return overQuota
   if ((await consentFlags(createAdminClient(), auth.userId)).aiBlocked) {
     return NextResponse.json({ error: 'AI features are turned off for your account. A parent can turn them on from their MindFit email.' }, { status: 403 })
   }

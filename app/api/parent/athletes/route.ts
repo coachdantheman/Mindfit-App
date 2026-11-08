@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 
@@ -16,7 +17,7 @@ export async function GET() {
     .select('id, email, full_name, primary_sport, created_at, onboarded_at, journal_entries(count)')
     .in('id', ids)
     .order('created_at', { ascending: false })
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
 
   return NextResponse.json((profiles ?? []).map((p: any) => ({
     ...p,

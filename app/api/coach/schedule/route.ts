@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { managedTeam } from '@/lib/teams'
@@ -15,7 +16,7 @@ export async function GET(req: Request) {
   if (!team) return NextResponse.json({ error: 'Team not found' }, { status: 404 })
   const { data, error } = await admin.from('team_events').select(COLS).eq('team_id', team.id)
     .order('event_date').order('start_time', { nullsFirst: true })
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json((data ?? []).map(e => ({ ...e, start_time: e.start_time?.slice(0, 5) ?? null })))
 }
 
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
   const events = (Array.isArray(body.events) ? body.events : []).slice(0, 300).map(cleanEvent).filter(Boolean)
   if (events.length === 0) return NextResponse.json({ error: 'No valid dates to save.' }, { status: 400 })
   const { error } = await admin.from('team_events').insert(events.map((e: any) => ({ ...e, team_id: team.id })))
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json({ saved: events.length }, { status: 201 })
 }
 
@@ -44,6 +45,6 @@ export async function DELETE(req: Request) {
   const ids: string[] = Array.isArray(body.ids) ? body.ids.filter((x: unknown) => typeof x === 'string') : []
   if (ids.length === 0) return NextResponse.json({ error: 'ids required' }, { status: 400 })
   const { error } = await admin.from('team_events').delete().eq('team_id', team.id).in('id', ids)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json({ ok: true })
 }

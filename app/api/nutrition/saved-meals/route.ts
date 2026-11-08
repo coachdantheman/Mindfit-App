@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { requireString, optionalString } from '@/lib/validate'
@@ -17,7 +18,7 @@ export async function GET() {
     .order('auto_saved', { ascending: true })
     .order('created_at', { ascending: false })
     .limit(60)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   if (!meals || meals.length === 0) return NextResponse.json([])
 
   const { data: items, error: itemErr } = await admin
@@ -25,7 +26,7 @@ export async function GET() {
     .select(ITEM_COLS)
     .in('saved_meal_id', meals.map(m => m.id))
     .order('sort_order', { ascending: true })
-  if (itemErr) return NextResponse.json({ error: itemErr.message }, { status: 500 })
+  if (itemErr) return dbError(itemErr)
 
   return NextResponse.json(meals.map(m => ({
     ...m,
@@ -58,7 +59,7 @@ export async function POST(req: Request) {
     .eq('user_id', auth.userId)
     .in('id', ids)
     .order('created_at', { ascending: true })
-  if (readErr) return NextResponse.json({ error: readErr.message }, { status: 500 })
+  if (readErr) return dbError(readErr)
   if (!entries || entries.length === 0) return NextResponse.json({ error: 'No entries found.' }, { status: 400 })
 
   if (auto) {
@@ -84,7 +85,7 @@ export async function POST(req: Request) {
     .select(ITEM_COLS)
   if (itemErr) {
     await admin.from('saved_meals').delete().eq('id', meal.id)
-    return NextResponse.json({ error: itemErr.message }, { status: 500 })
+    return dbError(itemErr)
   }
 
   return NextResponse.json({ ...meal, items: (items ?? []).map(({ saved_meal_id: _omit, ...rest }) => rest) }, { status: 201 })
@@ -99,6 +100,6 @@ export async function DELETE(req: Request) {
 
   const admin = createAdminClient()
   const { error } = await admin.from('saved_meals').delete().eq('id', id).eq('user_id', auth.userId)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json({ ok: true })
 }

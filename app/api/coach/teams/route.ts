@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { requireString, optionalString } from '@/lib/validate'
@@ -13,7 +14,7 @@ export async function GET() {
   let q = admin.from('teams').select(TEAM_COLS).order('created_at', { ascending: true })
   if (auth.role === 'coach') q = q.eq('coach_id', auth.userId)
   const { data: teams, error } = await q
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   const list = (teams ?? []) as TeamRow[]
   if (list.length === 0) return NextResponse.json([])
 

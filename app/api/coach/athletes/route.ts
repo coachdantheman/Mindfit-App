@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { calcStreak } from '@/lib/streaks'
@@ -63,7 +64,7 @@ export async function GET() {
     }),
   ])
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
 
   // The RPC only exists after migration v13 — degrade gracefully without it.
   const overviewMap = new Map<string, OverviewRow>(

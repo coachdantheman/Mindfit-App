@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import {
@@ -72,8 +73,8 @@ export async function GET(req: Request) {
       // PostgREST caps responses at 1000 rows by default; this is per member per day.
       .limit(20000),
   ])
-  if (pErr) return NextResponse.json({ error: pErr.message }, { status: 500 })
-  if (rErr) return NextResponse.json({ error: rErr.message }, { status: 500 })
+  if (pErr) return dbError(pErr)
+  if (rErr) return dbError(rErr)
 
   const all = (rows ?? []) as ActivityRow[]
   const thisRows = all.filter(r => r.day >= bounds.thisStart)

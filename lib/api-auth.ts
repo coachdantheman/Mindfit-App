@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-client'
+import { getVerifiedUser } from '@/lib/supabase-client'
 import { createAdminClient } from '@/lib/supabase-server'
 import { UserRole } from '@/types'
 import { touchLastSeen } from '@/lib/last-seen'
@@ -23,19 +23,18 @@ export async function verifyLockedApiUser(...allowedRoles: UserRole[]): Promise<
 }
 
 async function verify(allowedRoles: UserRole[], allowLocked: boolean): Promise<ApiUser | NextResponse> {
-  const supabase = await createServerSupabaseClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const user = await getVerifiedUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const admin = createAdminClient()
   const { data: profile } = await admin
     .from('profiles')
     .select('role, birth_year, consent_status')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single()
 
   const role = (profile?.role as UserRole) ?? 'member'
-  await touchLastSeen(admin, session.user.id)
+  await touchLastSeen(admin, user.id)
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -44,5 +43,5 @@ async function verify(allowedRoles: UserRole[], allowLocked: boolean): Promise<A
     return NextResponse.json({ error: 'Finish setting up your account first.', locked: true }, { status: 403 })
   }
 
-  return { userId: session.user.id, email: session.user.email ?? '', role }
+  return { userId: user.id, email: user.email, role }
 }

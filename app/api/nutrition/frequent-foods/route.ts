@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 
@@ -31,7 +32,7 @@ export async function GET() {
     .order('created_at', { ascending: false })
     .limit(100)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
 
   const map = new Map<string, { food_name: string; meal_name: string; calories: number; protein_g: number; carbs_g: number; fat_g: number; count: number }>()
   for (const e of data ?? []) {

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { isEmail } from '@/lib/validate'
@@ -89,6 +90,6 @@ export async function DELETE(req: Request) {
     null
   if (!q) return NextResponse.json({ error: 'Unsupported link kind' }, { status: 400 })
   const { error } = await q
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json({ ok: true })
 }

@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
+import { cronAuthorized } from '@/lib/cron-auth'
 import { createAdminClient } from '@/lib/supabase-server'
 import { getQuoteOfTheDay, QUOTE_TIMEZONE } from '@/lib/data/quotes'
 import { pushConfigured, sendPush } from '@/lib/push'
@@ -17,8 +19,7 @@ function centralHour(date = new Date()): number {
 // whichever run lands on 7 AM Central sends, the other exits early.
 // `?force=1` skips the hour check for manual tests.
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET
-  if (!secret || req.headers.get('authorization') !== `Bearer ${secret}`) {
+  if (!cronAuthorized(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   if (!pushConfigured()) return NextResponse.json({ error: 'Push not configured' }, { status: 503 })
@@ -35,7 +36,7 @@ export async function GET(req: Request) {
   const { data: subs, error } = await admin
     .from('push_subscriptions')
     .select('endpoint, p256dh, auth')
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
 
   const payload = {
     title: 'MindFit — Quote of the Day',

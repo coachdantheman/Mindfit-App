@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { verifyApiUser } from '@/lib/api-auth'
 import { createAdminClient } from '@/lib/supabase-server'
 import { isISODate, optionalString } from '@/lib/validate'
@@ -28,7 +29,7 @@ export async function POST(req: Request, { params }: { params: { programId: stri
     ids.map(athlete_id => ({ program_id: plan.id, athlete_id, coach_id: auth.userId, label, start_date: start })),
     { onConflict: 'program_id,athlete_id' },
   )
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json({ assigned: ids.length })
 }
 

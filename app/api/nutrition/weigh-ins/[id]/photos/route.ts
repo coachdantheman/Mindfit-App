@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { PHOTO_SLOTS, PhotoSlot } from '@/lib/images'
@@ -35,7 +36,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     .select('id, slot, storage_path')
     .eq('weigh_in_id', params.id)
     .eq('user_id', auth.userId)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json(await signed(admin, data ?? []))
 }
 
@@ -64,14 +65,14 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const { error: upErr } = await admin.storage
     .from(BUCKET)
     .upload(path, Buffer.from(await file.arrayBuffer()), { contentType: file.type, upsert: true })
-  if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 })
+  if (upErr) return dbError(upErr)
 
   const { data, error } = await admin
     .from('progress_photos')
     .upsert({ user_id: auth.userId, weigh_in_id: params.id, slot: slot as PhotoSlot, storage_path: path }, { onConflict: 'weigh_in_id,slot' })
     .select('id, slot, storage_path')
     .single()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
 
   const [photo] = await signed(admin, [data])
   return NextResponse.json(photo, { status: 201 })
@@ -96,6 +97,6 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
 
   await admin.storage.from(BUCKET).remove([row.storage_path])
   const { error } = await admin.from('progress_photos').delete().eq('id', row.id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json({ ok: true })
 }

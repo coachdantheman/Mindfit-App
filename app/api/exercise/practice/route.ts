@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { intOrNull, isISODate, optionalString } from '@/lib/validate'
@@ -25,7 +26,7 @@ export async function GET(req: Request) {
       admin.from('practice_logs').select('*').eq('user_id', auth.userId).eq('log_date', date),
       admin.from('journal_entries').select('id, objective').eq('user_id', auth.userId).eq('entry_date', date).maybeSingle(),
     ])
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return dbError(error)
     const flowIds = (entries ?? []).map(e => e.flow_log_id).filter((v): v is string => !!v)
     const { data: flows } = flowIds.length
       ? await admin.from('flow_logs').select('id, skill_level, flow_score, triggers_fired').in('id', flowIds)
@@ -44,7 +45,7 @@ export async function GET(req: Request) {
     .order('log_date', { ascending: false })
     .order('kind', { ascending: true })
     .limit(200)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
 
   const flowIds = (data ?? []).map(e => e.flow_log_id).filter((v): v is string => !!v)
   const { data: flows } = flowIds.length
@@ -119,14 +120,14 @@ export async function POST(req: Request) {
       }
       if (flow_log_id) {
         const { error } = await admin.from('flow_logs').update(flowRow).eq('id', flow_log_id).eq('user_id', auth.userId)
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error) return dbError(error)
       } else {
         const { data: created, error } = await admin
           .from('flow_logs')
           .insert({ ...flowRow, user_id: auth.userId, logged_at: new Date().toISOString() })
           .select('id')
           .single()
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error) return dbError(error)
         flow_log_id = created.id
       }
     }
@@ -138,6 +139,6 @@ export async function POST(req: Request) {
     .upsert(row, { onConflict: 'user_id,log_date,kind' })
     .select()
     .single()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json(data, { status: existing ? 200 : 201 })
 }

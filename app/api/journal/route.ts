@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { verifyApiUser } from '@/lib/api-auth'
 import { createAdminClient } from '@/lib/supabase-server'
 import { clampNumber, isISODate } from '@/lib/validate'
@@ -23,7 +24,7 @@ export async function GET(req: Request) {
   if (!date) query = query.limit(400)
 
   const { data, error } = await query
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json(data)
 }
 
@@ -32,14 +33,16 @@ export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json()
+  const body = await req.json().catch(() => ({}))
   const {
-    entry_date, objective,
-    action_step_1, action_step_2, action_step_3,
-    strength_1, strength_2, strength_3,
-    weakness, extra_notes,
+    entry_date,
     rating_motivation, rating_focus, rating_confidence, rating_anxiety,
   } = body
+  const TEXT_FIELDS = ['objective', 'action_step_1', 'action_step_2', 'action_step_3', 'strength_1', 'strength_2', 'strength_3', 'weakness', 'extra_notes'] as const
+  if (TEXT_FIELDS.some(k => body[k] != null && (typeof body[k] !== 'string' || body[k].length > 4000))) {
+    return NextResponse.json({ error: 'Each journal answer must be text under 4,000 characters.' }, { status: 400 })
+  }
+  const { objective, action_step_1, action_step_2, action_step_3, strength_1, strength_2, strength_3, weakness, extra_notes } = body
 
   if (!isISODate(entry_date)) {
     return NextResponse.json({ error: 'A valid entry date is required.' }, { status: 400 })
@@ -77,7 +80,7 @@ export async function POST(req: Request) {
         { status: 409 }
       )
     }
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return dbError(error)
   }
 
   return NextResponse.json(data, { status: 201 })

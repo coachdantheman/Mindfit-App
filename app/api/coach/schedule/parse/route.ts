@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { verifyApiUser } from '@/lib/api-auth'
+import { aiQuota } from '@/lib/rate-limit'
 import { extractJson } from '@/lib/ai-json'
 import { cleanEvent } from '@/lib/schedule'
 
@@ -15,6 +16,8 @@ const MAX_BASE64 = 5_500_000
 export async function POST(req: Request) {
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
+  const overQuota = await aiQuota(auth.userId, 'schedule', 20)
+  if (overQuota) return overQuota
 
   const body = await req.json().catch(() => ({}))
   const text = typeof body.text === 'string' ? body.text.slice(0, 20000).trim() : ''

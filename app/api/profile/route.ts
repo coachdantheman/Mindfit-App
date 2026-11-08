@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 
@@ -68,7 +69,7 @@ export async function PATCH(req: Request) {
       return NextResponse.json(row)
     }
     if (!isSchemaCacheError(error)) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return dbError(error)
     }
   }
 
@@ -91,6 +92,6 @@ export async function PATCH(req: Request) {
           `(Raw error: ${error.message})`,
       }, { status: 503 })
     }
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return dbError(error)
   }
 }

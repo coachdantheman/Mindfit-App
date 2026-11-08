@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { verifyApiUser } from '@/lib/api-auth'
 import { createAdminClient } from '@/lib/supabase-server'
 import { clampNumber, optionalString, requireString } from '@/lib/validate'
@@ -109,7 +110,7 @@ export async function PUT(req: Request) {
     goals: Array.isArray(body.goals) ? body.goals.slice(0, 10) : [],
     duration_weeks: clampNumber(body.duration_weeks, 1, 52) ?? 4,
   }).eq('id', body.id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
 
   if (Array.isArray(body.blocks)) {
     await admin.from('program_blocks').delete().eq('program_id', body.id)

@@ -100,39 +100,42 @@ function LoginForm() {
     if (error) {
       setError('That code is invalid or expired. Try again or resend.')
       setLoading(false)
-    } else {
-      finish()
+      return
     }
+    if (mode === 'signup' && password) {
+      const { error: pwError } = await supabase.auth.updateUser({ password })
+      if (pwError) console.error('Password not saved:', pwError.message)
+    }
+    finish()
   }
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     if (!agreed) { setError('Please accept the Terms and Privacy Policy.'); return }
+    if (password.length < 8 || password.length > 72) { setError('Password must be at least 8 characters.'); return }
     setLoading(true)
     const res = await fetch('/api/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, termsAccepted: true }),
+      body: JSON.stringify({ email, termsAccepted: true }),
     })
     const data = await res.json()
     if (!res.ok) {
       setError(data.error)
-      if (res.status === 409) setMode('signin')
       setLoading(false)
       return
     }
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithOtp({
       email: email.toLowerCase().trim(),
-      password,
+      options: { shouldCreateUser: false },
     })
     if (error) {
-      setError('Account created, but sign-in failed. Try signing in.')
-      setMode('signin')
-      setLoading(false)
+      setError('Could not send the code. Please try again in a minute.')
     } else {
-      finish()
+      setCodeSent(true)
     }
+    setLoading(false)
   }
 
   const handlePasswordLogin = async (e: React.FormEvent) => {
@@ -207,7 +210,7 @@ function LoginForm() {
                 disabled={loading || code.length < 6}
                 className="w-full bg-cta hover:bg-brand-600 text-fg-inverse font-semibold py-3 rounded-xl transition-colors disabled:opacity-60"
               >
-                {loading ? 'Checking…' : 'Sign in'}
+                {loading ? 'Checking…' : mode === 'signup' ? 'Verify email' : 'Sign in'}
               </button>
               <div className="flex justify-between text-sm">
                 <button

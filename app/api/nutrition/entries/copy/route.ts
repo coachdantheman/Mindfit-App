@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { isISODate } from '@/lib/validate'
@@ -25,7 +26,7 @@ export async function POST(req: Request) {
   if (meal) query = query.eq('meal_name', meal)
 
   const { data: source, error: readErr } = await query
-  if (readErr) return NextResponse.json({ error: readErr.message }, { status: 500 })
+  if (readErr) return dbError(readErr)
   if (!source || source.length === 0) {
     return NextResponse.json({ error: 'Nothing logged on that day.' }, { status: 400 })
   }
@@ -35,6 +36,6 @@ export async function POST(req: Request) {
     .insert(source.map(r => ({ ...r, user_id: auth.userId, entry_date: body.to_date })))
     .select()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json({ inserted: data }, { status: 201 })
 }

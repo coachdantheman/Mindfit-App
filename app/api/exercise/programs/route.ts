@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { clampNumber, isISODate, optionalString, requireString } from '@/lib/validate'
@@ -15,7 +16,7 @@ export async function GET(req: Request) {
   let query = admin.from('training_programs').select('id').eq('user_id', auth.userId)
   if (activeOnly) query = query.eq('is_active', true)
   const { data: ids, error } = await query
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
 
   const result = await loadPrograms(admin, (ids || []).map(p => p.id))
   return NextResponse.json(result)
@@ -108,12 +109,12 @@ export async function PUT(req: Request) {
 
   if (Object.keys(patch).length > 0) {
     const { error } = await admin.from('training_programs').update(patch).eq('id', id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return dbError(error)
   }
 
   if (Array.isArray(body.blocks)) {
     const { error: delErr } = await admin.from('program_blocks').delete().eq('program_id', id)
-    if (delErr) return NextResponse.json({ error: delErr.message }, { status: 500 })
+    if (delErr) return dbError(delErr)
     const failure = await insertBlocks(admin, id, body.blocks)
     if (failure) {
       console.error('program block replace failed:', failure)
@@ -138,6 +139,6 @@ export async function DELETE(req: Request) {
     .eq('id', id)
     .eq('user_id', auth.userId)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json({ ok: true })
 }

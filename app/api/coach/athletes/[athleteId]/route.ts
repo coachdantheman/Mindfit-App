@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 
@@ -13,7 +14,7 @@ export async function DELETE(_req: Request, { params }: { params: { athleteId: s
     .delete()
     .eq('coach_id', auth.userId)
     .eq('athlete_id', params.athleteId)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   const { data: myTeams } = await admin.from('teams').select('id').eq('coach_id', auth.userId)
   if (myTeams?.length) {
     await admin.from('team_members').delete().eq('athlete_id', params.athleteId).in('team_id', myTeams.map(t => t.id))

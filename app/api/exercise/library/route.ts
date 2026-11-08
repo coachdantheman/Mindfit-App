@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { optionalString, requireString } from '@/lib/validate'
@@ -23,7 +24,7 @@ export async function GET() {
   if (auth instanceof NextResponse) return auth
   const admin = createAdminClient()
   const { rows, error } = await loadLibrary(admin, auth.userId)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json(rows)
 }
 
@@ -40,7 +41,7 @@ export async function POST(req: Request) {
 
   const admin = createAdminClient()
   const { rows, error: loadErr } = await loadLibrary(admin, auth.userId)
-  if (loadErr) return NextResponse.json({ error: loadErr.message }, { status: 500 })
+  if (loadErr) return dbError(loadErr)
 
   const existing = matchExercise(rows, name)
   if (existing) return NextResponse.json(existing)
@@ -51,6 +52,6 @@ export async function POST(req: Request) {
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return NextResponse.json(data, { status: 201 })
 }
