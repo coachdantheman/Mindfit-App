@@ -25,12 +25,12 @@ export async function POST(req: Request) {
     .from('profiles')
     .update(update)
     .eq('id', auth.userId)
-    .select('email, full_name')
+    .select('email, full_name, consent_status')
     .maybeSingle()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  if (profile?.email) {
+  if (profile?.email && profile.consent_status === 'not_required') {
     void pushGhlEvent({ email: profile.email, name: profile.full_name }, 'onboarding_complete')
   }
 

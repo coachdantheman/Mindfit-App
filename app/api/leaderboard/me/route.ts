@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { isValidAlias } from '@/lib/leaderboard'
+import { consentFlags } from '@/lib/consent-flags'
 
 // Leaderboard privacy settings. Kept apart from /api/profile because its
 // update_user_profile RPC whitelists columns and would drop these.
@@ -36,6 +37,9 @@ export async function PATCH(req: Request) {
   if (Object.keys(updates).length === 0) return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
 
   const admin = createAdminClient()
+  if (updates.leaderboard_visible === true && (await consentFlags(admin, auth.userId)).leaderboardBlocked) {
+    return NextResponse.json({ error: 'A parent needs to allow the leaderboard first.' }, { status: 403 })
+  }
   const { data, error } = await admin
     .from('profiles')
     .update(updates)

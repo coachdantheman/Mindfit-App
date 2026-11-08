@@ -34,5 +34,6 @@ export async function POST(req: Request) {
   if (team.coach_id === auth.userId) return NextResponse.json({ error: 'You coach this team.' }, { status: 400 })
 
   const outcome = await addToTeam(admin, team, auth.userId)
+  if (outcome === 'blocked') return NextResponse.json({ error: "Your parent hasn't allowed sharing with coaches, so you can't join a team yet." }, { status: 403 })
   return NextResponse.json({ outcome, team: { id: team.id, name: team.name, coach_name: coachName } })
 }

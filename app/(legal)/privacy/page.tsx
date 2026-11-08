@@ -11,7 +11,7 @@ export default function PrivacyPage() {
     >
       <Section title="1. What we collect">
         <ul>
-          <li><strong>Account:</strong> email, name, sport, role (athlete, coach, parent), and when you accepted these terms.</li>
+          <li><strong>Account:</strong> email, name, sport, birth month and year, role (athlete, coach, parent), and when you accepted these terms.</li>
           <li><strong>What you log:</strong> daily journal entries and ratings (motivation, focus, confidence, anxiety), weekly assessments, flow state sessions, affirmations and goals, meals and macros, weigh-ins, progress photos, workouts and sets, sleep and recovery.</li>
           <li><strong>Game and schedule info:</strong> your next competition date and start time.</li>
           <li><strong>Technical:</strong> a sign-in session cookie, and small settings stored in your browser (theme, unsaved drafts). We do not run analytics or advertising trackers.</li>
@@ -37,17 +37,20 @@ export default function PrivacyPage() {
       <Section title="4. Services that process data for us">
         <ul>
           <li><strong>Supabase</strong> — database, file storage and sign-in (hosting all app data).</li>
-          <li><strong>Google</strong> — only if you choose &ldquo;Continue with Google&rdquo; to sign in.</li>
-          <li><strong>Resend</strong> — sends account and invite emails.</li>
-          <li><strong>GoHighLevel</strong> — our contact system receives your email and name so we can send you MindFit updates. You can unsubscribe from any email.</li>
-          <li><strong>Anthropic</strong> — when you describe a meal in words or generate a training program, that text is sent to Anthropic&rsquo;s AI to be turned into macros or a plan. No other data is sent.</li>
+          <li><strong>Vercel</strong> — hosts the app.</li>
+          <li><strong>Resend</strong> — sends account, invite and parent permission emails.</li>
+          <li><strong>Our contact system</strong> (currently GoHighLevel) — may receive your email and name so we can send you MindFit updates. You can unsubscribe from any email. Athletes under 13 are never added to it.</li>
+          <li><strong>Anthropic</strong> — when you describe a meal in words or generate a training program, that text is sent to Anthropic&rsquo;s AI to be turned into macros or a plan. No name, email or other data is sent. For athletes under 13 this happens only if a parent allowed AI features.</li>
           <li><strong>Open Food Facts</strong> — barcode lookups send the barcode number only.</li>
           <li><strong>Your browser&rsquo;s push service</strong> (Apple, Google, Mozilla) — only if you turn on daily notifications.</li>
           <li><strong>Skool / Zapier</strong> — tells us when a community member joins or leaves so we can link their account.</li>
         </ul>
       </Section>
       <Section title="5. Children and parental consent">
-        <p>MindFit is designed for high school athletes and may be used by athletes under 13 with a parent or guardian&rsquo;s involvement. If you are a parent and your child under 13 is using MindFit, you consent to the collection described here by allowing them to use it, and you may review, export or delete their data at any time: use the parent view, or contact us. If we learn that a child under 13 has an account without parental involvement, we will delete it on request from a parent or guardian.</p>
+        <p>Every athlete is asked for their birth month and year. If an athlete is under 13, the account is locked until a parent or legal guardian gives permission. Before that, we hold only the child&rsquo;s name, email, birth month and year, and the parent email they give us, and we use the parent email only to ask for permission.</p>
+        <p>We email the parent a notice explaining what we collect and how it is used, with a link to a signed online permission form. The parent decides separately whether coaches can see the child&rsquo;s logs, whether AI features can be used, and whether the child&rsquo;s first name appears on the leaderboard. Progress photos are not available to athletes under 13.</p>
+        <p>If the parent declines, or does not respond within 14 days, we delete the account and everything collected, including the parent&rsquo;s email. A parent can review their child&rsquo;s information, change their choices, or withdraw permission and have everything deleted at any time, using the link in our email or by contacting us.</p>
+        <p>Athletes aged 13 to 17 can use MindFit with their own agreement and can choose to share their progress with a parent from Settings.</p>
       </Section>
       <Section title="6. How long we keep it">
         <p>For as long as your account exists. When you delete your account, everything is removed immediately: profile, logs, photos and sign-in. Backups held by our hosting provider expire on their normal schedule (typically within 30 days).</p>

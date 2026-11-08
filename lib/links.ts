@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { consentFlags } from '@/lib/consent-flags'
 
 const EMAIL_IN_TEXT = /[^\s@,;"'<>()[\]]+@[^\s@,;"'<>()[\]]+\.[^\s@,;"'<>()[\]]+/g
 export const MAX_BULK = 200
@@ -29,7 +30,7 @@ export function extractNames(text: string): Map<string, string> {
 }
 
 export type LinkKind = 'coach' | 'parent'
-export type LinkOutcome = 'linked' | 'already_linked' | 'invited' | 'already_invited'
+export type LinkOutcome = 'linked' | 'already_linked' | 'invited' | 'already_invited' | 'blocked'
 
 // Link requester -> email holder now if they have an account, otherwise
 // queue it for the signup trigger. Coach: requester is the coach, the
@@ -42,6 +43,9 @@ export async function linkOrQueue(
   const { data: profile } = await admin.from('profiles').select('id').eq('email', email).maybeSingle()
 
   if (profile) {
+    if (kind === 'coach' && (await consentFlags(admin, profile.id)).coachesBlocked) {
+      return { outcome: 'blocked', userId: profile.id }
+    }
     const row = kind === 'coach'
       ? { coach_id: requesterId, athlete_id: profile.id }
       : { parent_id: profile.id, athlete_id: requesterId }

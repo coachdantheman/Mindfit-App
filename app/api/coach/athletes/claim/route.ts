@@ -37,8 +37,11 @@ export async function POST(req: Request) {
       if (email === auth.email.toLowerCase()) return { email, status: 'invalid', message: 'That is your own email.' }
       try {
         const { outcome, userId } = await linkOrQueue(admin, { email, requesterId: coachId, kind: 'coach' })
+        const blocked = { email, status: 'invalid' as const, message: "A parent hasn't allowed coach sharing for this athlete." }
+        if (outcome === 'blocked') return blocked
         if (userId) {
           const joined = team ? await addToTeam(admin, team, userId) : null
+          if (joined === 'blocked') return blocked
           return { email, status: outcome === 'linked' || joined === 'joined' ? 'linked' : 'already_linked' }
         }
 

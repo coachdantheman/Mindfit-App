@@ -1,8 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer } from 'recharts'
 import { WeighIn } from '@/types'
 import { linearTrend, localDateISO } from '@/lib/nutrition'
+import { isUnder13 } from '@/lib/age'
 import ProgressPhotoSheet from './ProgressPhotoSheet'
 import { CameraIcon } from '@/components/shared/icons'
 
@@ -18,6 +19,11 @@ export default function WeighInCard({ weighIns, targetWeight, onSaved }: Props) 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [photoFor, setPhotoFor] = useState<WeighIn | null>(null)
+  const [photosOk, setPhotosOk] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/profile').then(r => r.json()).then(p => setPhotosOk(!isUnder13(p))).catch(() => {})
+  }, [])
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -28,7 +34,7 @@ export default function WeighInCard({ weighIns, targetWeight, onSaved }: Props) 
     })
     const data = await res.json()
     if (!res.ok) setError(data.error ?? 'Could not save.')
-    else { setWeight(''); onSaved(); setPhotoFor({ ...data, photo_slots: [] }) }
+    else { setWeight(''); onSaved(); if (photosOk) setPhotoFor({ ...data, photo_slots: [] }) }
     setSaving(false)
   }
 
@@ -88,14 +94,16 @@ export default function WeighInCard({ weighIns, targetWeight, onSaved }: Props) 
             <div key={w.id} className="flex items-center justify-between gap-3 py-1.5 text-xs">
               <span className="text-fg-3">{w.entry_date}</span>
               <span className="text-fg-2 tabular-nums">{Number(w.weight_lb)} lb</span>
-              <button
-                type="button"
-                onClick={() => setPhotoFor(w)}
-                className={`inline-flex items-center gap-1 py-1 px-2 rounded-lg ${w.photo_slots?.length ? 'text-cta' : 'text-fg-4 hover:text-fg-2'}`}
-                aria-label="Progress photos"
-              >
-                <CameraIcon className="w-4 h-4" />{w.photo_slots?.length ? w.photo_slots.length : ''}
-              </button>
+              {photosOk ? (
+                <button
+                  type="button"
+                  onClick={() => setPhotoFor(w)}
+                  className={`inline-flex items-center gap-1 py-1 px-2 rounded-lg ${w.photo_slots?.length ? 'text-cta' : 'text-fg-4 hover:text-fg-2'}`}
+                  aria-label="Progress photos"
+                >
+                  <CameraIcon className="w-4 h-4" />{w.photo_slots?.length ? w.photo_slots.length : ''}
+                </button>
+              ) : <span />}
               <button type="button" onClick={() => remove(w.id)} className="text-fg-4 hover:text-red-400">Remove</button>
             </div>
           ))}

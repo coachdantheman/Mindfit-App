@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { maybeSyncToGhl } from '@/lib/ghl'
 import { UserRole } from '@/types'
 import { touchLastSeen } from '@/lib/last-seen'
+import type { ConsentStatus } from '@/lib/age'
 
 interface AuthResult {
   userId: string
@@ -11,6 +12,8 @@ interface AuthResult {
   role: UserRole
   fullName: string | null
   onboardedAt: string | null
+  birthYear: number | null
+  consentStatus: ConsentStatus
 }
 
 function nameFromMetadata(user: User): string | null {
@@ -32,7 +35,7 @@ export async function getAuthUser(): Promise<AuthResult | null> {
   const adminSupabase = createAdminClient()
   const { data: profile } = await adminSupabase
     .from('profiles')
-    .select('role, full_name, onboarded_at, ghl_synced_at')
+    .select('role, full_name, onboarded_at, ghl_synced_at, birth_year, consent_status')
     .eq('id', session.user.id)
     .maybeSingle()
 
@@ -44,10 +47,12 @@ export async function getAuthUser(): Promise<AuthResult | null> {
     role: (profile?.role as UserRole) ?? 'member',
     fullName: profile?.full_name ?? nameFromMetadata(session.user),
     onboardedAt: profile?.onboarded_at ?? null,
+    birthYear: profile?.birth_year ?? null,
+    consentStatus: (profile?.consent_status as ConsentStatus) ?? 'not_required',
   }
 }
 
-const profileCache = new Map<string, { role: UserRole; fullName: string | null; onboardedAt: string | null; ts: number }>()
+const profileCache = new Map<string, { role: UserRole; fullName: string | null; onboardedAt: string | null; birthYear: number | null; consentStatus: ConsentStatus; ts: number }>()
 const PROFILE_TTL = 60_000
 
 export async function getAuthUserCached(): Promise<AuthResult | null> {
@@ -56,9 +61,10 @@ export async function getAuthUserCached(): Promise<AuthResult | null> {
   if (!session) return null
 
   const cached = profileCache.get(session.user.id)
-  // Un-onboarded profiles bypass the cache so finishing onboarding
-  // takes effect immediately instead of after the TTL.
-  if (cached && cached.onboardedAt && Date.now() - cached.ts < PROFILE_TTL) {
+  // Un-onboarded profiles, profiles without a birth year and pending
+  // consent bypass the cache so finishing those steps takes effect
+  // immediately instead of after the TTL.
+  if (cached && cached.onboardedAt && cached.birthYear != null && cached.consentStatus !== 'pending' && Date.now() - cached.ts < PROFILE_TTL) {
     await touchLastSeen(createAdminClient(), session.user.id)
     return {
       userId: session.user.id,
@@ -66,13 +72,15 @@ export async function getAuthUserCached(): Promise<AuthResult | null> {
       role: cached.role,
       fullName: cached.fullName,
       onboardedAt: cached.onboardedAt,
+      birthYear: cached.birthYear,
+      consentStatus: cached.consentStatus,
     }
   }
 
   const adminSupabase = createAdminClient()
   const { data: profile } = await adminSupabase
     .from('profiles')
-    .select('role, full_name, onboarded_at, ghl_synced_at')
+    .select('role, full_name, onboarded_at, ghl_synced_at, birth_year, consent_status')
     .eq('id', session.user.id)
     .maybeSingle()
 
@@ -82,7 +90,9 @@ export async function getAuthUserCached(): Promise<AuthResult | null> {
   const role = (profile?.role as UserRole) ?? 'member'
   const fullName = profile?.full_name ?? nameFromMetadata(session.user)
   const onboardedAt = profile?.onboarded_at ?? null
-  profileCache.set(session.user.id, { role, fullName, onboardedAt, ts: Date.now() })
+  const birthYear = profile?.birth_year ?? null
+  const consentStatus = (profile?.consent_status as ConsentStatus) ?? 'not_required'
+  profileCache.set(session.user.id, { role, fullName, onboardedAt, birthYear, consentStatus, ts: Date.now() })
 
   return {
     userId: session.user.id,
@@ -90,6 +100,8 @@ export async function getAuthUserCached(): Promise<AuthResult | null> {
     role,
     fullName,
     onboardedAt,
+    birthYear,
+    consentStatus,
   }
 }
 

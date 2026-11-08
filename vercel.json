@@ -1,6 +1,7 @@
 {
   "crons": [
     { "path": "/api/cron/daily-quote", "schedule": "0 12 * * *" },
-    { "path": "/api/cron/daily-quote", "schedule": "0 13 * * *" }
+    { "path": "/api/cron/daily-quote", "schedule": "0 13 * * *" },
+    { "path": "/api/cron/consent-purge", "schedule": "0 9 * * *" }
   ]
 }

@@ -17,6 +17,12 @@ export interface Profile {
   last_seen_at: string | null
   leaderboard_visible: boolean
   leaderboard_alias: string | null
+  birth_year: number | null
+  birth_month: number | null
+  consent_status: 'not_required' | 'pending' | 'granted'
+  consent_share_coaches: boolean
+  consent_ai: boolean
+  consent_leaderboard: boolean
   created_at: string
 }
 

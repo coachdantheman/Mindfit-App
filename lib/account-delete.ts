@@ -8,7 +8,7 @@ const PHOTO_BUCKET = 'progress-photos'
 // profiles into every per-user table.
 export async function deleteUserCompletely(userId: string): Promise<{ photosRemoved: number }> {
   const admin = createAdminClient()
-  const { data: profile } = await admin.from('profiles').select('email, full_name').eq('id', userId).maybeSingle()
+  const { data: profile } = await admin.from('profiles').select('email, full_name, consent_status').eq('id', userId).maybeSingle()
 
   let photosRemoved = 0
   const { data: photos } = await admin.from('progress_photos').select('storage_path').eq('user_id', userId)
@@ -25,7 +25,7 @@ export async function deleteUserCompletely(userId: string): Promise<{ photosRemo
       admin.from('pending_links').delete().or(`requester_id.eq.${userId},email.eq.${email}`),
       admin.from('approved_emails').delete().eq('email', email),
     ])
-    void pushGhlEvent({ email, name: profile.full_name }, 'account_deleted')
+    if (profile.consent_status === 'not_required') void pushGhlEvent({ email, name: profile.full_name }, 'account_deleted')
   }
 
   const { error } = await admin.auth.admin.deleteUser(userId)

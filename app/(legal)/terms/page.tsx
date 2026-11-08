@@ -7,7 +7,7 @@ export default function TermsPage() {
   return (
     <LegalPage
       title="Terms of Service"
-      intro="These terms govern your use of the MindFit app and website. By creating an account or using the app you agree to them. If you are under 18, a parent or guardian must agree on your behalf."
+      intro="These terms govern your use of the MindFit app and website. By creating an account or using the app you agree to them. If you are under 13, a parent or guardian must agree on your behalf (see section 3)."
     >
       <Section title="1. What MindFit is">
         <p>MindFit is a mental skills and athlete development tool: journaling, assessments, nutrition and training logs, sleep tracking, and coaching features for athletes, their parents and their coaches.</p>
@@ -21,7 +21,8 @@ export default function TermsPage() {
         </ul>
       </Section>
       <Section title="3. Young athletes and parents">
-        <p>MindFit is built for high school athletes, so we expect many users to be under 18. Parents and guardians can see an athlete&rsquo;s progress only when the athlete shares it from Settings, and the athlete can stop sharing at any time. For users under 13, a parent or guardian must set up and supervise the account. See the Privacy Policy for how we handle children&rsquo;s data.</p>
+        <p>MindFit is built for high school athletes, so we expect many users to be under 18. Athletes 13 and older agree to these terms themselves. Parents and guardians can see an athlete&rsquo;s progress only when the athlete shares it from Settings, and the athlete can stop sharing at any time.</p>
+        <p>Athletes under 13 can use MindFit only after a parent or legal guardian gives permission through the form we email them; that parent accepts these terms on the child&rsquo;s behalf and controls what is shared. See the Privacy Policy for how we handle children&rsquo;s data.</p>
       </Section>
       <Section title="4. Acceptable use">
         <ul>

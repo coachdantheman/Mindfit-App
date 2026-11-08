@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { PHOTO_SLOTS, PhotoSlot } from '@/lib/images'
+import { consentFlags } from '@/lib/consent-flags'
 
 export const maxDuration = 30
 
@@ -53,6 +54,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (!MIME.includes(file.type)) return NextResponse.json({ error: 'Use a JPEG, PNG or WebP image' }, { status: 415 })
 
   const admin = createAdminClient()
+  if ((await consentFlags(admin, auth.userId)).photosBlocked) {
+    return NextResponse.json({ error: "Progress photos aren't available for athletes under 13." }, { status: 403 })
+  }
   if (!(await ownWeighIn(admin, params.id, auth.userId))) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg'

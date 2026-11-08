@@ -17,7 +17,8 @@ async function postToGhl(payload: { email: string; name?: string; event: string 
   return true
 }
 
-// One-time signup sync. Claim-first so concurrent renders can't double-send;
+// One-time signup sync, only once the athlete is known to be 13+ (children
+// under 13 never go to the contact system). Claim-first so concurrent renders can't double-send;
 // the claim is rolled back on failure so the next request retries.
 export async function maybeSyncToGhl(userId: string): Promise<void> {
   if (!process.env.GHL_WEBHOOK_URL) return
@@ -28,6 +29,8 @@ export async function maybeSyncToGhl(userId: string): Promise<void> {
     .update({ ghl_synced_at: new Date().toISOString() })
     .eq('id', userId)
     .is('ghl_synced_at', null)
+    .not('birth_year', 'is', null)
+    .eq('consent_status', 'not_required')
     .select('email, full_name')
     .maybeSingle()
   if (!claimed?.email) return

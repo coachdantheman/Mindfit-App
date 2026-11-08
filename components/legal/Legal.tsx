@@ -1,4 +1,4 @@
-export const LEGAL_UPDATED = 'October 30, 2026'
+export const LEGAL_UPDATED = 'November 7, 2026'
 export const LEGAL_CONTACT = 'daniel@mindfit.academy'
 
 export function LegalPage({ title, intro, children }: { title: string; intro: string; children: React.ReactNode }) {

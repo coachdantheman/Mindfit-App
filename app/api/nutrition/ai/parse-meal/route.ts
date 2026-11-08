@@ -3,6 +3,8 @@ import Anthropic from '@anthropic-ai/sdk'
 import { verifyApiUser } from '@/lib/api-auth'
 import { optionalString, requireString } from '@/lib/validate'
 import { extractJson, sanitizeEstimate } from '@/lib/ai-json'
+import { consentFlags } from '@/lib/consent-flags'
+import { createAdminClient } from '@/lib/supabase-server'
 
 export const maxDuration = 45
 
@@ -17,6 +19,9 @@ At most 12 items. Do not invent foods that were not mentioned. calories/protein/
 export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
+  if ((await consentFlags(createAdminClient(), auth.userId)).aiBlocked) {
+    return NextResponse.json({ error: 'AI features are turned off for your account. A parent can turn them on from their MindFit email.' }, { status: 403 })
+  }
 
   const body = await req.json()
   const text = requireString(body.text, 600)

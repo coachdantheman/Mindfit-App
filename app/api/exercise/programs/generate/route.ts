@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { consentFlags } from '@/lib/consent-flags'
+import { createAdminClient } from '@/lib/supabase-server'
 import { extractJson } from '@/lib/ai-json'
 import Anthropic from '@anthropic-ai/sdk'
 
@@ -10,6 +12,9 @@ const anthropic = new Anthropic()
 export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
+  if ((await consentFlags(createAdminClient(), auth.userId)).aiBlocked) {
+    return NextResponse.json({ error: 'AI features are turned off for your account. A parent can turn them on from their MindFit email.' }, { status: 403 })
+  }
 
   const body = await req.json()
   const { sport, goals, experience_level, days_per_week, duration_weeks } = body

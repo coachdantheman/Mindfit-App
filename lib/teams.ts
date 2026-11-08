@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { randomInt } from 'crypto'
+import { consentFlags } from '@/lib/consent-flags'
 
 // No 0/O or 1/I so codes read cleanly off a whiteboard.
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -29,7 +30,8 @@ export async function managedTeam(admin: SupabaseClient, user: { userId: string;
 
 // Joining a team also links the athlete to its coach, so the coach roster,
 // athlete detail and coach RLS policies all see them.
-export async function addToTeam(admin: SupabaseClient, team: Pick<TeamRow, 'id' | 'coach_id'>, athleteId: string): Promise<'joined' | 'already'> {
+export async function addToTeam(admin: SupabaseClient, team: Pick<TeamRow, 'id' | 'coach_id'>, athleteId: string): Promise<'joined' | 'already' | 'blocked'> {
+  if ((await consentFlags(admin, athleteId)).coachesBlocked) return 'blocked'
   const { error } = await admin.from('team_members').insert({ team_id: team.id, athlete_id: athleteId })
   if (error && error.code !== '23505') throw error
   if (team.coach_id !== athleteId) {

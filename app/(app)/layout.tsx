@@ -9,6 +9,8 @@ import PendingTeamJoin from '@/components/shared/PendingTeamJoin'
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await getAuthUserCached()
   if (!user) redirect('/')
+  if (user.role === 'member' && user.birthYear == null) redirect('/age')
+  if (user.role === 'member' && user.consentStatus === 'pending') redirect('/consent/waiting')
   if (user.role === 'member' && !user.onboardedAt) redirect('/onboarding')
 
   return (
