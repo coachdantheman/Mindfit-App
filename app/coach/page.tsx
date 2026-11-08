@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { format, parseISO } from 'date-fns'
 import { MemberWithCount } from '@/types'
-import TeamsManager from '@/components/coach/TeamsManager'
+import TeamsManager, { EncourageControl } from '@/components/coach/TeamsManager'
 import CreateWorkout from '@/components/coach/CreateWorkout'
 import CoachPrograms from '@/components/coach/CoachPrograms'
 import ScheduleManager from '@/components/coach/ScheduleManager'
@@ -129,6 +129,9 @@ function AthleteTable({ athletes, onChanged, notify }: { athletes: MemberWithCou
                 <td className="px-2 py-3 text-right whitespace-nowrap">
                   {a.status === 'invited' && (
                     <button type="button" onClick={() => resend(a)} className="text-xs text-fg-3 hover:text-cta mr-3">Resend invite</button>
+                  )}
+                  {a.status !== 'invited' && (
+                    <span className="mr-3"><EncourageControl target={{ athlete_id: a.id }} label="Encourage" className="text-xs text-fg-3 hover:text-cta" /></span>
                   )}
                   <button type="button" onClick={() => remove(a)} className="text-xs text-fg-4 hover:text-red-400" aria-label={`Remove ${a.full_name || a.email}`}>Remove</button>
                 </td>

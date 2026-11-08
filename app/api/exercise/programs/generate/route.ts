@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { aiQuota } from '@/lib/rate-limit'
 import { consentFlags } from '@/lib/consent-flags'
 import { createAdminClient } from '@/lib/supabase-server'
 import { extractJson } from '@/lib/ai-json'
@@ -8,7 +9,7 @@ import Anthropic from '@anthropic-ai/sdk'
 
 export const maxDuration = 60
 
-const anthropic = new Anthropic()
+const anthropic = new Anthropic({ timeout: 90_000, maxRetries: 1 })
 
 const BODYBUILDING_RULES = `
 Bodybuilding (muscle growth and aesthetics) rules:
@@ -23,6 +24,8 @@ Bodybuilding (muscle growth and aesthetics) rules:
 export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
+  const overQuota = await aiQuota(auth.userId, 'generate', 15)
+  if (overQuota) return overQuota
   if ((await consentFlags(createAdminClient(), auth.userId)).aiBlocked) {
     return NextResponse.json({ error: 'AI features are turned off for your account. A parent can turn them on from their MindFit email.' }, { status: 403 })
   }

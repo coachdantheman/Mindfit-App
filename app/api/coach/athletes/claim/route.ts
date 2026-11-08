@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { copy } from '@/lib/notify-copy'
+import { notify } from '@/lib/notify'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { sendCoachInviteEmail } from '@/lib/email'
@@ -39,7 +41,13 @@ export async function POST(req: Request) {
         const { outcome, userId } = await linkOrQueue(admin, { email, requesterId: coachId, kind: 'coach', teamId: team?.id ?? null })
         const blocked = { email, status: 'invalid' as const, message: "A parent hasn't allowed coach sharing for this athlete." }
         if (outcome === 'blocked') return blocked
-        if (outcome === 'requested') return { email, status: 'requested' }
+        if (outcome === 'requested') {
+          await notify(admin, userId!, {
+            type: 'coach_request', category: 'coach', url: '/mindset', dedupeKey: `request:${coachId}:${userId}`,
+            ...copy.coachRequest(me?.full_name?.trim() || 'A coach'),
+          }).catch(() => null)
+          return { email, status: 'requested' }
+        }
         if (userId) {
           const joined = team ? await addToTeam(admin, team, userId) : null
           if (joined === 'blocked') return blocked

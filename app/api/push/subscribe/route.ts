@@ -77,8 +77,8 @@ export async function POST(req: Request) {
   await sendPush(
     { endpoint, p256dh, auth: authKey },
     {
-      title: 'Daily quote is on',
-      body: `You’ll get one every morning at 7:00. Today’s: “${quote.text}”`,
+      title: 'Notifications are on',
+      body: `Reminders, level-ups and a daily quote at 7:00. Choose what you get in Settings. Today’s quote: “${quote.text}”`,
       url: '/mindset',
       tag: 'mindfit-push-welcome',
     }

@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { copy } from '@/lib/notify-copy'
+import { notify } from '@/lib/notify'
 import { dbError } from '@/lib/api-error'
 import { verifyApiUser } from '@/lib/api-auth'
 import { createAdminClient } from '@/lib/supabase-server'
@@ -30,6 +32,12 @@ export async function POST(req: Request, { params }: { params: { programId: stri
     { onConflict: 'program_id,athlete_id' },
   )
   if (error) return dbError(error)
+
+  const { data: me } = await admin.from('profiles').select('full_name').eq('id', auth.userId).single()
+  const msg = copy.planAssigned(me?.full_name?.trim() || 'Your coach', label)
+  await Promise.all(ids.map(id => notify(admin, id, {
+    type: 'plan_assigned', category: 'coach', url: '/exercise', dedupeKey: `plan:${plan.id}:${id}:${start}`, ...msg,
+  }).catch(() => null)))
   return NextResponse.json({ assigned: ids.length })
 }
 

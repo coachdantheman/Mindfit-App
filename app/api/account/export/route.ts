@@ -8,6 +8,7 @@ const USER_TABLES = [
   'sleep_entries', 'recovery_entries', 'visualization_entries', 'meditation_entries', 'gratitude_entries',
   'affirmations', 'goals', 'flow_sessions', 'flow_logs', 'flow_cue_words', 'flow_stage_checkins',
   'push_subscriptions', 'practice_logs', 'foods', 'exercise_library',
+  'quiz_results', 'notification_prefs', 'notifications', 'progress_snapshots',
 ]
 const ATHLETE_TABLES = ['team_members', 'coach_workouts', 'coach_program_assignments', 'coach_link_requests']
 

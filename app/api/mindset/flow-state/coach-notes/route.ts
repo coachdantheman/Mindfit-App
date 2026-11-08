@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { copy } from '@/lib/notify-copy'
+import { notify } from '@/lib/notify'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
@@ -66,5 +68,14 @@ export async function PUT(req: Request) {
     .single()
 
   if (error) return dbError(error)
+
+  if (body.note.trim()) {
+    const { data: me } = await admin.from('profiles').select('full_name').eq('id', auth.userId).single()
+    await notify(admin, body.athlete_id, {
+      type: 'coach_note', category: 'coach', url: '/mindset',
+      dedupeKey: `note:${auth.userId}:${body.athlete_id}:${new Date().toISOString().slice(0, 13)}`,
+      ...copy.coachNote(me?.full_name?.trim() || 'your coach'),
+    }).catch(() => null)
+  }
   return NextResponse.json(data)
 }

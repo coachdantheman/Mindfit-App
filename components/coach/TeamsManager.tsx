@@ -4,6 +4,53 @@ import Link from 'next/link'
 import Skeleton from '@/components/shared/Skeleton'
 import BulkClaimForm from '@/components/coach/BulkClaimForm'
 import { useToast } from '@/components/shared/Toast'
+import { ENCOURAGEMENT, type EncouragementKey } from '@/lib/notify-copy'
+
+type Target = { athlete_id: string } | { team_id: string }
+
+// Preset encouragement: opens an inline list, sends one message to an athlete or a whole team.
+export function EncourageControl({ target, label, className, disabled = false }: { target: Target; label: string; className: string; disabled?: boolean }) {
+  const [open, setOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null)
+
+  const send = async (message: EncouragementKey) => {
+    setOpen(false)
+    setBusy(true)
+    setStatus(null)
+    const res = await fetch('/api/coach/encourage', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...target, message }),
+    })
+    const data = await res.json().catch(() => ({}))
+    setBusy(false)
+    if (!res.ok) {
+      setStatus({ ok: false, msg: data.error || 'Could not send.' })
+      setTimeout(() => setStatus(null), 4000)
+      return
+    }
+    const msg = 'team_id' in target ? `Sent to ${data.sent} of ${data.of}` : data.sent > 0 ? 'Sent' : 'Already sent today'
+    setStatus({ ok: true, msg })
+    setTimeout(() => setStatus(null), 3000)
+  }
+
+  return (
+    <div className="inline-flex flex-col items-end gap-1 align-top">
+      <button type="button" className={className} disabled={busy || disabled} aria-expanded={open} onClick={() => setOpen(o => !o)}>
+        {busy ? 'Sending…' : label}
+      </button>
+      {open && (
+        <div className="flex flex-col gap-0.5 border border-edge rounded-xl p-1 w-64 max-w-full text-left whitespace-normal">
+          {(Object.entries(ENCOURAGEMENT) as [EncouragementKey, string][]).map(([key, text]) => (
+            <button key={key} type="button" onClick={() => send(key)} className="text-xs text-fg-2 hover:text-cta hover:bg-surface-2/60 rounded-lg px-2 py-1.5 text-left">
+              {text}
+            </button>
+          ))}
+        </div>
+      )}
+      {status && <span role="status" className={`text-xs ${status.ok ? 'text-cta' : 'text-red-400'}`}>{status.msg}</span>}
+    </div>
+  )
+}
 
 interface Member { id: string; full_name: string | null; email: string }
 interface Team {
@@ -158,6 +205,7 @@ export default function TeamsManager({ isAdmin = false, athleteHref = (id: strin
                       <button type="button" onClick={() => copy(inviteLink(t.join_code), 'Invite link')} className="btn-primary text-sm">Copy invite link</button>
                       <button type="button" onClick={() => copy(t.join_code, 'Code')} className="btn-secondary text-sm">Copy code</button>
                       <button type="button" onClick={() => newCode(t)} className="btn-ghost text-xs text-fg-4">New code</button>
+                      <EncourageControl target={{ team_id: t.id }} label="Encourage team" className="btn-secondary text-sm" disabled={t.members.length === 0} />
                       <button type="button" onClick={() => removeTeam(t)} className="btn-ghost text-xs text-fg-4 hover:text-red-400">Delete team</button>
                     </div>
 

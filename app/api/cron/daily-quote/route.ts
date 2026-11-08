@@ -33,10 +33,13 @@ export async function GET(req: Request) {
 
   const quote = getQuoteOfTheDay()
   const admin = createAdminClient()
-  const { data: subs, error } = await admin
-    .from('push_subscriptions')
-    .select('endpoint, p256dh, auth')
+  const [{ data: allSubs, error }, { data: optedOut }] = await Promise.all([
+    admin.from('push_subscriptions').select('user_id, endpoint, p256dh, auth'),
+    admin.from('notification_prefs').select('user_id').eq('push_daily_quote', false),
+  ])
   if (error) return dbError(error)
+  const off = new Set((optedOut ?? []).map(r => r.user_id))
+  const subs = (allSubs ?? []).filter(s => !off.has(s.user_id))
 
   const payload = {
     title: 'MindFit — Quote of the Day',

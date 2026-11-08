@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase'
 import { useKeyboardInset } from '@/lib/useKeyboardInset'
 import { UserRole } from '@/types'
 import { FlameIcon } from '@/components/shared/icons'
+import NotificationBell from '@/components/layout/NotificationBell'
 
 function StreakChip({ pathname }: { pathname: string }) {
   const [streak, setStreak] = useState<number | null>(null)
@@ -155,6 +156,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
 
             {/* Right cluster */}
             <div className="flex items-center gap-2">
+              <NotificationBell />
               <StreakChip pathname={pathname} />
               <Link
                 href="/learn"

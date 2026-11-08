@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { useEffect, useState } from 'react'
 import DailyQuoteToggle from '@/components/shared/DailyQuoteToggle'
+import NotificationSettings from '@/components/settings/NotificationSettings'
 import SharingCard from '@/components/settings/SharingCard'
 import LeaderboardCard from '@/components/settings/LeaderboardCard'
 import DeleteAccountCard from '@/components/settings/DeleteAccountCard'
@@ -269,6 +270,9 @@ export default function SettingsPage() {
         <div className="card p-5">
           <h3 className="font-semibold text-fg-1 mb-4 text-sm">Notifications</h3>
           <DailyQuoteToggle />
+          <div className="mt-6 pt-6 border-t border-edge-muted">
+            <NotificationSettings />
+          </div>
         </div>
 
         {/* Appearance */}

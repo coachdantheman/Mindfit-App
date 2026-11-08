@@ -10,7 +10,7 @@ function emailShell(inner: string): string {
       `
 }
 
-async function send(to: string, subject: string, html: string, label: string): Promise<boolean> {
+async function send(to: string, subject: string, html: string, label: string, headers?: Record<string, string>): Promise<boolean> {
   if (!process.env.RESEND_API_KEY) {
     console.warn(`${label} skipped: RESEND_API_KEY is not set`)
     return false
@@ -18,7 +18,7 @@ async function send(to: string, subject: string, html: string, label: string): P
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: 'Daniel @ MindFit <daniel@mindfit.academy>', to, subject, html }),
+    body: JSON.stringify({ from: 'Daniel @ MindFit <daniel@mindfit.academy>', to, subject, html, ...(headers ? { headers } : {}) }),
     signal: AbortSignal.timeout(10_000),
   }).catch(() => null)
   if (!res?.ok) console.error(`Failed to send ${label}:`, res?.status, await res?.text().catch(() => ''))
@@ -107,7 +107,7 @@ export async function sendWelcomeEmail(to: string, name?: string) {
   }
 }
 
-const escapeHtml = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!))
+export const escapeHtml = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!))
 
 // COPPA direct notice to the parent of an athlete under 13. No marketing
 // footer: this email exists only to ask for consent.
@@ -141,4 +141,26 @@ export async function sendParentConsentEmail(to: string, childName: string | nul
           </p>
         </div>
       `, 'parent consent email')
+}
+
+// Level-ups, weekly recaps, coach updates. No promotions, no Skool pitch.
+// Every one carries a one-click unsubscribe (link + List-Unsubscribe header).
+export function sendEngagementEmail(to: string, subject: string, inner: string, unsubscribe: string): Promise<boolean> {
+  const html = `
+        <div style="background:#0A0F1A;color:#e5e7eb;font-family:sans-serif;max-width:480px;margin:0 auto;padding:40px 24px;border-radius:16px;">
+          <h1 style="color:#C4B400;font-size:28px;letter-spacing:4px;font-weight:700;margin:0 0 24px;">MINDFIT</h1>
+          ${inner}
+          <a href="${appUrlOf()}/mindset" style="display:inline-block;background:#C4B400;color:#0A0F1A;font-weight:700;padding:14px 28px;border-radius:12px;text-decoration:none;font-size:15px;margin:8px 0 32px;">Open MindFit →</a>
+          <hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:0 0 16px;" />
+          <p style="color:#9ca3af;font-size:12px;line-height:1.6;margin:0;">
+            You get this because you use the MindFit app.
+            <a href="${unsubscribe}" style="color:#9ca3af;">Unsubscribe from these emails</a> ·
+            <a href="${appUrlOf()}/settings" style="color:#9ca3af;">Email settings</a><br/>
+            MindFit · daniel@mindfit.academy
+          </p>
+        </div>`
+  return send(to, subject, html, 'engagement email', {
+    'List-Unsubscribe': `<${unsubscribe}>`,
+    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+  })
 }

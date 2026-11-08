@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { copy } from '@/lib/notify-copy'
+import { notify } from '@/lib/notify'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { clampNumber, isISODate, optionalString, requireString } from '@/lib/validate'
@@ -177,6 +179,12 @@ export async function POST(req: Request) {
       p_exercises: exercises,
     })
     if (saveErr) console.error('save_custom_workout failed:', saveErr.message)
+  }
+
+  if (prs.length > 0 || tierUps > 0) {
+    await notify(admin, auth.userId, {
+      type: 'pr', category: 'progress', url: '/exercise', dedupeKey: `pr:${id}`, ...copy.pr(prs.length, tierUps),
+    }).catch(e => console.error('PR notify failed:', e?.message))
   }
 
   return NextResponse.json({ id, prs, tiers, needsProfile: !profile && ranked.length > 0 }, { status: 201 })

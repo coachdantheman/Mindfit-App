@@ -1,4 +1,7 @@
 import { NextResponse } from 'next/server'
+import { displayNameFor } from '@/lib/leaderboard'
+import { copy } from '@/lib/notify-copy'
+import { notify } from '@/lib/notify'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { addToTeam, normalizeCode } from '@/lib/teams'
@@ -40,5 +43,12 @@ export async function POST(req: Request) {
 
   const outcome = await addToTeam(admin, team, auth.userId)
   if (outcome === 'blocked') return NextResponse.json({ error: "Your parent hasn't allowed sharing with coaches, so you can't join a team yet." }, { status: 403 })
+  if (outcome === 'joined') {
+    const { data: me } = await admin.from('profiles').select('full_name').eq('id', auth.userId).single()
+    await notify(admin, team.coach_id, {
+      type: 'team_join', category: 'coach', url: '/coach', dedupeKey: `join:${team.id}:${auth.userId}`,
+      ...copy.teamJoin(displayNameFor(me?.full_name ?? null), team.name),
+    }).catch(() => null)
+  }
   return NextResponse.json({ outcome, team: { id: team.id, name: team.name, coach_name: coachName } })
 }

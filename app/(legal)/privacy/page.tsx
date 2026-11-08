@@ -14,14 +14,15 @@ export default function PrivacyPage() {
           <li><strong>Account:</strong> email, name, sport, birth month and year, role (athlete, coach, parent), and when you accepted these terms.</li>
           <li><strong>What you log:</strong> daily journal entries and ratings (motivation, focus, confidence, anxiety), weekly assessments, flow state sessions, affirmations and goals, meals and macros, weigh-ins, progress photos, workouts and sets, sleep and recovery.</li>
           <li><strong>Game and schedule info:</strong> your next competition date and start time.</li>
-          <li><strong>Technical:</strong> a sign-in session cookie, small settings stored in your browser (theme, unsaved drafts), and the time you last used the app. To stop abuse we keep short-lived counters keyed to your IP address or email (deleted within 2 days). When a parent signs a permission form we record their IP address and browser type as proof of consent. We do not run analytics or advertising trackers.</li>
+          <li><strong>Technical:</strong> a sign-in session cookie, small settings stored in your browser (theme, unsaved drafts), the time you last used the app, your time zone and notification choices, and a record of notifications sent to you (kept up to 120 days). To stop abuse we keep short-lived counters keyed to your IP address or email (deleted within 2 days). When a parent signs a permission form we record their IP address and browser type as proof of consent. We do not run analytics or advertising trackers.</li>
         </ul>
       </Section>
       <Section title="2. Why we use it">
         <ul>
           <li>To run the app: show your progress, compute streaks and scores, build your fueling plan.</li>
           <li>To show your progress to the coaches and parents you are linked to.</li>
-          <li>To send account emails (welcome, invites) and, if you opted in, daily notifications.</li>
+          <li>To send account emails (welcome, invites) and progress emails (level-ups, a weekly recap, updates from your coach). Every progress email has a one-click unsubscribe link, and athletes under 13 never get them.</li>
+          <li>To send in-app and push notifications you can turn on or off by type in Settings: reminders when you haven&rsquo;t logged that day, streaks, level-ups and PRs, game-day reminders, and messages from your coach. Scheduled notifications are not sent between 9 pm and 7 am in your time zone.</li>
           <li>To keep MindFit secure and fix problems.</li>
         </ul>
         <p>We do not sell personal data and do not use it for third-party advertising.</p>
@@ -42,7 +43,7 @@ export default function PrivacyPage() {
           <li><strong>Our contact system</strong> (currently GoHighLevel) — may receive your email and name so we can send you MindFit updates. You can unsubscribe from any email. Athletes under 13 are never added to it.</li>
           <li><strong>Anthropic</strong> — when you describe a meal in words or generate a training program, that text is sent to Anthropic&rsquo;s AI to be turned into macros or a plan. Your name and email are not sent. When a coach uploads a season schedule, that file is sent to Anthropic to read the dates, and it may include names printed on it. For athletes under 13 AI features run only if a parent allowed them.</li>
           <li><strong>Open Food Facts</strong> — barcode lookups send the barcode number only.</li>
-          <li><strong>Your browser&rsquo;s push service</strong> (Apple, Google, Mozilla) — only if you turn on daily notifications.</li>
+          <li><strong>Your browser&rsquo;s push service</strong> (Apple, Google, Mozilla) — only if you turn on notifications. It receives the notification text, not your logs.</li>
           <li><strong>Skool / Zapier</strong> — tells us when a community member joins or leaves so we can link their account.</li>
         </ul>
       </Section>
@@ -61,7 +62,7 @@ export default function PrivacyPage() {
           <li><strong>Delete</strong> your account and all data from Settings → Your data, or email us and we will do it within 7 days.</li>
           <li><strong>Correct</strong> your name, sports and game details from Settings.</li>
           <li><strong>Control sharing:</strong> remove any coach or parent from Settings → Sharing.</li>
-          <li><strong>Notifications:</strong> turn daily notifications off in Settings; unsubscribe from emails with the link in any email.</li>
+          <li><strong>Notifications:</strong> choose which notifications and emails you get in Settings → Notifications, or unsubscribe with the link in any progress email.</li>
         </ul>
         <p>Depending on where you live (for example the EU, UK or California) you may have additional rights to access, correct, restrict or object. Email us to exercise them.</p>
       </Section>
