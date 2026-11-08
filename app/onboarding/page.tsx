@@ -23,19 +23,28 @@ export default function OnboardingPage() {
   const [mpi, setMpi] = useState<number | null>(null)
   const [teamCode, setTeamCode] = useState('')
   const [teamError, setTeamError] = useState('')
-  const [teamName, setTeamName] = useState<string | null>(null)
+  const [teamNames, setTeamNames] = useState<string[]>([])
+  const [joining, setJoining] = useState(false)
 
   useEffect(() => { setTeamCode(readPendingTeamCode() ?? '') }, [])
 
+  // Athletes on more than one team add each code; the field clears after a join.
+  const addTeam = async (): Promise<boolean> => {
+    if (!teamCode) return true
+    setTeamError('')
+    setJoining(true)
+    const r = await joinTeam(teamCode)
+    setJoining(false)
+    if (!r.ok) { setTeamError(r.error); return false }
+    clearPendingTeamCode()
+    setTeamNames(n => n.includes(r.teamName) ? n : [...n, r.teamName])
+    setTeamCode('')
+    return true
+  }
+
   const startAssessment = async () => {
     setSaving(true)
-    setTeamError('')
-    if (teamCode && !teamName) {
-      const r = await joinTeam(teamCode)
-      if (!r.ok) { setTeamError(r.error); setSaving(false); return }
-      clearPendingTeamCode()
-      setTeamName(r.teamName)
-    }
+    if (!(await addTeam())) { setSaving(false); return }
     if (sport) {
       await fetch('/api/profile', {
         method: 'PATCH',
@@ -109,18 +118,26 @@ export default function OnboardingPage() {
           <label htmlFor="onboarding-team" className="block text-sm font-medium text-fg-2 mb-2">
             Team code <span className="text-fg-4 font-normal">(optional, from your coach)</span>
           </label>
-          <input
-            id="onboarding-team"
-            value={teamCode}
-            onChange={e => { setTeamCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6)); setTeamError('') }}
-            disabled={!!teamName}
-            autoCapitalize="characters"
-            autoComplete="off"
-            placeholder="ABC123"
-            className="w-full border border-edge rounded-xl px-4 py-3 text-sm font-mono tracking-widest focus:ring-2 focus:ring-brand-500 bg-surface-2 text-fg-1 placeholder:text-fg-4 mb-2"
-          />
+          <div className="flex gap-2 mb-2">
+            <input
+              id="onboarding-team"
+              value={teamCode}
+              onChange={e => { setTeamCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6)); setTeamError('') }}
+              autoCapitalize="characters"
+              autoComplete="off"
+              placeholder="ABC123"
+              className="flex-1 border border-edge rounded-xl px-4 py-3 text-sm font-mono tracking-widest focus:ring-2 focus:ring-brand-500 bg-surface-2 text-fg-1 placeholder:text-fg-4"
+            />
+            <button type="button" onClick={addTeam} disabled={joining || teamCode.length !== 6} className="btn-secondary px-4 shrink-0">
+              {joining ? 'Joining…' : 'Join'}
+            </button>
+          </div>
           {teamError && <p role="alert" className="text-sm text-red-400 mb-2">{teamError}</p>}
-          {teamName && <p role="status" className="text-sm text-green-400 mb-2">You joined {teamName}.</p>}
+          {teamNames.length > 0 && (
+            <p role="status" className="text-sm text-green-400 mb-2">
+              You joined {teamNames.join(', ')}. On another team too? Enter that code.
+            </p>
+          )}
           <div className="mb-6" />
 
           <button
@@ -166,7 +183,7 @@ export default function OnboardingPage() {
               You&rsquo;re on The Board: +{ACTIONS.find(a => a.key === 'baseline')?.points ?? 0} pts
             </p>
             <p className="text-xs text-fg-3 mt-0.5">
-              Your first MPI just put you on the monthly leaderboard{teamName ? ` with ${teamName}` : ''}. Show up every day to climb it.
+              Your first MPI just put you on the monthly leaderboard{teamNames.length ? ` with ${teamNames.join(' and ')}` : ''}. Show up every day to climb it.
             </p>
           </div>
           <button

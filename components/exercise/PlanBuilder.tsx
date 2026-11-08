@@ -3,7 +3,7 @@ import { useState } from 'react'
 import PlanSetupForm, { type BuilderMode, type PlanSetup } from './PlanSetupForm'
 import PlanDayEditor from './PlanDayEditor'
 import PlanReview from './PlanReview'
-import { generatePlanTemplate } from '@/lib/workout-templates'
+import { generatePlanTemplate, sportOptional } from '@/lib/workout-templates'
 import {
   applyTemplateToBlocks, blocksFromProgram, expandAiBlocks, expandTemplate, toLocalDateString,
   type DayTemplate, type PlanBlockInput,
@@ -74,8 +74,8 @@ export default function PlanBuilder({ program, library, onCreateExercise, onSave
     setError('')
     const duration = setup.durationWeeks
     if (!coach && !setup.startDate) { setError('Pick a start date.'); return }
-    if ((mode === 'generate' || mode === 'ai') && (!setup.sport.trim() || setup.goals.length === 0)) {
-      setError('Pick a sport and at least one goal.')
+    if ((mode === 'generate' || mode === 'ai') && (setup.goals.length === 0 || (!setup.sport.trim() && !sportOptional(setup.goals)))) {
+      setError(setup.goals.length === 0 ? 'Pick at least one goal.' : 'Pick a sport, or choose Bodybuilding as your only goal.')
       return
     }
     if ((mode === 'scratch' || mode === 'edit') && !setup.title.trim()) { setError('Give the plan a name.'); return }
@@ -122,7 +122,7 @@ export default function PlanBuilder({ program, library, onCreateExercise, onSave
         if (b.length === 0) { setError('AI returned an incomplete plan. Try "Generate" instead.'); return }
         setBlocks(b)
         setTemplates(templatesFromBlocks(b))
-        setSetup(s => ({ ...s, title: s.title || data.title || `${s.sport} AI plan`, description: s.description || data.description || '' }))
+        setSetup(s => ({ ...s, title: s.title || data.title || `${s.sport || 'Bodybuilding'} AI plan`, description: s.description || data.description || '' }))
         setStep('days')
       } catch {
         setError('AI generation failed. Try "Generate" instead.')

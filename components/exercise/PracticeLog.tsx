@@ -165,6 +165,7 @@ export default function PracticeLog({ notify }: Props) {
     update({ triggers: form.triggers.includes(t) ? form.triggers.filter(x => x !== t) : [...form.triggers, t] })
 
   const save = async () => {
+    if (state === 'saving') return
     setState('saving')
     const res = await fetch('/api/exercise/practice', {
       method: 'POST',

@@ -19,6 +19,7 @@ async function send(to: string, subject: string, html: string, label: string): P
     method: 'POST',
     headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ from: 'Daniel @ MindFit <daniel@mindfit.academy>', to, subject, html }),
+    signal: AbortSignal.timeout(10_000),
   }).catch(() => null)
   if (!res?.ok) console.error(`Failed to send ${label}:`, res?.status, await res?.text().catch(() => ''))
   return !!res?.ok
@@ -78,6 +79,7 @@ export async function sendWelcomeEmail(to: string, name?: string) {
       'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
       'Content-Type': 'application/json',
     },
+    signal: AbortSignal.timeout(10_000),
     body: JSON.stringify({
       from: 'Daniel @ MindFit <daniel@mindfit.academy>',
       to,
@@ -98,10 +100,10 @@ export async function sendWelcomeEmail(to: string, name?: string) {
         </div>
       `,
     }),
-  })
+  }).catch(() => null)
 
-  if (!res.ok) {
-    console.error('Failed to send welcome email:', res.status, await res.text().catch(() => ''))
+  if (!res?.ok) {
+    console.error('Failed to send welcome email:', res?.status, await res?.text().catch(() => ''))
   }
 }
 

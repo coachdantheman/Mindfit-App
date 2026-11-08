@@ -4,6 +4,7 @@ import Navbar from '@/components/layout/Navbar'
 import ServiceWorkerRegistrar from '@/components/shared/ServiceWorkerRegistrar'
 import { ToastProvider } from '@/components/shared/Toast'
 import TermsBanner from '@/components/shared/TermsBanner'
+import CoachRequestsBanner from '@/components/shared/CoachRequestsBanner'
 import PendingTeamJoin from '@/components/shared/PendingTeamJoin'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -23,6 +24,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <PendingTeamJoin />
         <Navbar email={user.email} role={user.role} fullName={user.fullName} />
         <TermsBanner />
+        <CoachRequestsBanner />
         <main id="main" tabIndex={-1} className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 py-8 pb-24 sm:pb-8">
           {children}
         </main>

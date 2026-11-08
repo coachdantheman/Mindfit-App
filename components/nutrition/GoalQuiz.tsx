@@ -61,6 +61,9 @@ export default function GoalQuiz({ initial, onSave, onCancel }: Props) {
       </div>
 
       {step === 0 && <div className="space-y-2">{GOALS.map(g => <Card key={g.key} active={goal === g.key} title={g.title} desc={g.desc} onClick={() => setGoal(g.key)} />)}</div>}
+      {step === 0 && goal === 'lose' && (
+        <p className="text-xs text-fg-3">Growing athletes need fuel to perform and recover. Talk with a parent, doctor or athletic trainer before cutting calories.</p>
+      )}
       {step === 1 && <div className="space-y-2">{ACTIVITY.map(a => <Card key={a.key} active={activity === a.key} title={a.title} desc={a.desc} onClick={() => setActivity(a.key)} />)}</div>}
       {step === 2 && (
         <div className="flex items-center gap-3">

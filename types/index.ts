@@ -105,7 +105,7 @@ export interface ParentAthlete {
   created_at: string
 }
 
-export type ClaimStatus = 'created' | 'linked' | 'already_linked' | 'exists' | 'invalid' | 'error'
+export type ClaimStatus = 'created' | 'linked' | 'requested' | 'already_linked' | 'exists' | 'invalid' | 'error'
 export interface ClaimResult {
   email: string
   status: ClaimStatus

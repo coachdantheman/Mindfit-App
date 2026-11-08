@@ -59,6 +59,7 @@ export default function DailyPracticeForm({
   }, [completed, duration, notes, loading, saved, key])
 
   const handleSave = async () => {
+    if (state === 'saving') return
     setState('saving')
     const extra = buildPayload?.() ?? {}
     const res = await fetch(endpoint, {

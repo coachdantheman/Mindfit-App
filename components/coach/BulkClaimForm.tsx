@@ -1,7 +1,15 @@
 'use client'
-import { useId, useMemo, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useState } from 'react'
 import type { ClaimResult, ClaimStatus } from '@/types'
 import { extractEmails } from '@/lib/links'
+
+interface PendingRequest {
+  id: string
+  name: string | null
+  email: string
+  team_name: string | null
+  created_at: string
+}
 
 interface Copy {
   label: string
@@ -29,6 +37,7 @@ const DEFAULT_COPY: Copy = {
 const STATUS_LABEL: Record<ClaimStatus, { label: string; className: string }> = {
   created: { label: 'Account created', className: 'bg-cta/15 text-cta' },
   linked: { label: 'Linked', className: 'bg-green-500/10 text-green-400' },
+  requested: { label: 'Waiting for athlete to accept', className: 'bg-surface-3/60 text-fg-2' },
   already_linked: { label: 'Already yours', className: 'bg-surface-3/60 text-fg-3' },
   exists: { label: 'Already has an account', className: 'bg-surface-3/60 text-fg-3' },
   invalid: { label: 'Skipped', className: 'bg-orange-500/10 text-orange-400' },
@@ -41,9 +50,19 @@ export default function BulkClaimForm({ onDone, endpoint = '/api/coach/athletes/
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [results, setResults] = useState<ClaimResult[] | null>(null)
+  const [pending, setPending] = useState<PendingRequest[]>([])
+  const [cancelingId, setCancelingId] = useState<string | null>(null)
+  const [cancelError, setCancelError] = useState('')
 
   const count = useMemo(() => extractEmails(text).length, [text])
   const fieldId = useId()
+
+  const loadPending = useCallback(async () => {
+    const data = await fetch('/api/coach/link-requests').then(r => r.ok ? r.json() : null).catch(() => null)
+    if (Array.isArray(data)) setPending(data)
+  }, [])
+
+  useEffect(() => { loadPending() }, [loadPending])
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -61,6 +80,25 @@ export default function BulkClaimForm({ onDone, endpoint = '/api/coach/athletes/
     setResults(data.results)
     setText('')
     onDone()
+    loadPending()
+  }
+
+  const cancelRequest = async (id: string) => {
+    setCancelError('')
+    setCancelingId(id)
+    try {
+      const res = await fetch('/api/coach/link-requests', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      setPending(prev => prev.filter(p => p.id !== id))
+    } catch {
+      setCancelError('Could not cancel that request. Please try again.')
+    } finally {
+      setCancelingId(null)
+    }
   }
 
   return (
@@ -103,6 +141,21 @@ export default function BulkClaimForm({ onDone, endpoint = '/api/coach/athletes/
             ))}
           </ul>
           <p className="text-xs text-fg-4 mt-3">{c.footnote}</p>
+        </div>
+      )}
+
+      {pending.length > 0 && (
+        <div className="card p-4">
+          <p className="text-sm font-semibold text-fg-1 mb-2">Waiting for athletes to accept ({pending.length})</p>
+          <ul className="divide-y divide-edge-muted">
+            {pending.map(p => (
+              <li key={p.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                <span className="text-fg-2 truncate">{p.name || p.email}{p.team_name ? <span className="text-fg-4 text-xs"> · {p.team_name}</span> : null}</span>
+                <button type="button" onClick={() => cancelRequest(p.id)} disabled={cancelingId === p.id} className="btn-ghost shrink-0">Cancel</button>
+              </li>
+            ))}
+          </ul>
+          {cancelError && <p role="alert" className="text-sm text-red-400 mt-2">{cancelError}</p>}
         </div>
       )}
     </div>

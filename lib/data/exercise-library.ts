@@ -25,6 +25,7 @@ const ROWS: Row[] = [
   ['plyo-push-ups', 'Plyo Push-Ups', 'chest', 'bodyweight', 'reps', ['Clap Push-Ups', 'Plyometric Push-Ups', 'Explosive Push-Ups']],
   ['dips', 'Dips', 'chest', 'bodyweight', 'reps', ['Parallel Bar Dips', 'Chest Dips', 'Tricep Dips', 'Bench Dips']],
   ['chest-pass-to-wall', 'Chest Pass to Wall', 'chest', 'med ball', 'reps', ['Med Ball Chest Pass', 'Medicine Ball Chest Pass']],
+  ['cable-fly', 'Cable Fly', 'chest', 'cable', 'weight_reps', ['Cable Flys', 'Cable Flyes', 'Cable Crossover', 'Chest Fly', 'Dumbbell Fly', 'Dumbbell Flyes', 'Pec Deck', 'Machine Fly']],
   ['landmine-press', 'Landmine Press', 'shoulders', 'barbell', 'weight_reps', ['Half-Kneeling Landmine Press']],
 
   // ─── back ──────────────────────────────────────────────────────────────
@@ -34,6 +35,7 @@ const ROWS: Row[] = [
   ['single-arm-dumbbell-row', 'Single-Arm Dumbbell Row', 'back', 'dumbbell', 'weight_reps', ['Single Arm Dumbbell Row', 'One-Arm Dumbbell Row', 'Dumbbell Row', 'DB Row']],
   ['seated-cable-row', 'Seated Cable Row', 'back', 'cable', 'weight_reps', ['Cable Row', 'Single Arm Cable Row', 'Single-Arm Cable Row']],
   ['lat-pulldown', 'Lat Pulldown', 'back', 'cable', 'weight_reps', ['Lat Pulldowns', 'Pulldown']],
+  ['straight-arm-pulldown', 'Straight-Arm Pulldown', 'back', 'cable', 'weight_reps', ['Straight Arm Pulldown', 'Straight-Arm Pulldowns', 'Cable Pullover', 'Lat Pullover']],
   ['face-pulls', 'Face Pulls', 'shoulders', 'cable', 'weight_reps', ['Face Pull', 'Band Face Pulls']],
   ['band-pull-aparts', 'Band Pull-Aparts', 'shoulders', 'band', 'reps', ['Band Pull Aparts', 'Band Pull-Apart']],
   ['deadlift', 'Deadlift', 'legs', 'barbell', 'weight_reps', ['Conventional Deadlift', 'Barbell Deadlift', 'Deadlifts'], 'deadlift'],
@@ -46,6 +48,7 @@ const ROWS: Row[] = [
   ['overhead-press', 'Overhead Press', 'shoulders', 'barbell', 'weight_reps', ['OHP', 'Military Press', 'Standing Press', 'Barbell Overhead Press', 'Shoulder Press'], 'ohp'],
   ['dumbbell-shoulder-press', 'Dumbbell Shoulder Press', 'shoulders', 'dumbbell', 'weight_reps', ['DB Shoulder Press', 'Seated Dumbbell Press']],
   ['lateral-raises', 'Lateral Raises', 'shoulders', 'dumbbell', 'weight_reps', ['Lateral Raise', 'Side Raises', 'Dumbbell Lateral Raise']],
+  ['rear-delt-fly', 'Rear Delt Fly', 'shoulders', 'dumbbell', 'weight_reps', ['Rear Delt Flyes', 'Reverse Fly', 'Reverse Flyes', 'Bent-Over Reverse Fly', 'Reverse Pec Deck', 'Rear Delt Raise']],
   ['shoulder-external-rotation', 'Shoulder External Rotation', 'shoulders', 'band', 'reps', ['Band External Rotation', 'External Rotation']],
   ['wall-slides', 'Wall Slides', 'shoulders', 'bodyweight', 'reps', ['Wall Slide']],
   ['arm-circles', 'Arm Circles', 'shoulders', 'bodyweight', 'reps', ['Arm Circle']],
@@ -54,6 +57,10 @@ const ROWS: Row[] = [
   ['barbell-curl', 'Barbell Curl', 'arms', 'barbell', 'weight_reps', ['Barbell Curls', 'Bicep Curl']],
   ['dumbbell-curls', 'Dumbbell Curls', 'arms', 'dumbbell', 'weight_reps', ['Dumbbell Curl', 'DB Curls', 'Bicep Curls']],
   ['hammer-curls', 'Hammer Curls', 'arms', 'dumbbell', 'weight_reps', ['Hammer Curl']],
+  ['incline-dumbbell-curl', 'Incline Dumbbell Curl', 'arms', 'dumbbell', 'weight_reps', ['Incline Dumbbell Curls', 'Incline DB Curl', 'Incline Curl']],
+  ['preacher-curl', 'Preacher Curl', 'arms', 'barbell', 'weight_reps', ['Preacher Curls', 'EZ-Bar Preacher Curl', 'Dumbbell Preacher Curl']],
+  ['overhead-tricep-extension', 'Overhead Tricep Extension', 'arms', 'dumbbell', 'weight_reps', ['Overhead Triceps Extension', 'Overhead Tricep Extensions', 'Dumbbell Overhead Extension', 'Cable Overhead Extension']],
+  ['skull-crushers', 'Skull Crushers', 'arms', 'barbell', 'weight_reps', ['Skull Crusher', 'Lying Tricep Extension', 'Lying Triceps Extension', 'EZ-Bar Skull Crushers']],
   ['tricep-pushdowns', 'Tricep Pushdowns', 'arms', 'cable', 'weight_reps', ['Tricep Pushdown', 'Triceps Pushdown', 'Cable Pushdown', 'Rope Pushdown']],
 
   // ─── legs ──────────────────────────────────────────────────────────────

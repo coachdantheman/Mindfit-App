@@ -78,7 +78,7 @@ export default function GoalsSection() {
 
   const addGoal = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formTitle.trim()) return
+    if (!formTitle.trim() || saving) return
     setSaving(true)
     const res = await fetch('/api/mindset/goals', {
       method: 'POST',

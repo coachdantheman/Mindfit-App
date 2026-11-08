@@ -7,8 +7,9 @@ const USER_TABLES = [
   'weigh_ins', 'workout_logs', 'exercise_logs', 'custom_workouts', 'training_programs', 'athlete_profiles',
   'sleep_entries', 'recovery_entries', 'visualization_entries', 'meditation_entries', 'gratitude_entries',
   'affirmations', 'goals', 'flow_sessions', 'flow_logs', 'flow_cue_words', 'flow_stage_checkins',
-  'push_subscriptions',
+  'push_subscriptions', 'practice_logs', 'foods', 'exercise_library',
 ]
+const ATHLETE_TABLES = ['team_members', 'coach_workouts', 'coach_program_assignments', 'coach_link_requests']
 
 // Everything the app stores about the signed-in user, as one JSON file.
 export async function GET() {
@@ -19,6 +20,8 @@ export async function GET() {
   const data: Record<string, unknown> = {}
   const results = await Promise.all(USER_TABLES.map(t => admin.from(t).select('*').eq('user_id', auth.userId)))
   USER_TABLES.forEach((t, i) => { data[t] = results[i].error ? [] : results[i].data })
+  const athleteResults = await Promise.all(ATHLETE_TABLES.map(t => admin.from(t).select('*').eq('athlete_id', auth.userId)))
+  ATHLETE_TABLES.forEach((t, i) => { data[t] = athleteResults[i].error ? [] : athleteResults[i].data })
 
   const [profile, savedMeals, photos, coaches, parents, coachNotes] = await Promise.all([
     admin.from('profiles').select('*').eq('id', auth.userId).maybeSingle(),

@@ -74,6 +74,7 @@ export default function WeeklyAssessment({ mode = 'weekly', onComplete }: Weekly
   }, [scores, notes, loading, saved, isBaseline])
 
   const handleSave = async () => {
+    if (saving) return
     setSaving(true)
     const res = await fetch('/api/mindset/weekly-assessment', {
       method: 'POST',

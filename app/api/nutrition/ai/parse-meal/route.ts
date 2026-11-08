@@ -9,7 +9,7 @@ import { createAdminClient } from '@/lib/supabase-server'
 
 export const maxDuration = 45
 
-const anthropic = new Anthropic()
+const anthropic = new Anthropic({ timeout: 60_000, maxRetries: 1 })
 
 const SYSTEM = `You are a sports nutrition assistant helping a high-school athlete log a meal they described in words.
 Split the description into separate food items with a per-item serving and nutrition.

@@ -61,6 +61,7 @@ export default function WeighInCard({ weighIns, targetWeight, onSaved }: Props) 
         <button type="submit" disabled={saving} className="btn-primary col-span-2 sm:col-span-1">Log</button>
       </form>
       {error && <p className="text-xs text-red-400">{error}</p>}
+      <p className="text-xs text-fg-4">Weight is one number, not your worth. This is not medical advice: for weight goals, check with a parent, doctor or athletic trainer.</p>
 
       {points.length >= 2 ? (
         <>

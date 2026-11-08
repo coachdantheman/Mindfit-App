@@ -55,9 +55,9 @@ export default function LeaderboardPage() {
             {data.teams.length > 0 && (
               <div className="mb-4">
                 <label htmlFor="board-team" className="sr-only">Show</label>
-                <select id="board-team" value={team} onChange={e => { setTeam(e.target.value); setPage(1) }} className="input-field sm:w-72">
-                  <option value="">Everyone</option>
+                <select id="board-team" value={data.team ?? 'all'} onChange={e => { setTeam(e.target.value); setPage(1) }} className="input-field sm:w-72">
                   {data.teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  <option value="all">Everyone</option>
                 </select>
               </div>
             )}

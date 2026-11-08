@@ -50,16 +50,24 @@ export default function ExercisePage() {
     if (saved) { setSavedDraft(saved); setTab('track') }
   }, [])
 
-  const createExercise = useCallback(async (name: string, muscle_group: MuscleGroup): Promise<ExerciseLibraryRow | null> => {
-    const res = await fetch('/api/exercise/library', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, muscle_group }),
-    })
-    if (!res.ok) { notify("Couldn't add that exercise.", 'error'); return null }
-    const row = (await res.json()) as ExerciseLibraryRow
-    setLibrary(prev => (prev.some(e => e.id === row.id) ? prev : [...prev, row]))
-    return row
+  const pendingCreates = useRef(new Map<string, Promise<ExerciseLibraryRow | null>>())
+  const createExercise = useCallback((name: string, muscle_group: MuscleGroup): Promise<ExerciseLibraryRow | null> => {
+    const key = `${name}|${muscle_group}`
+    const pending = pendingCreates.current.get(key)
+    if (pending) return pending
+    const request = (async (): Promise<ExerciseLibraryRow | null> => {
+      const res = await fetch('/api/exercise/library', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, muscle_group }),
+      })
+      if (!res.ok) { notify("Couldn't add that exercise.", 'error'); return null }
+      const row = (await res.json()) as ExerciseLibraryRow
+      setLibrary(prev => (prev.some(e => e.id === row.id) ? prev : [...prev, row]))
+      return row
+    })().finally(() => pendingCreates.current.delete(key))
+    pendingCreates.current.set(key, request)
+    return request
   }, [notify])
 
   const startSession = useCallback((input: StartWorkoutInput) => {

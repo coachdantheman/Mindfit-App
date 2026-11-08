@@ -7,7 +7,7 @@ import { cleanEvent } from '@/lib/schedule'
 
 export const maxDuration = 60
 
-const anthropic = new Anthropic()
+const anthropic = new Anthropic({ timeout: 60_000, maxRetries: 1 })
 const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'] as const
 const MAX_BASE64 = 5_500_000
 

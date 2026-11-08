@@ -34,7 +34,7 @@ export async function sendPush(sub: StoredSubscription, payload: PushPayload): P
   configure()
   const target: WebPushSubscription = { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }
   try {
-    await webpush.sendNotification(target, JSON.stringify(payload), { TTL: 60 * 60 * 12 })
+    await webpush.sendNotification(target, JSON.stringify(payload), { TTL: 60 * 60 * 12, timeout: 10_000 })
     return 'sent'
   } catch (e: any) {
     const status = e?.statusCode

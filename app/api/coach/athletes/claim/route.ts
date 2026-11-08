@@ -7,9 +7,9 @@ import { createInvitedAccount, signInLinkFor } from '@/lib/invites'
 import { addToTeam, managedTeam } from '@/lib/teams'
 import type { ClaimResult } from '@/types'
 
-// Bulk add: every email becomes an athlete linked to this coach right now.
-// Accounts that don't exist are created (the athlete claims them at first
-// sign-in); existing ones are linked in place. With a team_id they also go
+// Bulk add. New emails get an account linked to this coach right away (the
+// athlete claims it at first sign-in). Existing accounts get a request they
+// accept in the app before the coach sees anything. With a team_id they also go
 // on that team, linked to the team's coach (how admins add for a coach).
 export async function POST(req: Request) {
   const auth = await verifyApiUser('coach', 'admin')
@@ -36,9 +36,10 @@ export async function POST(req: Request) {
     const settled = await Promise.all(chunk.map(async (email): Promise<ClaimResult> => {
       if (email === auth.email.toLowerCase()) return { email, status: 'invalid', message: 'That is your own email.' }
       try {
-        const { outcome, userId } = await linkOrQueue(admin, { email, requesterId: coachId, kind: 'coach' })
+        const { outcome, userId } = await linkOrQueue(admin, { email, requesterId: coachId, kind: 'coach', teamId: team?.id ?? null })
         const blocked = { email, status: 'invalid' as const, message: "A parent hasn't allowed coach sharing for this athlete." }
         if (outcome === 'blocked') return blocked
+        if (outcome === 'requested') return { email, status: 'requested' }
         if (userId) {
           const joined = team ? await addToTeam(admin, team, userId) : null
           if (joined === 'blocked') return blocked

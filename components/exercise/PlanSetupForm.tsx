@@ -1,19 +1,8 @@
 'use client'
+import { PLAN_GOALS, PLAN_SPORTS, sportOptional } from '@/lib/workout-templates'
 
-export const SPORTS = [
-  'Football', 'Basketball', 'Baseball', 'Soccer', 'Hockey',
-  'Tennis', 'Track & Field', 'Swimming', 'Volleyball',
-  'Lacrosse', 'Wrestling', 'Golf', 'Softball', 'Cross Country',
-]
-
-export const GOALS = [
-  { key: 'strength', label: 'Strength' },
-  { key: 'speed', label: 'Speed' },
-  { key: 'explosiveness', label: 'Explosiveness' },
-  { key: 'endurance', label: 'Endurance' },
-  { key: 'flexibility', label: 'Flexibility' },
-  { key: 'sport-specific', label: 'Sport-Specific Skills' },
-]
+export const SPORTS = PLAN_SPORTS
+export const GOALS = PLAN_GOALS
 
 export type BuilderMode = 'generate' | 'ai' | 'scratch' | 'edit'
 
@@ -42,6 +31,7 @@ const chip = (on: boolean) =>
 export default function PlanSetupForm({ mode, setup, onChange, error, hideStartDate }: Props) {
   const set = <K extends keyof PlanSetup>(k: K, v: PlanSetup[K]) => onChange({ ...setup, [k]: v })
   const needsSportGoals = mode === 'generate' || mode === 'ai'
+  const sportRequired = needsSportGoals && !sportOptional(setup.goals)
   const showTitle = mode === 'scratch' || mode === 'edit'
 
   return (
@@ -60,7 +50,7 @@ export default function PlanSetupForm({ mode, setup, onChange, error, hideStartD
       )}
 
       <div>
-        <label className="text-xs text-fg-4 block mb-1">Sport{needsSportGoals ? '' : ' (optional)'}</label>
+        <label className="text-xs text-fg-4 block mb-1">Sport{sportRequired ? '' : ' (optional)'}</label>
         <div className="flex flex-col sm:flex-row gap-2">
           <select
             value={SPORTS.includes(setup.sport) ? setup.sport : ''}

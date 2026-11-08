@@ -111,12 +111,12 @@ html.light {
   --surface:   255 255 255;
   --surface-2: 244 243 241;
   --surface-3: 228 226 224;
-  --fg-1:      28 25 23;
-  --fg-2:      68 64 60;
-  --fg-3:      87 83 78;
-  --fg-4:      120 113 108;
-  --border:       rgba(0,0,0,0.16);
-  --border-muted: rgba(0,0,0,0.10);
+  --fg-1:      17 15 14;
+  --fg-2:      45 42 39;
+  --fg-3:      62 58 54;
+  --fg-4:      88 83 78;
+  --border:       rgba(0,0,0,0.22);
+  --border-muted: rgba(0,0,0,0.13);
 
   /* Gold text on white needs a deep olive to reach 4.5:1 (#C4B400 is 2.1:1).
      Buttons on that olive flip to white text. */

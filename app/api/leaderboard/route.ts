@@ -41,28 +41,40 @@ export async function GET(req: Request) {
     teams = none ? [] : (await q).data ?? []
   }
 
-  const team = teams.find(t => t.id === teamParam) ?? null
-  let teamIds = new Set<string>()
-  if (team?.id === 'family') {
-    const { data } = await admin.from('parent_athletes').select('athlete_id').eq('parent_id', auth.userId)
-    teamIds = new Set((data ?? []).map((r: any) => r.athlete_id))
-  } else if (team) {
+  // Everyone on my teams (teammates and their coaches; a coach's athletes;
+  // a parent's kids). They are the only rows highlighted, and the board
+  // opens on them by default. Admins get no team view.
+  const idsOfTeam = async (teamId: string) => {
     const [{ data: members }, { data: t }] = await Promise.all([
-      admin.from('team_members').select('athlete_id').eq('team_id', team.id),
-      admin.from('teams').select('coach_id').eq('id', team.id).single(),
+      admin.from('team_members').select('athlete_id').eq('team_id', teamId),
+      admin.from('teams').select('coach_id').eq('id', teamId).single(),
     ])
-    teamIds = new Set([...(members ?? []).map((r: any) => r.athlete_id), ...(t ? [t.coach_id] : [])])
+    return [...(members ?? []).map((r: any) => r.athlete_id as string), ...(t ? [t.coach_id as string] : [])]
   }
-
-  // Coaches and parents see their own athletes highlighted.
-  let mineIds: Set<string> | undefined
-  if (auth.role === 'coach') {
-    const { data } = await admin.from('coach_athletes').select('athlete_id').eq('coach_id', auth.userId)
-    mineIds = new Set((data ?? []).map((r: any) => r.athlete_id))
-  } else if (auth.role === 'parent') {
+  const myTeamIds = new Set<string>()
+  if (auth.role === 'parent') {
     const { data } = await admin.from('parent_athletes').select('athlete_id').eq('parent_id', auth.userId)
-    mineIds = new Set((data ?? []).map((r: any) => r.athlete_id))
+    for (const r of data ?? []) myTeamIds.add((r as any).athlete_id)
+  } else if (auth.role !== 'admin') {
+    for (const ids of await Promise.all(teams.map(t => idsOfTeam(t.id)))) ids.forEach(id => myTeamIds.add(id))
+    if (auth.role === 'coach') {
+      const { data } = await admin.from('coach_athletes').select('athlete_id').eq('coach_id', auth.userId)
+      for (const r of data ?? []) myTeamIds.add((r as any).athlete_id)
+    }
   }
+  myTeamIds.delete(auth.userId)
+
+  // Filter options: "My teams" when there is more than one, each team, and
+  // "all" (Everyone). No team param = my team(s) if I have any.
+  if (teams.length > 1 && auth.role !== 'admin') teams = [{ id: 'mine', name: 'All my teams' }, ...teams]
+  else if (teams.length === 0 && auth.role === 'coach' && myTeamIds.size > 0) teams = [{ id: 'mine', name: 'My athletes' }]
+  const defaultTeam = auth.role === 'admin' ? null : teams[0] ?? null
+  const team = teamParam === 'all' ? null : teams.find(t => t.id === teamParam) ?? (myTeamIds.size > 0 ? defaultTeam : null)
+  let teamIds = new Set<string>()
+  if (team?.id === 'family' || team?.id === 'mine') teamIds = myTeamIds
+  else if (team) teamIds = new Set(await idsOfTeam(team.id))
+
+  const mineIds = myTeamIds.size > 0 ? myTeamIds : undefined
 
   const [{ data: profiles, error: pErr }, { data: rows, error: rErr }] = await Promise.all([
     admin.from('profiles')
@@ -130,7 +142,7 @@ export async function GET(req: Request) {
 
   return NextResponse.json({
     period: { month: bounds.month, daysLeft: bounds.daysLeft, lastMonth: bounds.lastMonth },
-    team: team?.id ?? null,
+    team: team?.id ?? 'all',
     teams,
     me: meOut,
     thisMonth: { ...pageOf(thisList, pageParam), of: thisList.length },

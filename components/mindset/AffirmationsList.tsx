@@ -128,7 +128,7 @@ export default function AffirmationsList() {
 
   const addAffirmation = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newText.trim()) return
+    if (!newText.trim() || adding) return
     setAdding(true)
     const res = await fetch('/api/mindset/affirmations', {
       method: 'POST',

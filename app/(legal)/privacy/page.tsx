@@ -14,7 +14,7 @@ export default function PrivacyPage() {
           <li><strong>Account:</strong> email, name, sport, birth month and year, role (athlete, coach, parent), and when you accepted these terms.</li>
           <li><strong>What you log:</strong> daily journal entries and ratings (motivation, focus, confidence, anxiety), weekly assessments, flow state sessions, affirmations and goals, meals and macros, weigh-ins, progress photos, workouts and sets, sleep and recovery.</li>
           <li><strong>Game and schedule info:</strong> your next competition date and start time.</li>
-          <li><strong>Technical:</strong> a sign-in session cookie, and small settings stored in your browser (theme, unsaved drafts). We do not run analytics or advertising trackers.</li>
+          <li><strong>Technical:</strong> a sign-in session cookie, small settings stored in your browser (theme, unsaved drafts), and the time you last used the app. To stop abuse we keep short-lived counters keyed to your IP address or email (deleted within 2 days). When a parent signs a permission form we record their IP address and browser type as proof of consent. We do not run analytics or advertising trackers.</li>
         </ul>
       </Section>
       <Section title="2. Why we use it">
@@ -29,7 +29,7 @@ export default function PrivacyPage() {
       <Section title="3. Who can see your data">
         <ul>
           <li><strong>You.</strong></li>
-          <li><strong>Coaches</strong> linked to your account see your journal, assessments, flow data, nutrition, workouts, sleep and goals. They do not see weigh-ins or progress photos. You can remove a coach in Settings.</li>
+          <li><strong>Coaches</strong> you connect with see your journal, assessments, flow data, nutrition, workouts, sleep and goals. You connect with a coach by entering their team code, by creating your account from their email invite, or by accepting their request in the app. A coach who invites an existing account sees nothing until you accept. Coaches do not see weigh-ins or progress photos. You can remove a coach in Settings.</li>
           <li><strong>Parents</strong> you share with see the same, read-only. You can stop sharing in Settings.</li>
           <li><strong>MindFit staff</strong> (admin) can see account data to run the service and support you.</li>
         </ul>
@@ -40,7 +40,7 @@ export default function PrivacyPage() {
           <li><strong>Vercel</strong> — hosts the app.</li>
           <li><strong>Resend</strong> — sends account, invite and parent permission emails.</li>
           <li><strong>Our contact system</strong> (currently GoHighLevel) — may receive your email and name so we can send you MindFit updates. You can unsubscribe from any email. Athletes under 13 are never added to it.</li>
-          <li><strong>Anthropic</strong> — when you describe a meal in words or generate a training program, that text is sent to Anthropic&rsquo;s AI to be turned into macros or a plan. No name, email or other data is sent. For athletes under 13 this happens only if a parent allowed AI features.</li>
+          <li><strong>Anthropic</strong> — when you describe a meal in words or generate a training program, that text is sent to Anthropic&rsquo;s AI to be turned into macros or a plan. Your name and email are not sent. When a coach uploads a season schedule, that file is sent to Anthropic to read the dates, and it may include names printed on it. For athletes under 13 AI features run only if a parent allowed them.</li>
           <li><strong>Open Food Facts</strong> — barcode lookups send the barcode number only.</li>
           <li><strong>Your browser&rsquo;s push service</strong> (Apple, Google, Mozilla) — only if you turn on daily notifications.</li>
           <li><strong>Skool / Zapier</strong> — tells us when a community member joins or leaves so we can link their account.</li>
@@ -57,7 +57,7 @@ export default function PrivacyPage() {
       </Section>
       <Section title="7. Your rights and choices">
         <ul>
-          <li><strong>Export</strong> a complete copy of your data from Settings → Your data.</li>
+          <li><strong>Export</strong> a copy of your data from Settings → Your data.</li>
           <li><strong>Delete</strong> your account and all data from Settings → Your data, or email us and we will do it within 7 days.</li>
           <li><strong>Correct</strong> your name, sports and game details from Settings.</li>
           <li><strong>Control sharing:</strong> remove any coach or parent from Settings → Sharing.</li>

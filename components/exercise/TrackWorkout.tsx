@@ -61,7 +61,7 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
   useEffect(() => { if (draft) saveDraft(draft) }, [draft])
 
   const finish = async () => {
-    if (!draft) return
+    if (!draft || saving) return
     const stats = draftStats(draft)
     if (stats.doneSets === 0 && !confirm('No sets are marked ✓. Save this workout with no sets?')) return
     if (!draft.name.trim()) { notify('Give the workout a name first.', 'error'); return }

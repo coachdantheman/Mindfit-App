@@ -9,7 +9,7 @@ import { createAdminClient } from '@/lib/supabase-server'
 
 export const maxDuration = 30
 
-const anthropic = new Anthropic()
+const anthropic = new Anthropic({ timeout: 60_000, maxRetries: 1 })
 
 const SYSTEM = `You are a sports nutrition assistant estimating nutrition for a high-school athlete's food log.
 Return ONLY valid JSON with this exact shape:

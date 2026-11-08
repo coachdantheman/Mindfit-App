@@ -30,6 +30,12 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
   const [sheetMeal, setSheetMeal] = useState<MealName | null>(null)
   const [savedMeals, setSavedMeals] = useState<SavedMeal[]>([])
   const [saveMeal, setSaveMeal] = useState<MealName | null>(null)
+  const inFlight = useRef(new Set<string>())
+  const once = (key: string, fn: () => Promise<void>) => {
+    if (inFlight.current.has(key)) return Promise.resolve()
+    inFlight.current.add(key)
+    return fn().finally(() => inFlight.current.delete(key))
+  }
 
   const load = useCallback(async () => {
     const [e, y] = await Promise.all([
@@ -72,7 +78,7 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
     }, 1500)
   }, [date])
 
-  const addItems = async (items: AddItem[], saveToFoods?: boolean) => {
+  const addItems = (items: AddItem[], saveToFoods?: boolean) => once('add', async () => {
     if (!sheetMeal) return
     const added: FoodEntry[] = []
     for (const item of items) {
@@ -101,7 +107,7 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
       autoSaveMeal(sheetMeal)
     }
     setSheetMeal(null)
-  }
+  })
 
   const updateServings = async (id: string, servings: number) => {
     const res = await fetch('/api/nutrition/entries', {
@@ -116,7 +122,7 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
     await fetch('/api/nutrition/entries', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
   }
 
-  const copyYesterday = async (meal: MealName) => {
+  const copyYesterday = (meal: MealName) => once('copy', async () => {
     const res = await fetch('/api/nutrition/entries/copy', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ from_date: shiftDate(date, -1), to_date: date, meal_name: meal }),
@@ -124,9 +130,9 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
     const data = await res.json()
     if (res.ok) { setEntries(prev => [...prev, ...data.inserted]); notify(`Copied yesterday's ${meal.toLowerCase()}`); autoSaveMeal(meal) }
     else notify(data.error ?? 'Could not copy.')
-  }
+  })
 
-  const saveMealAs = async (name: string) => {
+  const saveMealAs = (name: string) => once('saveMeal', async () => {
     if (!saveMeal) return
     const ids = entries.filter(e => e.meal_name === saveMeal).map(e => e.id)
     const res = await fetch('/api/nutrition/saved-meals', {
@@ -137,9 +143,9 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
     if (res.ok) { setSavedMeals(prev => [data, ...prev]); notify(`Saved "${name}" to Favorites`) }
     else notify(data.error ?? 'Could not save meal.')
     setSaveMeal(null)
-  }
+  })
 
-  const addSavedMeal = async (meal: SavedMeal) => {
+  const addSavedMeal = (meal: SavedMeal) => once('addSaved', async () => {
     if (!sheetMeal) return
     const res = await fetch('/api/nutrition/saved-meals/log', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -149,7 +155,7 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
     if (res.ok) { setEntries(prev => [...prev, ...data.inserted]); notify(`Added ${meal.name} to ${sheetMeal}`); loadRecent() }
     else notify(data.error ?? 'Could not add meal.')
     setSheetMeal(null)
-  }
+  })
 
   const deleteSavedMeal = async (meal: SavedMeal) => {
     setSavedMeals(prev => prev.filter(m => m.id !== meal.id))
@@ -160,7 +166,7 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
   // starring goes through the server so a manual or AI-estimated entry
   // becomes a reusable food first and the entry gets linked to it.
   const favoriteIds = new Set(favorites.map(f => f.id))
-  const toggleEntryFavorite = async (entry: FoodEntry) => {
+  const toggleEntryFavorite = (entry: FoodEntry) => once(`fav:${entry.id}`, async () => {
     const starred = entry.food_id ? favorites.find(f => f.id === entry.food_id) : undefined
     if (starred) { onToggleFavorite(starred); notify(`Removed ${entry.food_name} from Favorites`); return }
     const res = await fetch('/api/nutrition/favorites', {
@@ -174,7 +180,7 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
     onFavoriteSaved(food)
     if (entry.food_id !== food.id) setEntries(prev => prev.map(e => e.id === entry.id ? { ...e, food_id: food.id } : e))
     notify(`Saved ${entry.food_name} to Favorites`)
-  }
+  })
 
   const totals = sumEntries(entries)
 
