@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
-import { verifyApiUser } from '@/lib/api-auth'
+import { verifyLockedApiUser } from '@/lib/api-auth'
 import { isEmail } from '@/lib/validate'
 import { consentExpired } from '@/lib/age'
 import { createConsentRequest, hashToken } from '@/lib/consent'
@@ -12,7 +12,7 @@ const DAY = 24 * 60 * 60 * 1000
 const MAX_PER_DAY = 5
 
 export async function GET() {
-  const auth = await verifyApiUser()
+  const auth = await verifyLockedApiUser()
   if (auth instanceof NextResponse) return auth
   const admin = createAdminClient()
 
@@ -39,7 +39,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const auth = await verifyApiUser()
+  const auth = await verifyLockedApiUser()
   if (auth instanceof NextResponse) return auth
   const admin = createAdminClient()
 

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
-import { verifyApiUser } from '@/lib/api-auth'
+import { verifyLockedApiUser } from '@/lib/api-auth'
 
 const USER_TABLES = [
   'journal_entries', 'weekly_assessments', 'nutrition_goals', 'food_entries', 'food_favorites',
@@ -12,7 +12,7 @@ const USER_TABLES = [
 
 // Everything the app stores about the signed-in user, as one JSON file.
 export async function GET() {
-  const auth = await verifyApiUser()
+  const auth = await verifyLockedApiUser()
   if (auth instanceof NextResponse) return auth
   const admin = createAdminClient()
 

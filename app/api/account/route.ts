@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
-import { verifyApiUser } from '@/lib/api-auth'
+import { verifyLockedApiUser } from '@/lib/api-auth'
 import { deleteUserCompletely, isLastAdmin } from '@/lib/account-delete'
 
 // Self-service "delete my account and all my data".
 export async function DELETE(req: Request) {
-  const auth = await verifyApiUser()
+  const auth = await verifyLockedApiUser()
   if (auth instanceof NextResponse) return auth
 
   const body = await req.json().catch(() => ({}))

@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
-import { verifyApiUser } from '@/lib/api-auth'
+import { verifyLockedApiUser } from '@/lib/api-auth'
 import { validBirth } from '@/lib/age'
 import { recordBirth } from '@/lib/consent'
 
 export async function POST(req: Request) {
-  const auth = await verifyApiUser('member')
+  const auth = await verifyLockedApiUser('member')
   if (auth instanceof NextResponse) return auth
 
   const body = await req.json().catch(() => ({}))

@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-client'
+import { verifyApiUser } from '@/lib/api-auth'
 import { createAdminClient } from '@/lib/supabase-server'
 import { clampNumber, isISODate } from '@/lib/validate'
 
 // GET /api/journal — return all entries for the current user (optionally filter by ?date=)
 export async function GET(req: Request) {
-  const supabase = await createServerSupabaseClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await verifyApiUser()
+  if (auth instanceof NextResponse) return auth
 
   const { searchParams } = new URL(req.url)
   const date = searchParams.get('date')
@@ -16,7 +15,7 @@ export async function GET(req: Request) {
   let query = adminSupabase
     .from('journal_entries')
     .select('*')
-    .eq('user_id', session.user.id)
+    .eq('user_id', auth.userId)
     .order('entry_date', { ascending: false })
 
   if (date) query = query.eq('entry_date', date)
@@ -30,9 +29,8 @@ export async function GET(req: Request) {
 
 // POST /api/journal — create a new entry
 export async function POST(req: Request) {
-  const supabase = await createServerSupabaseClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await verifyApiUser()
+  if (auth instanceof NextResponse) return auth
 
   const body = await req.json()
   const {
@@ -60,7 +58,7 @@ export async function POST(req: Request) {
   const { data, error } = await adminSupabase
     .from('journal_entries')
     .insert({
-      user_id: session.user.id,
+      user_id: auth.userId,
       entry_date,
       objective,
       action_step_1, action_step_2, action_step_3,
