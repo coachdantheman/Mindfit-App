@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { sendSignInCodeEmail } from '@/lib/email'
 
 const appUrl = () => process.env.NEXT_PUBLIC_APP_URL || 'https://mindfit.academy'
 
@@ -22,6 +23,29 @@ export async function createInvitedAccount(
     { onConflict: 'email', ignoreDuplicates: true }
   )
   return { userId: created.user.id }
+}
+
+// Emails a 6-digit code plus a one-click link from our own mailer, creating
+// the account first if it doesn't exist. Replaces supabase.auth.signInWithOtp,
+// whose PKCE link broke when opened in a different browser than the app.
+export async function sendSignInCode(admin: SupabaseClient, email: string, origin: string): Promise<boolean> {
+  const { error: createError } = await admin.auth.admin.createUser({
+    email,
+    email_confirm: true,
+    user_metadata: { terms_accepted_at: new Date().toISOString() },
+  })
+  if (createError && !/already/i.test(createError.message)) {
+    console.error('Sign-in code: create user failed:', createError.message)
+    return false
+  }
+  const { data, error } = await admin.auth.admin.generateLink({ type: 'magiclink', email })
+  const code = data?.properties?.email_otp
+  const hash = data?.properties?.hashed_token
+  if (error || !code || !hash) {
+    console.error('Sign-in code: generateLink failed:', error?.message)
+    return false
+  }
+  return sendSignInCodeEmail(email, code, `${origin}/auth/confirm?token_hash=${encodeURIComponent(hash)}&type=magiclink`)
 }
 
 // One-click sign-in URL for an invite email. We build the URL ourselves

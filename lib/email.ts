@@ -51,6 +51,22 @@ export async function sendCoachInviteEmail(to: string, coachName?: string | null
           </p>` : ''}`), 'coach invite email')
 }
 
+// Sign-in / signup code. The link works on any device (token_hash, no PKCE),
+// so opening the email on a phone signs in there instead of failing.
+export function sendSignInCodeEmail(to: string, code: string, link: string): Promise<boolean> {
+  return send(to, `${code} is your MindFit code`, emailShell(`
+          <h2 style="color:#f3f4f6;font-size:20px;font-weight:600;margin:0 0 16px;">Your sign-in code</h2>
+          <p style="color:#9ca3af;font-size:15px;line-height:1.6;margin:0 0 16px;">Type this code in the app:</p>
+          <p style="color:#f3f4f6;font-size:34px;letter-spacing:8px;font-weight:700;font-family:monospace;margin:0 0 24px;">${code}</p>
+          <p style="color:#9ca3af;font-size:15px;line-height:1.6;margin:0 0 16px;">Or tap the button to sign in on this device:</p>
+          <a href="${link}" style="display:inline-block;background:#C4B400;color:#0A0F1A;font-weight:700;padding:14px 28px;border-radius:12px;text-decoration:none;font-size:15px;margin-bottom:24px;">
+            Sign In →
+          </a>
+          <p style="color:#6b7280;font-size:13px;line-height:1.6;margin:0;">
+            Use the newest email only: asking for a new code cancels the old one. Didn't ask for this? Ignore it.
+          </p>`), 'sign-in code email')
+}
+
 // An athlete wants to share progress with this parent.
 export async function sendParentInviteEmail(to: string, athleteName?: string | null) {
   const athlete = athleteName?.trim() || 'Your athlete'

@@ -66,25 +66,8 @@ function LoginForm() {
       body: JSON.stringify({ email }),
     })
     const gateData = await gate.json()
-    if (!gate.ok) {
-      setError(gateData.error)
-      setLoading(false)
-      return
-    }
-
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.toLowerCase().trim(),
-      options: {
-        shouldCreateUser: gateData.shouldCreateUser,
-        emailRedirectTo: `${window.location.origin}/auth/callback?terms=1`,
-        data: { terms_accepted_at: new Date().toISOString() },
-      },
-    })
-    if (error) {
-      setError('Could not send the code. Please try again in a minute.')
-    } else {
-      setCodeSent(true)
-    }
+    if (!gate.ok) setError(gateData.error)
+    else setCodeSent(true)
     setLoading(false)
   }
 
@@ -126,15 +109,7 @@ function LoginForm() {
       setLoading(false)
       return
     }
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.toLowerCase().trim(),
-      options: { shouldCreateUser: false },
-    })
-    if (error) {
-      setError('Could not send the code. Please try again in a minute.')
-    } else {
-      setCodeSent(true)
-    }
+    setCodeSent(true)
     setLoading(false)
   }
 
