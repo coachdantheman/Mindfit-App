@@ -102,3 +102,40 @@ export function nextGame<T extends Pick<ScheduleEvent, 'kind' | 'event_date' | '
     .filter(e => e.kind === 'game' && e.event_date >= today)
     .sort((a, b) => a.event_date.localeCompare(b.event_date) || (a.start_time ?? '').localeCompare(b.start_time ?? ''))[0] ?? null
 }
+
+// Athlete-entered schedule (v37). Primary = the athlete's main team
+// schedule; a coach's posted schedule always wins over the athlete's own.
+// Secondary = extra sessions (trainer, MindFit, extra training, another
+// sport) that may never overlap a primary event.
+export interface TimedEvent { kind: string; event_date: string; start_time: string | null; end_time?: string | null }
+
+const DEFAULT_MINUTES: Record<string, number> = { game: 180, practice: 120 }
+
+const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
+
+// Minutes since midnight, or null when there is no start time (no
+// overlap check is possible then). Missing or earlier end times fall back
+// to a default length: 3h game, 2h practice, 1h anything else.
+export function eventSpan(e: TimedEvent): [number, number] | null {
+  if (!e.start_time) return null
+  const start = toMin(e.start_time)
+  const end = e.end_time ? toMin(e.end_time) : NaN
+  return [start, end > start ? end : start + (DEFAULT_MINUTES[e.kind] ?? 60)]
+}
+
+export function findOverlap<T extends TimedEvent>(candidate: TimedEvent, events: T[]): T | null {
+  const a = eventSpan(candidate)
+  if (!a) return null
+  for (const e of events) {
+    if (e.event_date !== candidate.event_date) continue
+    const b = eventSpan(e)
+    if (b && a[0] < b[1] && b[0] < a[1]) return e
+  }
+  return null
+}
+
+export function effectivePrimary<T, U>(teamEvents: T[], ownPrimary: U[]): { source: 'coach' | 'athlete' | 'none'; events: (T | U)[]; hiddenOwn: number } {
+  if (teamEvents.length > 0) return { source: 'coach', events: teamEvents, hiddenOwn: ownPrimary.length }
+  if (ownPrimary.length > 0) return { source: 'athlete', events: ownPrimary, hiddenOwn: 0 }
+  return { source: 'none', events: [], hiddenOwn: 0 }
+}

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Workout } from '@/types'
 import type { AthleteProfile, ExerciseLibraryRow, MuscleGroup, StartWorkoutInput } from '@/types/exercise'
 import MyPlan from '@/components/exercise/MyPlan'
+import ScheduleTab from '@/components/exercise/ScheduleTab'
 import TrackWorkout from '@/components/exercise/TrackWorkout'
 import StrengthStandards from '@/components/exercise/StrengthStandards'
 import PreBuiltWorkouts from '@/components/exercise/PreBuiltWorkouts'
@@ -11,11 +12,12 @@ import PracticeLog from '@/components/exercise/PracticeLog'
 import LessonLinks from '@/components/shared/LessonLinks'
 import { clearDraft, draftFromWorkout, draftStats, loadDraft, saveDraft, type WorkoutDraft } from '@/lib/workout-draft'
 
-type Tab = 'plan' | 'track' | 'practice' | 'strength' | 'prebuilt'
+type Tab = 'plan' | 'schedule' | 'track' | 'practice' | 'strength' | 'prebuilt'
 type ToastKind = 'success' | 'error'
 
 const TABS: { key: Tab; label: string }[] = [
   { key: 'plan', label: 'My Plan' },
+  { key: 'schedule', label: 'Schedule' },
   { key: 'track', label: 'Track' },
   { key: 'practice', label: 'Practice' },
   { key: 'strength', label: 'Strength' },
@@ -24,6 +26,11 @@ const TABS: { key: Tab; label: string }[] = [
 
 export default function ExercisePage() {
   const [tab, setTab] = useState<Tab>('plan')
+  // Deep links like /exercise?tab=practice&session=<id> from the Flow Stack.
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get('tab')
+    if (t && TABS.some(x => x.key === t)) setTab(t as Tab)
+  }, [])
   const [library, setLibrary] = useState<ExerciseLibraryRow[]>([])
   const [profile, setProfile] = useState<AthleteProfile | null>(null)
   const [suggestedBodyweight, setSuggestedBodyweight] = useState<number | null>(null)
@@ -113,6 +120,9 @@ export default function ExercisePage() {
       {/* Keep-alive tabs — hidden instead of unmounted so form state survives */}
       <div className={tab === 'plan' ? '' : 'hidden'}>
         <MyPlan library={library} onStart={startSession} onCreateExercise={createExercise} notify={notify} refreshKey={0} />
+      </div>
+      <div className={tab === 'schedule' ? '' : 'hidden'}>
+        <ScheduleTab />
       </div>
       <div className={tab === 'track' ? '' : 'hidden'}>
         <TrackWorkout

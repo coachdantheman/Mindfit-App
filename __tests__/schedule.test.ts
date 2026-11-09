@@ -40,3 +40,22 @@ test('nextGame picks the soonest upcoming game', () => {
   assert.equal(nextGame(ev, '2026-11-06')?.event_date, '2026-11-13')
   assert.equal(nextGame(ev, '2026-11-21'), null)
 })
+
+test('findOverlap uses end time or default lengths', async () => {
+  const { findOverlap, eventSpan } = await import('../lib/schedule')
+  const practice = { kind: 'practice', event_date: '2026-11-10', start_time: '15:30', end_time: null }
+  assert.deepEqual(eventSpan(practice), [930, 1050])
+  assert.equal(findOverlap({ kind: 'training', event_date: '2026-11-10', start_time: '17:00', end_time: '18:00' }, [practice]), practice)
+  assert.equal(findOverlap({ kind: 'training', event_date: '2026-11-10', start_time: '17:30', end_time: '18:30' }, [practice]), null)
+  assert.equal(findOverlap({ kind: 'training', event_date: '2026-11-11', start_time: '16:00' }, [practice]), null)
+  assert.equal(findOverlap({ kind: 'training', event_date: '2026-11-10', start_time: null }, [practice]), null)
+  const game = { kind: 'game', event_date: '2026-11-13', start_time: '19:00' }
+  assert.equal(findOverlap({ kind: 'session', event_date: '2026-11-13', start_time: '21:30' }, [game]), game)
+})
+
+test('effectivePrimary: coach schedule wins over the athlete own primary', async () => {
+  const { effectivePrimary } = await import('../lib/schedule')
+  assert.deepEqual(effectivePrimary([1, 2], [3]), { source: 'coach', events: [1, 2], hiddenOwn: 1 })
+  assert.deepEqual(effectivePrimary([], [3]), { source: 'athlete', events: [3], hiddenOwn: 0 })
+  assert.deepEqual(effectivePrimary([], []), { source: 'none', events: [], hiddenOwn: 0 })
+})
