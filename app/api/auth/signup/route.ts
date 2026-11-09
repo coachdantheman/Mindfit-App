@@ -6,7 +6,7 @@ import { clientIp, rateLimit } from '@/lib/rate-limit'
 
 // Step 1 of signup. Makes sure an account exists for the email WITHOUT a
 // password, so nobody can use an email they don't own: this route emails a
-// 6-digit code, and only after the code is verified does the browser set the
+// sign-in code, and only after the code is verified does the browser set the
 // password (supabase.auth.updateUser). The response is the same whether or
 // not the email already has an account.
 export async function POST(req: Request) {

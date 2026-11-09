@@ -25,7 +25,7 @@ export async function createInvitedAccount(
   return { userId: created.user.id }
 }
 
-// Emails a 6-digit code plus a one-click link from our own mailer, creating
+// Emails a sign-in code plus a one-click link from our own mailer, creating
 // the account first if it doesn't exist. Replaces supabase.auth.signInWithOtp,
 // whose PKCE link broke when opened in a different browser than the app.
 export async function sendSignInCode(admin: SupabaseClient, email: string, origin: string): Promise<boolean> {

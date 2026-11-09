@@ -162,19 +162,19 @@ function LoginForm() {
           {codeSent ? (
             <form onSubmit={verifyCode} className="space-y-4">
               <p className="text-sm text-fg-3">
-                We sent a 6-digit code to <span className="text-fg-2">{email}</span>.
+                We sent a sign-in code to <span className="text-fg-2">{email}</span>.
               </p>
               <input
                 type="text"
                 inputMode="numeric"
                 autoComplete="one-time-code"
-                aria-label="6-digit code"
+                aria-label="Sign-in code"
                 required
-                maxLength={6}
+                maxLength={10}
                 value={code}
                 onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
-                className={`${inputClass} text-center text-2xl tracking-[0.5em] font-mono`}
-                placeholder="000000"
+                className={`${inputClass} text-center text-2xl tracking-[0.3em] font-mono placeholder:tracking-normal placeholder:text-base`}
+                placeholder="Enter code"
                 autoFocus
               />
               {error && (
