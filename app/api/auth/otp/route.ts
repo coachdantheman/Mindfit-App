@@ -13,8 +13,8 @@ export async function POST(req: Request) {
   }
   const normalized = email.toLowerCase().trim()
   const limited =
-    (await rateLimit(`otp:ip:${clientIp(req)}`, 10, 3600)) ??
-    (await rateLimit(`otp:email:${normalized}`, 5, 3600))
+    (await rateLimit(`otp:ip:${clientIp(req)}`, 20, 3600)) ??
+    (await rateLimit(`otp:email:${normalized}`, 10, 3600))
   if (limited) return limited
 
   const sent = await sendSignInCode(createAdminClient(), normalized, new URL(req.url).origin)
