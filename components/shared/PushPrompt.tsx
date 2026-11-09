@@ -16,23 +16,24 @@ export default function PushPrompt() {
   }, [])
 
   if (dismissed) return null
-  if (status === 'loading' || status === 'on' || status === 'unsupported') {
-    // Keep the toggle mounted (hidden) so it can report its status.
-    return <div className="hidden"><DailyQuoteToggle onStatus={onStatus} /></div>
-  }
+  // The toggle stays mounted in the same place whatever the status: swapping
+  // it between two parents remounts it, which resets its status and loops.
+  const hidden = status === 'loading' || status === 'on' || status === 'unsupported'
 
   return (
-    <div className="card p-4 mb-6 border-cta/40">
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <p className="text-sm font-semibold text-cta">Turn on reminders</p>
-        <button
-          type="button"
-          onClick={() => { setDismissed(true); try { localStorage.setItem(KEY, '1') } catch {} }}
-          className="text-xs text-fg-4 hover:text-fg-2"
-        >
-          Not now
-        </button>
-      </div>
+    <div className={hidden ? 'hidden' : 'card p-4 mb-6 border-cta/40'}>
+      {!hidden && (
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <p className="text-sm font-semibold text-cta">Turn on reminders</p>
+          <button
+            type="button"
+            onClick={() => { setDismissed(true); try { localStorage.setItem(KEY, '1') } catch {} }}
+            className="text-xs text-fg-4 hover:text-fg-2"
+          >
+            Not now
+          </button>
+        </div>
+      )}
       <DailyQuoteToggle onStatus={onStatus} />
     </div>
   )
