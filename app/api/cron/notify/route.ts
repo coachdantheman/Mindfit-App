@@ -24,7 +24,7 @@ export async function GET(req: Request) {
   const now = new Date()
 
   const [{ data: profiles }, { data: prefRows }] = await Promise.all([
-    admin.from('profiles').select('id, full_name, role, birth_year, consent_status').in('role', ['member', 'coach']),
+    admin.from('profiles').select('id, full_name, role, birth_year, consent_status').in('role', ['member', 'coach', 'admin']),
     admin.from('notification_prefs').select('*'),
   ])
   const prefsById = new Map<string, Prefs>((prefRows ?? []).map((p: any) => [p.user_id, { ...DEFAULT_PREFS, ...p }]))
@@ -71,7 +71,8 @@ export async function GET(req: Request) {
     const mine = act.rows.filter(r => r.user_id === u.id)
     const loggedToday = mine.some(r => r.day === clock.date)
 
-    if (u.role === 'member') {
+    // Admins use the app as athletes too, so they get the same reminders.
+    if (u.role === 'member' || u.role === 'admin') {
       const streak = activityStreaks(mine, clock.date).get(u.id) ?? 0
       const thisRows = mine.filter(r => r.day >= act.thisStart)
       const score = scoreMonth(thisRows, mine).get(u.id)

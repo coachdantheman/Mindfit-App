@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import { useRouter, useSearchParams } from 'next/navigation'
 import LessonLinks from '@/components/shared/LessonLinks'
 import QuoteOfTheDay from '@/components/mindset/QuoteOfTheDay'
+import PushPrompt from '@/components/shared/PushPrompt'
 import { LessonSection } from '@/types'
 
 const JournalTab = dynamic(() => import('@/components/mindset/JournalTab'))
@@ -77,6 +78,8 @@ function MindsetContent() {
         <h1 className="page-title">Mindset</h1>
         <p className="page-subtitle">Train your mind. Build your identity.</p>
       </div>
+
+      <PushPrompt />
 
       <QuoteOfTheDay />
 

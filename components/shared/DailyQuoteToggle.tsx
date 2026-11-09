@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 
+export type PushStatus = Status
 type Status = 'loading' | 'unsupported' | 'needs-install' | 'blocked' | 'off' | 'on' | 'busy'
 
 function urlBase64ToUint8Array(base64: string): Uint8Array {
@@ -14,8 +15,11 @@ const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent)
 const isStandalone = () =>
   window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true
 
-export default function DailyQuoteToggle() {
+// Turns on web push for this device. Every push type (reminders, coach
+// messages, progress, daily quote) uses this one subscription.
+export default function DailyQuoteToggle({ onStatus }: { onStatus?: (s: Status) => void } = {}) {
   const [status, setStatus] = useState<Status>('loading')
+  useEffect(() => { onStatus?.(status) }, [status, onStatus])
   const [error, setError] = useState<string | null>(null)
   const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
 
@@ -97,14 +101,14 @@ export default function DailyQuoteToggle() {
     <div>
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-sm text-fg-2 font-medium">Daily quote notification</p>
-          <p className="text-xs text-fg-4 mt-0.5">One quote, every morning at 7:00 AM Central.</p>
+          <p className="text-sm text-fg-2 font-medium">Push notifications on this device</p>
+          <p className="text-xs text-fg-4 mt-0.5">Daily reminders, messages from your coach, level-ups and the morning quote.</p>
         </div>
         <button
           type="button"
           role="switch"
           aria-checked={on}
-          aria-label="Daily quote notification"
+          aria-label="Push notifications on this device"
           disabled={disabled}
           onClick={on ? disable : enable}
           className={`relative shrink-0 w-12 h-7 rounded-full transition-colors disabled:opacity-40 ${on ? 'bg-cta' : 'bg-surface-3 border border-edge'}`}
