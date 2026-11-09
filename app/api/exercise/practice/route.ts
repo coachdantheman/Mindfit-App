@@ -105,12 +105,19 @@ export async function POST(req: Request) {
 
   let flow_log_id: string | null = existing?.flow_log_id ?? null
   const flow = body.flow && typeof body.flow === 'object' ? body.flow : null
+  // A pre-game 5-A Stack run links to the game's flow log.
+  let flow_session_id: string | null = null
+  if (typeof body.flow_session_id === 'string' && /^[0-9a-f-]{36}$/i.test(body.flow_session_id)) {
+    const { data: s } = await admin.from('flow_sessions').select('id').eq('id', body.flow_session_id).eq('user_id', auth.userId).maybeSingle()
+    flow_session_id = s?.id ?? null
+  }
   if (flow && difficulty !== null) {
     const skill = intOrNull(flow.skill_level, 1, 10)
     const score = intOrNull(flow.flow_score, 1, 10)
     if (skill !== null && score !== null) {
       const triggers = (Array.isArray(flow.triggers_fired) ? flow.triggers_fired : []).filter((t: unknown): t is FlowTrigger => typeof t === 'string' && TRIGGER_CODES.has(t))
       const flowRow = {
+        ...(flow_session_id ? { flow_session_id } : {}),
         sport,
         challenge_level: difficulty,
         skill_level: skill,

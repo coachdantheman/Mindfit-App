@@ -32,6 +32,8 @@ export default function FiveAStackSession() {
   const [cueWords, setCueWords] = useState<FlowCueWord[]>([])
   const [newCue, setNewCue] = useState('')
   const [saving, setSaving] = useState(false)
+  const [finished, setFinished] = useState<{ id: string } | null>(null)
+  const [saveFailed, setSaveFailed] = useState(false)
   const advancingRef = useRef(false)
 
   useEffect(() => {
@@ -66,6 +68,7 @@ export default function FiveAStackSession() {
 
   async function finishSession(skipped: FiveAStep[]) {
     setSaving(true)
+    setSaveFailed(false)
     const res = await fetch('/api/mindset/flow-state/sessions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -74,9 +77,11 @@ export default function FiveAStackSession() {
         skipped_steps: skipped,
         completed_at: new Date().toISOString(),
       }),
-    })
-    const saved = res.ok ? await res.json() : null
-    router.push(saved?.id ? `/mindset/flow-state/log?session=${saved.id}` : '/mindset/flow-state/log')
+    }).catch(() => null)
+    const saved = res?.ok ? await res.json().catch(() => null) : null
+    setSaving(false)
+    if (saved?.id) setFinished({ id: saved.id })
+    else setSaveFailed(true)
   }
 
   function advance() {
@@ -120,9 +125,37 @@ export default function FiveAStackSession() {
   const mm = String(Math.floor(remaining / 60)).padStart(2, '0')
   const ss = String(remaining % 60).padStart(2, '0')
 
+  if (finished) {
+    const logHref = `/exercise?tab=practice&session=${finished.id}`
+    return (
+      <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center px-4 py-6">
+        <div className="w-full max-w-xl bg-surface rounded-2xl border border-cta/30 p-8 text-center">
+          <p className="text-xs uppercase tracking-[0.24em] text-cta mb-2">Stack complete</p>
+          <h2 className="text-3xl font-bold text-fg-1 mb-4">Go compete.</h2>
+          <p className="text-base text-fg-2">You&apos;ve set your identity, your aim and your cue. Now trust it and play.</p>
+          <div className="mt-6 rounded-xl border border-edge bg-surface-2/60 p-4 text-left">
+            <p className="text-sm font-semibold text-fg-1">After the game: log your flow</p>
+            <p className="text-sm text-fg-3 mt-1">
+              When competition is over, open Flow State or Exercise → Practice and log the game. Your flow score links to this stack so you can see what the routine does for you.
+            </p>
+          </div>
+          <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+            <button onClick={() => router.push('/mindset?tab=Flow%20State')} className="btn-primary">Done, see you after the game</button>
+            <button onClick={() => router.push(logHref)} className="btn-secondary">Game&apos;s over, log it now</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center px-4 py-6">
       <div className="w-full max-w-xl">
+        {paused && stepIdx === 0 && (
+          <p className="mb-4 rounded-xl border border-cta/40 bg-cta/10 px-4 py-3 text-sm text-fg-2 text-center">
+            The 5-A Flow Stack is your <span className="font-semibold text-cta">pre-competition</span> routine. Run it before a game or meet, not before practice.
+          </p>
+        )}
         <div className="flex items-center justify-between mb-6">
           <button
             onClick={() => router.push('/mindset')}
@@ -187,6 +220,12 @@ export default function FiveAStackSession() {
         </div>
 
         {saving && <p className="text-center text-xs text-fg-4 mt-4">Saving session…</p>}
+        {saveFailed && (
+          <div className="mt-4 text-center">
+            <p className="text-sm text-red-400">Your stack didn&apos;t save. Check your connection and try again.</p>
+            <button onClick={() => finishSession(payload.skipped_steps)} className="btn-primary mt-3">Retry save</button>
+          </div>
+        )}
       </div>
     </div>
   )

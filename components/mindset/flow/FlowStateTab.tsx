@@ -68,6 +68,10 @@ export default function FlowStateTab() {
   const findings = flowFindings(logs, context)
   const lastZone = lastLog ? flowZone(lastLog.challenge_level, lastLog.skill_level) : null
   const routine = gameRoutine(game)
+  // Today's finished stack with no flow log yet: remind the athlete to log after competing.
+  const todayKey = localDateISO()
+  const openStack = sessions.find(s =>
+    s.completed_at && localDateISO(new Date(s.completed_at)) === todayKey && !logs.some(l => l.flow_session_id === s.id))
   const showSportHint = profile && !profile.primary_sport
 
   return (
@@ -95,6 +99,14 @@ export default function FlowStateTab() {
         </div>
       )}
 
+      {openStack && (
+        <div className="rounded-2xl border border-cta/40 bg-cta/10 p-4 space-y-2">
+          <p className="text-xs uppercase tracking-wider font-semibold text-cta">After competition</p>
+          <p className="text-sm text-fg-1">You ran your pre-game Flow Stack today. Once the game is over, log how it went. Your flow score links to the stack.</p>
+          <button type="button" onClick={() => router.push(`/exercise?tab=practice&session=${openStack.id}`)} className="btn-primary text-sm">Log today&apos;s game</button>
+        </div>
+      )}
+
       <div className="card p-5 space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -104,16 +116,19 @@ export default function FlowStateTab() {
                 {format(parseISO(lastLog.logged_at), 'EEE, MMM d')} · flow score <span className="text-cta font-semibold">{lastLog.flow_score}/10</span>
               </p>
             ) : (
-              <p className="text-sm text-fg-3 mt-0.5">Run the stack before your next practice or game, then log how it went.</p>
+              <p className="text-sm text-fg-3 mt-0.5">Run the stack before your next game, then log your flow after it.</p>
             )}
           </div>
           {lastZone && (
             <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border shrink-0 ${ZONE_COLOR[lastZone].tw}`}>{ZONE_COLOR[lastZone].label}</span>
           )}
         </div>
-        <button onClick={() => router.push('/mindset/flow-state/session')} className="btn-primary text-base py-3 w-full">
-          Start 5-A Flow Stack · ~4.5 min
-        </button>
+        <div>
+          <button onClick={() => router.push('/mindset/flow-state/session')} className="btn-primary text-base py-3 w-full">
+            Start Pre-Game Flow Stack · ~4.5 min
+          </button>
+          <p className="text-xs text-fg-4 text-center mt-2">Do this before competition, not practice. Log your flow after the game.</p>
+        </div>
         <button onClick={() => router.push('/mindset/flow-state/log')} className="btn-secondary w-full">
           Log a practice or game
         </button>

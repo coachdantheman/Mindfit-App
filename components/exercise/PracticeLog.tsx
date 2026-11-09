@@ -105,6 +105,8 @@ export default function PracticeLog({ notify }: Props) {
   const [objective, setObjective] = useState<string | null>(null)
   const [sports, setSports] = useState<string[]>([])
   const [recent, setRecent] = useState<Entry[]>([])
+  // Set when the athlete arrives from a finished pre-game 5-A Stack.
+  const [stackSession, setStackSession] = useState<string | null>(null)
   const form = forms[kind]
   const key = draftKey(`practice-log:${kind}`)
 
@@ -126,7 +128,9 @@ export default function PracticeLog({ notify }: Props) {
       setSports(list)
       defaultSport = list[0] ?? ''
       const teamGame = schedule.find(e => e.kind === 'game' && e.event_date === today)
-      if (teamGame || profile?.next_competition_at?.slice(0, 10) === today) setKind('game')
+      const session = new URLSearchParams(window.location.search).get('session')
+      if (session) setStackSession(session)
+      if (session || teamGame || profile?.next_competition_at?.slice(0, 10) === today) setKind('game')
 
       const entries: Entry[] = day?.entries ?? []
       const flows: FlowRow[] = day?.flows ?? []
@@ -144,6 +148,7 @@ export default function PracticeLog({ notify }: Props) {
           next[k] = draft ? { ...EMPTY, ...draft } : { ...EMPTY, sport: defaultSport, opponent: k === 'game' ? teamGame?.opponent ?? '' : '' }
         }
       }
+      if (session) next.game = { ...next.game, flowOn: true }
       setForms(next)
       setSaved(nextSaved)
       setLoading(false)
@@ -187,6 +192,7 @@ export default function PracticeLog({ notify }: Props) {
         to_improve: form.toImprove || null,
         playing_time_min: form.playingTime ? parseInt(form.playingTime, 10) : null,
         flow: form.flowOn ? { skill_level: form.skill, flow_score: form.flow, triggers_fired: form.triggers } : null,
+        flow_session_id: kind === 'game' ? stackSession : null,
       }),
     })
     if (res.ok) {
@@ -287,6 +293,12 @@ export default function PracticeLog({ notify }: Props) {
             <Area label="What did you learn?" value={form.learned} onChange={v => update({ learned: v })} placeholder="One thing that clicked, or one thing you still need." />
             <RatingSlider label="Difficulty — how hard was practice?" value={form.difficulty} onChange={v => update({ difficulty: v })} color="bg-cta" />
           </>
+        )}
+
+        {stackSession && kind === 'game' && (
+          <p className="rounded-xl border border-cta/40 bg-cta/10 px-4 py-3 text-sm text-fg-2">
+            Linked to today&apos;s pre-game Flow Stack. Your flow score below connects the stack to how you played.
+          </p>
         )}
 
         {/* Flow thread — difficulty is the challenge; flow needs it within 1 of skill */}
