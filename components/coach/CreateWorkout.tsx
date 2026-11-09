@@ -150,14 +150,14 @@ export default function CreateWorkout() {
           <SortableList items={exercises} ids={exercises.map(ex => ex.id)} onReorder={setExercises}>
           <div className="space-y-2">
           {exercises.map((ex, idx) => (
-            <SortableRow key={ex.id} id={ex.id} className="flex items-center gap-2 bg-surface-2/50 rounded-lg p-2">
+            <SortableRow key={ex.id} id={ex.id} className="flex flex-wrap items-center gap-2 bg-surface-2/50 rounded-lg p-2">
               {handle => (<>
               {exercises.length > 1 && handle}
               <input
                 value={ex.name}
                 onChange={e => updateExercise(idx, 'name', e.target.value)}
                 placeholder="Exercise name"
-                className="flex-1 bg-surface-2 border border-edge rounded-lg px-2 py-1.5 text-sm text-fg-1 placeholder:text-fg-4 focus:ring-2 focus:ring-cta/50"
+                className="flex-1 min-w-0 bg-surface-2 border border-edge rounded-lg px-2 py-1.5 text-sm text-fg-1 placeholder:text-fg-4 focus:ring-2 focus:ring-cta/50"
               />
               <input
                 type="number"
@@ -177,7 +177,7 @@ export default function CreateWorkout() {
                 value={ex.notes}
                 onChange={e => updateExercise(idx, 'notes', e.target.value)}
                 placeholder="Notes"
-                className="flex-1 bg-surface-2 border border-edge rounded-lg px-2 py-1.5 text-sm text-fg-1 placeholder:text-fg-4 focus:ring-2 focus:ring-cta/50"
+                className="min-w-0 basis-full sm:basis-auto sm:flex-1 bg-surface-2 border border-edge rounded-lg px-2 py-1.5 text-sm text-fg-1 placeholder:text-fg-4 focus:ring-2 focus:ring-cta/50"
               />
               {exercises.length > 1 && (
                 <button type="button" onClick={() => removeExercise(idx)} className="text-red-400 hover:text-red-300 text-xs px-1">x</button>

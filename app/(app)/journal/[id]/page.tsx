@@ -1,21 +1,22 @@
-import { createServerSupabaseClient } from '@/lib/supabase-client'
-import { notFound } from 'next/navigation'
+import { getVerifiedUser } from '@/lib/supabase-client'
+import { createAdminClient } from '@/lib/supabase-server'
+import { notFound, redirect } from 'next/navigation'
 import { format, parseISO } from 'date-fns'
 import Link from 'next/link'
 import { JournalEntry } from '@/types'
 import TodayEntry from '@/components/journal/TodayEntry'
 
 export default async function EntryPage({ params }: { params: { id: string } }) {
-  const supabase = await createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) notFound()
+  const user = await getVerifiedUser()
+  if (!user) redirect('/login')
 
-  const { data: entry } = await supabase
+  // Service role with an explicit owner filter, same as the API routes.
+  const { data: entry } = await createAdminClient()
     .from('journal_entries')
     .select('*')
     .eq('id', params.id)
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
 
   if (!entry) notFound()
 

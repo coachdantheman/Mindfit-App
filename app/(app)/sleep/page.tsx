@@ -203,14 +203,14 @@ export default function SleepPage() {
           <div className="card p-6">
             <div className="flex items-start justify-between gap-3 mb-1">
               <h3 className="font-semibold text-fg-1">Sleep Log</h3>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <label htmlFor="sleep-date" className="text-xs text-fg-4">Night of</label>
                 <input id="sleep-date"
                   type="date"
                   value={date}
                   max={lastNight}
                   onChange={e => { if (e.target.value && e.target.value <= lastNight) setDate(e.target.value) }}
-                  className="bg-surface-2 border border-edge rounded-lg px-2.5 py-1.5 text-xs text-fg-2 focus:ring-2 focus:ring-cta/50"
+                  className="input-field min-w-0 sm:w-auto py-1.5 text-xs text-fg-2 focus:ring-2 focus:ring-cta/50"
                 />
                 {!isDefault && (
                   <button type="button" onClick={() => setDate(lastNight)} className="text-xs text-cta hover:underline">Last night</button>
@@ -220,14 +220,14 @@ export default function SleepPage() {
             <p className="text-sm text-fg-4 mb-5">Champions are built in recovery. Aim for 7–9 hours every night.</p>
 
             <div className="space-y-4">
-              <div className="flex gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label htmlFor="sleep-bedtime" className="text-sm text-fg-3 block mb-1">Bedtime</label>
                   <input id="sleep-bedtime"
                     type="time"
                     value={bedtime}
                     onChange={e => { setBedtime(e.target.value); setSleepSaved(false) }}
-                    className="bg-surface-2 border border-edge rounded-xl px-4 py-2.5 text-sm text-fg-1 focus:ring-2 focus:ring-cta/50"
+                    className="w-full min-w-0 bg-surface-2 border border-edge rounded-xl px-4 py-2.5 text-sm text-fg-1 focus:ring-2 focus:ring-cta/50"
                   />
                 </div>
                 <div>
@@ -236,15 +236,13 @@ export default function SleepPage() {
                     type="time"
                     value={wakeTime}
                     onChange={e => { setWakeTime(e.target.value); setSleepSaved(false) }}
-                    className="bg-surface-2 border border-edge rounded-xl px-4 py-2.5 text-sm text-fg-1 focus:ring-2 focus:ring-cta/50"
+                    className="w-full min-w-0 bg-surface-2 border border-edge rounded-xl px-4 py-2.5 text-sm text-fg-1 focus:ring-2 focus:ring-cta/50"
                   />
                 </div>
-                {hours && (
-                  <div className="flex flex-col justify-end">
-                    <p className={`text-2xl font-bold ${sleepColor}`}>{hours}h</p>
-                  </div>
-                )}
               </div>
+              {hours && (
+                <p className={`text-2xl font-bold ${sleepColor}`}>{hours}h</p>
+              )}
 
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-fg-4">
                 {usual && (

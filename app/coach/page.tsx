@@ -126,7 +126,7 @@ function AthleteTable({ athletes, onChanged, notify }: { athletes: MemberWithCou
                     )}
                   </div>
                 </td>
-                <td className="px-2 py-3 text-right whitespace-nowrap">
+                <td className="px-2 py-3 text-right whitespace-normal sm:whitespace-nowrap">
                   {a.status === 'invited' && (
                     <button type="button" onClick={() => resend(a)} className="text-xs text-fg-3 hover:text-cta mr-3">Resend invite</button>
                   )}

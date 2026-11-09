@@ -29,7 +29,7 @@ export default function TodayEntry({ entry }: { entry: JournalEntry }) {
       {/* Ratings summary */}
       <div className="card p-6">
         <h3 className="font-semibold text-fg-1 mb-4">Today&apos;s Ratings</h3>
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <RatingBadge label="Motivation" value={entry.rating_motivation} color={ratingColors.motivation} />
           <RatingBadge label="Focus" value={entry.rating_focus} color={ratingColors.focus} />
           <RatingBadge label="Confidence" value={entry.rating_confidence} color={ratingColors.confidence} />

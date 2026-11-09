@@ -38,7 +38,7 @@ export default function WhitelistTable({ refreshKey = 0 }: { refreshKey?: number
         <p className="text-sm text-fg-4">No invites yet.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="table-fixed w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-fg-4 border-b border-edge">
                 <th className="pb-2 font-medium">Email</th>
@@ -51,7 +51,7 @@ export default function WhitelistTable({ refreshKey = 0 }: { refreshKey?: number
             <tbody className="divide-y divide-edge-muted">
               {emails.map(e => (
                 <tr key={e.id}>
-                  <td className="py-2.5 pr-3 max-w-[180px] sm:max-w-none">
+                  <td className="py-2.5 pr-3 w-full max-w-0 truncate">
                     <p className="font-medium text-fg-2 truncate">{e.full_name || e.email}</p>
                     {e.full_name && <p className="text-xs text-fg-4 truncate">{e.email}</p>}
                   </td>

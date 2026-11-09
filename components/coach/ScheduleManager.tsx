@@ -169,14 +169,14 @@ export default function ScheduleManager() {
               <p className="text-sm font-semibold text-fg-1">Found {review.length}. Check them, then save.</p>
               <ul className="space-y-2 max-h-96 overflow-y-auto">
                 {review.map((e, i) => (
-                  <li key={i} className="grid grid-cols-2 sm:grid-cols-[6rem_9rem_7rem_1fr_6rem_auto] gap-2 items-center bg-surface-2/50 rounded-xl p-2">
-                    <select aria-label="Kind" value={e.kind} onChange={ev => editReview(i, { kind: ev.target.value as ScheduleEvent['kind'] })} className="input-field text-sm">
+                  <li key={i} className="grid grid-cols-1 sm:grid-cols-[6rem_9rem_7rem_1fr_6rem_auto] gap-2 items-center bg-surface-2/50 rounded-xl p-2">
+                    <select aria-label="Kind" value={e.kind} onChange={ev => editReview(i, { kind: ev.target.value as ScheduleEvent['kind'] })} className="input-field min-w-0 w-full text-sm">
                       <option value="game">Game</option><option value="practice">Practice</option>
                     </select>
-                    <input aria-label="Date" type="date" value={e.event_date} onChange={ev => editReview(i, { event_date: ev.target.value })} className="input-field text-sm" />
-                    <input aria-label="Start time" type="time" value={e.start_time ?? ''} onChange={ev => editReview(i, { start_time: ev.target.value || null })} className="input-field text-sm" />
-                    <input aria-label="Opponent" value={e.opponent ?? ''} onChange={ev => editReview(i, { opponent: ev.target.value || null })} placeholder="Opponent" className="input-field text-sm" disabled={e.kind === 'practice'} />
-                    <select aria-label="Home or away" value={e.home_away ?? ''} onChange={ev => editReview(i, { home_away: (ev.target.value || null) as ScheduleEvent['home_away'] })} className="input-field text-sm" disabled={e.kind === 'practice'}>
+                    <input aria-label="Date" type="date" value={e.event_date} onChange={ev => editReview(i, { event_date: ev.target.value })} className="input-field min-w-0 w-full text-sm" />
+                    <input aria-label="Start time" type="time" value={e.start_time ?? ''} onChange={ev => editReview(i, { start_time: ev.target.value || null })} className="input-field min-w-0 w-full text-sm" />
+                    <input aria-label="Opponent" value={e.opponent ?? ''} onChange={ev => editReview(i, { opponent: ev.target.value || null })} placeholder="Opponent" className="input-field min-w-0 w-full text-sm" disabled={e.kind === 'practice'} />
+                    <select aria-label="Home or away" value={e.home_away ?? ''} onChange={ev => editReview(i, { home_away: (ev.target.value || null) as ScheduleEvent['home_away'] })} className="input-field min-w-0 w-full text-sm" disabled={e.kind === 'practice'}>
                       <option value="">—</option><option value="home">Home</option><option value="away">Away</option><option value="neutral">Neutral</option>
                     </select>
                     <button type="button" onClick={() => setReview(r => r?.filter((_, j) => j !== i) ?? null)} className="btn-ghost text-xs text-fg-4" aria-label="Remove row">✕</button>

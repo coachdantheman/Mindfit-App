@@ -11,7 +11,7 @@ function lastUsed(a: MemberWithCount): string {
   return formatLastSeen(latestOf(a.last_seen_at, a.overview?.last_journal_date, a.overview?.last_flow_at))
 }
 
-function StatusChips({ a }: { a: MemberWithCount }) {
+function StatusChips({ a, wrap = false }: { a: MemberWithCount; wrap?: boolean }) {
   if (a.status === 'invited') {
     return <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-cta/15 text-cta whitespace-nowrap">Invited</span>
   }
@@ -20,7 +20,7 @@ function StatusChips({ a }: { a: MemberWithCount }) {
   return (
     <div className="flex flex-wrap gap-1 justify-end sm:justify-start">
       {flags.map(f => (
-        <span key={f} className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${FLAG_LABELS[f]?.className ?? 'bg-surface-2/60 text-fg-3'}`}>
+        <span key={f} className={`text-xs font-semibold px-2 py-0.5 rounded-full ${wrap ? '' : 'whitespace-nowrap'} ${FLAG_LABELS[f]?.className ?? 'bg-surface-2/60 text-fg-3'}`}>
           {FLAG_LABELS[f]?.label ?? f}
         </span>
       ))}
@@ -115,8 +115,8 @@ export default function MemberTable() {
                   {a.full_name && <p className="text-xs text-fg-4 truncate">{a.email}</p>}
                   <p className="text-xs text-fg-4 mt-0.5">Last used {lastUsed(a)} · {a.entry_count} entries{a.overview?.latest_mpi != null ? ` · MPI ${a.overview.latest_mpi}` : ''}</p>
                 </div>
-                <div className="shrink-0 flex flex-col items-end gap-2">
-                  <StatusChips a={a} />
+                <div className="min-w-0 max-w-[55%] flex flex-col items-end gap-2">
+                  <StatusChips a={a} wrap />
                   <Actions m={a} />
                 </div>
               </li>
