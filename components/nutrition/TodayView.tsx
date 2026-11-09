@@ -8,6 +8,7 @@ import MealSection from './MealSection'
 import AddFoodSheet, { AddItem } from './AddFoodSheet'
 import GameDayCard from './GameDayCard'
 import SaveMealSheet from './SaveMealSheet'
+import SupplementsCard from './SupplementsCard'
 
 interface Props {
   goal: NutritionGoal | null
@@ -208,6 +209,7 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
           />
         ))
       )}
+      <SupplementsCard date={date} />
       {sheetMeal && (
         <AddFoodSheet
           meal={sheetMeal}
