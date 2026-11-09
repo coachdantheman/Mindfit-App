@@ -9,6 +9,7 @@ const USER_TABLES = [
   'affirmations', 'goals', 'flow_sessions', 'flow_logs', 'flow_cue_words', 'flow_stage_checkins',
   'push_subscriptions', 'practice_logs', 'foods', 'exercise_library',
   'quiz_results', 'notification_prefs', 'notifications', 'progress_snapshots',
+  'habits', 'habit_checks', 'supplements', 'supplement_checks', 'vault_prefs', 'athlete_events',
 ]
 const ATHLETE_TABLES = ['team_members', 'coach_workouts', 'coach_program_assignments', 'coach_link_requests']
 

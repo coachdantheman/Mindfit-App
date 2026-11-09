@@ -39,6 +39,7 @@ export async function POST(req: Request) {
       completed: body.completed ?? true,
       duration_min: body.duration_min || null,
       notes: body.notes || null,
+      viz_type: typeof body.viz_type === 'string' && body.viz_type.length <= 40 ? body.viz_type : null,
     }, { onConflict: 'user_id,entry_date' })
     .select()
     .single()

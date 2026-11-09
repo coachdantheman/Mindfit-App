@@ -26,7 +26,9 @@ export async function GET(req: Request) {
     .order('sort_order')
 
   if (!all) query = query.eq('is_published', true)
-  if (section && SECTIONS.includes(section)) query = query.eq('app_section', section)
+  // Meditation lessons show on the merged Visualization tab.
+  if (section === 'visualization') query = query.in('app_section', ['visualization', 'meditation'])
+  else if (section && SECTIONS.includes(section)) query = query.eq('app_section', section)
 
   const { data, error } = await query
   if (error) return dbError(error)

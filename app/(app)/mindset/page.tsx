@@ -9,25 +9,30 @@ import { LessonSection } from '@/types'
 
 const JournalTab = dynamic(() => import('@/components/mindset/JournalTab'))
 const VisualizationForm = dynamic(() => import('@/components/mindset/VisualizationForm'))
-const MeditationForm = dynamic(() => import('@/components/mindset/MeditationForm'))
 const AffirmationsList = dynamic(() => import('@/components/mindset/AffirmationsList'))
 const GoalsSection = dynamic(() => import('@/components/mindset/GoalsSection'))
 const WeeklyAssessment = dynamic(() => import('@/components/mindset/WeeklyAssessment'))
 const FlowStateTab = dynamic(() => import('@/components/mindset/flow/FlowStateTab'))
 const GratitudeTab = dynamic(() => import('@/components/mindset/GratitudeTab'))
+const HabitsTab = dynamic(() => import('@/components/mindset/HabitsTab'))
+const QuoteVault = dynamic(() => import('@/components/mindset/QuoteVault'))
+const MusicTab = dynamic(() => import('@/components/mindset/MusicTab'))
 
-const tabs = ['Journal', 'Gratitude', 'Weekly Assessment', 'Flow State', 'Visualization', 'Meditation', 'Affirmations', 'Goals'] as const
+const tabs = ['Journal', 'Gratitude', 'MPI Weekly Assessment', 'Flow State', 'Visualization', 'Affirmations', 'Goals', 'Habits', 'Quote Vault', 'Music'] as const
 type Tab = typeof tabs[number]
 
-const tabSections: Record<Tab, LessonSection> = {
+// Old ?tab= names still land on the right tab.
+const tabAliases: Record<string, Tab> = { 'Weekly Assessment': 'MPI Weekly Assessment', 'Meditation': 'Visualization' }
+
+const tabSections: Partial<Record<Tab, LessonSection>> = {
   'Journal': 'journal',
   'Gratitude': 'gratitude',
-  'Weekly Assessment': 'weekly_assessment',
+  'MPI Weekly Assessment': 'weekly_assessment',
   'Flow State': 'flow_state',
   'Visualization': 'visualization',
-  'Meditation': 'meditation',
   'Affirmations': 'affirmations',
   'Goals': 'goals',
+  'Habits': 'goals',
 }
 
 export default function MindsetPage() {
@@ -42,7 +47,7 @@ function MindsetContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const paramTab = searchParams.get('tab')
-  const initialTab = tabs.find(t => t === paramTab) ?? 'Journal'
+  const initialTab = tabs.find(t => t === paramTab) ?? (paramTab ? tabAliases[paramTab] : undefined) ?? 'Journal'
   const [activeTab, setActiveTab] = useState<Tab>(initialTab)
   // Tabs stay mounted once visited so half-written forms survive switching.
   const [visited, setVisited] = useState<Tab[]>([initialTab])
@@ -56,12 +61,14 @@ function MindsetContent() {
   const tabContent: Record<Tab, React.ReactNode> = {
     'Journal': <JournalTab />,
     'Gratitude': <GratitudeTab />,
-    'Weekly Assessment': <WeeklyAssessment />,
+    'MPI Weekly Assessment': <WeeklyAssessment />,
     'Flow State': <FlowStateTab />,
     'Visualization': <VisualizationForm />,
-    'Meditation': <MeditationForm />,
     'Affirmations': <AffirmationsList />,
     'Goals': <GoalsSection />,
+    'Habits': <HabitsTab />,
+    'Quote Vault': <QuoteVault />,
+    'Music': <MusicTab />,
   }
 
   return (
@@ -81,7 +88,7 @@ function MindsetContent() {
         </div>
       ))}
 
-      <LessonLinks section={tabSections[activeTab]} />
+      {tabSections[activeTab] && <LessonLinks section={tabSections[activeTab]!} />}
     </div>
   )
 }

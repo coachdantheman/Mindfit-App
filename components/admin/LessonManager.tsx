@@ -6,7 +6,7 @@ import Skeleton from '@/components/shared/Skeleton'
 const SECTIONS: { value: LessonSection; label: string }[] = [
   { value: 'journal', label: 'Journal' },
   { value: 'gratitude', label: 'Gratitude' },
-  { value: 'weekly_assessment', label: 'Weekly Assessment' },
+  { value: 'weekly_assessment', label: 'MPI Weekly Assessment' },
   { value: 'flow_state', label: 'Flow State' },
   { value: 'visualization', label: 'Visualization' },
   { value: 'meditation', label: 'Meditation' },
@@ -94,8 +94,8 @@ export default function LessonManager() {
         <input required value={title} onChange={e => setTitle(e.target.value)} className={inputClass} placeholder="Lesson title" />
         <input required value={url} onChange={e => setUrl(e.target.value)} className={inputClass} placeholder="https://www.skool.com/mindfit/classroom/…" />
         <input required value={moduleName} onChange={e => setModuleName(e.target.value)} className={inputClass} placeholder="Module (e.g. Confidence Foundations)" />
-        <div className="flex gap-3">
-          <select value={section} onChange={e => setSection(e.target.value as LessonSection)} className={inputClass}>
+        <div className="flex flex-wrap gap-3">
+          <select value={section} onChange={e => setSection(e.target.value as LessonSection)} className={`${inputClass} min-w-0 flex-1`}>
             {SECTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
           <button

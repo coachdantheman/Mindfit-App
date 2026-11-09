@@ -111,7 +111,7 @@ export default function WeeklyAssessment({ mode = 'weekly', onComplete }: Weekly
     <div className="space-y-5">
       <div className="card p-6">
         <div className="flex items-center justify-between mb-1">
-          <h3 className="font-semibold text-fg-1">{isBaseline ? 'Baseline Assessment' : 'Weekly Assessment'}</h3>
+          <h3 className="font-semibold text-fg-1">{isBaseline ? 'Baseline Assessment' : 'MPI Weekly Assessment'}</h3>
           {!isBaseline && (
             <span className="text-sm text-fg-4">Week of {new Date(weekDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
           )}
@@ -119,7 +119,7 @@ export default function WeeklyAssessment({ mode = 'weekly', onComplete }: Weekly
         <p className="text-sm text-fg-4 mb-6">
           {isBaseline
             ? 'Be honest — this is your starting point, and it’s how we measure your growth.'
-            : 'Rate each area 1–10. Track your mental game weekly.'}
+            : 'This is where your MPI (Mental Performance Index) is scored. Drag each dot to rate the area 1–10.'}
         </p>
 
         <div className="space-y-4">
@@ -139,10 +139,24 @@ export default function WeeklyAssessment({ mode = 'weekly', onComplete }: Weekly
                     <div className="w-full h-2 rounded-full bg-surface-2 overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-[width] ${getScoreColor(scores[key])}`}
-                        style={{ width: `${(scores[key] / 10) * 100}%` }}
+                        style={{ width: `calc(10px + (100% - 20px) * ${(scores[key] - 1) / 9})` }}
                       />
                     </div>
                   </div>
+                  {/* One dot per score, plus a handle at the current value, so it reads as draggable. */}
+                  {Array.from({ length: 10 }, (_, i) => (
+                    <span
+                      key={i}
+                      aria-hidden
+                      className={`absolute h-1.5 w-1.5 -translate-x-1/2 rounded-full ${i + 1 <= scores[key] ? 'bg-white/60' : 'bg-fg-4/50'}`}
+                      style={{ left: `calc(10px + (100% - 20px) * ${i / 9})` }}
+                    />
+                  ))}
+                  <span
+                    aria-hidden
+                    className={`pointer-events-none absolute h-5 w-5 -translate-x-1/2 rounded-full border-2 border-white shadow-md transition-[left] ${getScoreColor(scores[key])}`}
+                    style={{ left: `calc(10px + (100% - 20px) * ${(scores[key] - 1) / 9})` }}
+                  />
                   <input
                     type="range"
                     min="1"

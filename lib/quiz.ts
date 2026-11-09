@@ -68,12 +68,12 @@ const A = {
   affirmations: { label: 'Affirmations', href: '/mindset?tab=Affirmations', section: 'affirmations' },
   journal: { label: 'Journal', href: '/mindset?tab=Journal', section: 'journal' },
   visualization: { label: 'Visualization', href: '/mindset?tab=Visualization', section: 'visualization' },
-  meditation: { label: 'Meditation', href: '/mindset?tab=Meditation', section: 'meditation' },
+  habits: { label: 'Habits', href: '/mindset?tab=Habits', section: 'goals' },
   flow: { label: 'Flow State', href: '/mindset?tab=Flow%20State', section: 'flow_state' },
   goals: { label: 'Goals', href: '/mindset?tab=Goals', section: 'goals' },
   gratitude: { label: 'Gratitude', href: '/mindset?tab=Gratitude', section: 'gratitude' },
   sleep: { label: 'Sleep', href: '/sleep', section: 'sleep' },
-  weekly: { label: 'Weekly Assessment', href: '/mindset?tab=Weekly%20Assessment', section: 'weekly_assessment' },
+  weekly: { label: 'MPI Weekly Assessment', href: '/mindset?tab=MPI%20Weekly%20Assessment', section: 'weekly_assessment' },
 } satisfies Record<string, QuizAction>
 
 export const RESULTS: Record<Need, { paragraph: string; actions: QuizAction[] }> = {
@@ -83,11 +83,11 @@ export const RESULTS: Record<Need, { paragraph: string; actions: QuizAction[] }>
   },
   focus: {
     paragraph: "Your attention is leaking. The crowd, the scoreboard and the last mistake each pull you out of the play in front of you. Focus is a skill you can train, and it's where flow starts. Athletes who find flow see themselves as present competitors who live in this play and nothing else. Your work is to train the reset: one breath, one cue word, back to now.",
-    actions: [A.meditation, A.flow, A.visualization],
+    actions: [A.visualization, A.flow, A.journal],
   },
   pressure: {
     paragraph: "You're not short on talent. Pressure is getting between your training and your game. Nerves are energy, your body getting ready to compete. The trouble starts when you read that energy as a threat. Athletes who rise in big moments see themselves as people who belong there. Your work is to rehearse the moment before it arrives, so game day feels familiar instead of foreign.",
-    actions: [A.visualization, A.meditation, A.flow],
+    actions: [A.visualization, A.flow, A.affirmations],
   },
   motivation: {
     paragraph: "Your drive fades when the work gets hard or the results don't come. That's normal, and you can fix it. Motivation that depends on how you feel won't last a season. Resilient athletes act from who they are: \"I'm someone who shows up,\" not \"I'll show up if I feel like it.\" Your work is to tie your daily habits to that identity and treat setbacks as part of the story, not the end of it.",
@@ -95,7 +95,7 @@ export const RESULTS: Record<Need, { paragraph: string; actions: QuizAction[] }>
   },
   recovery: {
     paragraph: "Your mind and body aren't getting the consistency they need. Without a routine, every game day starts from zero. Short or uneven sleep drains focus, mood and reaction time before you step on the field. Elite athletes treat recovery as part of training, not a break from it. Your work is to build a pre-game routine and protect a sleep window, so your best self shows up on schedule.",
-    actions: [A.sleep, A.weekly, A.meditation],
+    actions: [A.sleep, A.habits, A.visualization],
   },
 }
 

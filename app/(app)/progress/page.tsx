@@ -59,18 +59,17 @@ export default function ProgressPage() {
       fetch('/api/sleep/entries').then(r => r.json()),
       fetch('/api/exercise/logs').then(r => r.json()),
       fetch('/api/mindset/visualization').then(r => r.json()),
-      fetch('/api/mindset/meditation').then(r => r.json()),
       fetch('/api/mindset/goals').then(r => r.json()),
       fetch('/api/nutrition/entries?days=30').then(r => r.json()),
       fetch('/api/nutrition/goals').then(r => r.json()),
       fetch('/api/mindset/weekly-assessment').then(r => r.json()),
       fetch('/api/stats/overview').then(r => r.json()),
-    ]).then(([journal, sleep, workouts, viz, med, goals, food, nutGoal, weeklyAssessments, stats]) => {
+    ]).then(([journal, sleep, workouts, viz, goals, food, nutGoal, weeklyAssessments, stats]) => {
       setJournalEntries(journal)
       setSleepEntries(sleep)
       setWorkoutLogs(workouts)
       setVizCount(viz.filter((v: { completed: boolean }) => v.completed).length)
-      setMedCount(med.filter((m: { completed: boolean }) => m.completed).length)
+      setMedCount(viz.filter((v: { completed: boolean }) => v.completed).reduce((sum: number, v: { duration_min: number | null }) => sum + (v.duration_min ?? 0), 0))
       setGoalCount({ total: goals.length, completed: goals.filter((g: { is_completed: boolean }) => g.is_completed).length })
       setFoodEntries(food)
       setNutritionGoal(nutGoal)
@@ -166,18 +165,18 @@ export default function ProgressPage() {
             <>
               <JournalRatingsGrid entries={journalEntries} />
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div className="bg-surface rounded-xl border border-edge p-3 text-center">
                   <p className="text-lg font-bold text-fg-2">{vizCount}</p>
-                  <p className="text-xs text-fg-4">Visualizations</p>
+                  <p className="break-words text-xs text-fg-4">Visualizations</p>
                 </div>
                 <div className="bg-surface rounded-xl border border-edge p-3 text-center">
                   <p className="text-lg font-bold text-fg-2">{medCount}</p>
-                  <p className="text-xs text-fg-4">Meditations</p>
+                  <p className="break-words text-xs text-fg-4">Practice minutes</p>
                 </div>
                 <div className="bg-surface rounded-xl border border-edge p-3 text-center">
                   <p className="text-lg font-bold text-fg-2">{goalCount.completed}</p>
-                  <p className="text-xs text-fg-4">Goals Hit</p>
+                  <p className="break-words text-xs text-fg-4">Goals Hit</p>
                 </div>
               </div>
 

@@ -5,7 +5,7 @@
 export type Pillar = 'mind' | 'body' | 'fuel' | 'rest'
 
 export const PILLARS: { key: Pillar; name: string; emoji: string; blurb: string }[] = [
-  { key: 'mind', name: 'Mind', emoji: '🧠', blurb: 'Journal, gratitude, flow, visualization, meditation, goals, MPI growth' },
+  { key: 'mind', name: 'Mind', emoji: '🧠', blurb: 'Journal, gratitude, flow, visualization, goals, MPI growth' },
   { key: 'body', name: 'Body', emoji: '💪', blurb: 'Workouts, sets, PRs and strength tiers' },
   { key: 'fuel', name: 'Fuel', emoji: '🍽️', blurb: 'Meals logged' },
   { key: 'rest', name: 'Rest', emoji: '😴', blurb: 'Sleep and recovery check-ins' },
@@ -37,8 +37,7 @@ export const ACTIONS: ActionRule[] = [
   { key: 'flow_sessions', pillar: 'mind', label: 'Flow State session',       points: 20, cap: 1 },
   { key: 'flow_logs',     pillar: 'mind', label: 'Post-competition flow log', points: 15, cap: 1 },
   { key: 'flow_checkins', pillar: 'mind', label: 'Flow stage check-in',      points: 5,  cap: 3 },
-  { key: 'visualization', pillar: 'mind', label: 'Visualization',            points: 10, cap: 1 },
-  { key: 'meditation',    pillar: 'mind', label: 'Meditation',               points: 10, cap: 1 },
+  { key: 'visualization', pillar: 'mind', label: 'Visualization / meditation', points: 10, cap: 1 },
   { key: 'affirmations',  pillar: 'mind', label: 'New affirmation',          points: 5,  cap: 2 },
   { key: 'goals_done',    pillar: 'mind', label: 'Goal completed',           points: 20, cap: 2 },
   { key: 'workouts',      pillar: 'body', label: 'Workout logged',           points: 25, cap: 2 },
