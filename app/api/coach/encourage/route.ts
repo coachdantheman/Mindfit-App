@@ -7,7 +7,7 @@ import { ENCOURAGEMENT, type EncouragementKey } from '@/lib/notify-copy'
 
 // Coach taps "Send encouragement" on one athlete or a whole team. Preset
 // messages only, so nothing unreviewed reaches a minor. One per athlete
-// per message per day.
+// per message per day. Admins can message any athlete or team.
 export async function POST(req: Request) {
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
@@ -18,14 +18,19 @@ export async function POST(req: Request) {
   if (limited) return limited
 
   const admin = createAdminClient()
+  const isAdmin = auth.role === 'admin'
   let athleteIds: string[] = []
   if (typeof body.team_id === 'string') {
-    const { data: team } = await admin.from('teams').select('id').eq('id', body.team_id).eq('coach_id', auth.userId).maybeSingle()
+    let teamQuery = admin.from('teams').select('id').eq('id', body.team_id)
+    if (!isAdmin) teamQuery = teamQuery.eq('coach_id', auth.userId)
+    const { data: team } = await teamQuery.maybeSingle()
     if (!team) return NextResponse.json({ error: 'Team not found.' }, { status: 404 })
     const { data } = await admin.from('team_members').select('athlete_id').eq('team_id', team.id)
     athleteIds = (data ?? []).map(r => r.athlete_id)
   } else if (typeof body.athlete_id === 'string') {
-    const { data } = await admin.from('coach_athletes').select('athlete_id').eq('coach_id', auth.userId).eq('athlete_id', body.athlete_id).maybeSingle()
+    const { data } = isAdmin
+      ? await admin.from('profiles').select('athlete_id:id').eq('id', body.athlete_id).eq('role', 'member').maybeSingle()
+      : await admin.from('coach_athletes').select('athlete_id').eq('coach_id', auth.userId).eq('athlete_id', body.athlete_id).maybeSingle()
     if (!data) return NextResponse.json({ error: 'Athlete not found.' }, { status: 404 })
     athleteIds = [data.athlete_id]
   }

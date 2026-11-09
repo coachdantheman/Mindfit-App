@@ -6,6 +6,7 @@ import Skeleton from '@/components/shared/Skeleton'
 import { FLAG_LABELS } from '@/components/shared/flag-labels'
 import { formatLastSeen, latestOf } from '@/lib/last-seen'
 import { saveRoster } from '@/components/shared/roster'
+import { EncourageControl } from '@/components/coach/TeamsManager'
 
 function lastUsed(a: MemberWithCount): string {
   return formatLastSeen(latestOf(a.last_seen_at, a.overview?.last_journal_date, a.overview?.last_flow_at))
@@ -80,9 +81,11 @@ export default function MemberTable() {
   if (loading) return <Skeleton />
 
   const Actions = ({ m }: { m: MemberWithCount }) => (
-    <div className="flex items-center gap-3 whitespace-nowrap">
-      {m.status === 'invited' && (
+    <div className="flex items-start gap-3 whitespace-nowrap">
+      {m.status === 'invited' ? (
         <button type="button" onClick={() => resend(m)} className="text-xs text-fg-3 hover:text-cta">Resend invite</button>
+      ) : (
+        <EncourageControl target={{ athlete_id: m.id }} label="Encourage" className="text-xs text-fg-3 hover:text-cta" />
       )}
       <button type="button" onClick={() => remove(m)} className="text-xs text-fg-4 hover:text-red-400" aria-label={`Delete ${m.email}`}>Delete</button>
     </div>
