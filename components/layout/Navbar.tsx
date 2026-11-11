@@ -92,9 +92,9 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
 
   const initials = computeInitials(fullName, email)
   const roleLink =
-    role === 'admin' ? { href: '/admin', label: 'Admin' } :
-    role === 'coach' ? { href: '/coach', label: 'Coach' } :
-    role === 'parent' ? { href: '/parent', label: 'My Athletes' } :
+    role === 'admin' ? { href: '/admin', label: 'Admin', short: 'Admin' } :
+    role === 'coach' ? { href: '/coach', label: 'Coach', short: 'Coach' } :
+    role === 'parent' ? { href: '/parent', label: 'My Athletes', short: 'Athletes' } :
     null
 
   return (
@@ -156,7 +156,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
             </div>
 
             {/* Right cluster */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               <NotificationBell />
               <StreakChip pathname={pathname} />
               <Link
@@ -176,15 +176,14 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
                 <Link
                   href={roleLink.href}
                   aria-current={isActive(roleLink.href) ? 'page' : undefined}
-                  className={`sm:hidden p-2.5 rounded-md transition-colors ${
+                  className={`sm:hidden flex items-center gap-1 min-h-[40px] pl-2 pr-2.5 rounded-full border text-xs font-semibold whitespace-nowrap transition-colors ${
                     isActive(roleLink.href)
-                      ? 'text-cta bg-cta/10'
-                      : 'text-fg-3 hover:text-fg-1 hover:bg-surface-2'
+                      ? 'text-cta bg-cta/10 border-cta/50'
+                      : 'text-cta border-cta/30 hover:bg-cta/10'
                   }`}
-                  title={roleLink.label}
-                  aria-label={roleLink.label}
                 >
-                  <ShieldIcon className="w-5 h-5" />
+                  <ShieldIcon className="w-4 h-4" />
+                  {roleLink.short}
                 </Link>
               )}
               <Link
