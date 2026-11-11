@@ -4,14 +4,27 @@ import { cronAuthorized } from '@/lib/cron-auth'
 import { notify, DEFAULT_PREFS, type Prefs, type Message } from '@/lib/notify'
 import { copy } from '@/lib/notify-copy'
 import { scheduledKinds, localClock, shiftDate, inQuietHours } from '@/lib/notify-jobs'
-import {
-  scoreMonth, activityStreaks, levelFor, titleFor, monthBounds, isValidTimeZone, displayNameFor,
-  type ActivityRow,
-} from '@/lib/leaderboard'
+import { levelFor, titleFor, monthBounds, isValidTimeZone, displayNameFor } from '@/lib/leaderboard'
+import { refreshScore, liveStreak, pillarsOf, type ScoreRow } from '@/lib/leaderboard-scores'
 import { LEVELS } from '@/lib/leaderboard-config'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
+
+const PAGE = 1000
+const MAX_REFRESH_PER_RUN = 4000
+// last_seen_at is only stamped every 10 minutes, so allow for that gap.
+const SEEN_SLACK_MS = 15 * 60_000
+
+// PostgREST returns at most 1000 rows per request; read every page.
+async function fetchAll<T>(page: (from: number, to: number) => PromiseLike<{ data: T[] | null }>): Promise<T[]> {
+  const out: T[] = []
+  for (let from = 0; ; from += PAGE) {
+    const { data } = await page(from, from + PAGE - 1)
+    out.push(...(data ?? []))
+    if (!data || data.length < PAGE) return out
+  }
+}
 
 // Runs once per UTC hour (24 daily entries in vercel.json; Hobby crons
 // fire anywhere inside their hour). Every send has a dedupe key, so an
@@ -23,28 +36,44 @@ export async function GET(req: Request) {
   const admin = createAdminClient()
   const now = new Date()
 
-  const [{ data: profiles }, { data: prefRows }] = await Promise.all([
-    admin.from('profiles').select('id, full_name, role, birth_year, consent_status').in('role', ['member', 'coach', 'admin']),
-    admin.from('notification_prefs').select('*'),
+  const [profiles, prefRows] = await Promise.all([
+    fetchAll<{ id: string; full_name: string | null; role: string; birth_year: number | null; consent_status: string; last_seen_at: string | null }>((from, to) =>
+      admin.from('profiles').select('id, full_name, role, birth_year, consent_status, last_seen_at').in('role', ['member', 'coach', 'admin']).order('id').range(from, to)),
+    fetchAll<any>((from, to) => admin.from('notification_prefs').select('*').order('user_id').range(from, to)),
   ])
-  const prefsById = new Map<string, Prefs>((prefRows ?? []).map((p: any) => [p.user_id, { ...DEFAULT_PREFS, ...p }]))
-  const users = (profiles ?? []).filter(p => !(p.role === 'member' && (p.birth_year == null || p.consent_status === 'pending')))
+  const prefsById = new Map<string, Prefs>(prefRows.map((p: any) => [p.user_id, { ...DEFAULT_PREFS, ...p }]))
+  const users = profiles.filter(p => !(p.role === 'member' && (p.birth_year == null || p.consent_status === 'pending')))
   const prefsOf = (id: string) => prefsById.get(id) ?? DEFAULT_PREFS
   const tzOf = (id: string) => (isValidTimeZone(prefsOf(id).timezone) ? prefsOf(id).timezone : DEFAULT_PREFS.timezone)
 
-  // Activity per timezone (the RPC buckets days in one timezone).
-  const tzs = [...new Set(users.map(u => tzOf(u.id)))]
-  const activity = new Map<string, { rows: ActivityRow[]; month: string; thisStart: string }>()
-  for (const tz of tzs) {
-    const b = monthBounds(now, tz)
-    const { data } = await admin
-      .rpc('get_leaderboard_activity', { p_start: shiftDate(b.lastStart, -30), p_end: b.thisEnd, p_tz: tz })
-      .limit(20000)
-    activity.set(tz, { rows: (data ?? []) as ActivityRow[], month: b.month, thisStart: b.thisStart })
+  // Stored month scores (leaderboard_scores). Anyone who used the app since
+  // their score was last saved is refreshed first, one athlete at a time, so
+  // reminders never go to someone who already logged today.
+  const monthOf = (id: string) => monthBounds(now, tzOf(id)).month
+  const months = [...new Set(users.map(u => monthOf(u.id)))]
+  const scoreRows = months.length
+    ? await fetchAll<ScoreRow>((from, to) =>
+        admin.from('leaderboard_scores').select('*').in('month', months).order('user_id').order('month').range(from, to))
+    : []
+  const scoreOf = new Map<string, ScoreRow>(scoreRows.map(r => [`${r.user_id}:${r.month}`, r]))
+  const recentCutoff = now.getTime() - 35 * 86_400_000
+  const stale = users.filter(u => {
+    if (!u.last_seen_at) return false
+    const seen = new Date(u.last_seen_at).getTime()
+    const row = scoreOf.get(`${u.id}:${monthOf(u.id)}`)
+    return row?.updated_at ? seen > new Date(row.updated_at).getTime() - SEEN_SLACK_MS : seen > recentCutoff
+  }).slice(0, MAX_REFRESH_PER_RUN)
+  for (let i = 0; i < stale.length; i += 10) {
+    const fresh = await Promise.all(stale.slice(i, i + 10).map(u => refreshScore(admin, u.id, tzOf(u.id), now).catch(() => null)))
+    for (const row of fresh) if (row) scoreOf.set(`${row.user_id}:${row.month}`, { ...row, updated_at: now.toISOString() })
   }
+  const rowOf = (id: string) => scoreOf.get(`${id}:${monthOf(id)}`) ?? null
 
-  const { data: snaps } = await admin.from('progress_snapshots').select('user_id, month, level, title')
-  const snapOf = new Map((snaps ?? []).map((s: any) => [`${s.user_id}:${s.month}`, s]))
+  const snaps = months.length
+    ? await fetchAll<any>((from, to) =>
+        admin.from('progress_snapshots').select('user_id, month, level, title').in('month', months).order('user_id').order('month').range(from, to))
+    : []
+  const snapOf = new Map(snaps.map((s: any) => [`${s.user_id}:${s.month}`, s]))
 
   const queue: { userId: string; msg: Message }[] = []
   const send = (userId: string, msg: Message) => queue.push({ userId, msg })
@@ -54,9 +83,9 @@ export async function GET(req: Request) {
   const tomorrows = [...new Set(users.map(u => shiftDate(localClock(tzOf(u.id), now).date, 1)))]
   const { data: games } = await admin.from('team_events').select('team_id, event_date, opponent').eq('kind', 'game').in('event_date', tomorrows)
   const gameTeams = [...new Set((games ?? []).map((g: any) => g.team_id))]
-  const { data: gameMembers } = gameTeams.length
-    ? await admin.from('team_members').select('team_id, athlete_id').in('team_id', gameTeams)
-    : { data: [] as any[] }
+  const gameMembers = gameTeams.length
+    ? await fetchAll<any>((from, to) => admin.from('team_members').select('team_id, athlete_id').in('team_id', gameTeams).order('team_id').order('athlete_id').range(from, to))
+    : []
 
   // Quiz taken 30 days ago.
   const { data: quizzes } = await admin.from('quiz_results').select('id, user_id, created_at')
@@ -67,16 +96,15 @@ export async function GET(req: Request) {
     const tz = tzOf(u.id)
     const prefs = prefsOf(u.id)
     const clock = localClock(tz, now)
-    const act = activity.get(tz)!
-    const mine = act.rows.filter(r => r.user_id === u.id)
-    const loggedToday = mine.some(r => r.day === clock.date)
+    const month = monthOf(u.id)
+    const row = rowOf(u.id)
+    const recent = row?.recent_days ?? []
+    const loggedToday = recent.includes(clock.date)
 
     // Admins use the app as athletes too, so they get the same reminders.
     if (u.role === 'member' || u.role === 'admin') {
-      const streak = activityStreaks(mine, clock.date).get(u.id) ?? 0
-      const thisRows = mine.filter(r => r.day >= act.thisStart)
-      const score = scoreMonth(thisRows, mine).get(u.id)
-      const points = score?.total ?? 0
+      const streak = liveStreak(row, clock.date)
+      const points = row?.points ?? 0
 
       for (const kind of scheduledKinds({ clock, reminderHour: prefs.reminder_hour, loggedToday, streak })) {
         const key = `${kind}:${u.id}:${clock.date}`
@@ -86,7 +114,7 @@ export async function GET(req: Request) {
         if (kind === 'month_start') send(u.id, { type: kind, category: 'progress', url: '/leaderboard', dedupeKey: key, ...copy.monthStart() })
         if (kind === 'weekly_recap') {
           const weekStart = shiftDate(clock.date, -6)
-          const activeDays = new Set(mine.filter(r => r.day >= weekStart).map(r => r.day)).size
+          const activeDays = recent.filter(d => d >= weekStart && d <= clock.date).length
           send(u.id, { type: kind, category: 'weekly', url: '/leaderboard', dedupeKey: key, ...copy.weeklyRecap({ level: levelFor(points).name, points, streak, activeDays }) })
         }
       }
@@ -95,20 +123,20 @@ export async function GET(req: Request) {
       // the starting point, so turning this on never sends a backlog.
       if (!inQuietHours(clock.hour)) {
         const level = levelFor(points)
-        const title = score ? titleFor(score.pillars, points) : null
-        const snap = snapOf.get(`${u.id}:${act.month}`)
+        const title = row && points > 0 ? titleFor(pillarsOf(row), points) : null
+        const snap = snapOf.get(`${u.id}:${month}`)
         if (!snap) {
-          snapshotWrites.push({ user_id: u.id, month: act.month, level: level.key, title: title?.key ?? null })
+          snapshotWrites.push({ user_id: u.id, month, level: level.key, title: title?.key ?? null })
         } else {
           const rank = (k: string) => LEVELS.findIndex(l => l.key === k)
           if (rank(level.key) > rank(snap.level)) {
-            send(u.id, { type: 'level_up', category: 'progress', url: '/leaderboard', dedupeKey: `level:${u.id}:${act.month}:${level.key}`, ...copy.levelUp(level.name, points) })
+            send(u.id, { type: 'level_up', category: 'progress', url: '/leaderboard', dedupeKey: `level:${u.id}:${month}:${level.key}`, ...copy.levelUp(level.name, points) })
           }
           if (title && title.key !== snap.title && points >= 100) {
-            send(u.id, { type: 'new_title', category: 'progress', url: '/leaderboard', dedupeKey: `title:${u.id}:${act.month}:${title.key}`, ...copy.newTitle(title.name) })
+            send(u.id, { type: 'new_title', category: 'progress', url: '/leaderboard', dedupeKey: `title:${u.id}:${month}:${title.key}`, ...copy.newTitle(title.name) })
           }
           if (rank(level.key) > rank(snap.level) || (title && title.key !== snap.title)) {
-            snapshotWrites.push({ user_id: u.id, month: act.month, level: level.key, title: title?.key ?? null })
+            snapshotWrites.push({ user_id: u.id, month, level: level.key, title: title?.key ?? null })
           }
         }
       }
@@ -132,7 +160,7 @@ export async function GET(req: Request) {
         const active: string[] = []
         const quiet: string[] = []
         for (const l of links as any[]) {
-          const days = new Set(act.rows.filter(r => r.user_id === l.athlete_id && r.day >= weekStart).map(r => r.day)).size
+          const days = (rowOf(l.athlete_id)?.recent_days ?? []).filter(d => d >= weekStart && d <= clock.date).length
           const name = displayNameFor(l.profiles?.full_name ?? null)
           ;(days >= 3 ? active : quiet).push(name)
         }
@@ -144,7 +172,7 @@ export async function GET(req: Request) {
   if (dryRun) {
     const byType: Record<string, number> = {}
     for (const q of queue) byType[q.msg.type] = (byType[q.msg.type] ?? 0) + 1
-    return NextResponse.json({ dryRun: true, users: users.length, queued: queue.length, byType, snapshots: snapshotWrites.length })
+    return NextResponse.json({ dryRun: true, users: users.length, refreshed: stale.length, queued: queue.length, byType, snapshots: snapshotWrites.length })
   }
 
   if (snapshotWrites.length) await admin.from('progress_snapshots').upsert(snapshotWrites, { onConflict: 'user_id,month' })

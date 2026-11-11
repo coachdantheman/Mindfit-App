@@ -98,7 +98,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
 
   return (
     <>
-      <nav className="bg-surface/80 backdrop-blur border-b border-edge pt-safe">
+      <nav className="bg-surface border-b border-edge pt-safe">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-14">
             {/* Logo lockup */}
@@ -110,6 +110,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
                   width={24}
                   height={24}
                   priority
+                  unoptimized
                 />
               </span>
               <span className="text-fg-1 font-bold text-sm tracking-[0.18em] uppercase hidden sm:inline">

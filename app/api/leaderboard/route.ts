@@ -4,10 +4,9 @@ import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import {
-  scoreMonth, rankEntries, pageOf, titleFor, levelFor, nextLevel, levelProgress,
-  displayNameFor, monthBounds, isValidTimeZone, activityStreaks, todayIn, multiplierFor,
-  type ActivityRow, type PoolMember,
+  titleFor, levelFor, nextLevel, levelProgress, displayNameFor, monthBounds, isValidTimeZone, todayIn, multiplierFor,
 } from '@/lib/leaderboard'
+import { refreshScore, timezoneFor, readBoardPage, pillarsOf, liveStreak } from '@/lib/leaderboard-scores'
 
 // Returns only display name, sport, title, level and points per person.
 // No ids, emails, MPI, ratings or logged content ever leave this route.
@@ -77,69 +76,51 @@ export async function GET(req: Request) {
 
   const mineIds = myTeamIds.size > 0 ? myTeamIds : undefined
 
-  const [{ data: profiles, error: pErr }, { data: rows, error: rErr }] = await Promise.all([
-    admin.from('profiles')
-      .select('id, full_name, primary_sport, leaderboard_visible, leaderboard_alias')
-      .in('role', ['member', 'coach', 'admin']),
-    // 30 extra days before last month so streak multipliers see the whole run.
-    admin.rpc('get_leaderboard_activity', { p_start: shiftISO(bounds.lastStart, -30), p_end: bounds.thisEnd, p_tz: tz })
-      // PostgREST caps responses at 1000 rows by default; this is per member per day.
-      .limit(20000),
+  // My own score is rebuilt from my activity on every view, so points I
+  // just earned show at once. Everyone else's comes from the stored table.
+  const today = todayIn(tz)
+  const ranked = auth.role !== 'parent'
+  const [myRow, { data: me }] = await Promise.all([
+    ranked ? refreshScore(admin, auth.userId, await timezoneFor(admin, auth.userId, tz)) : null,
+    ranked
+      ? admin.from('profiles').select('full_name, primary_sport, leaderboard_visible, leaderboard_alias').eq('id', auth.userId).maybeSingle()
+      : { data: null },
   ])
-  if (pErr) return dbError(pErr)
-  if (rErr) return dbError(rErr)
 
-  const all = (rows ?? []) as ActivityRow[]
-  const thisRows = all.filter(r => r.day >= bounds.thisStart)
-  const lastRows = all.filter(r => r.day >= bounds.lastStart && r.day < bounds.thisStart)
-  const thisScores = scoreMonth(thisRows, all)
-  const lastScores = scoreMonth(lastRows, all)
-  // Streaks look across both months so a run that started last month still counts.
-  const streaks = activityStreaks(all, todayIn(tz))
-
-  const members = (profiles ?? []) as {
-    id: string; full_name: string | null; primary_sport: string | null
-    leaderboard_visible: boolean; leaderboard_alias: string | null
-  }[]
-  // Athletes, coaches and admins are all ranked; parents only view.
-  const me = auth.role !== 'parent' ? members.find(m => m.id === auth.userId) ?? null : null
-
-  const toPool = (m: typeof members[number]): PoolMember => ({
-    id: m.id, fullName: m.full_name, alias: m.leaderboard_alias, sport: m.primary_sport,
-  })
-  // Hidden athletes are only ever in their own list.
-  let pool = members.filter(m => m.leaderboard_visible || m.id === auth.userId)
-  if (team) pool = pool.filter(m => teamIds.has(m.id) || m.id === auth.userId)
-  const poolMembers = pool.map(toPool)
-
-  const thisList = rankEntries(thisScores, poolMembers, { meId: auth.userId, mineIds, streaks })
-  const lastList = rankEntries(lastScores, poolMembers, { meId: auth.userId, mineIds, streaks })
-  const myLast = lastList.find(e => e.isMe)
+  const ids = team ? [...teamIds] : null
+  let thisPage, lastPage
+  try {
+    [thisPage, lastPage] = await Promise.all([
+      readBoardPage(admin, { month: bounds.month, viewerId: auth.userId, today, ids, page: pageParam, mineIds }),
+      readBoardPage(admin, { month: bounds.lastMonth, viewerId: auth.userId, today, ids, page: 1, size: 3, mineIds }),
+    ])
+  } catch (e: any) {
+    return dbError({ message: e?.message ?? 'leaderboard read failed' })
+  }
   // Real ids stay on the server; rows carry a sealed id for the Report button.
   const sealed = <T extends { id: string }>(list: T[]) => list.map(e => ({ ...e, id: sealId(e.id) }))
 
   let meOut = null
   if (me) {
-    const s = thisScores.get(me.id)
-    const points = s?.total ?? 0
-    const pillars = s?.pillars ?? { mind: 0, body: 0, fuel: 0, rest: 0, bonus: 0 }
-    const mine = thisList.find(e => e.isMe)
+    const points = myRow?.points ?? 0
+    const pillars = myRow ? pillarsOf(myRow) : { mind: 0, body: 0, fuel: 0, rest: 0, bonus: 0 }
+    const streak = liveStreak(myRow, today)
     meOut = {
       displayName: displayNameFor(me.full_name, me.leaderboard_alias),
       sport: me.primary_sport,
       points,
       pillars,
-      clutchDays: s?.clutchDays ?? 0,
-      activeDays: s?.activeDays ?? 0,
+      clutchDays: myRow?.clutch_days ?? 0,
+      activeDays: myRow?.active_days ?? 0,
       level: levelFor(points),
       nextLevel: nextLevel(points),
       progress: levelProgress(points),
       title: titleFor(pillars, points),
-      rank: mine?.rank ?? null,
-      of: thisList.length,
+      rank: thisPage.myRank,
+      of: thisPage.total,
       visible: me.leaderboard_visible,
-      streak: streaks.get(me.id) ?? 0,
-      multiplier: multiplierFor(streaks.get(me.id) ?? 0),
+      streak,
+      multiplier: multiplierFor(streak),
     }
   }
 
@@ -148,12 +129,7 @@ export async function GET(req: Request) {
     team: team?.id ?? 'all',
     teams,
     me: meOut,
-    thisMonth: { ...pageOf(sealed(thisList), pageParam), of: thisList.length },
-    lastMonth: { podium: sealed(lastList.slice(0, 3)), myRank: myLast?.rank ?? null, of: lastList.length },
+    thisMonth: { entries: sealed(thisPage.entries), page: thisPage.page, pages: thisPage.pages, myPage: thisPage.myPage, of: thisPage.total },
+    lastMonth: { podium: sealed(lastPage.entries), myRank: lastPage.myRank, of: lastPage.total },
   })
-}
-
-function shiftISO(iso: string, days: number): string {
-  const [y, m, d] = iso.split('-').map(Number)
-  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10)
 }

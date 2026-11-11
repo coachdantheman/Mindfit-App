@@ -65,6 +65,16 @@ export function scoreDay(row: ActivityRow): Omit<PillarPoints, 'bonus'> {
 
 const isActive = (r: ActivityRow) => (r.food ?? 0) > 0 || ACTIONS.some(a => (r[a.key] ?? 0) > 0)
 
+/** Sorted days (YYYY-MM-DD) with any activity in the rows given. */
+export function activeDaysOf(rows: ActivityRow[]): string[] {
+  return [...new Set(rows.filter(isActive).map(r => r.day))].sort()
+}
+
+/** Exported form of the day shift used for streaks. */
+export function shiftDayBy(day: string, by: number): string {
+  return shiftDay(day, by)
+}
+
 function activeDaysByUser(rows: ActivityRow[]): Map<string, Set<string>> {
   const days = new Map<string, Set<string>>()
   for (const r of rows) {
