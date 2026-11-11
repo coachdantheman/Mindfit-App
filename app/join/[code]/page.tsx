@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, use } from 'react';
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { clearPendingTeamCode, savePendingTeamCode } from '@/lib/team-code'
@@ -11,7 +11,8 @@ type State =
   | { kind: 'joined'; name: string; already: boolean }
   | { kind: 'error'; error: string }
 
-export default function JoinTeamPage({ params }: { params: { code: string } }) {
+export default function JoinTeamPage(props: { params: Promise<{ code: string }> }) {
+  const params = use(props.params);
   const router = useRouter()
   const code = params.code.toUpperCase()
   const [state, setState] = useState<State>({ kind: 'loading' })

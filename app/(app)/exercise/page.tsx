@@ -38,7 +38,7 @@ export default function ExercisePage() {
   const [savedDraft, setSavedDraft] = useState<WorkoutDraft | null>(null)
   const [toast, setToast] = useState<{ msg: string; kind: ToastKind } | null>(null)
   const [historyKey, setHistoryKey] = useState(0)
-  const toastTimer = useRef<ReturnType<typeof setTimeout>>()
+  const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   const notify = useCallback((msg: string, kind: ToastKind = 'success') => {
     setToast({ msg, kind })

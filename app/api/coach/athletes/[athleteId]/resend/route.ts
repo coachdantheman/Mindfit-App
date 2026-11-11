@@ -4,7 +4,8 @@ import { verifyApiUser } from '@/lib/api-auth'
 import { sendCoachInviteEmail } from '@/lib/email'
 import { signInLinkFor } from '@/lib/invites'
 
-export async function POST(_req: Request, { params }: { params: { athleteId: string } }) {
+export async function POST(_req: Request, props: { params: Promise<{ athleteId: string }> }) {
+  const params = await props.params;
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
 

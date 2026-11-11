@@ -134,7 +134,8 @@ async function loadUpcoming(admin: Admin, athleteId: string, from: string, to: s
   return items.sort((a, b) => a.date.localeCompare(b.date) || (a.start_time ?? '').localeCompare(b.start_time ?? ''))
 }
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 

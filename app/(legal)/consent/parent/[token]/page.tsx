@@ -8,7 +8,8 @@ export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
 export const metadata: Metadata = { title: 'Parent permission | MindFit', robots: { index: false, follow: false } }
 
-export default async function ParentConsentPage({ params }: { params: { token: string } }) {
+export default async function ParentConsentPage(props: { params: Promise<{ token: string }> }) {
+  const params = await props.params;
   const row = await findConsentByToken(createAdminClient(), params.token)
   if (!row || row.status === 'superseded') {
     return (

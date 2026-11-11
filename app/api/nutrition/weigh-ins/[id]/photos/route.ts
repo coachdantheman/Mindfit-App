@@ -26,7 +26,8 @@ async function signed(admin: ReturnType<typeof createAdminClient>, rows: { id: s
   return out
 }
 
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function GET(_req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
@@ -40,7 +41,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   return NextResponse.json(await signed(admin, data ?? []))
 }
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
@@ -78,7 +80,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   return NextResponse.json(photo, { status: 201 })
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 

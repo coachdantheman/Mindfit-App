@@ -6,7 +6,8 @@ import { addToTeam, managedTeam, removeFromTeam } from '@/lib/teams'
 // Put existing athletes on a team. Coaches can only add their own roster;
 // admins can add anyone, which moves the athlete off the admin's old
 // direct link onto the team's coach.
-export async function POST(req: Request, { params }: { params: { teamId: string } }) {
+export async function POST(req: Request, props: { params: Promise<{ teamId: string }> }) {
+  const params = await props.params;
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
   const admin = createAdminClient()
@@ -37,7 +38,8 @@ export async function POST(req: Request, { params }: { params: { teamId: string 
   return NextResponse.json({ added })
 }
 
-export async function DELETE(req: Request, { params }: { params: { teamId: string } }) {
+export async function DELETE(req: Request, props: { params: Promise<{ teamId: string }> }) {
+  const params = await props.params;
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
   const admin = createAdminClient()

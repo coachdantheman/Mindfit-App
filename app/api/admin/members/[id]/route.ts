@@ -3,7 +3,8 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { deleteUserCompletely } from '@/lib/account-delete'
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const auth = await verifyApiUser('admin')
   if (auth instanceof NextResponse) return auth
   if (params.id === auth.userId) return NextResponse.json({ error: 'Delete your own account from Settings.' }, { status: 400 })

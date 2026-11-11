@@ -4,7 +4,7 @@ import { WorkoutCategory, Workout, WorkoutExercise } from '@/types'
 import Skeleton from '@/components/shared/Skeleton'
 import { BalanceIcon, BodyweightIcon, BoltIcon, BurstIcon, DumbbellIcon, StretchIcon } from '@/components/shared/icons'
 
-const CATEGORY_ICONS: Record<string, (p: { className?: string }) => JSX.Element> = {
+const CATEGORY_ICONS: Record<string, (p: { className?: string }) => React.JSX.Element> = {
   Speed: BoltIcon,
   Explosiveness: BurstIcon,
   Strength: DumbbellIcon,

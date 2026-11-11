@@ -50,12 +50,12 @@ export async function POST(req: Request) {
         { onConflict: 'email' }
       )
     if (error) {
-      console.error('skool webhook: whitelist upsert failed', email, error.message)
+      console.error('skool webhook: whitelist upsert failed', maskEmail(email), error.message)
       return dbError(error)
     }
 
     await sendWelcomeEmail(email, name || undefined)
-    console.log('skool webhook: member.joined', email)
+    console.log('skool webhook: member.joined', maskEmail(email))
     return NextResponse.json({ ok: true, action: 'whitelisted' })
   }
 
@@ -69,7 +69,7 @@ export async function POST(req: Request) {
     .maybeSingle()
 
   if (!row || row.source !== 'skool') {
-    console.log('skool webhook: member.left ignored (manual or unknown email)', email)
+    console.log('skool webhook: member.left ignored (manual or unknown email)', maskEmail(email))
     return NextResponse.json({ ok: true, action: 'ignored' })
   }
 
@@ -91,6 +91,11 @@ export async function POST(req: Request) {
     }
   }
 
-  console.log('skool webhook: member.left', email)
+  console.log('skool webhook: member.left', maskEmail(email))
   return NextResponse.json({ ok: true, action: 'revoked' })
+}
+
+function maskEmail(email: string): string {
+  const [name, domain] = email.split('@')
+  return `${name.slice(0, 2)}***@${domain ?? ''}`
 }

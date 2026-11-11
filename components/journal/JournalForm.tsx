@@ -37,7 +37,7 @@ export default function JournalForm({ previewMode = false, onSaved }: Props) {
     if (saved) { reset({ ...DEFAULTS, ...saved }); setRestored(true) }
   }, [key, reset])
 
-  const timer = useRef<ReturnType<typeof setTimeout>>()
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
   useEffect(() => {
     const sub = watch(values => {
       clearTimeout(timer.current)

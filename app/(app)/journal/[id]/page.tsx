@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { JournalEntry } from '@/types'
 import TodayEntry from '@/components/journal/TodayEntry'
 
-export default async function EntryPage({ params }: { params: { id: string } }) {
+export default async function EntryPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const user = await getVerifiedUser()
   if (!user) redirect('/login')
 

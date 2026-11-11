@@ -4,7 +4,8 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 
 // Unlink an athlete from this coach. The athlete's account is untouched.
-export async function DELETE(_req: Request, { params }: { params: { athleteId: string } }) {
+export async function DELETE(_req: Request, props: { params: Promise<{ athleteId: string }> }) {
+  const params = await props.params;
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
 

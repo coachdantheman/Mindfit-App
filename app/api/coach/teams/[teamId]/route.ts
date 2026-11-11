@@ -6,7 +6,8 @@ import { optionalString } from '@/lib/validate'
 import { managedTeam, newJoinCode } from '@/lib/teams'
 
 // Rename, change sport, or issue a new join code (the old one stops working).
-export async function PATCH(req: Request, { params }: { params: { teamId: string } }) {
+export async function PATCH(req: Request, props: { params: Promise<{ teamId: string }> }) {
+  const params = await props.params;
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
   const admin = createAdminClient()
@@ -27,7 +28,8 @@ export async function PATCH(req: Request, { params }: { params: { teamId: string
 }
 
 // Deleting a team keeps every athlete linked to the coach.
-export async function DELETE(_req: Request, { params }: { params: { teamId: string } }) {
+export async function DELETE(_req: Request, props: { params: Promise<{ teamId: string }> }) {
+  const params = await props.params;
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
   const admin = createAdminClient()

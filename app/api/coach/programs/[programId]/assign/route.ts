@@ -14,7 +14,8 @@ async function ownedPlan(admin: ReturnType<typeof createAdminClient>, id: string
 
 // Assign a library plan to whole teams and/or single athletes. Already
 // assigned athletes get the new start date.
-export async function POST(req: Request, { params }: { params: { programId: string } }) {
+export async function POST(req: Request, props: { params: Promise<{ programId: string }> }) {
+  const params = await props.params;
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
   const admin = createAdminClient()
@@ -41,7 +42,8 @@ export async function POST(req: Request, { params }: { params: { programId: stri
   return NextResponse.json({ assigned: ids.length })
 }
 
-export async function DELETE(req: Request, { params }: { params: { programId: string } }) {
+export async function DELETE(req: Request, props: { params: Promise<{ programId: string }> }) {
+  const params = await props.params;
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
   const admin = createAdminClient()

@@ -5,13 +5,14 @@ import ShareBar from './ShareBar'
 
 export const dynamic = 'force-dynamic'
 
-type Props = { searchParams: { id?: string } }
+type Props = { searchParams: Promise<{ id?: string }> }
 
 function resolve(id?: string) {
   return (id && getQuoteById(id)) || getQuoteOfTheDay()
 }
 
-export function generateMetadata({ searchParams }: Props): Metadata {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const searchParams = await props.searchParams;
   const q = resolve(searchParams.id)
   const title = 'MindFit | Quote of the Day'
   const description = `“${q.text}” — ${q.author}`
@@ -24,7 +25,8 @@ export function generateMetadata({ searchParams }: Props): Metadata {
   }
 }
 
-export default function QuotePage({ searchParams }: Props) {
+export default async function QuotePage(props: Props) {
+  const searchParams = await props.searchParams;
   const q = resolve(searchParams.id)
   const len = q.text.length
   const size = len <= 60 ? 'text-4xl sm:text-6xl' : len <= 100 ? 'text-3xl sm:text-5xl' : 'text-2xl sm:text-4xl'
