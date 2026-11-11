@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { pushConfigured, sendPush } from '@/lib/push'
+import { apnsConfigured, sendApns } from '@/lib/apns'
 import { sendEngagementEmail } from '@/lib/email'
 import { unsubscribeUrl, type EmailCategory } from '@/lib/unsubscribe'
 
@@ -74,6 +75,16 @@ export async function notify(admin: SupabaseClient, userId: string, msg: Message
       if (r === 'gone') gone.push(s.endpoint)
     }
     if (gone.length) await admin.from('push_subscriptions').delete().in('endpoint', gone)
+  }
+
+  if (prefs[PUSH_KEY[msg.category]] && apnsConfigured()) {
+    const { data: devices } = await admin.from('device_tokens').select('token, sandbox').eq('user_id', userId).eq('platform', 'ios')
+    const gone: string[] = []
+    for (const d of devices ?? []) {
+      const r = await sendApns(d.token, { title: msg.title, body: msg.body, url: msg.url ?? '/mindset', tag: msg.type }, d.sandbox)
+      if (r === 'gone') gone.push(d.token)
+    }
+    if (gone.length) await admin.from('device_tokens').delete().in('token', gone)
   }
 
   const emailKey = EMAIL_KEY[msg.category]

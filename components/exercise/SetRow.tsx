@@ -1,6 +1,7 @@
 'use client'
 import type { DraftSet } from '@/lib/workout-draft'
 import type { DistanceUnit, ExerciseMeasure } from '@/types/exercise'
+import { haptic } from '@/lib/native'
 
 interface Props {
   set: DraftSet
@@ -40,6 +41,7 @@ export default function SetRow({ set, measure, unit, lastWeight, lastDistance, o
     const reps = set.reps || (fields.reps ? leadingNumber(set.targetReps) : set.reps)
     const weight = set.weight || (fields.weight && lastWeight ? String(lastWeight) : set.weight)
     const distance = set.distance || (fields.distance ? leadingNumber(set.targetReps) || (lastDistance ? String(lastDistance) : '') : set.distance)
+    haptic('done')
     onChange({ ...set, reps, weight, distance, done: true })
   }
 

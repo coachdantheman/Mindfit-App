@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { haptic } from '@/lib/native'
 
 interface Props {
   endsAt: number | null        // epoch ms
@@ -32,7 +33,7 @@ export default function RestTimer({ endsAt, onChange }: Props) {
   useEffect(() => {
     if (!endsAt || remaining > 0 || buzzed) return
     setBuzzed(true)
-    try { navigator.vibrate?.([200, 100, 200]) } catch {}
+    haptic('success', [200, 100, 200])
   }, [endsAt, remaining, buzzed])
 
   if (!endsAt) return null

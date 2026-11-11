@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { nativePushAvailable, nativePushStatus, enableNativePush, disableNativePush } from '@/lib/native'
 
 export type PushStatus = Status
 type Status = 'loading' | 'unsupported' | 'needs-install' | 'blocked' | 'off' | 'on' | 'busy'
@@ -25,6 +26,7 @@ export default function DailyQuoteToggle({ onStatus }: { onStatus?: (s: Status) 
 
   useEffect(() => {
     const run = async () => {
+      if (nativePushAvailable()) { setStatus(await nativePushStatus().catch(() => 'off' as const)); return }
       if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
         setStatus(isIOS() && !isStandalone() ? 'needs-install' : 'unsupported')
         return
@@ -45,6 +47,12 @@ export default function DailyQuoteToggle({ onStatus }: { onStatus?: (s: Status) 
   }, [])
 
   const enable = async () => {
+    if (nativePushAvailable()) {
+      setStatus('busy'); setError(null)
+      try { setStatus(await enableNativePush()) }
+      catch (e: any) { setError(e?.message || 'Could not turn on notifications.'); setStatus('off') }
+      return
+    }
     if (!vapidKey) { setError('Push is not configured yet.'); return }
     setStatus('busy'); setError(null)
     try {
@@ -77,6 +85,7 @@ export default function DailyQuoteToggle({ onStatus }: { onStatus?: (s: Status) 
   const disable = async () => {
     setStatus('busy'); setError(null)
     try {
+      if (nativePushAvailable()) { await disableNativePush(); setStatus('off'); return }
       const reg = await navigator.serviceWorker.getRegistration()
       const sub = await reg?.pushManager.getSubscription()
       if (sub) {
@@ -127,7 +136,7 @@ export default function DailyQuoteToggle({ onStatus }: { onStatus?: (s: Status) 
         <p className="text-xs text-fg-4 mt-3">This browser doesn’t support push notifications.</p>
       )}
       {status === 'blocked' && (
-        <p className="text-xs text-fg-4 mt-3">Notifications are blocked for this site. Allow them in your browser settings, then reload.</p>
+        <p className="text-xs text-fg-4 mt-3"><span className="web-only">Notifications are blocked for this site. Allow them in your browser settings, then reload.</span><span className="native-only">Notifications are off for MindFit. Turn them on in iPhone Settings → Notifications → MindFit.</span></p>
       )}
       {error && <p className="text-xs text-red-400 mt-3">{error}</p>}
     </div>

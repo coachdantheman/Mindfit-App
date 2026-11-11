@@ -5,6 +5,7 @@ import { isValidBarcode } from '@/lib/barcode'
 import { scaleFood } from '@/lib/nutrition'
 import type { AddItem } from './AddFoodSheet'
 import ServingStepper from './ServingStepper'
+import { haptic } from '@/lib/native'
 
 interface Props {
   onAdd: (item: AddItem) => void
@@ -31,7 +32,7 @@ export default function BarcodeScanner({ onAdd, onFoodCreated, onNotFound, busy 
     lastCode.current = code
     setStatus('looking-up')
     setError('')
-    try { navigator.vibrate?.(60) } catch {}
+    haptic('done', 60)
     const res = await fetch(`/api/nutrition/barcode?code=${code}`)
     const data = await res.json()
     if (res.ok) {
