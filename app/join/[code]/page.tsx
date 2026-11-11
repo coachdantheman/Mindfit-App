@@ -57,7 +57,8 @@ export default function JoinTeamPage(props: { params: Promise<{ code: string }> 
             <p className="text-sm text-fg-3 mb-6">
               {state.coach ? `Coach ${state.coach} invited you.` : 'Your coach invited you.'} Create your free account or sign in, and you’ll be added to the team automatically.
             </p>
-            <Link href="/login" className="btn-primary inline-block w-full">Continue</Link>
+            <Link href="/start" className="btn-primary inline-block w-full">Create my free account</Link>
+            <Link href="/login" className="block text-sm text-fg-3 hover:text-fg-1 mt-3">I already have an account</Link>
           </>
         )}
         {state.kind === 'joined' && (

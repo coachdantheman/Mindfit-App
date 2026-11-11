@@ -27,7 +27,7 @@ export default async function HomePage() {
               Track your mindset, nutrition, exercise, and recovery — free
             </p>
             <a
-              href="/login"
+              href="/start"
               className="inline-block mt-3 bg-cta hover:bg-brand-600 text-fg-inverse font-semibold px-6 py-2.5 rounded-xl text-sm transition-colors"
             >
               Create your free account

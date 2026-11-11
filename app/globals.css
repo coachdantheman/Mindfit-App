@@ -329,6 +329,8 @@ html:not(.native-app) .native-only { display: none !important; }
 }
 /* Fades start from hidden, so anything stays visible if animation never runs. */
 @keyframes mf-fade-in { from { opacity: 0; } }
+@keyframes mf-rise { from { opacity: 0; transform: translateY(10px); } }
+.mf-rise { animation: mf-rise 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) backwards; }
 @keyframes mf-splash-slide { 0% { transform: translateX(-110%); } 100% { transform: translateX(260%); } }
 /* Placeholders fade in after a beat, so a fast load never flashes grey. */
 .mf-skeleton-page { animation: mf-fade-in 0.25s ease-out 0.12s backwards; }
