@@ -1,8 +1,8 @@
 export const LEGAL_UPDATED = 'November 11, 2026'
 export const LEGAL_CONTACT = 'daniel@mindfit.academy'
 // Registered company name and mailing address. Shown in the policies once set.
-export const LEGAL_ENTITY: string | null = null
-export const LEGAL_ADDRESS: string | null = null
+export const LEGAL_ENTITY: string | null = 'MindFit LLC'
+export const LEGAL_ADDRESS: string | null = '445 E 300 S, Pleasant Grove, UT 84062'
 
 export function WhoWeAre() {
   return (
