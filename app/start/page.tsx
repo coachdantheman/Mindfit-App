@@ -25,6 +25,10 @@ const PROOF = [
   { head: 'Confident athletes tend to perform better.', body: 'Belief in your own skills is consistently linked with how well you perform.', cite: 'Moritz et al., 2000 · Research Quarterly for Exercise & Sport' },
 ]
 
+// Onboarding asks 1–5; each answer is saved doubled (2–10) so the baseline
+// sits on the same 1–10 scale as weekly check-ins and calcMPI stays /100.
+const SCALE = ['Struggling', 'Shaky', 'Okay', 'Strong', 'Locked in']
+
 const INTRO = ['Every athlete plays two games.', 'The one on the field.', 'And the one in their head.']
 
 type Step = 'intro' | 'name' | 'sport' | 'age' | 'young' | 'proof' | 'mpi' | 'score' | 'account' | 'code' | 'done'
@@ -286,7 +290,7 @@ export default function StartPage() {
                 </div>
               ))}
             </div>
-            <p className="text-sm text-fg-3 text-center mt-5">Next: 10 quick taps to measure your mental game today.</p>
+            <p className="text-sm text-fg-3 text-center mt-5">Next: 10 quick taps, 1 to 5, to measure your mental game today.</p>
             <div className="flex-1" />
             <Primary onClick={() => { setQ(0); go('mpi') }}>Start my baseline</Primary>
           </div>
@@ -300,21 +304,24 @@ export default function StartPage() {
               <p className="mt-10 text-center text-xs uppercase tracking-[0.24em] text-cta">{q + 1} of {MPI_DIMENSIONS.length} · {dim.label}</p>
               <h1 className="mt-3 mb-10 text-center font-display text-2xl text-fg-1 text-balance">{dim.description}</h1>
               <div className="grid grid-cols-5 gap-2" role="radiogroup" aria-label={dim.label}>
-                {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
-                  <button
-                    key={n}
-                    type="button"
-                    role="radio"
-                    aria-checked={val === n}
-                    onClick={() => rate(dim.key, n)}
-                    className={`h-14 rounded-xl border font-display text-lg transition-all ${val === n ? 'bg-cta text-fg-inverse border-cta scale-[1.04]' : 'border-edge text-fg-2 bg-surface/60'}`}
-                  >
-                    {n}
-                  </button>
-                ))}
-              </div>
-              <div className="flex justify-between text-xs text-fg-4 mt-3">
-                <span>Struggling</span><span>Locked in</span>
+                {SCALE.map((word, i) => {
+                  const n = i + 1
+                  const on = val === n * 2
+                  return (
+                    <button
+                      key={n}
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      aria-label={`${n}, ${word}`}
+                      onClick={() => rate(dim.key, n * 2)}
+                      className={`h-20 rounded-2xl border flex flex-col items-center justify-center gap-1 transition-all ${on ? 'bg-cta text-fg-inverse border-cta scale-[1.04]' : 'border-edge text-fg-2 bg-surface/60'}`}
+                    >
+                      <span className="font-display text-2xl leading-none">{n}</span>
+                      <span className={`text-[10px] leading-none ${on ? 'text-fg-inverse' : 'text-fg-4'}`}>{word}</span>
+                    </button>
+                  )
+                })}
               </div>
               <p className="text-center text-xs text-fg-4 mt-10">Be honest. This is your starting line, not a test.</p>
             </div>

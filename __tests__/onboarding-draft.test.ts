@@ -25,3 +25,11 @@ test('draftComplete needs birth date and all ten scores', () => {
   delete missing.vision_clarity
   assert.equal(draftComplete({ ...EMPTY_DRAFT, birthYear: 2010, birthMonth: 4, scores: missing }), false)
 })
+
+test('1–5 onboarding answers, saved doubled, still score out of 100', async () => {
+  const { calcMPI } = await import('../lib/mpi')
+  const all = (v: number) => Object.fromEntries(MPI_DIMENSIONS.map(d => [d.key, v * 2]))
+  assert.equal(calcMPI(all(5)), 100)
+  assert.equal(calcMPI(all(3)), 60)
+  assert.equal(calcMPI(all(1)), 20)
+})
