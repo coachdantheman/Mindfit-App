@@ -12,6 +12,7 @@ export default function CookiesPage() {
       <Section title="Strictly necessary cookies">
         <ul>
           <li><strong>Sign-in session</strong> (set by Supabase, names begin with <code className="font-mono text-xs">sb-</code>): keeps you signed in between pages. Expires when the session does, or when you sign out.</li>
+          <li><strong>Age check</strong> (<code className="font-mono text-xs">mf_ab</code>): set only if someone enters a birth date under 13 on this device, so the question can&rsquo;t simply be answered again. Holds no personal information. Expires after one year.</li>
         </ul>
       </Section>
       <Section title="Browser storage (not cookies)">

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
-import { pushGhlEvent } from '@/lib/ghl'
+import { pushGhlEvent, ghlEligible } from '@/lib/ghl'
 
 export async function POST(req: Request) {
   const auth = await verifyApiUser()
@@ -26,12 +26,12 @@ export async function POST(req: Request) {
     .from('profiles')
     .update(update)
     .eq('id', auth.userId)
-    .select('email, full_name, consent_status')
+    .select('email, full_name, consent_status, role, birth_year, birth_month')
     .maybeSingle()
 
   if (error) return dbError(error)
 
-  if (profile?.email && profile.consent_status === 'not_required') {
+  if (profile?.email && profile.consent_status === 'not_required' && ghlEligible(profile)) {
     void pushGhlEvent({ email: profile.email, name: profile.full_name }, 'onboarding_complete')
   }
 

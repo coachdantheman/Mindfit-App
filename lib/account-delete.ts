@@ -8,7 +8,7 @@ const PHOTO_BUCKET = 'progress-photos'
 // profiles into every per-user table.
 export async function deleteUserCompletely(userId: string): Promise<{ photosRemoved: number }> {
   const admin = createAdminClient()
-  const { data: profile } = await admin.from('profiles').select('email, full_name, consent_status').eq('id', userId).maybeSingle()
+  const { data: profile } = await admin.from('profiles').select('email, full_name, ghl_synced_at').eq('id', userId).maybeSingle()
 
   // Everything under <userId>/ in the bucket, not just paths still listed in
   // progress_photos: deleted weigh-ins and re-uploads leave objects behind.
@@ -23,7 +23,9 @@ export async function deleteUserCompletely(userId: string): Promise<{ photosRemo
       admin.from('pending_links').delete().or(`requester_id.eq.${userId},email.eq.${email}`),
       admin.from('approved_emails').delete().eq('email', email),
     ])
-    if (profile.consent_status === 'not_required') void pushGhlEvent({ email, name: profile.full_name }, 'account_deleted')
+    // Only contacts that were actually sent. Awaited (with retries inside)
+    // so the removal isn't lost when the function ends.
+    if (profile.ghl_synced_at) await pushGhlEvent({ email, name: profile.full_name }, 'account_deleted')
   }
 
   const { error } = await admin.auth.admin.deleteUser(userId)

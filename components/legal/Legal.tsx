@@ -1,5 +1,18 @@
-export const LEGAL_UPDATED = 'November 7, 2026'
+export const LEGAL_UPDATED = 'November 11, 2026'
 export const LEGAL_CONTACT = 'daniel@mindfit.academy'
+// Registered company name and mailing address. Shown in the policies once set.
+export const LEGAL_ENTITY: string | null = null
+export const LEGAL_ADDRESS: string | null = null
+
+export function WhoWeAre() {
+  return (
+    <p>
+      MindFit is operated by {LEGAL_ENTITY ?? 'MindFit'} (&ldquo;MindFit&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;).
+      {LEGAL_ADDRESS && <> Mailing address: {LEGAL_ADDRESS}.</>}
+      {' '}Contact: <a href={`mailto:${LEGAL_CONTACT}`} className="text-cta hover:underline">{LEGAL_CONTACT}</a>.
+    </p>
+  )
+}
 
 export function LegalPage({ title, intro, children }: { title: string; intro: string; children: React.ReactNode }) {
   return (

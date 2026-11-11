@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { rateLimit } from '@/lib/rate-limit'
 import { isValidBarcode, lookupCandidates, normalizeOffProduct } from '@/lib/barcode'
 
 export const maxDuration = 20
@@ -17,6 +18,9 @@ export async function GET(req: Request) {
   const code = (new URL(req.url).searchParams.get('code') ?? '').replace(/\D/g, '')
   if (!isValidBarcode(code)) return NextResponse.json({ error: 'That doesn’t look like a valid barcode.' }, { status: 400 })
 
+  const limited = await rateLimit(`barcode:${auth.userId}`, 120, 3600)
+  if (limited) return limited
+
   const admin = createAdminClient()
   const candidates = lookupCandidates(code)
 
@@ -27,7 +31,8 @@ export async function GET(req: Request) {
     .order('user_id', { ascending: true, nullsFirst: true })
     .limit(1)
     .maybeSingle()
-  if (cached) return NextResponse.json(cached)
+  // Never reveal which other athlete scanned it first.
+  if (cached) return NextResponse.json({ ...cached, user_id: cached.user_id === auth.userId ? cached.user_id : null })
 
   let product: ReturnType<typeof normalizeOffProduct> = null
   let matched = code

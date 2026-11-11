@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { rateLimit } from '@/lib/rate-limit'
 import { sendCoachInviteEmail } from '@/lib/email'
 import { signInLinkFor } from '@/lib/invites'
 
@@ -8,6 +9,8 @@ export async function POST(_req: Request, props: { params: Promise<{ athleteId: 
   const params = await props.params;
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
+  const limited = await rateLimit(`invite-resend:${auth.userId}`, 30, 3600)
+  if (limited) return limited
 
   const admin = createAdminClient()
   const [{ data: link }, { data: athlete }, { data: me }] = await Promise.all([

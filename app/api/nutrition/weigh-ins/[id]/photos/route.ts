@@ -3,6 +3,7 @@ import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { PHOTO_SLOTS, PhotoSlot } from '@/lib/images'
+import { rateLimit } from '@/lib/rate-limit'
 import { consentFlags } from '@/lib/consent-flags'
 
 export const maxDuration = 30
@@ -45,6 +46,8 @@ export async function POST(req: Request, props: { params: Promise<{ id: string }
   const params = await props.params;
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
+  const limited = await rateLimit(`photo-upload:${auth.userId}`, 60, 3600)
+  if (limited) return limited
 
   const form = await req.formData()
   const slot = form.get('slot')

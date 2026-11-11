@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server'
 import { verifyLockedApiUser } from '@/lib/api-auth'
+import { rateLimit } from '@/lib/rate-limit'
 import { deleteUserCompletely, isLastAdmin } from '@/lib/account-delete'
 
 // Self-service "delete my account and all my data".
 export async function DELETE(req: Request) {
   const auth = await verifyLockedApiUser()
   if (auth instanceof NextResponse) return auth
+
+  const limited = await rateLimit(`account-delete:${auth.userId}`, 5, 3600)
+  if (limited) return limited
 
   const body = await req.json().catch(() => ({}))
   if (body.confirm !== 'DELETE') return NextResponse.json({ error: 'Type DELETE to confirm.' }, { status: 400 })

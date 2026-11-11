@@ -1,6 +1,6 @@
 import { getVerifiedUser } from '@/lib/supabase-client'
 import { createAdminClient } from '@/lib/supabase-server'
-import { maybeSyncToGhl } from '@/lib/ghl'
+import { maybeSyncToGhl, ghlEligible } from '@/lib/ghl'
 import { UserRole } from '@/types'
 import { touchLastSeen } from '@/lib/last-seen'
 import type { ConsentStatus } from '@/lib/age'
@@ -33,11 +33,11 @@ export async function getAuthUser(): Promise<AuthResult | null> {
   const adminSupabase = createAdminClient()
   const { data: profile } = await adminSupabase
     .from('profiles')
-    .select('role, full_name, onboarded_at, ghl_synced_at, birth_year, consent_status')
+    .select('role, full_name, onboarded_at, ghl_synced_at, birth_year, birth_month, consent_status')
     .eq('id', user.id)
     .maybeSingle()
 
-  if (profile && !profile.ghl_synced_at) void maybeSyncToGhl(user.id)
+  if (profile && !profile.ghl_synced_at && ghlEligible(profile)) void maybeSyncToGhl(user.id)
 
   return {
     userId: user.id,
@@ -77,11 +77,11 @@ export async function getAuthUserCached(): Promise<AuthResult | null> {
   const adminSupabase = createAdminClient()
   const { data: profile } = await adminSupabase
     .from('profiles')
-    .select('role, full_name, onboarded_at, ghl_synced_at, birth_year, consent_status')
+    .select('role, full_name, onboarded_at, ghl_synced_at, birth_year, birth_month, consent_status')
     .eq('id', user.id)
     .maybeSingle()
 
-  if (profile && !profile.ghl_synced_at) void maybeSyncToGhl(user.id)
+  if (profile && !profile.ghl_synced_at && ghlEligible(profile)) void maybeSyncToGhl(user.id)
   await touchLastSeen(adminSupabase, user.id)
 
   const role = (profile?.role as UserRole) ?? 'member'

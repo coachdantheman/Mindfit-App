@@ -3,6 +3,7 @@ import { copy } from '@/lib/notify-copy'
 import { notify } from '@/lib/notify'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { rateLimit } from '@/lib/rate-limit'
 import { sendCoachInviteEmail } from '@/lib/email'
 import { extractEmails, extractNames, linkOrQueue, MAX_BULK } from '@/lib/links'
 import { createInvitedAccount, signInLinkFor } from '@/lib/invites'
@@ -16,6 +17,8 @@ import type { ClaimResult } from '@/types'
 export async function POST(req: Request) {
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
+  const limited = await rateLimit(`coach-invite:${auth.userId}`, 30, 3600)
+  if (limited) return limited
 
   const body = await req.json().catch(() => ({}))
   const text: string = typeof body.text === 'string' ? body.text : Array.isArray(body.emails) ? body.emails.join('\n') : ''
