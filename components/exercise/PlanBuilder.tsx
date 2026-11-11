@@ -4,6 +4,7 @@ import PlanSetupForm, { type BuilderMode, type PlanSetup } from './PlanSetupForm
 import PlanDayEditor from './PlanDayEditor'
 import PlanReview from './PlanReview'
 import { generatePlanTemplate, sportOptional } from '@/lib/workout-templates'
+import { useAiConsent } from '@/components/shared/AiConsentSheet'
 import {
   applyTemplateToBlocks, blocksFromProgram, expandAiBlocks, expandTemplate, toLocalDateString,
   type DayTemplate, type PlanBlockInput,
@@ -62,6 +63,7 @@ export default function PlanBuilder({ program, library, onCreateExercise, onSave
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [aiProgress, setAiProgress] = useState(0)
+  const { ensure, sheet } = useAiConsent()
 
   const choose = (m: BuilderMode) => {
     setMode(m)
@@ -103,6 +105,7 @@ export default function PlanBuilder({ program, library, onCreateExercise, onSave
       return
     }
     if (mode === 'ai') {
+      if (!(await ensure())) return
       setBusy(true)
       setAiProgress(0)
       const tick = setInterval(() => setAiProgress(p => (p >= 90 ? 90 : p + Math.random() * 8 + 2)), 800)
@@ -114,18 +117,18 @@ export default function PlanBuilder({ program, library, onCreateExercise, onSave
         })
         if (!res.ok) {
           const err = await res.json().catch(() => ({}))
-          setError(err.error || 'AI generation failed. Try "Generate" instead.')
+          setError(err.error || "The AI plan didn't finish. Try again, or pick the instant plan instead.")
           return
         }
         const data = await res.json()
         const b = expandAiBlocks(data, duration)
-        if (b.length === 0) { setError('AI returned an incomplete plan. Try "Generate" instead.'); return }
+        if (b.length === 0) { setError("The AI plan came back incomplete. Try again, or pick the instant plan instead."); return }
         setBlocks(b)
         setTemplates(templatesFromBlocks(b))
         setSetup(s => ({ ...s, title: s.title || data.title || `${s.sport || 'Bodybuilding'} AI plan`, description: s.description || data.description || '' }))
         setStep('days')
       } catch {
-        setError('AI generation failed. Try "Generate" instead.')
+        setError("The AI plan didn't finish. Try again, or pick the instant plan instead.")
       } finally {
         clearInterval(tick)
         setBusy(false)
@@ -185,7 +188,7 @@ export default function PlanBuilder({ program, library, onCreateExercise, onSave
 
   if (step === 'choose') {
     const options: { m: BuilderMode; title: string; sub: string; show: boolean }[] = [
-      { m: 'generate', title: 'Generate', sub: `Instant periodized plan from ${coach ? 'the' : 'your'} sport and goals`, show: true },
+      { m: 'generate', title: 'Instant plan', sub: `Instant periodized plan from ${coach ? 'the' : 'your'} sport and goals`, show: true },
       { m: 'ai', title: 'Generate with AI', sub: 'More tailored, takes ~20 seconds', show: true },
       { m: 'scratch', title: 'Build from scratch', sub: 'Pick your own days and exercises', show: true },
       { m: 'edit', title: coach ? 'Edit this plan' : 'Edit current plan', sub: program ? `Change ${program.title}` : '', show: !!program },
@@ -211,6 +214,7 @@ export default function PlanBuilder({ program, library, onCreateExercise, onSave
       <div className="space-y-4">
         {header(mode === 'edit' ? 'Edit plan' : 'Set up', () => setStep('choose'))}
         <PlanSetupForm mode={mode} setup={setup} onChange={setSetup} error={error} hideStartDate={coach} />
+        {sheet}
         {busy && mode === 'ai' && (
           <div className="card p-4 space-y-2">
             <p className="text-sm font-medium text-fg-2">Building your plan…</p>

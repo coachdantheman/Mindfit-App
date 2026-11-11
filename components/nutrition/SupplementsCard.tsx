@@ -21,6 +21,7 @@ export default function SupplementsCard({ date }: { date: string }) {
   const [stack, setStack] = useState<Supplement[]>([])
   const [checked, setChecked] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
+  const [suggest, setSuggest] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
   const [name, setName] = useState('')
   const [dose, setDose] = useState('')
@@ -38,6 +39,7 @@ export default function SupplementsCard({ date }: { date: string }) {
         if (!live) return
         setStack(data.supplements)
         setChecked(new Set(data.checked))
+        setSuggest(!!data.suggest)
       })
       .catch(() => {
         if (live) setError('Could not load supplements.')
@@ -109,7 +111,7 @@ export default function SupplementsCard({ date }: { date: string }) {
   }
 
   const inStack = (n: string) => stack.some(s => s.name.toLowerCase() === n.toLowerCase())
-  const available = RECOMMENDED.filter(r => !inStack(r.name))
+  const available = suggest ? RECOMMENDED.filter(r => !inStack(r.name)) : []
   const doneCount = stack.filter(s => checked.has(s.id)).length
 
   return (
@@ -156,7 +158,7 @@ export default function SupplementsCard({ date }: { date: string }) {
           )}
 
           <div className="border-t border-border-muted pt-3 space-y-3">
-            <p className="text-xs text-fg-3">Build your stack</p>
+            <p className="text-xs text-fg-3">{suggest ? 'Build your stack' : 'Track what you already take'}</p>
             {available.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {available.map(r => (
@@ -172,7 +174,7 @@ export default function SupplementsCard({ date }: { date: string }) {
                 ))}
               </div>
             )}
-            <p className="text-xs text-fg-4">Check with a parent or doctor before starting any supplement.</p>
+            <p className="text-xs text-fg-4">MindFit does not give medical advice. Check with a parent and a doctor before starting any supplement.</p>
             <form onSubmit={submitCustom} className="grid grid-cols-1 sm:grid-cols-[1fr_8rem] gap-2">
               <input
                 type="text"

@@ -5,6 +5,7 @@ import { useToast } from '@/components/shared/Toast'
 import { expandRecurring, type ScheduleEvent } from '@/lib/schedule'
 import { formatClock, parseTime } from '@/lib/game-day'
 import { DAY_NAMES, toLocalDateString } from '@/lib/programs'
+import { useAiConsent } from '@/components/shared/AiConsentSheet'
 
 interface Team { id: string; name: string }
 type Saved = ScheduleEvent & { id: string }
@@ -34,6 +35,7 @@ export default function ScheduleManager() {
   const [panel, setPanel] = useState<Panel>(null)
   const [busy, setBusy] = useState(false)
   const [openMonth, setOpenMonth] = useState<string | null>(null)
+  const { ensure, sheet } = useAiConsent({ hideWhatIsSent: true })
 
   // Import
   const [text, setText] = useState('')
@@ -83,6 +85,7 @@ export default function ScheduleManager() {
   }
 
   const parse = async () => {
+    if (!(await ensure())) return
     setBusy(true)
     setReview(null)
     try {
@@ -145,6 +148,8 @@ export default function ScheduleManager() {
         {panelBtn('practice', 'Recurring practices')}
         {panelBtn('game', 'Add a game')}
       </div>
+
+      {sheet}
 
       {panel === 'import' && (
         <div className="card p-4 space-y-3">

@@ -4,6 +4,7 @@ import type { EstimateItem } from '@/lib/ai-json'
 import type { AddItem } from './AddFoodSheet'
 import ServingStepper from './ServingStepper'
 import { scaleFood } from '@/lib/nutrition'
+import { useAiConsent } from '@/components/shared/AiConsentSheet'
 
 interface Props {
   query: string
@@ -16,8 +17,10 @@ export default function AiEstimateCard({ query, onAdd, busy }: Props) {
   const [servings, setServings] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const { ensure, sheet } = useAiConsent()
 
   const estimate = async () => {
+    if (!(await ensure())) return
     setLoading(true); setError('')
     const res = await fetch('/api/nutrition/ai/estimate', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -38,6 +41,7 @@ export default function AiEstimateCard({ query, onAdd, busy }: Props) {
           {loading ? 'Estimating…' : 'Estimate nutrition'}
         </button>
         {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
+        {sheet}
       </div>
     )
   }

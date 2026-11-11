@@ -153,7 +153,7 @@ export default function AthleteQuiz({ lessons }: { lessons: Lesson[] }) {
         </div>
 
         {matched.length > 0 && (
-          <div>
+          <div className="web-only">
             <p className="text-xs uppercase tracking-wider text-fg-4 font-mono mb-2">Lessons for this</p>
             <div className="grid gap-2 sm:grid-cols-2">
               {matched.map(lesson => (
@@ -173,7 +173,10 @@ export default function AthleteQuiz({ lessons }: { lessons: Lesson[] }) {
         )}
       </div>
 
-      <div className="card p-6">
+      <div className="native-only">
+        <button type="button" onClick={start} className="btn-ghost">Retake quiz</button>
+      </div>
+      <div className="web-only card p-6">
         <p className="text-sm text-fg-2 mb-1 font-semibold">Want a coach on this?</p>
         <p className="text-sm text-fg-3 mb-4">The full MindFit course and weekly group coaching live in the Locker Room on Skool.</p>
         <div className="flex flex-wrap items-center gap-3">

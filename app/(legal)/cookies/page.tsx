@@ -23,7 +23,7 @@ export default function CookiesPage() {
         <p>None of this is sent to anyone else and none of it is used to track you across sites.</p>
       </Section>
       <Section title="Third-party cookies">
-        <p>If you sign in with Google, Google sets its own cookies on its sign-in page under Google&rsquo;s policy. The MindFit app itself sets no third-party cookies.</p>
+        <p>The MindFit app sets no third-party cookies.</p>
       </Section>
       <Section title="Managing cookies">
         <p>You can clear cookies and site data in your browser settings. Clearing the sign-in cookie signs you out; clearing storage resets your theme and removes drafts.</p>

@@ -119,7 +119,7 @@ export default function DailyQuoteToggle({ onStatus }: { onStatus?: (s: Status) 
         </button>
       </div>
       {status === 'needs-install' && (
-        <p className="text-xs text-fg-4 mt-3">
+        <p className="web-only text-xs text-fg-4 mt-3">
           On iPhone, notifications only work after you add MindFit to your Home Screen: Share → “Add to Home Screen”, then open it from there.
         </p>
       )}

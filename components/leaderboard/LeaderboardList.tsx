@@ -1,6 +1,7 @@
 import { LevelBadge, TitleBadge } from './Badges'
 import { initialsOf, type Entry } from './types'
 import { FlameIcon, MedalIcon } from '@/components/shared/icons'
+import ReportButton from '@/components/shared/ReportButton'
 
 const MEDAL_TONE = ['text-cta', 'text-fg-2', 'text-[var(--medal-bronze)]']
 
@@ -25,6 +26,7 @@ function Row({ e }: { e: Entry }) {
         </div>
       </div>
       <span className="text-sm font-bold tabular-nums text-fg-1 shrink-0">{e.points}<span className="text-xs font-medium text-fg-4 ml-0.5">pts</span></span>
+      {!e.isMe && <ReportButton kind="leaderboard_name" targetUserId={e.id} />}
     </li>
   )
 }

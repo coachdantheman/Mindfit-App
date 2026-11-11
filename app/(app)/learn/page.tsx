@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { Lesson } from '@/types'
 import TabBar from '@/components/shared/TabBar'
+import { isNativeApp } from '@/lib/platform'
 
 const AthleteQuiz = dynamic(() => import('@/components/learn/AthleteQuiz'))
 
@@ -18,6 +19,9 @@ export default function LearnPage() {
     setTab(t)
     if (t === 'quiz') setQuizOpened(true)
   }
+
+  // The iPhone app has no outside lesson links, so Learn is the quiz there.
+  useEffect(() => { if (isNativeApp()) selectTab('quiz') }, [])
 
   useEffect(() => {
     fetch('/api/lessons')
@@ -35,17 +39,22 @@ export default function LearnPage() {
     <div>
       <div className="mb-6">
         <h1 className="page-title">Learn</h1>
-        <p className="page-subtitle">
+        <p className="page-subtitle web-only">
           The complete MindFit course is live in the Locker Room, our Skool community. Every lesson is there and ready.
+        </p>
+        <p className="page-subtitle native-only">
+          Find the mental skill to train next, then put it into practice in the app.
         </p>
       </div>
 
+      <div className="web-only">
       <TabBar
         label="Learn sections"
         tabs={[{ key: 'lessons' as Tab, label: 'Lessons' }, { key: 'quiz' as Tab, label: 'Athlete Quiz' }]}
         active={tab}
         onSelect={selectTab}
       />
+      </div>
 
       {quizOpened && (
         <div className={tab === 'quiz' ? '' : 'hidden'}>
@@ -53,7 +62,7 @@ export default function LearnPage() {
         </div>
       )}
 
-      <div className={tab === 'lessons' ? '' : 'hidden'}>
+      <div className={tab === 'lessons' ? 'web-only' : 'hidden'}>
         <div className="card p-6 mb-8">
           <p className="text-sm text-fg-2 mb-1 font-semibold">The full course, in one place</p>
           <p className="text-sm text-fg-3 mb-4">

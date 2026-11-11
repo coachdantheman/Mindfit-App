@@ -162,6 +162,16 @@ export async function sendParentConsentEmail(to: string, childName: string | nul
       `, 'parent consent email')
 }
 
+// Someone flagged user content. Goes to the admin inbox only.
+export function sendReportEmail(kind: string, snapshot: string, reason: string | null): Promise<boolean> {
+  return send('daniel@mindfit.academy', `MindFit report: ${kind}`, emailShell(`
+          <h2 style="color:#f3f4f6;font-size:20px;font-weight:600;margin:0 0 16px;">New content report</h2>
+          <p style="color:#9ca3af;font-size:15px;line-height:1.6;margin:0 0 8px;">Kind: ${escapeHtml(kind)}</p>
+          <p style="color:#f3f4f6;font-size:15px;line-height:1.6;margin:0 0 16px;white-space:pre-wrap;">${escapeHtml(snapshot)}</p>
+          <p style="color:#9ca3af;font-size:15px;line-height:1.6;margin:0 0 24px;">Reason: ${escapeHtml(reason?.trim() || 'none given')}</p>
+          <a href="${appUrlOf()}/admin?tab=reports" style="display:inline-block;background:#C4B400;color:#0A0F1A;font-weight:700;padding:14px 28px;border-radius:12px;text-decoration:none;font-size:15px;">Review reports →</a>`), 'report email')
+}
+
 // Level-ups, weekly recaps, coach updates. No promotions, no Skool pitch.
 // Every one carries a one-click unsubscribe (link + List-Unsubscribe header).
 export function sendEngagementEmail(to: string, subject: string, inner: string, unsubscribe: string): Promise<boolean> {

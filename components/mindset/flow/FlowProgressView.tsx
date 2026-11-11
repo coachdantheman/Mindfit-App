@@ -55,11 +55,8 @@ export default function FlowProgressView() {
   if (staleCache) {
     return (
       <div className="bg-yellow-500/10 border border-yellow-500/40 rounded-xl px-4 py-3 text-sm">
-        <p className="font-semibold text-yellow-400 mb-1">Supabase schema cache is stale</p>
-        <p className="text-xs text-fg-2">
-          Reload this page in a minute. If it persists, run{' '}
-          <code className="text-cta">NOTIFY pgrst, 'reload schema';</code> in the SQL editor, or restart the API from Supabase settings.
-        </p>
+        <p className="font-semibold text-yellow-400 mb-1">Flow progress is updating</p>
+        <p className="text-xs text-fg-2">Your data is safe. Give it a minute, then reload.</p>
       </div>
     )
   }

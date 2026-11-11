@@ -289,3 +289,7 @@ html.light .text-purple-300, html.light .text-purple-400 { color: #9333ea; }
     max-height: calc(92dvh - var(--kb, 0px));
   }
 }
+
+/* iPhone app vs website (see lib/platform.ts) */
+.native-app .web-only { display: none !important; }
+html:not(.native-app) .native-only { display: none !important; }

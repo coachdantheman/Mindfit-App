@@ -1,6 +1,7 @@
 import { TitleBadge } from './Badges'
 import { initialsOf, monthLabel, type Entry } from './types'
 import { FlameIcon, MedalIcon } from '@/components/shared/icons'
+import ReportButton from '@/components/shared/ReportButton'
 
 const MEDAL_TONE = ['text-cta', 'text-fg-2', 'text-[var(--medal-bronze)]']
 
@@ -29,6 +30,7 @@ export default function Podium({ podium, month, myRank, of }: { podium: Entry[];
               </p>
               <p className="text-xs text-fg-3 tabular-nums">{e.points} pts</p>
               <div className="mt-1"><TitleBadge title={e.title} /></div>
+              {!e.isMe && <ReportButton kind="leaderboard_name" targetUserId={e.id} />}
             </div>
           )
         })}

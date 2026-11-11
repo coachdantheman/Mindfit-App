@@ -4,6 +4,7 @@ import type { EstimateItem } from '@/lib/ai-json'
 import type { AddItem } from './AddFoodSheet'
 import ServingStepper from './ServingStepper'
 import { scaleFood } from '@/lib/nutrition'
+import { useAiConsent } from '@/components/shared/AiConsentSheet'
 
 interface Props {
   meal: string
@@ -16,8 +17,10 @@ export default function DescribeMeal({ meal, onAddMany, busy }: Props) {
   const [items, setItems] = useState<(EstimateItem & { checked: boolean })[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const { ensure, sheet } = useAiConsent()
 
   const parse = async () => {
+    if (!(await ensure())) return
     setLoading(true); setError('')
     const res = await fetch('/api/nutrition/ai/parse-meal', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -50,6 +53,7 @@ export default function DescribeMeal({ meal, onAddMany, busy }: Props) {
         {loading ? 'Breaking it down…' : 'Break it down'}
       </button>
       {error && <p className="text-xs text-red-400">{error}</p>}
+      {sheet}
       {items.length > 0 && (
         <div className="space-y-2">
           {items.map((it, i) => (

@@ -24,6 +24,7 @@ export interface PoolMember {
 }
 
 export interface Entry {
+  id: string
   rank: number
   displayName: string
   sport: string | null
@@ -237,6 +238,7 @@ export function rankEntries(
   rows.forEach((r, i) => {
     if (i === 0 || r.points < rows[i - 1].points) rank = i + 1
     out.push({
+      id: r.m.id,
       rank,
       displayName: r.name,
       sport: r.m.sport,

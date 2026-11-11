@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { aiQuota } from '@/lib/rate-limit'
 import { consentFlags } from '@/lib/consent-flags'
+import { requireAiConsent } from '@/lib/ai-consent'
 import { createAdminClient } from '@/lib/supabase-server'
 import { extractJson } from '@/lib/ai-json'
 import { parsePlanRequest } from '@/lib/workout-templates'
@@ -29,6 +30,8 @@ export async function POST(req: Request) {
   if ((await consentFlags(createAdminClient(), auth.userId)).aiBlocked) {
     return NextResponse.json({ error: 'AI features are turned off for your account. A parent can turn them on from their MindFit email.' }, { status: 403 })
   }
+  const noConsent = await requireAiConsent(createAdminClient(), auth.userId)
+  if (noConsent) return noConsent
 
   try {
     const body = await req.json().catch(() => null)
@@ -95,6 +98,6 @@ Keep it concise — ${numBlocks} blocks, ${days_per_week} workouts per block, 5-
     return NextResponse.json(program)
   } catch (err: any) {
     console.error('AI generation error:', err?.message || err)
-    return NextResponse.json({ error: 'AI generation failed. Please try again or use "Generate" instead.' }, { status: 500 })
+    return NextResponse.json({ error: "The AI plan didn't finish. Try again, or pick the instant plan instead." }, { status: 500 })
   }
 }

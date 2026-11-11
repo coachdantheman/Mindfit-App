@@ -22,7 +22,7 @@ export default function LessonLinks({ section }: { section: LessonSection }) {
       href="https://www.skool.com/mindfit"
       target="_blank"
       rel="noopener noreferrer"
-      className="mt-6 flex items-center justify-between gap-3 border border-cta/20 bg-cta/5 rounded-2xl p-4 hover:border-cta/40 transition-colors"
+      className="web-only mt-6 flex items-center justify-between gap-3 border border-cta/20 bg-cta/5 rounded-2xl p-4 hover:border-cta/40 transition-colors"
     >
       <span className="min-w-0">
         <span className="block text-xs font-semibold uppercase tracking-wider text-cta">Learn this in the Locker Room</span>
@@ -33,7 +33,7 @@ export default function LessonLinks({ section }: { section: LessonSection }) {
   )
 
   return (
-    <div className="mt-6 border border-cta/20 bg-cta/5 rounded-2xl p-4">
+    <div className="web-only mt-6 border border-cta/20 bg-cta/5 rounded-2xl p-4">
       <p className="text-xs font-semibold uppercase tracking-wider text-cta mb-3">
         Learn this in the Locker Room
       </p>

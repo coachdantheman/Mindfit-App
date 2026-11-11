@@ -82,6 +82,9 @@ export default function NutritionPage() {
       {tab === 'goals' && <GoalsView goal={goal} onSaved={setGoal} notify={notify} />}
 
       <div className="mt-6"><LessonLinks section="nutrition" /></div>
+      <p className="text-xs text-fg-4 mt-6">
+        Nutrition numbers here are estimates for learning, not medical or dietary advice. Check with a parent and a doctor or registered dietitian before changing how you eat.
+      </p>
     </div>
   )
 }

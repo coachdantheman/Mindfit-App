@@ -55,13 +55,7 @@ export default function StageTracker() {
     return (
       <div className="bg-surface rounded-2xl border border-yellow-500/40 p-5">
         <p className="text-sm font-semibold text-yellow-400 mb-1">Stage tracker temporarily unavailable</p>
-        <p className="text-xs text-fg-3">
-          Supabase's API server is serving a stale schema cache. To fix:
-          in <span className="text-fg-1">Supabase Dashboard → Project Settings → API</span> click
-          <span className="text-fg-1"> Restart server</span>, or run
-          <code className="mx-1 text-cta"> NOTIFY pgrst, 'reload schema';</code>
-          in the SQL editor.
-        </p>
+        <p className="text-xs text-fg-3">Your data is safe. Give it a minute, then reload.</p>
       </div>
     )
   }

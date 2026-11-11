@@ -39,3 +39,12 @@ test('consent tokens — random, hashed deterministically', () => {
   assert.equal(hashToken(a), hashToken(a))
   assert.equal(hashToken(a).length, 64)
 })
+
+test('isAdult — 18 only once the birthday month has fully passed', async () => {
+  const { isAdult } = await import('../lib/age')
+  const now = new Date(Date.UTC(2026, 10, 11)) // Nov 2026
+  assert.equal(isAdult({ birth_year: 2008, birth_month: 10 }, now), true)
+  assert.equal(isAdult({ birth_year: 2008, birth_month: 11 }, now), false)
+  assert.equal(isAdult({ birth_year: 2012, birth_month: 1 }, now), false)
+  assert.equal(isAdult({ birth_year: null, birth_month: null }, now), false)
+})

@@ -223,6 +223,11 @@ export default function JournalForm({ previewMode = false, onSaved }: Props) {
             Carrying a lot right now? You don&rsquo;t have to handle it alone. Talk to a parent, coach or school counselor. In the US you can call or text 988 any time, free and confidential.
           </p>
         )}
+        {!previewMode && (
+          <p className="text-xs text-fg-4">
+            Need to talk to someone? <a href="/support#help" className="underline hover:text-fg-2">Find help here</a>.
+          </p>
+        )}
       </section>
 
       {error && (

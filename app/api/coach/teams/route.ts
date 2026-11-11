@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { requireString, optionalString } from '@/lib/validate'
 import { createTeam, TEAM_COLS, type TeamRow } from '@/lib/teams'
+import { hasProfanity } from '@/lib/profanity'
 
 // A coach's teams with rosters. Admins get every team.
 export async function GET() {
@@ -39,6 +40,7 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}))
   const name = requireString(body.name, 80)
   if (!name) return NextResponse.json({ error: 'Team name is required.' }, { status: 400 })
+  if (hasProfanity(name)) return NextResponse.json({ error: 'Pick a different name.' }, { status: 400 })
   const sport = optionalString(body.sport, 40)
 
   const admin = createAdminClient()

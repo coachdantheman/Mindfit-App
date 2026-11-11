@@ -1,3 +1,4 @@
+import { sealId } from '@/lib/report-token'
 import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
@@ -114,6 +115,8 @@ export async function GET(req: Request) {
   const thisList = rankEntries(thisScores, poolMembers, { meId: auth.userId, mineIds, streaks })
   const lastList = rankEntries(lastScores, poolMembers, { meId: auth.userId, mineIds, streaks })
   const myLast = lastList.find(e => e.isMe)
+  // Real ids stay on the server; rows carry a sealed id for the Report button.
+  const sealed = <T extends { id: string }>(list: T[]) => list.map(e => ({ ...e, id: sealId(e.id) }))
 
   let meOut = null
   if (me) {
@@ -145,8 +148,8 @@ export async function GET(req: Request) {
     team: team?.id ?? 'all',
     teams,
     me: meOut,
-    thisMonth: { ...pageOf(thisList, pageParam), of: thisList.length },
-    lastMonth: { podium: lastList.slice(0, 3), myRank: myLast?.rank ?? null, of: lastList.length },
+    thisMonth: { ...pageOf(sealed(thisList), pageParam), of: thisList.length },
+    lastMonth: { podium: sealed(lastList.slice(0, 3)), myRank: myLast?.rank ?? null, of: lastList.length },
   })
 }
 

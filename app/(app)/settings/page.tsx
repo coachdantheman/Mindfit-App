@@ -7,6 +7,7 @@ import DailyQuoteToggle from '@/components/shared/DailyQuoteToggle'
 import NotificationSettings from '@/components/settings/NotificationSettings'
 import SharingCard from '@/components/settings/SharingCard'
 import LeaderboardCard from '@/components/settings/LeaderboardCard'
+import AiFeaturesCard from '@/components/settings/AiFeaturesCard'
 import DeleteAccountCard from '@/components/settings/DeleteAccountCard'
 import Link from 'next/link'
 import type { UserRole } from '@/types'
@@ -299,7 +300,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Community */}
-        <div className="card p-5">
+        <div className="web-only card p-5">
           <h3 className="font-semibold text-fg-1 mb-1 text-sm">MindFit Community</h3>
           <p className="text-sm text-fg-4 mb-4">Connect with other athletes, access courses, and get coached.</p>
           <a
@@ -312,10 +313,23 @@ export default function SettingsPage() {
           </a>
         </div>
 
+        <AiFeaturesCard />
+
+        {/* Help and safety */}
+        <div className="card p-5">
+          <h3 className="font-semibold text-fg-1 mb-1 text-sm">Help &amp; safety</h3>
+          <p className="text-sm text-fg-4 mb-3">
+            MindFit trains mental skills. It is not medical care or therapy. If you&rsquo;re carrying a lot, talk to an adult you trust,
+            or call or text <a href="tel:988" className="text-cta hover:underline">988</a> any time in the US. Free and confidential.
+          </p>
+          <Link href="/support" className="text-sm text-cta hover:underline">Get help or contact support →</Link>
+        </div>
+
         {/* Legal */}
         <div className="card p-5">
           <h3 className="font-semibold text-fg-1 mb-3 text-sm">About</h3>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+            <Link href="/support" className="text-cta hover:underline">Support</Link>
             <Link href="/terms" className="text-cta hover:underline">Terms of Service</Link>
             <Link href="/privacy" className="text-cta hover:underline">Privacy Policy</Link>
             <Link href="/cookies" className="text-cta hover:underline">Cookie Policy</Link>

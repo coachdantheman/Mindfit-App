@@ -303,7 +303,7 @@ function LoginForm() {
                 </button>
               )}
 
-              <p className="text-center text-sm text-fg-4 mt-6">
+              <p className="web-only text-center text-sm text-fg-4 mt-6">
                 Part of the{' '}
                 <a
                   href="https://www.skool.com/mindfit"
@@ -316,7 +316,7 @@ function LoginForm() {
                 ? Use your Skool email and your coach is linked automatically.
               </p>
               <p className="text-center text-xs text-fg-4 mt-4">
-                <Link href="/terms" className="hover:text-fg-2">Terms</Link> · <Link href="/privacy" className="hover:text-fg-2">Privacy</Link> · <Link href="/cookies" className="hover:text-fg-2">Cookies</Link>
+                <Link href="/terms" className="hover:text-fg-2">Terms</Link> · <Link href="/privacy" className="hover:text-fg-2">Privacy</Link> · <Link href="/cookies" className="hover:text-fg-2">Cookies</Link> · <Link href="/support" className="hover:text-fg-2">Support</Link>
               </p>
             </>
           )}

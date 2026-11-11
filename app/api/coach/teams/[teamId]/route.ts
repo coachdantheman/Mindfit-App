@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { optionalString } from '@/lib/validate'
 import { managedTeam, newJoinCode } from '@/lib/teams'
+import { hasProfanity } from '@/lib/profanity'
 
 // Rename, change sport, or issue a new join code (the old one stops working).
 export async function PATCH(req: Request, props: { params: Promise<{ teamId: string }> }) {
@@ -17,6 +18,7 @@ export async function PATCH(req: Request, props: { params: Promise<{ teamId: str
   const body = await req.json().catch(() => ({}))
   const patch: Record<string, string | null> = {}
   const name = optionalString(body.name, 80)
+  if (name && hasProfanity(name)) return NextResponse.json({ error: 'Pick a different name.' }, { status: 400 })
   if (name) patch.name = name
   if ('sport' in body) patch.sport = optionalString(body.sport, 40)
   if (Object.keys(patch).length) {

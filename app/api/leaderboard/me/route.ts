@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { isValidAlias } from '@/lib/leaderboard'
 import { consentFlags } from '@/lib/consent-flags'
+import { hasProfanity } from '@/lib/profanity'
 
 // Leaderboard privacy settings. Kept apart from /api/profile because its
 // update_user_profile RPC whitelists columns and would drop these.
@@ -32,6 +33,9 @@ export async function PATCH(req: Request) {
     const alias = typeof body.leaderboard_alias === 'string' ? body.leaderboard_alias.trim() : ''
     if (alias && !isValidAlias(alias)) {
       return NextResponse.json({ error: 'Alias must be 2–20 characters.' }, { status: 400 })
+    }
+    if (alias && hasProfanity(alias)) {
+      return NextResponse.json({ error: 'Pick a different name.' }, { status: 400 })
     }
     updates.leaderboard_alias = alias || null
   }

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { FlowInsights } from '@/types'
 import { STAGE_META, TRIGGER_LABEL } from '@/components/mindset/flow/flow-constants'
 import Skeleton from '@/components/shared/Skeleton'
+import ReportButton from '@/components/shared/ReportButton'
 
 export default function FlowInsightsView() {
   const router = useRouter()
@@ -66,7 +67,10 @@ export default function FlowInsightsView() {
       <div className="card p-5">
         <p className="text-xs uppercase tracking-wide text-fg-4 mb-2">Coach note</p>
         {insights.coach_note ? (
-          <p className="text-fg-2 text-sm whitespace-pre-wrap">{insights.coach_note}</p>
+          <>
+            <p className="text-fg-2 text-sm whitespace-pre-wrap">{insights.coach_note}</p>
+            <ReportButton kind="coach_note" />
+          </>
         ) : (
           <p className="text-sm text-fg-4 italic">Your coach hasn't left a note yet.</p>
         )}

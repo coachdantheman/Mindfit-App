@@ -34,7 +34,7 @@ export default async function HomePage() {
             </a>
           </div>
 
-          <div className="bg-surface border border-edge rounded-2xl p-5 text-center">
+          <div className="web-only bg-surface border border-edge rounded-2xl p-5 text-center">
             <p className="text-fg-2 font-medium">Want coaching and the full course?</p>
             <p className="text-fg-4 text-sm mt-1">
               Join the MindFit community for group coaching, the complete sport psychology
@@ -53,7 +53,7 @@ export default async function HomePage() {
           <JournalForm previewMode />
         </div>
         <p className="text-center text-xs text-fg-4 mt-10">
-          <a href="/terms" className="hover:text-fg-2">Terms</a> · <a href="/privacy" className="hover:text-fg-2">Privacy</a> · <a href="/cookies" className="hover:text-fg-2">Cookies</a>
+          <a href="/terms" className="hover:text-fg-2">Terms</a> · <a href="/privacy" className="hover:text-fg-2">Privacy</a> · <a href="/cookies" className="hover:text-fg-2">Cookies</a> · <a href="/support" className="hover:text-fg-2">Support</a>
         </p>
       </main>
     </div>

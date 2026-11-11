@@ -17,6 +17,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
           <Link href="/terms" className="hover:text-fg-2">Terms</Link>
           <Link href="/privacy" className="hover:text-fg-2">Privacy</Link>
           <Link href="/cookies" className="hover:text-fg-2">Cookies</Link>
+          <Link href="/support" className="hover:text-fg-2">Support</Link>
           <span className="ml-auto">© {new Date().getFullYear()} MindFit</span>
         </div>
       </footer>

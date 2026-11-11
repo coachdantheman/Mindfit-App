@@ -16,6 +16,15 @@ export function isUnder13(p: { birth_year?: number | null; birth_month?: number 
   return ageOn(p.birth_year, p.birth_month, now) < CONSENT_AGE
 }
 
+export function isAdult(p: { birth_year?: number | null; birth_month?: number | null }, now = new Date()): boolean {
+  if (p.birth_year == null || p.birth_month == null) return false
+  return ageOn(p.birth_year, p.birth_month, now) >= 18
+}
+
+// Set on a device where someone answered with an under-13 birthday, so the
+// answer can't simply be changed on a second try.
+export const AGE_BLOCK_COOKIE = 'mf_ab'
+
 export function validBirth(year: unknown, month: unknown, now = new Date()): { year: number; month: number } | null {
   const y = Number(year)
   const m = Number(month)

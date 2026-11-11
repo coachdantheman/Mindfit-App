@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase'
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
@@ -12,6 +13,7 @@ export default function AgePage() {
   const [year, setYear] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [tooYoung, setTooYoung] = useState(false)
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -22,8 +24,27 @@ export default function AgePage() {
     })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) { setError(data.error ?? 'Could not save. Try again.'); setSaving(false); return }
+    if (data.status === 'too_young') {
+      await createClient().auth.signOut().catch(() => {})
+      setTooYoung(true)
+      return
+    }
     router.push(data.status === 'pending' ? '/consent/waiting' : '/mindset')
     router.refresh()
+  }
+
+  if (tooYoung) {
+    return (
+      <div className="max-w-xl mx-auto">
+        <div className="bg-surface rounded-2xl border border-edge p-8">
+          <h1 className="text-2xl font-bold text-fg-1 mb-3">MindFit is for athletes 13 and older</h1>
+          <p className="text-fg-3 text-sm leading-relaxed">
+            Thanks for wanting to train your mind. We can&apos;t set up an account for you yet, and nothing you entered was kept.
+            Come back when you&apos;re 13.
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (

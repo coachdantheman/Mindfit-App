@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { verifyApiUser } from '@/lib/api-auth'
 import { aiQuota } from '@/lib/rate-limit'
+import { requireAiConsent } from '@/lib/ai-consent'
+import { createAdminClient } from '@/lib/supabase-server'
 import { extractJson } from '@/lib/ai-json'
 import { cleanEvent } from '@/lib/schedule'
 
@@ -18,6 +20,8 @@ export async function POST(req: Request) {
   if (auth instanceof NextResponse) return auth
   const overQuota = await aiQuota(auth.userId, 'schedule', 20)
   if (overQuota) return overQuota
+  const noConsent = await requireAiConsent(createAdminClient(), auth.userId)
+  if (noConsent) return noConsent
 
   const body = await req.json().catch(() => ({}))
   const text = typeof body.text === 'string' ? body.text.slice(0, 20000).trim() : ''

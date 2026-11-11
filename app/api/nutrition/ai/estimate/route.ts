@@ -5,6 +5,7 @@ import { aiQuota } from '@/lib/rate-limit'
 import { optionalString, requireString } from '@/lib/validate'
 import { extractJson, sanitizeEstimate } from '@/lib/ai-json'
 import { consentFlags } from '@/lib/consent-flags'
+import { requireAiConsent } from '@/lib/ai-consent'
 import { createAdminClient } from '@/lib/supabase-server'
 
 export const maxDuration = 30
@@ -25,6 +26,8 @@ export async function POST(req: Request) {
   if ((await consentFlags(createAdminClient(), auth.userId)).aiBlocked) {
     return NextResponse.json({ error: 'AI features are turned off for your account. A parent can turn them on from their MindFit email.' }, { status: 403 })
   }
+  const noConsent = await requireAiConsent(createAdminClient(), auth.userId)
+  if (noConsent) return noConsent
 
   const body = await req.json()
   const food_name = requireString(body.food_name, 120)

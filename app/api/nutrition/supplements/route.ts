@@ -3,6 +3,7 @@ import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { isISODate, optionalString, requireString } from '@/lib/validate'
+import { isAdult } from '@/lib/age'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -14,7 +15,7 @@ export async function GET(req: Request) {
   if (!isISODate(date)) return NextResponse.json({ error: 'Valid date required' }, { status: 400 })
 
   const admin = createAdminClient()
-  const [supp, checks] = await Promise.all([
+  const [supp, checks, me] = await Promise.all([
     admin
       .from('supplements')
       .select('*')
@@ -27,6 +28,7 @@ export async function GET(req: Request) {
       .select('supplement_id')
       .eq('user_id', auth.userId)
       .eq('check_date', date),
+    admin.from('profiles').select('role, birth_year, birth_month').eq('id', auth.userId).maybeSingle(),
   ])
 
   if (supp.error) return dbError(supp.error)
@@ -34,6 +36,8 @@ export async function GET(req: Request) {
   return NextResponse.json({
     supplements: supp.data,
     checked: (checks.data ?? []).map(c => c.supplement_id),
+    // No suggested supplements for athletes under 18.
+    suggest: !!me.data && (me.data.role !== 'member' || isAdult(me.data)),
   })
 }
 

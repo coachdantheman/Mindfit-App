@@ -54,7 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='light'){document.documentElement.classList.add('light');document.addEventListener('DOMContentLoaded',function(){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content','#F1F0EE')})}}catch(e){}})()`,
+            __html: `(function(){try{if(navigator.userAgent.indexOf('MindFitApp')>-1)document.documentElement.classList.add('native-app')}catch(e){}try{var t=localStorage.getItem('theme');if(t==='light'){document.documentElement.classList.add('light');document.addEventListener('DOMContentLoaded',function(){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content','#F1F0EE')})}}catch(e){}})()`,
           }}
         />
       </head>

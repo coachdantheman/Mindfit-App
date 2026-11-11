@@ -78,11 +78,8 @@ export default function FlowStateTab() {
     <div className="space-y-5">
       {staleCache && (
         <div className="bg-yellow-500/10 border border-yellow-500/40 rounded-xl px-4 py-3 text-sm">
-          <p className="font-semibold text-yellow-400 mb-1">Supabase schema cache is stale</p>
-          <p className="text-xs text-fg-2">
-            Your Flow State data is there, but Supabase&apos;s API server hasn&apos;t picked up the latest
-            migration yet. Run <code className="text-cta">NOTIFY pgrst, &apos;reload schema&apos;;</code> in the SQL Editor, then reload.
-          </p>
+          <p className="font-semibold text-yellow-400 mb-1">Flow State is updating</p>
+          <p className="text-xs text-fg-2">Your data is safe. Give it a minute, then reload.</p>
         </div>
       )}
 
