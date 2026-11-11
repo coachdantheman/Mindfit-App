@@ -95,4 +95,5 @@ export interface CustomWorkoutRow {
   exercises: { exercise_id: string | null; exercise_name: string; is_bodyweight: boolean; sets: CustomWorkoutSet[] }[]
   times_done: number
   last_done_at: string
+  pinned_at: string | null
 }

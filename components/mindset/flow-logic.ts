@@ -134,7 +134,6 @@ export function flowPctFromCheckins(checkins: FlowStageCheckin[]): number | null
  * Coach "needs attention" flags:
  *  - 3+ consecutive logs ending in Struggle (most recent first)
  *  - Flow score 7d dropped >2 vs prior 7d
- *  - No 5A session run in 5+ days
  */
 export function needsAttention(
   logs: FlowLog[],
@@ -176,16 +175,6 @@ export function needsAttention(
   const avgPrior = avgFlowScore(prior)
   if (avgRecent != null && avgPrior != null && avgPrior - avgRecent > 2) {
     reasons.push(`Flow score dropped ${(avgPrior - avgRecent).toFixed(1)} vs prior week`)
-  }
-
-  const lastSession = sessions
-    .map(s => new Date(s.started_at).getTime())
-    .sort((a, b) => b - a)[0]
-  if (!lastSession) {
-    reasons.push('No 5A session ever run')
-  } else {
-    const daysSince = Math.floor((todayDate.getTime() - lastSession) / (1000 * 60 * 60 * 24))
-    if (daysSince >= 5) reasons.push(`No 5A session in ${daysSince} days`)
   }
 
   return reasons
@@ -259,7 +248,7 @@ export function calcFlowReadiness(
     score >= 65 ? 'Strong. Keep the rhythm.' :
     score >= 50 ? 'Building. Refine the ritual.' :
     score >= 30 ? 'Drifting. Re-ground with a full 5A.' :
-                  'Reset week. Start with one great stack.'
+                  'Reset. Run one great stack before your next game.'
 
   return {
     score,
@@ -330,7 +319,7 @@ export function stageDistribution(checkins: FlowStageCheckin[]): { stage: FlowSt
  */
 export function generateRecommendation(logs: FlowLog[], sessions: FlowSession[]): string {
   if (logs.length === 0 && sessions.length === 0) {
-    return 'Start with one 5A Flow Stack today. The habit beats the hack.'
+    return 'Run the 5A Flow Stack before your next game, then log how it went.'
   }
 
   const tooEasyDays = logs.filter(l => flowZone(l.challenge_level, l.skill_level) === 'too_easy').length
@@ -364,5 +353,5 @@ export function generateRecommendation(logs: FlowLog[], sessions: FlowSession[])
     return 'Flow is firing. Keep your identity statement and cue word locked — consistency compounds.'
   }
 
-  return 'Keep running the stack daily. Flow is a practiced state, not an accident.'
+  return 'Run the stack before every game or big moment. Same ritual, same identity, every time.'
 }

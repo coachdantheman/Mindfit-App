@@ -196,12 +196,9 @@ test('needsAttention — fires on 3+ struggle logs', () => {
   assert.ok(reasons.some(r => r.includes('Struggle')))
 })
 
-test('needsAttention — fires when no session in 5+ days', () => {
-  const now = new Date()
-  const old = new Date(now); old.setDate(old.getDate() - 10)
-  const sessions = [session({ started_at: old.toISOString() })]
-  const reasons = needsAttention([], sessions)
-  assert.ok(reasons.some(r => r.includes('No 5A session')))
+test('needsAttention — no stack for 10 days is not a flag (game-day only)', () => {
+  const old = new Date(); old.setDate(old.getDate() - 10)
+  assert.deepEqual(needsAttention([], [session({ started_at: old.toISOString() })]), [])
 })
 
 test('needsAttention — fires when flow score drops >2 WoW', () => {
@@ -227,9 +224,9 @@ test('needsAttention — clean week = no reasons', () => {
   assert.deepEqual(needsAttention(logs, sessions), [])
 })
 
-test('generateRecommendation — empty returns start-today message', () => {
+test('generateRecommendation — empty points to the next game', () => {
   const rec = generateRecommendation([], [])
-  assert.match(rec, /5A Flow Stack today/)
+  assert.match(rec, /before your next game/)
 })
 
 test('generateRecommendation — >50% too-easy triggers bump message', () => {
@@ -270,7 +267,7 @@ test('generateRecommendation — ACTIVATE skips >3 triggers box breathing messag
 test('calcFlowReadiness — empty returns 0 with verdict', () => {
   const r = calcFlowReadiness([], [], [])
   assert.equal(r.score, 0)
-  assert.match(r.verdict, /Reset week|Drifting/)
+  assert.match(r.verdict, /Reset\.|Drifting/)
 })
 
 test('calcFlowReadiness — perfect inputs approach 100', () => {

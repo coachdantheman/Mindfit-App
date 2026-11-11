@@ -43,7 +43,7 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
     if (res.ok) setLogs(await res.json())
     if (mine?.ok) {
       const data = await mine.json()
-      if (Array.isArray(data)) setSaved(data)
+      if (Array.isArray(data)) setSaved(sortSaved(data))
     }
     setLoading(false)
   }, [])
@@ -78,7 +78,7 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
         notify(err.error || "Couldn't save the workout. Your sets are still here.", 'error')
         return
       }
-      const data = (await res.json()) as { id: string; prs: DetectedPr[]; tiers?: SessionTier[]; needsProfile?: boolean }
+      const data = (await res.json()) as { id: string; prs: DetectedPr[]; tiers?: SessionTier[]; needsProfile?: boolean; savedToMyWorkouts?: boolean }
       clearDraft()
       onDraftChange(null)
       setFinished({
@@ -93,6 +93,7 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
       })
       const ups = (data.tiers ?? []).filter(t => t.tierUp).length
       notify(ups ? `Workout saved · Tier up!` : data.prs?.length ? `Workout saved · ${data.prs.length} PR${data.prs.length > 1 ? 's' : ''}!` : 'Workout saved')
+      if (stats.doneSets > 0 && data.savedToMyWorkouts === false) notify("Workout logged, but it didn't save to My Workouts. Finish it once more to save it.", 'error')
       fetchHistory()
       fetchCoach()
     } catch {
@@ -121,6 +122,21 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
       // Runs and sprints carry last time's distance as the placeholder instead of reps.
       prefill: groups.map(([name, rows]) => ({ name, reps: rows.map(r => (r.distance != null ? String(Number(r.distance)) : r.reps != null ? String(r.reps) : null)) })),
     })
+  }
+
+  const togglePin = async (w: CustomWorkoutRow) => {
+    const pinned = !w.pinned_at
+    const before = saved
+    setSaved(sortSaved(saved.map(x => (x.id === w.id ? { ...x, pinned_at: pinned ? new Date().toISOString() : null } : x))))
+    const res = await fetch('/api/exercise/custom-workouts', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: w.id, pinned }),
+    }).catch(() => null)
+    if (!res?.ok) {
+      setSaved(before)
+      notify("Couldn't update the pin. Try again.", 'error')
+    }
   }
 
   const doAgain = (w: CustomWorkoutRow) => {
@@ -222,14 +238,26 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
           <h4 className="text-sm font-semibold text-fg-1 mb-3">My Workouts</h4>
           <div className="space-y-2">
             {saved.map(w => (
-              <div key={w.id} className="flex items-center justify-between gap-2 bg-surface rounded-xl border border-edge p-3">
+              <div key={w.id} className={`flex items-center justify-between gap-2 bg-surface rounded-xl border p-3 ${w.pinned_at ? 'border-cta/40' : 'border-edge'}`}>
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-fg-2 truncate">{w.name}</p>
                   <p className="text-xs text-fg-4">
                     {w.exercises.length} exercise{w.exercises.length === 1 ? '' : 's'} · done {w.times_done}× · last {format(parseISO(w.last_done_at), 'MMM d')}
                   </p>
                 </div>
-                <button type="button" onClick={() => doAgain(w)} className="btn-secondary shrink-0 px-3 py-2">Do again</button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => togglePin(w)}
+                    aria-pressed={!!w.pinned_at}
+                    aria-label={w.pinned_at ? `Unpin ${w.name}` : `Pin ${w.name}`}
+                    title={w.pinned_at ? 'Unpin' : 'Pin to top'}
+                    className={`w-11 h-11 flex items-center justify-center rounded-lg transition-colors ${w.pinned_at ? 'text-cta' : 'text-fg-4 hover:text-fg-2'}`}
+                  >
+                    <PinIcon filled={!!w.pinned_at} />
+                  </button>
+                  <button type="button" onClick={() => doAgain(w)} className="btn-secondary px-3 py-2">Do again</button>
+                </div>
               </div>
             ))}
           </div>
@@ -320,4 +348,18 @@ function groupSets(sets: ExerciseLogRow[]): [string, ExerciseLogRow[]][] {
     else map.set(s.exercise_name, [s])
   }
   return [...map.entries()].map(([n, rows]) => [n, rows.sort((a, b) => a.set_number - b.set_number)])
+}
+
+function sortSaved(rows: CustomWorkoutRow[]): CustomWorkoutRow[] {
+  return [...rows].sort((a, b) =>
+    (b.pinned_at ?? '').localeCompare(a.pinned_at ?? '') || b.last_done_at.localeCompare(a.last_done_at))
+}
+
+function PinIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" className="w-5 h-5" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={1.6} strokeLinejoin="round" aria-hidden>
+      <path d="M9 3h6l-1 6 4 4H6l4-4-1-6Z" />
+      <path d="M12 13v8" fill="none" strokeLinecap="round" />
+    </svg>
+  )
 }

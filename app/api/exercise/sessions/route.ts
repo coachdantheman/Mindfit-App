@@ -169,9 +169,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Couldn't save the workout. Nothing was written — try again." }, { status: 500 })
   }
 
-  // One saved workout per name. The session is already logged, so a
-  // failure here only costs the My Workouts row.
-  if (source === 'custom' && exercises.length > 0) {
+  // Every tracked session with sets lands in My Workouts, one row per name,
+  // whatever it started from. The session is already logged, so a failure
+  // here only costs the My Workouts row.
+  let savedToMyWorkouts = false
+  if (exercises.length > 0) {
     const { error: saveErr } = await admin.rpc('save_custom_workout', {
       p_user_id: auth.userId,
       p_name: workout_name,
@@ -179,6 +181,7 @@ export async function POST(req: Request) {
       p_exercises: exercises,
     })
     if (saveErr) console.error('save_custom_workout failed:', saveErr.message)
+    else savedToMyWorkouts = true
   }
 
   if (prs.length > 0 || tierUps > 0) {
@@ -187,5 +190,5 @@ export async function POST(req: Request) {
     }).catch(e => console.error('PR notify failed:', e?.message))
   }
 
-  return NextResponse.json({ id, prs, tiers, needsProfile: !profile && ranked.length > 0 }, { status: 201 })
+  return NextResponse.json({ id, prs, tiers, needsProfile: !profile && ranked.length > 0, savedToMyWorkouts }, { status: 201 })
 }

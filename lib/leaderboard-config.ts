@@ -34,7 +34,7 @@ export const ACTIONS: ActionRule[] = [
   { key: 'baseline',      pillar: 'mind', label: 'First MPI assessment',     points: 50, cap: 1 },
   { key: 'assessments',   pillar: 'mind', label: 'Weekly assessment',        points: 25, cap: 1, per: 'week' },
   { key: 'mpi_gain',      pillar: 'mind', label: 'Each MPI point gained',    points: 2,  cap: 10, per: 'week' },
-  { key: 'flow_sessions', pillar: 'mind', label: 'Flow State session',       points: 20, cap: 1 },
+  { key: 'flow_sessions', pillar: 'mind', label: 'Pre-game Flow Stack',      points: 20, cap: 3, per: 'week' },
   { key: 'flow_logs',     pillar: 'mind', label: 'Post-competition flow log', points: 15, cap: 1 },
   { key: 'flow_checkins', pillar: 'mind', label: 'Flow stage check-in',      points: 5,  cap: 3 },
   { key: 'visualization', pillar: 'mind', label: 'Visualization / meditation', points: 10, cap: 1 },
