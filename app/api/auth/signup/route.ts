@@ -11,7 +11,7 @@ import { AGE_BLOCK_COOKIE } from '@/lib/age'
 // password (supabase.auth.updateUser). The response is the same whether or
 // not the email already has an account.
 export async function POST(req: Request) {
-  const { email, termsAccepted } = await req.json().catch(() => ({}))
+  const { email, termsAccepted, next } = await req.json().catch(() => ({}))
 
   if (!isEmail(email)) {
     return NextResponse.json({ error: 'A valid email is required.' }, { status: 400 })
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     (await rateLimit(`signup:email:${normalized}`, 10, 3600))
   if (limited) return limited
 
-  const sent = await sendSignInCode(createAdminClient(), normalized)
+  const sent = await sendSignInCode(createAdminClient(), normalized, next === '/start' ? '/start' : undefined)
   if (!sent) {
     return NextResponse.json({ error: 'Could not send the code. Please try again in a minute.' }, { status: 500 })
   }

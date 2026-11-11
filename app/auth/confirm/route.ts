@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   if (token_hash && type) {
     const supabase = await createServerSupabaseClient()
     const { error } = await supabase.auth.verifyOtp({ token_hash, type })
-    if (!error) return NextResponse.redirect(origin)
+    if (!error) return NextResponse.redirect(searchParams.get('next') === '/start' ? `${origin}/start` : origin)
     console.error('Sign-in link failed:', error.message)
   }
   return NextResponse.redirect(`${origin}/login?error=link_expired`)

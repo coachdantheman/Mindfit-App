@@ -31,7 +31,7 @@ const SCALE = ['Struggling', 'Shaky', 'Okay', 'Strong', 'Locked in']
 
 const INTRO = ['Every athlete plays two games.', 'The one on the field.', 'And the one in their head.']
 
-type Step = 'intro' | 'name' | 'sport' | 'age' | 'young' | 'proof' | 'mpi' | 'score' | 'account' | 'code' | 'done'
+type Step = 'intro' | 'name' | 'sport' | 'age' | 'young' | 'proof' | 'mpi' | 'score' | 'account' | 'code' | 'saving' | 'done'
 const PROGRESS: Partial<Record<Step, number>> = { name: 1, sport: 2, age: 3, proof: 4, mpi: 5, score: 15 }
 const TOTAL = 15
 
@@ -62,10 +62,14 @@ export default function StartPage() {
   const [resendIn, setResendIn] = useState(0)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) router.replace('/')
-    })
     const saved = readDraft()
+    // Signed in already: either back from the email's sign-in button with
+    // answers waiting on this device (save them), or an existing account.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return
+      if (draftComplete(saved)) { setStep('saving'); saveOnboarding(saved) }
+      else router.replace('/')
+    })
     if (saved) setD(saved)
     if (draftComplete(saved)) setStep('score')
     setTeamCode(readPendingTeamCode() ?? '')
@@ -120,7 +124,7 @@ export default function StartPage() {
     setBusy(true)
     const res = await fetch('/api/auth/signup', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, termsAccepted: true }),
+      body: JSON.stringify({ email, termsAccepted: true, next: '/start' }),
     })
     const data = await res.json().catch(() => ({}))
     setBusy(false)
@@ -147,10 +151,14 @@ export default function StartPage() {
     const { error: pwErr } = await supabase.auth.updateUser({ password })
     if (pwErr) console.error('Password not saved:', pwErr.message)
     try { localStorage.setItem('mf_last_email', email.toLowerCase().trim()) } catch {}
+    await saveOnboarding(d)
+  }
 
+  const saveOnboarding = async (draft: OnboardingDraft) => {
+    setBusy(true)
     const res = await fetch('/api/onboarding/complete', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: d.name.trim(), sport: d.sport, year: d.birthYear, month: d.birthMonth, scores: d.scores, week_date: mondayISO() }),
+      body: JSON.stringify({ name: draft.name.trim(), sport: draft.sport, year: draft.birthYear, month: draft.birthMonth, scores: draft.scores, week_date: mondayISO() }),
     })
     const data = await res.json().catch(() => ({}))
     setBusy(false)
@@ -385,6 +393,13 @@ export default function StartPage() {
                 {resendIn > 0 ? `Resend in ${resendIn}s` : 'Send a new code'}
               </button>
             </div>
+          </div>
+        )}
+
+        {step === 'saving' && (
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 py-10 text-center">
+            <div className="h-10 w-10 rounded-full border-2 border-cta/30 border-t-cta animate-spin" aria-hidden />
+            <p className="text-fg-2">Saving your score…</p>
           </div>
         )}
 
