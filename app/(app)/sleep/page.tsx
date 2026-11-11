@@ -14,7 +14,7 @@ import { shiftDate } from '@/lib/nutrition'
 interface SleepDraft { bedtime: string; wakeTime: string; quality: number; sleepNotes: string }
 interface RecoveryDraft { isRestDay: boolean; activities: { type: string; duration_min: number }[]; recoveryNotes: string }
 
-const RECOVERY_ACTIVITIES = ['Stretching', 'Foam Rolling', 'Ice Bath', 'Massage', 'Yoga', 'Walking', 'Epsom Salt Bath', 'Compression']
+const RECOVERY_ACTIVITIES = ['Stretching', 'Foam Rolling', 'Ice Bath', 'Sauna', 'Massage', 'Yoga', 'Walking', 'Epsom Salt Bath', 'Compression']
 
 type Tab = 'track' | 'tips'
 
@@ -115,14 +115,19 @@ export default function SleepPage() {
 
   const saveUsual = async () => {
     setSavingUsual(true)
-    const res = await fetch('/api/profile', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ default_bedtime: bedtime, default_wake_time: wakeTime }),
-    })
-    if (res.ok) { setUsual({ bedtime, wakeTime }); notify(`Usual times saved: ${clock(bedtime)} – ${clock(wakeTime)}`) }
-    else notify('Could not save your usual times.', 'error')
-    setSavingUsual(false)
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ default_bedtime: bedtime, default_wake_time: wakeTime }),
+      })
+      if (res.ok) { setUsual({ bedtime, wakeTime }); notify(`Usual times saved: ${clock(bedtime)} – ${clock(wakeTime)}`) }
+      else notify('Could not save your usual times.', 'error')
+    } catch {
+      notify("Couldn't save your usual times. Check your connection.", 'error')
+    } finally {
+      setSavingUsual(false)
+    }
   }
 
   const calcHours = () => {

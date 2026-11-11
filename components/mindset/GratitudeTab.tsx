@@ -36,16 +36,21 @@ export default function GratitudeTab() {
 
   const save = async () => {
     setState('saving')
-    const res = await fetch('/api/mindset/gratitude', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entry_date: today, item_1: items[0], item_2: items[1], item_3: items[2] }),
-    })
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok) { setState('idle'); notify(data.error || 'Could not save', 'error'); return }
-    setEntries(prev => [data, ...prev.filter(e => e.entry_date !== today)])
-    setSavedToday(true)
-    setState('saved')
-    notify('Gratitude saved')
+    try {
+      const res = await fetch('/api/mindset/gratitude', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry_date: today, item_1: items[0], item_2: items[1], item_3: items[2] }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) { setState('idle'); notify(data.error || 'Could not save', 'error'); return }
+      setEntries(prev => [data, ...prev.filter(e => e.entry_date !== today)])
+      setSavedToday(true)
+      setState('saved')
+      notify('Gratitude saved')
+    } catch {
+      setState('idle')
+      notify("Couldn't save. Try again.", 'error')
+    }
   }
 
   const past = entries.filter(e => e.entry_date !== today)

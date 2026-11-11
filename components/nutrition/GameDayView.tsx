@@ -6,7 +6,7 @@ import { loadNextGame, type UpcomingGame } from '@/lib/team-schedule'
 
 interface Props {
   bodyWeightLb?: number | null
-  notify: (msg: string) => void
+  notify: (msg: string, kind?: 'success' | 'error') => void
 }
 
 interface Step {
@@ -44,13 +44,18 @@ export default function GameDayView({ bodyWeightLb, notify }: Props) {
 
   const save = async () => {
     setSaving(true)
-    const res = await fetch('/api/profile', {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ next_competition_at: gameDate || null, next_competition_time: gameTime || null }),
-    })
-    setSaving(false)
-    if (res.ok) { setEditing(false); setTeamGame(null) }
-    notify(res.ok ? 'Game saved' : 'Could not save')
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ next_competition_at: gameDate || null, next_competition_time: gameTime || null }),
+      })
+      if (res.ok) { setEditing(false); setTeamGame(null); notify('Game saved') }
+      else notify('Could not save', 'error')
+    } catch {
+      notify("Couldn't save. Try again.", 'error')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const today = localDateISO(now)

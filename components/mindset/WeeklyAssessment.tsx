@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { cached } from '@/lib/api-cache'
 import SaveButton from '@/components/shared/SaveButton'
+import { useToast } from '@/components/shared/Toast'
 import { clearDraft, draftKey, readDraft, writeDraft } from '@/lib/useDraft'
 import { WeeklyAssessment as WeeklyAssessmentType } from '@/types'
 import { MPI_DIMENSIONS, calcMPI, MpiKey } from '@/lib/mpi'
@@ -34,6 +35,7 @@ interface WeeklyAssessmentProps {
 
 export default function WeeklyAssessment({ mode = 'weekly', onComplete }: WeeklyAssessmentProps) {
   const isBaseline = mode === 'baseline'
+  const notify = useToast()
   const [scores, setScores] = useState<Record<CategoryKey, number>>(
     Object.fromEntries(CATEGORIES.map(c => [c.key, 5])) as Record<CategoryKey, number>
   )
@@ -77,31 +79,38 @@ export default function WeeklyAssessment({ mode = 'weekly', onComplete }: Weekly
   const handleSave = async () => {
     if (saving) return
     setSaving(true)
-    const res = await fetch('/api/mindset/weekly-assessment', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        week_date: weekDate,
-        ...scores,
-        notes: notes || null,
-        assessment_type: mode,
-      }),
-    })
-    if (res.ok) {
-      setSaved(true)
-      setJustSaved(true)
-      clearDraft(draftKey('weekly-assessment'))
-      const saved = await res.json()
-      if (!isBaseline) {
-        setHistory(prev => {
-          const idx = prev.findIndex(e => e.week_date === weekDate)
-          if (idx >= 0) return prev.map((e, i) => i === idx ? saved : e)
-          return [saved, ...prev]
-        })
+    try {
+      const res = await fetch('/api/mindset/weekly-assessment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          week_date: weekDate,
+          ...scores,
+          notes: notes || null,
+          assessment_type: mode,
+        }),
+      })
+      if (res.ok) {
+        setSaved(true)
+        setJustSaved(true)
+        clearDraft(draftKey('weekly-assessment'))
+        const saved = await res.json()
+        if (!isBaseline) {
+          setHistory(prev => {
+            const idx = prev.findIndex(e => e.week_date === weekDate)
+            if (idx >= 0) return prev.map((e, i) => i === idx ? saved : e)
+            return [saved, ...prev]
+          })
+        }
+        onComplete?.(calcMPI(scores))
+      } else {
+        notify("Couldn't save your assessment. Try again.", 'error')
       }
-      onComplete?.(calcMPI(scores))
+    } catch {
+      notify("Couldn't save your assessment. Try again.", 'error')
+    } finally {
+      setSaving(false)
     }
-    setSaving(false)
   }
 
   const average = Math.round((Object.values(scores).reduce((a, b) => a + b, 0) / CATEGORIES.length) * 10) / 10

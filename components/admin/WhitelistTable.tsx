@@ -3,8 +3,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { format, parseISO } from 'date-fns'
 import { ApprovedEmail } from '@/types'
 import Skeleton from '@/components/shared/Skeleton'
+import { useToast } from '@/components/shared/Toast'
 
 export default function WhitelistTable({ refreshKey = 0 }: { refreshKey?: number }) {
+  const notify = useToast()
   const [emails, setEmails] = useState<ApprovedEmail[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -18,12 +20,17 @@ export default function WhitelistTable({ refreshKey = 0 }: { refreshKey?: number
 
   const removeEmail = async (id: string) => {
     if (!confirm('Remove this invite from the list? Their account (if any) stays.')) return
-    await fetch('/api/admin/whitelist', {
+    const before = emails
+    setEmails(prev => prev.filter(e => e.id !== id))
+    const res = await fetch('/api/admin/whitelist', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
-    })
-    setEmails(prev => prev.filter(e => e.id !== id))
+    }).catch(() => null)
+    if (!res?.ok) {
+      setEmails(before)
+      notify("Couldn't remove that invite. Try again.", 'error')
+    }
   }
 
   return (

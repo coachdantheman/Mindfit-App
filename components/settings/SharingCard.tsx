@@ -26,21 +26,38 @@ export default function SharingCard({ role }: { role: UserRole }) {
     e.preventDefault()
     setBusy(true)
     setStatus(null)
-    const res = await fetch('/api/me/links', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ kind: 'parent', email }),
-    })
-    const data = await res.json().catch(() => ({}))
-    setBusy(false)
-    if (!res.ok) { setStatus({ ok: false, msg: data.error || 'Could not share.' }); return }
-    setStatus({ ok: true, msg: data.outcome === 'invited' ? 'Invite sent. They get access when they create an account.' : 'Shared.' })
-    setEmail('')
-    load()
+    try {
+      const res = await fetch('/api/me/links', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'parent', email }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) { setStatus({ ok: false, msg: data.error || 'Could not share.' }); return }
+      setStatus({ ok: true, msg: data.outcome === 'invited' ? 'Invite sent. They get access when they create an account.' : 'Shared.' })
+      setEmail('')
+      load()
+    } catch {
+      setStatus({ ok: false, msg: "Couldn't share. Try again." })
+    } finally {
+      setBusy(false)
+    }
   }
 
   const revoke = async (kind: 'coach' | 'parent' | 'pending_parent', id: string, label: string) => {
     if (!confirm(`Stop sharing your progress with ${label}?`)) return
-    await fetch('/api/me/links', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind, id }) })
+    const before = links
+    setLinks(prev => prev && {
+      ...prev,
+      coaches: kind === 'coach' ? prev.coaches.filter(c => c.linkId !== id) : prev.coaches,
+      parents: kind === 'parent' ? prev.parents.filter(p => p.linkId !== id) : prev.parents,
+      pendingParents: kind === 'pending_parent' ? prev.pendingParents.filter(p => p.linkId !== id) : prev.pendingParents,
+    })
+    const res = await fetch('/api/me/links', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind, id }) }).catch(() => null)
+    if (!res?.ok) {
+      setLinks(before)
+      setStatus({ ok: false, msg: "Couldn't remove that. Try again." })
+      return
+    }
     load()
   }
 
@@ -58,7 +75,14 @@ export default function SharingCard({ role }: { role: UserRole }) {
 
   const leave = async (t: MyTeam) => {
     if (!confirm(`Leave ${t.name}? ${t.coach_name ?? 'The coach'} stops seeing your progress unless you're on another of their teams.`)) return
-    await fetch('/api/me/teams', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ team_id: t.id }) })
+    const before = teams
+    setTeams(prev => prev?.filter(x => x.id !== t.id) ?? prev)
+    const res = await fetch('/api/me/teams', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ team_id: t.id }) }).catch(() => null)
+    if (!res?.ok) {
+      setTeams(before)
+      setStatus({ ok: false, msg: `Couldn't leave ${t.name}. Try again.` })
+      return
+    }
     load()
   }
 

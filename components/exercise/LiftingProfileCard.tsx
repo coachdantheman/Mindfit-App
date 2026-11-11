@@ -30,20 +30,25 @@ export default function LiftingProfileCard({ profile, suggestedBodyweight, onSav
     if (!(b >= 50 && b <= 500)) { setError('Bodyweight should be 50–500 lb.'); return }
     if (!(a >= 10 && a <= 80)) { setError('Age should be 10–80.'); return }
     setSaving(true)
-    const res = await fetch('/api/exercise/profile', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sex, bodyweight_lb: b, age: a }),
-    })
-    setSaving(false)
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}))
-      setError(err.error || "Couldn't save your profile.")
-      return
+    try {
+      const res = await fetch('/api/exercise/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sex, bodyweight_lb: b, age: a }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        setError(err.error || "Couldn't save your profile.")
+        return
+      }
+      onSaved(await res.json())
+      setEditing(false)
+      notify('Lifting profile saved')
+    } catch {
+      setError("Couldn't save your profile. Try again.")
+    } finally {
+      setSaving(false)
     }
-    onSaved(await res.json())
-    setEditing(false)
-    notify('Lifting profile saved')
   }
 
   if (!editing && profile) {

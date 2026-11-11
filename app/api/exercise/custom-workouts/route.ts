@@ -42,3 +42,24 @@ export async function PATCH(req: Request) {
   if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json(data)
 }
+
+export async function DELETE(req: Request) {
+  const auth = await verifyApiUser()
+  if (auth instanceof NextResponse) return auth
+
+  const id = new URL(req.url).searchParams.get('id')
+  if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 })
+
+  const admin = createAdminClient()
+  const { data, error } = await admin
+    .from('custom_workouts')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', auth.userId)
+    .select('id')
+    .maybeSingle()
+
+  if (error) return dbError(error)
+  if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  return NextResponse.json({ ok: true })
+}

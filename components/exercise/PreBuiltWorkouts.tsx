@@ -49,27 +49,32 @@ export default function PreBuiltWorkouts({ onStartWorkout, notify }: Props) {
     e.preventDefault()
     if (!logForm) return
     setSaving(true)
-    const res = await fetch('/api/exercise/logs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        workout_id: logForm.workoutId,
-        category_name: logForm.categoryName,
-        workout_name: logForm.workoutName,
-        duration_min: logDuration ? parseInt(logDuration) : null,
-        notes: logNotes || null,
-        source: 'prebuilt',
-      }),
-    })
-    if (res.ok) {
-      setLogForm(null)
-      setLogDuration('')
-      setLogNotes('')
-      notify?.('Workout logged')
-    } else {
+    try {
+      const res = await fetch('/api/exercise/logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workout_id: logForm.workoutId,
+          category_name: logForm.categoryName,
+          workout_name: logForm.workoutName,
+          duration_min: logDuration ? parseInt(logDuration) : null,
+          notes: logNotes || null,
+          source: 'prebuilt',
+        }),
+      })
+      if (res.ok) {
+        setLogForm(null)
+        setLogDuration('')
+        setLogNotes('')
+        notify?.('Workout logged')
+      } else {
+        notify?.("Couldn't log the workout.", 'error')
+      }
+    } catch {
       notify?.("Couldn't log the workout.", 'error')
+    } finally {
+      setSaving(false)
     }
-    setSaving(false)
   }
 
   if (loading) return <Skeleton />

@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Lesson, LessonSection } from '@/types'
 import Skeleton from '@/components/shared/Skeleton'
+import { useToast } from '@/components/shared/Toast'
 
 const SECTIONS: { value: LessonSection; label: string }[] = [
   { value: 'journal', label: 'Journal' },
@@ -27,6 +28,7 @@ export default function LessonManager() {
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
+  const notify = useToast()
   const [title, setTitle] = useState('')
   const [url, setUrl] = useState('')
   const [moduleName, setModuleName] = useState('')
@@ -62,21 +64,35 @@ export default function LessonManager() {
   }
 
   const togglePublished = async (lesson: Lesson) => {
-    await fetch('/api/lessons', {
+    const before = lessons
+    setLessons(prev => prev.map(l => l.id === lesson.id ? { ...l, is_published: !lesson.is_published } : l))
+    const res = await fetch('/api/lessons', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: lesson.id, is_published: !lesson.is_published }),
-    })
+    }).catch(() => null)
+    if (!res?.ok) {
+      setLessons(before)
+      notify("Couldn't update that lesson. Try again.", 'error')
+      return
+    }
     fetchLessons()
   }
 
   const removeLesson = async (lesson: Lesson) => {
     if (!confirm(`Remove "${lesson.title}"?`)) return
-    await fetch('/api/lessons', {
+    const before = lessons
+    setLessons(prev => prev.filter(l => l.id !== lesson.id))
+    const res = await fetch('/api/lessons', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: lesson.id }),
-    })
+    }).catch(() => null)
+    if (!res?.ok) {
+      setLessons(before)
+      notify("Couldn't remove that lesson. Try again.", 'error')
+      return
+    }
     fetchLessons()
   }
 

@@ -6,6 +6,8 @@ type Filter = MusicMoment | 'all'
 
 const INTRO = 'Music is a tool. Match it to the moment: raise your energy to compete, lower it to reset. Every song here is clean. Songs marked Clean edit open the clean version.'
 
+const LINK = 'inline-flex items-center gap-1 min-h-[44px] px-3 rounded-lg border border-cta/40 bg-cta/10 text-cta text-xs font-medium whitespace-nowrap hover:bg-cta/20 transition-colors'
+
 function SongRow({ song }: { song: Song }) {
   return (
     <li className="py-3 flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -25,17 +27,17 @@ function SongRow({ song }: { song: Song }) {
           href={spotifyUrl(song)}
           target="_blank"
           rel="noopener noreferrer"
-          className="tab-btn text-xs min-h-[44px] sm:min-h-0 inline-flex items-center"
+          className={LINK}
         >
-          Spotify
+          Spotify <span aria-hidden="true">↗</span>
         </a>
         <a
           href={appleMusicUrl(song)}
           target="_blank"
           rel="noopener noreferrer"
-          className="tab-btn text-xs min-h-[44px] sm:min-h-0 inline-flex items-center"
+          className={LINK}
         >
-          Apple Music
+          Apple Music <span aria-hidden="true">↗</span>
         </a>
       </div>
     </li>

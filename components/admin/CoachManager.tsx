@@ -2,8 +2,10 @@
 import { useState, useEffect } from 'react'
 import { MemberWithCount } from '@/types'
 import Skeleton from '@/components/shared/Skeleton'
+import { useToast } from '@/components/shared/Toast'
 
 export default function CoachManager() {
+  const notify = useToast()
   const [members, setMembers] = useState<MemberWithCount[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
@@ -23,12 +25,14 @@ export default function CoachManager() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, newRole }),
-    })
+    }).catch(() => null)
 
-    if (res.ok) {
+    if (res?.ok) {
       setMembers(prev => prev.map(m =>
         m.id === userId ? { ...m, role: newRole as any } : m
       ))
+    } else {
+      notify("Couldn't update that role. Try again.", 'error')
     }
     setUpdating(null)
   }

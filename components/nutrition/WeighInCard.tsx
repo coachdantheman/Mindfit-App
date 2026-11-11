@@ -7,6 +7,8 @@ import { isUnder13 } from '@/lib/age'
 import ProgressPhotoSheet from './ProgressPhotoSheet'
 import { cached } from '@/lib/api-cache'
 import { CameraIcon } from '@/components/shared/icons'
+import SaveButton, { type SaveState } from '@/components/shared/SaveButton'
+import { useToast } from '@/components/shared/Toast'
 
 interface Props {
   weighIns: WeighIn[]
@@ -17,7 +19,8 @@ interface Props {
 export default function WeighInCard({ weighIns, targetWeight, onSaved }: Props) {
   const [weight, setWeight] = useState('')
   const [date, setDate] = useState(() => localDateISO(new Date()))
-  const [saving, setSaving] = useState(false)
+  const [state, setState] = useState<SaveState>('idle')
+  const notify = useToast()
   const [error, setError] = useState('')
   const [photoFor, setPhotoFor] = useState<WeighIn | null>(null)
   const [photosOk, setPhotosOk] = useState(false)
@@ -28,19 +31,27 @@ export default function WeighInCard({ weighIns, targetWeight, onSaved }: Props) 
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSaving(true); setError('')
-    const res = await fetch('/api/nutrition/weigh-ins', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ weight_lb: parseFloat(weight), entry_date: date }),
-    })
-    const data = await res.json()
-    if (!res.ok) setError(data.error ?? 'Could not save.')
-    else { setWeight(''); onSaved(); if (photosOk) setPhotoFor({ ...data, photo_slots: [] }) }
-    setSaving(false)
+    setState('saving'); setError('')
+    try {
+      const res = await fetch('/api/nutrition/weigh-ins', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ weight_lb: parseFloat(weight), entry_date: date }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error ?? 'Could not save.'); setState('idle') }
+      else {
+        setWeight(''); onSaved(); notify('Weigh-in logged'); setState('saved')
+        if (photosOk) setPhotoFor({ ...data, photo_slots: [] })
+      }
+    } catch {
+      setState('idle')
+      notify("Couldn't log your weigh-in. Try again.", 'error')
+    }
   }
 
   const remove = async (id: string) => {
-    await fetch('/api/nutrition/weigh-ins', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+    const res = await fetch('/api/nutrition/weigh-ins', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }).catch(() => null)
+    if (!res?.ok) { notify("Couldn't remove that weigh-in. Try again.", 'error'); return }
     onSaved()
   }
 
@@ -59,7 +70,7 @@ export default function WeighInCard({ weighIns, targetWeight, onSaved }: Props) 
       <form onSubmit={save} className="grid grid-cols-[6rem_minmax(0,1fr)] sm:flex gap-2">
         <input type="number" inputMode="decimal" step="0.1" min="50" max="500" required placeholder="lb" value={weight} onChange={e => setWeight(e.target.value)} className="input-field w-full sm:w-24" />
         <input type="date" value={date} max={localDateISO(new Date())} onChange={e => setDate(e.target.value)} className="input-field w-full min-w-0 flex-1" />
-        <button type="submit" disabled={saving} className="btn-primary col-span-2 sm:col-span-1">Log</button>
+        <SaveButton state={state} idleLabel="Log" savedLabel="Logged ✓" savingLabel="Logging…" className="col-span-2 sm:col-span-1 sm:w-auto" />
       </form>
       {error && <p className="text-xs text-red-400">{error}</p>}
       <p className="text-xs text-fg-4">Weight is one number, not your worth. This is not medical advice: for weight goals, check with a parent, doctor or athletic trainer.</p>

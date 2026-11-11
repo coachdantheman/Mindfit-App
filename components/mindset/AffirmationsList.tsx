@@ -129,58 +129,78 @@ export default function AffirmationsList() {
     e.preventDefault()
     if (!newText.trim() || adding) return
     setAdding(true)
-    const res = await fetch('/api/mindset/affirmations', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: newText }),
-    })
-    if (res.ok) {
-      const data = await res.json()
-      setAffirmations(prev => [...prev, data])
-      setNewText('')
-      notify('Affirmation added ✓')
-    } else {
+    try {
+      const res = await fetch('/api/mindset/affirmations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: newText }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setAffirmations(prev => [...prev, data])
+        setNewText('')
+        notify('Affirmation added ✓')
+      } else {
+        notify('Could not add it. Please try again.', 'error')
+      }
+    } catch {
       notify('Could not add it. Please try again.', 'error')
+    } finally {
+      setAdding(false)
     }
-    setAdding(false)
   }
 
   const saveEdit = async (id: string) => {
     if (!editText.trim()) return
-    await fetch('/api/mindset/affirmations', {
+    const before = affirmations
+    setAffirmations(prev => prev.map(a => a.id === id ? { ...a, text: editText } : a))
+    setEditingId(null)
+    const res = await fetch('/api/mindset/affirmations', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, text: editText }),
-    })
-    setAffirmations(prev => prev.map(a => a.id === id ? { ...a, text: editText } : a))
-    setEditingId(null)
+    }).catch(() => null)
+    if (!res?.ok) {
+      setAffirmations(before)
+      notify("Couldn't save that change. Try again.", 'error')
+    }
   }
 
   const removeAffirmation = async (id: string) => {
-    await fetch('/api/mindset/affirmations', {
+    const before = affirmations
+    setAffirmations(prev => prev.filter(a => a.id !== id))
+    const res = await fetch('/api/mindset/affirmations', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
-    })
-    setAffirmations(prev => prev.filter(a => a.id !== id))
+    }).catch(() => null)
+    if (!res?.ok) {
+      setAffirmations(before)
+      notify("Couldn't remove that. Try again.", 'error')
+    }
   }
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
     if (!over || active.id === over.id) return
 
+    const before = affirmations
     const oldIndex = affirmations.findIndex(a => a.id === active.id)
     const newIndex = affirmations.findIndex(a => a.id === over.id)
     const reordered = arrayMove(affirmations, oldIndex, newIndex)
     setAffirmations(reordered)
 
-    await fetch('/api/mindset/affirmations', {
+    const res = await fetch('/api/mindset/affirmations', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         items: reordered.map((a, i) => ({ id: a.id, sort_order: i })),
       }),
-    })
+    }).catch(() => null)
+    if (!res?.ok) {
+      setAffirmations(before)
+      notify("Couldn't save the new order. Try again.", 'error')
+    }
   }
 
   if (loading) return <Skeleton />

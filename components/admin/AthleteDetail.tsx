@@ -26,6 +26,7 @@ import { STAGE_META } from '@/components/mindset/flow/flow-constants'
 import { formatDistanceToNow } from 'date-fns'
 import { localDateISO } from '@/lib/dates'
 import { FlameIcon } from '@/components/shared/icons'
+import SaveButton, { type SaveState } from '@/components/shared/SaveButton'
 
 const RatingChart = dynamic(() => import('@/components/dashboard/RatingChart'), { ssr: false })
 const FlowBarChart = dynamic(() => import('@/components/mindset/flow/FlowBarChart'), { ssr: false })
@@ -113,7 +114,7 @@ export default function AthleteDetail({ athleteId, backHref, backLabel = 'Back',
   const prevId = idx > 0 ? roster!.ids[idx - 1] : null
   const nextId = roster && idx >= 0 && idx < roster.ids.length - 1 ? roster.ids[idx + 1] : null
   const navBar = (
-    <div className="sticky top-[env(safe-area-inset-top)] z-30 -mx-4 px-4 sm:-mx-6 sm:px-6 py-2 mb-4 bg-page/95 backdrop-blur border-b border-edge flex flex-wrap items-center justify-between gap-2">
+    <div className="sticky top-[calc(env(safe-area-inset-top)+3.5rem)] z-30 -mx-4 px-4 sm:-mx-6 sm:px-6 py-2 mb-4 bg-page/95 backdrop-blur border-b border-edge flex flex-wrap items-center justify-between gap-2">
       <Link href={backHref} className="text-cta text-sm font-medium hover:underline shrink-0 py-2">← {backLabel}</Link>
       {roster && idx >= 0 && (
         <div className="flex items-center gap-1 text-sm">
@@ -559,7 +560,7 @@ function FlowSectionPanel({
   readOnly?: boolean
 }) {
   const [note, setNote] = useState(initialNote ?? '')
-  const [saving, setSaving] = useState(false)
+  const [noteState, setNoteState] = useState<SaveState>('idle')
   const [savedAt, setSavedAt] = useState<string | null>(null)
 
   const streak = calcCompetitionStreak(logs, sessions)
@@ -575,14 +576,14 @@ function FlowSectionPanel({
   const latestCheckin = checkins[0] ?? null
 
   async function saveNote() {
-    setSaving(true)
+    setNoteState('saving')
     const res = await fetch('/api/mindset/flow-state/coach-notes', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ athlete_id: athleteId, note }),
-    })
-    if (res.ok) setSavedAt(new Date().toLocaleTimeString())
-    setSaving(false)
+    }).catch(() => null)
+    if (res?.ok) { setSavedAt(new Date().toLocaleTimeString()); setNoteState('saved') }
+    else setNoteState('error')
   }
 
   if (sessions.length === 0 && logs.length === 0 && checkins.length === 0) {
@@ -700,10 +701,9 @@ function FlowSectionPanel({
           placeholder="What should this athlete focus on this week?"
           className="textarea-field"
         />
-        <div className="mt-2 text-right">
-          <button onClick={saveNote} disabled={saving} className="text-xs text-cta hover:underline disabled:opacity-50">
-            {saving ? 'Saving…' : 'Save now'}
-          </button>
+        <div className="mt-2 flex items-center justify-end gap-3">
+          {noteState === 'error' && <span className="text-xs text-red-400">Couldn&rsquo;t save the note. Try again.</span>}
+          <SaveButton type="button" onClick={saveNote} state={noteState} idleLabel="Save now" savingLabel="Saving…" className="!w-auto" />
         </div>
       </div>}
     </div>

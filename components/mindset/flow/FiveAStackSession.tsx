@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { FIVE_A_STEPS } from '@/components/mindset/flow/flow-constants'
 import { playChime } from '@/lib/flow-audio'
+import { useToast } from '@/components/shared/Toast'
 import { FiveAStep, FlowCueWord } from '@/types'
 
 interface SessionPayload {
@@ -34,6 +35,7 @@ export default function FiveAStackSession() {
   const [saving, setSaving] = useState(false)
   const [finished, setFinished] = useState<{ id: string } | null>(null)
   const [saveFailed, setSaveFailed] = useState(false)
+  const notify = useToast()
   const advancingRef = useRef(false)
 
   useEffect(() => {
@@ -109,12 +111,14 @@ export default function FiveAStackSession() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cue_word: newCue.trim() }),
-    })
-    if (res.ok) {
+    }).catch(() => null)
+    if (res?.ok) {
       const created = await res.json()
       setCueWords(cw => [created, ...cw])
       setPayload(p => ({ ...p, cue_word: created.cue_word }))
       setNewCue('')
+    } else {
+      notify("Couldn't save that cue word. Try again.", 'error')
     }
   }
 

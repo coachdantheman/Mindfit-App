@@ -69,8 +69,9 @@ export default function CoachPrograms() {
 
   const unassign = async (p: LibraryPlan, a: AssignedAthlete) => {
     if (!confirm(`Remove "${p.title}" from ${a.full_name || a.email}?`)) return
-    const res = await fetch(`/api/coach/programs/${p.id}/assign`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ athlete_id: a.id }) })
-    if (res.ok) load()
+    const res = await fetch(`/api/coach/programs/${p.id}/assign`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ athlete_id: a.id }) }).catch(() => null)
+    if (res?.ok) load()
+    else notify("Couldn't remove that athlete. Try again.", 'error')
   }
 
   if (building) {

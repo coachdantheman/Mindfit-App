@@ -9,7 +9,7 @@ import GoalSummaryCard from './GoalSummaryCard'
 interface Props {
   goal: NutritionGoal | null
   onSaved: (goal: NutritionGoal) => void
-  notify: (msg: string) => void
+  notify: (msg: string, kind?: 'success' | 'error') => void
 }
 
 export default function GoalsView({ goal, onSaved, notify }: Props) {
@@ -17,21 +17,29 @@ export default function GoalsView({ goal, onSaved, notify }: Props) {
   const hasQuiz = !!goal?.quiz_completed_at
 
   const put = async (payload: Record<string, unknown>) => {
-    const res = await fetch('/api/nutrition/goals', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-    const data = await res.json()
-    if (!res.ok) { notify(data.error ?? 'Could not save.'); return }
-    onSaved(data)
+    try {
+      const res = await fetch('/api/nutrition/goals', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) { notify(data.error ?? "Couldn't save. Try again.", 'error'); return false }
+      onSaved(data)
+      return true
+    } catch {
+      notify("Couldn't save. Try again.", 'error')
+      return false
+    }
   }
 
   const saveQuiz = async (input: QuizInput, result: GoalResult) => {
-    await put({ mode: 'percentage', calories: result.calories, ...result.split, ...input })
+    if (!(await put({ mode: 'percentage', calories: result.calories, ...result.split, ...input }))) return false
     setRetaking(false)
     notify('Goal saved')
+    return true
   }
 
   const saveEditor = async (payload: { calories: number } & MacroSplit) => {
-    await put({ mode: 'percentage', ...payload })
+    if (!(await put({ mode: 'percentage', ...payload }))) return false
     notify('Goal updated')
+    return true
   }
 
   const recalc = () => {

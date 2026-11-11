@@ -14,7 +14,7 @@ type Tab = 'today' | 'gameday' | 'trends' | 'goals'
 const TABS: { key: Tab; label: string }[] = [
   { key: 'today', label: 'Today' },
   { key: 'gameday', label: 'Game Day' },
-  { key: 'trends', label: 'Trends' },
+  { key: 'trends', label: 'Progress' },
   { key: 'goals', label: 'Goals' },
 ]
 
@@ -23,11 +23,11 @@ export default function NutritionPage() {
   const [goal, setGoal] = useState<NutritionGoal | null>(null)
   const [foods, setFoods] = useState<Food[]>([])
   const [favorites, setFavorites] = useState<Food[]>([])
-  const [toast, setToast] = useState<string | null>(null)
+  const [toast, setToast] = useState<{ msg: string; kind: 'success' | 'error' } | null>(null)
 
-  const notify = useCallback((msg: string) => {
-    setToast(msg)
-    setTimeout(() => setToast(null), 2500)
+  const notify = useCallback((msg: string, kind: 'success' | 'error' = 'success') => {
+    setToast({ msg, kind })
+    setTimeout(() => setToast(null), kind === 'error' ? 4000 : 2500)
   }, [])
 
   useEffect(() => {
@@ -38,12 +38,17 @@ export default function NutritionPage() {
 
   const toggleFavorite = useCallback(async (food: Food) => {
     const isFav = favorites.some(f => f.id === food.id)
+    const before = favorites
     setFavorites(prev => isFav ? prev.filter(f => f.id !== food.id) : [food, ...prev])
-    await fetch('/api/nutrition/favorites', {
+    const res = await fetch('/api/nutrition/favorites', {
       method: isFav ? 'DELETE' : 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ food_id: food.id }),
-    })
-  }, [favorites])
+    }).catch(() => null)
+    if (!res?.ok) {
+      setFavorites(before)
+      notify("Couldn't update favorites. Try again.", 'error')
+    }
+  }, [favorites, notify])
 
   // The server already starred it (favorites API with entry_id); just merge.
   const favoriteSaved = useCallback((food: Food) => {
@@ -60,8 +65,8 @@ export default function NutritionPage() {
       <TabBar label="Nutrition sections" tabs={TABS} active={tab} onSelect={setTab} />
 
       {toast && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] bg-surface border border-cta/40 text-fg-1 text-sm px-4 py-2 rounded-xl shadow-lg">
-          {toast}
+        <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[60] bg-surface border text-sm px-4 py-2 rounded-xl shadow-lg ${toast.kind === 'error' ? 'border-red-500/40 text-red-400' : 'border-cta/40 text-fg-1'}`}>
+          {toast.msg}
         </div>
       )}
 

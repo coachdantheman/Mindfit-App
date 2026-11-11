@@ -30,6 +30,7 @@ export default function JournalTab() {
 
   return (
     <div>
+      <h2 className="text-base font-semibold text-fg-1">Daily Objective Journal</h2>
       <p className="text-fg-4 text-sm mb-4">
         {format(new Date(), 'EEEE, MMMM d, yyyy')}
       </p>

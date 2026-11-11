@@ -17,15 +17,21 @@ export default function LeaderboardCard() {
   const patch = async (body: Record<string, unknown>) => {
     setSaving(true)
     setStatus(null)
-    const res = await fetch('/api/leaderboard/me', {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
-    })
-    const data = await res.json().catch(() => ({}))
-    setSaving(false)
-    if (!res.ok) { setStatus({ ok: false, msg: data.error || 'Could not save.' }); return false }
-    setVisible(!!data.leaderboard_visible)
-    setAlias(data.leaderboard_alias ?? '')
-    return true
+    try {
+      const res = await fetch('/api/leaderboard/me', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) { setStatus({ ok: false, msg: data.error || 'Could not save.' }); return false }
+      setVisible(!!data.leaderboard_visible)
+      setAlias(data.leaderboard_alias ?? '')
+      return true
+    } catch {
+      setStatus({ ok: false, msg: "Couldn't save. Try again." })
+      return false
+    } finally {
+      setSaving(false)
+    }
   }
 
   const toggle = async () => {

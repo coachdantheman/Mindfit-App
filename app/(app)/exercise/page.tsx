@@ -19,9 +19,9 @@ type ToastKind = 'success' | 'error'
 const TABS: { key: Tab; label: string }[] = [
   { key: 'plan', label: 'My Plan' },
   { key: 'schedule', label: 'Schedule' },
-  { key: 'track', label: 'Track' },
+  { key: 'track', label: 'Custom' },
   { key: 'practice', label: 'Practice' },
-  { key: 'strength', label: 'Strength' },
+  { key: 'strength', label: 'Level' },
   { key: 'prebuilt', label: 'Pre-Built' },
 ]
 

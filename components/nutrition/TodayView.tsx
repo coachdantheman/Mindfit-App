@@ -20,7 +20,7 @@ interface Props {
   onFoodCreated: (food: Food) => void
   onSetGoal: () => void
   onOpenGameDay: () => void
-  notify: (msg: string) => void
+  notify: (msg: string, kind?: 'success' | 'error') => void
 }
 
 export default function TodayView({ goal, foods, favorites, onToggleFavorite, onFavoriteSaved, onFoodCreated, onSetGoal, onOpenGameDay, notify }: Props) {
@@ -82,30 +82,39 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
   const addItems = (items: AddItem[], saveToFoods?: boolean) => once('add', async () => {
     if (!sheetMeal) return
     const added: FoodEntry[] = []
+    let failed = 0
     for (const item of items) {
-      let food_id = item.food_id ?? null
-      if (saveToFoods && !food_id && item.perServing) {
-        const res = await fetch('/api/nutrition/foods', {
+      try {
+        let food_id = item.food_id ?? null
+        if (saveToFoods && !food_id && item.perServing) {
+          const res = await fetch('/api/nutrition/foods', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: item.food_name, ...item.perServing, source: item.source ?? 'user' }),
+          })
+          if (res.ok) { const food = await res.json(); food_id = food.id; onFoodCreated(food) }
+        }
+        const res = await fetch('/api/nutrition/entries', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: item.food_name, ...item.perServing, source: item.source ?? 'user' }),
+          body: JSON.stringify({
+            entry_date: date, meal_name: sheetMeal, food_name: item.food_name, food_id,
+            servings: item.servings, serving_size: item.serving_size,
+            calories: item.calories, protein_g: item.protein_g, carbs_g: item.carbs_g, fat_g: item.fat_g,
+          }),
         })
-        if (res.ok) { const food = await res.json(); food_id = food.id; onFoodCreated(food) }
+        if (res.ok) added.push(await res.json())
+        else failed++
+      } catch {
+        failed++
       }
-      const res = await fetch('/api/nutrition/entries', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          entry_date: date, meal_name: sheetMeal, food_name: item.food_name, food_id,
-          servings: item.servings, serving_size: item.serving_size,
-          calories: item.calories, protein_g: item.protein_g, carbs_g: item.carbs_g, fat_g: item.fat_g,
-        }),
-      })
-      if (res.ok) added.push(await res.json())
     }
     if (added.length) {
       setEntries(prev => [...prev, ...added])
       notify(`Added ${added.length === 1 ? added[0].food_name : `${added.length} items`} to ${sheetMeal}`)
       loadRecent()
       autoSaveMeal(sheetMeal)
+    }
+    if (failed) {
+      notify(failed === items.length ? "Couldn't add those items. Try again." : `Couldn't add ${failed} of ${items.length} items. Try again.`, 'error')
     }
     setSheetMeal(null)
   })
@@ -114,53 +123,77 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
     const res = await fetch('/api/nutrition/entries', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, servings }),
-    })
-    if (res.ok) { const row = await res.json(); setEntries(prev => prev.map(e => e.id === id ? row : e)) }
+    }).catch(() => null)
+    if (!res?.ok) { notify("Couldn't update servings. Try again.", 'error'); return }
+    const row = await res.json()
+    setEntries(prev => prev.map(e => e.id === id ? row : e))
   }
 
   const remove = async (id: string) => {
+    const before = entries
     setEntries(prev => prev.filter(e => e.id !== id))
-    await fetch('/api/nutrition/entries', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+    const res = await fetch('/api/nutrition/entries', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }).catch(() => null)
+    if (!res?.ok) {
+      setEntries(before)
+      notify("Couldn't remove that. Try again.", 'error')
+    }
   }
 
   const copyYesterday = (meal: MealName) => once('copy', async () => {
-    const res = await fetch('/api/nutrition/entries/copy', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from_date: shiftDate(date, -1), to_date: date, meal_name: meal }),
-    })
-    const data = await res.json()
-    if (res.ok) { setEntries(prev => [...prev, ...data.inserted]); notify(`Copied yesterday's ${meal.toLowerCase()}`); autoSaveMeal(meal) }
-    else notify(data.error ?? 'Could not copy.')
+    try {
+      const res = await fetch('/api/nutrition/entries/copy', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from_date: shiftDate(date, -1), to_date: date, meal_name: meal }),
+      })
+      const data = await res.json()
+      if (res.ok) { setEntries(prev => [...prev, ...data.inserted]); notify(`Copied yesterday's ${meal.toLowerCase()}`); autoSaveMeal(meal) }
+      else notify(data.error ?? 'Could not copy.', 'error')
+    } catch {
+      notify("Couldn't copy. Try again.", 'error')
+    }
   })
 
   const saveMealAs = (name: string) => once('saveMeal', async () => {
     if (!saveMeal) return
     const ids = entries.filter(e => e.meal_name === saveMeal).map(e => e.id)
-    const res = await fetch('/api/nutrition/saved-meals', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, meal_name: saveMeal, entry_ids: ids }),
-    })
-    const data = await res.json()
-    if (res.ok) { setSavedMeals(prev => [data, ...prev]); notify(`Saved "${name}" to Favorites`) }
-    else notify(data.error ?? 'Could not save meal.')
+    try {
+      const res = await fetch('/api/nutrition/saved-meals', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, meal_name: saveMeal, entry_ids: ids }),
+      })
+      const data = await res.json()
+      if (res.ok) { setSavedMeals(prev => [data, ...prev]); notify(`Saved "${name}" to Favorites`) }
+      else notify(data.error ?? 'Could not save meal.', 'error')
+    } catch {
+      notify("Couldn't save the meal. Try again.", 'error')
+    }
     setSaveMeal(null)
   })
 
   const addSavedMeal = (meal: SavedMeal) => once('addSaved', async () => {
     if (!sheetMeal) return
-    const res = await fetch('/api/nutrition/saved-meals/log', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ saved_meal_id: meal.id, entry_date: date, meal_name: sheetMeal }),
-    })
-    const data = await res.json()
-    if (res.ok) { setEntries(prev => [...prev, ...data.inserted]); notify(`Added ${meal.name} to ${sheetMeal}`); loadRecent() }
-    else notify(data.error ?? 'Could not add meal.')
+    try {
+      const res = await fetch('/api/nutrition/saved-meals/log', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ saved_meal_id: meal.id, entry_date: date, meal_name: sheetMeal }),
+      })
+      const data = await res.json()
+      if (res.ok) { setEntries(prev => [...prev, ...data.inserted]); notify(`Added ${meal.name} to ${sheetMeal}`); loadRecent() }
+      else notify(data.error ?? 'Could not add meal.', 'error')
+    } catch {
+      notify("Couldn't add that meal. Try again.", 'error')
+    }
     setSheetMeal(null)
   })
 
   const deleteSavedMeal = async (meal: SavedMeal) => {
+    const before = savedMeals
     setSavedMeals(prev => prev.filter(m => m.id !== meal.id))
-    await fetch('/api/nutrition/saved-meals', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: meal.id }) })
+    const res = await fetch('/api/nutrition/saved-meals', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: meal.id }) }).catch(() => null)
+    if (!res?.ok) {
+      setSavedMeals(before)
+      notify("Couldn't delete that meal. Try again.", 'error')
+    }
   }
 
   // Star something already on the log. Unstarring only needs the food id;

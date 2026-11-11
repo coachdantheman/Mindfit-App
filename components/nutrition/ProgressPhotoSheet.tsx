@@ -46,9 +46,10 @@ export default function ProgressPhotoSheet({ weighIn, onChange, onClose }: Props
 
   const remove = async (slot: PhotoSlot) => {
     setBusy(slot)
-    await fetch(`/api/nutrition/weigh-ins/${weighIn.id}/photos?slot=${slot}`, { method: 'DELETE' })
-    setPhotos(prev => prev.filter(p => p.slot !== slot))
+    const res = await fetch(`/api/nutrition/weigh-ins/${weighIn.id}/photos?slot=${slot}`, { method: 'DELETE' }).catch(() => null)
     setBusy(null)
+    if (!res?.ok) { notify("Couldn't remove that photo. Try again.", 'error'); return }
+    setPhotos(prev => prev.filter(p => p.slot !== slot))
     onChange()
   }
 

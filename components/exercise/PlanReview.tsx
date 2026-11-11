@@ -2,6 +2,7 @@
 import { format } from 'date-fns'
 import { DAY_NAMES, parseLocalDate, type DayTemplate, type PlanBlockInput } from '@/lib/programs'
 import type { PlanSetup } from './PlanSetupForm'
+import SaveButton from '@/components/shared/SaveButton'
 
 interface Props {
   setup: PlanSetup
@@ -62,9 +63,12 @@ export default function PlanReview({ setup, blocks, templates, isEdit, saving, e
         </p>
       )}
       {error && <p className="text-xs text-red-400">{error}</p>}
-      <button type="button" onClick={onSave} disabled={saving} className="btn-primary w-full py-3">
-        {saving ? 'Saving…' : isEdit ? 'Save changes' : 'Save plan'}
-      </button>
+      <SaveButton
+        type="button"
+        onClick={onSave}
+        state={saving ? 'saving' : error ? 'error' : 'idle'}
+        idleLabel={isEdit ? 'Save changes' : 'Save plan'}
+      />
     </div>
   )
 }

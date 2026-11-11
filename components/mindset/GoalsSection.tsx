@@ -1,7 +1,7 @@
 'use client'
 import CollapsibleList from '@/components/shared/CollapsibleList'
 import { cached } from '@/lib/api-cache'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import SaveButton from '@/components/shared/SaveButton'
 import { useToast } from '@/components/shared/Toast'
 import { Goal, GoalType } from '@/types'
@@ -70,6 +70,9 @@ export default function GoalsSection() {
   const [editTitle, setEditTitle] = useState('')
   const [editDesc, setEditDesc] = useState('')
   const [editSaving, setEditSaving] = useState(false)
+  const progressTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>())
+  const confirmedProgress = useRef(new Map<string, number>())
+  const latestProgress = useRef(new Map<string, number>())
 
   useEffect(() => {
     cached('/api/mindset/goals', (data: Goal[]) => { setGoals(data); setLoading(false) })
@@ -79,32 +82,53 @@ export default function GoalsSection() {
     e.preventDefault()
     if (!formTitle.trim() || saving) return
     setSaving(true)
-    const res = await fetch('/api/mindset/goals', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ goal_type: formType, title: formTitle, description: formDesc || null }),
-    })
-    if (res.ok) {
-      const data = await res.json()
-      setGoals(prev => [data, ...prev])
-      setFormTitle('')
-      setFormDesc('')
-      setShowForm(false)
-      notify('Goal added ✓')
-    } else {
+    try {
+      const res = await fetch('/api/mindset/goals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ goal_type: formType, title: formTitle, description: formDesc || null }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setGoals(prev => [data, ...prev])
+        setFormTitle('')
+        setFormDesc('')
+        setShowForm(false)
+        notify('Goal added ✓')
+      } else {
+        notify('Could not add the goal. Please try again.', 'error')
+      }
+    } catch {
       notify('Could not add the goal. Please try again.', 'error')
+    } finally {
+      setSaving(false)
     }
-    setSaving(false)
   }
 
-  const updateProgress = async (id: string, progress: number) => {
+  const updateProgress = (id: string, progress: number) => {
     const completed = progress >= 100
-    await fetch('/api/mindset/goals', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, progress, is_completed: completed }),
-    })
+    if (!confirmedProgress.current.has(id)) {
+      confirmedProgress.current.set(id, goals.find(g => g.id === id)?.progress ?? progress)
+    }
+    latestProgress.current.set(id, progress)
     setGoals(prev => prev.map(g => g.id === id ? { ...g, progress, is_completed: completed } : g))
+    clearTimeout(progressTimers.current.get(id))
+    progressTimers.current.set(id, setTimeout(async () => {
+      const res = await fetch('/api/mindset/goals', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, progress, is_completed: completed }),
+      }).catch(() => null)
+      if (res?.ok) {
+        confirmedProgress.current.set(id, progress)
+        return
+      }
+      // A newer change is on its way; let that request decide the final value.
+      if (latestProgress.current.get(id) !== progress) return
+      const back = confirmedProgress.current.get(id) ?? progress
+      setGoals(prev => prev.map(g => g.id === id ? { ...g, progress: back, is_completed: back >= 100 } : g))
+      notify("Couldn't update progress. Try again.", 'error')
+    }, 400))
   }
 
   const startEdit = (g: Goal) => {
@@ -120,29 +144,39 @@ export default function GoalsSection() {
     setEditSaving(true)
     const title = editTitle.trim()
     const description = editDesc.trim() || null
-    const res = await fetch('/api/mindset/goals', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: editingId, title, description, goal_type: editType }),
-    })
-    if (res.ok) {
-      setGoals(prev => prev.map(g => g.id === editingId ? { ...g, title, description, goal_type: editType } : g))
-      setEditingId(null)
-      notify('Goal updated ✓')
-    } else {
+    try {
+      const res = await fetch('/api/mindset/goals', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: editingId, title, description, goal_type: editType }),
+      })
+      if (res.ok) {
+        setGoals(prev => prev.map(g => g.id === editingId ? { ...g, title, description, goal_type: editType } : g))
+        setEditingId(null)
+        notify('Goal updated ✓')
+      } else {
+        notify('Could not update the goal. Please try again.', 'error')
+      }
+    } catch {
       notify('Could not update the goal. Please try again.', 'error')
+    } finally {
+      setEditSaving(false)
     }
-    setEditSaving(false)
   }
 
   const deleteGoal = async (id: string) => {
     if (!confirm('Delete this goal?')) return
-    await fetch('/api/mindset/goals', {
+    const before = goals
+    setGoals(prev => prev.filter(g => g.id !== id))
+    const res = await fetch('/api/mindset/goals', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
-    })
-    setGoals(prev => prev.filter(g => g.id !== id))
+    }).catch(() => null)
+    if (!res?.ok) {
+      setGoals(before)
+      notify("Couldn't delete the goal. Try again.", 'error')
+    }
   }
 
   if (loading) return <Skeleton />

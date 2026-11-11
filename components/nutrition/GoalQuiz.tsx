@@ -1,10 +1,11 @@
 'use client'
 import { useState } from 'react'
 import { ActivityLevel, GoalResult, GoalType, QuizInput, computeGoalFromQuiz } from '@/lib/nutrition'
+import SaveButton, { type SaveState } from '@/components/shared/SaveButton'
 
 interface Props {
   initial?: Partial<QuizInput>
-  onSave: (input: QuizInput, result: GoalResult) => Promise<void>
+  onSave: (input: QuizInput, result: GoalResult) => Promise<boolean>
   onCancel?: () => void
 }
 
@@ -25,7 +26,7 @@ export default function GoalQuiz({ initial, onSave, onCancel }: Props) {
   const [activity, setActivity] = useState<ActivityLevel | undefined>(initial?.activity_level)
   const [current, setCurrent] = useState(initial?.current_weight_lb ? String(initial.current_weight_lb) : '')
   const [target, setTarget] = useState(initial?.target_weight_lb ? String(initial.target_weight_lb) : '')
-  const [saving, setSaving] = useState(false)
+  const [state, setState] = useState<SaveState>('idle')
 
   const cur = parseFloat(current)
   const tgt = parseFloat(target)
@@ -37,8 +38,9 @@ export default function GoalQuiz({ initial, onSave, onCancel }: Props) {
 
   const save = async () => {
     if (!input || !result) return
-    setSaving(true)
-    try { await onSave(input, result) } finally { setSaving(false) }
+    setState('saving')
+    const ok = await onSave(input, result)
+    setState(ok ? 'saved' : 'error')
   }
 
   const Card = ({ active, title, desc, onClick }: { active: boolean; title: string; desc: string; onClick: () => void }) => (
@@ -101,7 +103,7 @@ export default function GoalQuiz({ initial, onSave, onCancel }: Props) {
         {step < 3 ? (
           <button type="button" onClick={() => setStep(s => s + 1)} disabled={!canNext} className="btn-primary">Next</button>
         ) : (
-          <button type="button" onClick={save} disabled={!result || saving} className="btn-primary">{saving ? 'Saving…' : 'Save my goal'}</button>
+          <SaveButton type="button" onClick={save} state={state} idleLabel="Save my goal" disabled={!result} className="!w-auto" />
         )}
       </div>
     </div>

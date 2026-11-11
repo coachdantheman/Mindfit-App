@@ -6,6 +6,7 @@ import Skeleton from '@/components/shared/Skeleton'
 import { SortableList, SortableRow } from '@/components/exercise/Sortable'
 import { nextKey } from '@/lib/workout-draft'
 import AssignPicker, { type Assignees } from '@/components/coach/AssignPicker'
+import { useToast } from '@/components/shared/Toast'
 
 interface ExerciseRow {
   id: string
@@ -18,6 +19,7 @@ interface ExerciseRow {
 export default function CreateWorkout() {
   const [assigned, setAssigned] = useState<(CoachWorkout & { athlete?: { full_name: string | null; email: string } })[]>([])
   const [loading, setLoading] = useState(true)
+  const notify = useToast()
 
   // Form state
   const [assignees, setAssignees] = useState<Assignees>({ teamIds: [], athleteIds: [] })
@@ -94,12 +96,17 @@ export default function CreateWorkout() {
   }
 
   const deleteWorkout = async (id: string) => {
-    await fetch('/api/coach/workouts', {
+    const before = assigned
+    setAssigned(prev => prev.filter(w => w.id !== id))
+    const res = await fetch('/api/coach/workouts', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
-    })
-    setAssigned(prev => prev.filter(w => w.id !== id))
+    }).catch(() => null)
+    if (!res?.ok) {
+      setAssigned(before)
+      notify("Couldn't delete that workout. Try again.", 'error')
+    }
   }
 
   if (loading) return <Skeleton />

@@ -61,25 +61,30 @@ export default function DailyPracticeForm({
     if (state === 'saving') return
     setState('saving')
     const extra = buildPayload?.() ?? {}
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        entry_date: today,
-        completed,
-        duration_min: duration ? parseInt(duration) : null,
-        notes: notes || null,
-        ...extra,
-      }),
-    })
-    if (res.ok) {
-      setSaved(true)
-      setState('saved')
-      clearDraft(key)
-      notify(`${title} saved`)
-    } else {
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entry_date: today,
+          completed,
+          duration_min: duration ? parseInt(duration) : null,
+          notes: notes || null,
+          ...extra,
+        }),
+      })
+      if (res.ok) {
+        setSaved(true)
+        setState('saved')
+        clearDraft(key)
+        notify(`${title} saved`)
+      } else {
+        setState('error')
+        notify('Could not save. Please try again.', 'error')
+      }
+    } catch {
       setState('error')
-      notify('Could not save. Please try again.', 'error')
+      notify("Couldn't save. Try again.", 'error')
     }
   }
 

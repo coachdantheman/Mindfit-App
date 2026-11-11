@@ -25,6 +25,9 @@ export default function OnboardingPage() {
   const [teamError, setTeamError] = useState('')
   const [teamNames, setTeamNames] = useState<string[]>([])
   const [joining, setJoining] = useState(false)
+  const [completed, setCompleted] = useState(false)
+  const [completing, setCompleting] = useState(false)
+  const [completeError, setCompleteError] = useState('')
 
   useEffect(() => { setTeamCode(readPendingTeamCode() ?? '') }, [])
 
@@ -56,14 +59,23 @@ export default function OnboardingPage() {
     setStep('assessment')
   }
 
-  const handleAssessmentDone = async (score: number) => {
-    setMpi(score)
-    setStep('result')
-    await fetch('/api/onboarding', {
+  const completeOnboarding = async () => {
+    setCompleting(true)
+    setCompleteError('')
+    const res = await fetch('/api/onboarding', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ full_name: name.trim() || undefined }),
-    }).catch(() => {})
+    }).catch(() => null)
+    setCompleting(false)
+    if (res?.ok) setCompleted(true)
+    else setCompleteError("Couldn't finish setup. Check your connection and try again.")
+  }
+
+  const handleAssessmentDone = async (score: number) => {
+    setMpi(score)
+    setStep('result')
+    await completeOnboarding()
   }
 
   const finish = () => {
@@ -186,16 +198,26 @@ export default function OnboardingPage() {
               Your first MPI just put you on the monthly leaderboard{teamNames.length ? ` with ${teamNames.join(' and ')}` : ''}. Show up every day to climb it.
             </p>
           </div>
+          {completeError && (
+            <div className="mb-4">
+              <p role="alert" className="text-sm text-red-400 mb-2">{completeError}</p>
+              <button type="button" onClick={completeOnboarding} disabled={completing} className="btn-secondary w-full">
+                {completing ? 'Trying again…' : 'Try again'}
+              </button>
+            </div>
+          )}
           <button
             onClick={finish}
-            className="w-full bg-cta hover:bg-brand-600 text-fg-inverse font-semibold py-3 rounded-xl transition-colors"
+            disabled={!completed}
+            className="w-full bg-cta hover:bg-brand-600 text-fg-inverse font-semibold py-3 rounded-xl transition-colors disabled:opacity-60"
           >
-            Start Training →
+            {completing && !completeError ? 'Finishing setup…' : 'Start Training →'}
           </button>
           <button
             type="button"
             onClick={() => { router.push('/leaderboard'); router.refresh() }}
-            className="w-full mt-2 text-sm text-cta py-2"
+            disabled={!completed}
+            className="w-full mt-2 text-sm text-cta py-2 disabled:opacity-50"
           >
             See The Board
           </button>

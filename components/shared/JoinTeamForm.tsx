@@ -11,11 +11,16 @@ export default function JoinTeamForm({ initialCode = '', onJoined }: { initialCo
     e.preventDefault()
     setBusy(true)
     setError('')
-    const r = await joinTeam(code)
-    setBusy(false)
-    if (!r.ok) { setError(r.error); return }
-    setCode('')
-    onJoined(r.teamName)
+    try {
+      const r = await joinTeam(code)
+      if (!r.ok) { setError(r.error); return }
+      setCode('')
+      onJoined(r.teamName)
+    } catch {
+      setError("Couldn't join the team. Check your connection and try again.")
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (

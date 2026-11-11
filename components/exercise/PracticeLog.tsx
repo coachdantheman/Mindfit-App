@@ -173,39 +173,44 @@ export default function PracticeLog({ notify }: Props) {
   const save = async () => {
     if (state === 'saving') return
     setState('saving')
-    const res = await fetch('/api/exercise/practice', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        log_date: today,
-        kind,
-        sport: form.sport || null,
-        completed: form.completed,
-        trained: form.trained || null,
-        learned: form.learned || null,
-        difficulty: form.difficulty,
-        objective_met: objective ? form.objectiveMet : null,
-        opponent: form.opponent || null,
-        result: form.result || null,
-        score: form.score || null,
-        performance: form.performance,
-        went_well: form.wentWell || null,
-        to_improve: form.toImprove || null,
-        playing_time_min: form.playingTime ? parseInt(form.playingTime, 10) : null,
-        flow: form.flowOn ? { skill_level: form.skill, flow_score: form.flow, triggers_fired: form.triggers } : null,
-        flow_session_id: kind === 'game' ? stackSession : null,
-      }),
-    })
-    if (res.ok) {
-      setSaved(prev => ({ ...prev, [kind]: true }))
-      setState('saved')
-      clearDraft(key)
-      notify(kind === 'game' ? 'Game reflection saved' : 'Practice saved')
-      fetchRecent()
-    } else {
+    try {
+      const res = await fetch('/api/exercise/practice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          log_date: today,
+          kind,
+          sport: form.sport || null,
+          completed: form.completed,
+          trained: form.trained || null,
+          learned: form.learned || null,
+          difficulty: form.difficulty,
+          objective_met: objective ? form.objectiveMet : null,
+          opponent: form.opponent || null,
+          result: form.result || null,
+          score: form.score || null,
+          performance: form.performance,
+          went_well: form.wentWell || null,
+          to_improve: form.toImprove || null,
+          playing_time_min: form.playingTime ? parseInt(form.playingTime, 10) : null,
+          flow: form.flowOn ? { skill_level: form.skill, flow_score: form.flow, triggers_fired: form.triggers } : null,
+          flow_session_id: kind === 'game' ? stackSession : null,
+        }),
+      })
+      if (res.ok) {
+        setSaved(prev => ({ ...prev, [kind]: true }))
+        setState('saved')
+        clearDraft(key)
+        notify(kind === 'game' ? 'Game reflection saved' : 'Practice saved')
+        fetchRecent()
+      } else {
+        setState('error')
+        const err = await res.json().catch(() => ({}))
+        notify(err.error || 'Could not save. Please try again.', 'error')
+      }
+    } catch {
       setState('error')
-      const err = await res.json().catch(() => ({}))
-      notify(err.error || 'Could not save. Please try again.', 'error')
+      notify("Couldn't save. Try again.", 'error')
     }
   }
 

@@ -34,6 +34,7 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
   const [coachWorkouts, setCoachWorkouts] = useState<CoachWorkout[]>([])
   const [saving, setSaving] = useState(false)
   const [finished, setFinished] = useState<FinishResult | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
 
   const fetchHistory = useCallback(async () => {
     setLoading(true)
@@ -146,6 +147,19 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
       setSaved(before)
       notify("Couldn't update the pin. Try again.", 'error')
     }
+  }
+
+  const removeSaved = async (w: CustomWorkoutRow) => {
+    setConfirmDelete(null)
+    const before = saved
+    setSaved(saved.filter(x => x.id !== w.id))
+    const res = await fetch(`/api/exercise/custom-workouts?id=${encodeURIComponent(w.id)}`, { method: 'DELETE' }).catch(() => null)
+    if (!res?.ok) {
+      setSaved(before)
+      notify("Couldn't delete that workout. Try again.", 'error')
+      return
+    }
+    notify(`Deleted ${w.name}`)
   }
 
   const doAgain = (w: CustomWorkoutRow) => {
@@ -265,7 +279,25 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
                   >
                     <PinIcon filled={!!w.pinned_at} />
                   </button>
-                  <button type="button" onClick={() => doAgain(w)} className="btn-secondary px-3 py-2">Do again</button>
+                  {confirmDelete === w.id ? (
+                    <>
+                      <button type="button" onClick={() => removeSaved(w)} className="btn-secondary px-3 py-2 !text-[var(--danger)]">Delete</button>
+                      <button type="button" onClick={() => setConfirmDelete(null)} className="btn-ghost px-3 py-2">Keep</button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDelete(w.id)}
+                        aria-label={`Delete ${w.name}`}
+                        title="Delete"
+                        className="w-11 h-11 flex items-center justify-center rounded-lg text-fg-4 hover:text-fg-2 transition-colors"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3" /></svg>
+                      </button>
+                      <button type="button" onClick={() => doAgain(w)} className="btn-secondary px-3 py-2">Do again</button>
+                    </>
+                  )}
                 </div>
               </div>
             ))}

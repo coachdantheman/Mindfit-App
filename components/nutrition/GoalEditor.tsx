@@ -3,10 +3,11 @@ import { useEffect, useState } from 'react'
 import { NutritionGoal } from '@/types'
 import { CALORIE_CEILING, MacroSplit, macrosFromCalories, splitFromGrams } from '@/lib/nutrition'
 import MacroPercentageSlider from './MacroPercentageSlider'
+import SaveButton, { type SaveState } from '@/components/shared/SaveButton'
 
 interface Props {
   goal: NutritionGoal
-  onSave: (payload: { calories: number } & MacroSplit) => Promise<void>
+  onSave: (payload: { calories: number } & MacroSplit) => Promise<boolean>
 }
 
 export default function GoalEditor({ goal, onSave }: Props) {
@@ -15,7 +16,7 @@ export default function GoalEditor({ goal, onSave }: Props) {
     ? { protein_pct: goal.protein_pct, carbs_pct: goal.carbs_pct, fat_pct: goal.fat_pct }
     : splitFromGrams(goal))
   const [showSplit, setShowSplit] = useState(false)
-  const [saving, setSaving] = useState(false)
+  const [state, setState] = useState<SaveState>('idle')
 
   useEffect(() => {
     setCalories(goal.calories)
@@ -28,8 +29,9 @@ export default function GoalEditor({ goal, onSave }: Props) {
   const dirty = calories !== goal.calories || split.protein_pct !== goal.protein_pct || split.carbs_pct !== goal.carbs_pct || split.fat_pct !== goal.fat_pct
 
   const save = async () => {
-    setSaving(true)
-    try { await onSave({ calories, ...split }) } finally { setSaving(false) }
+    setState('saving')
+    const ok = await onSave({ calories, ...split })
+    setState(ok ? 'saved' : 'error')
   }
 
   return (
@@ -57,7 +59,7 @@ export default function GoalEditor({ goal, onSave }: Props) {
       <button type="button" onClick={() => setShowSplit(o => !o)} className="text-xs text-cta hover:underline">{showSplit ? 'Hide split' : 'Adjust the split'}</button>
       {showSplit && <MacroPercentageSlider totalCalories={calories} split={split} onChange={setSplit} />}
 
-      <button type="button" onClick={save} disabled={!dirty || saving} className="btn-primary w-full">{saving ? 'Saving…' : 'Save changes'}</button>
+      <SaveButton type="button" onClick={save} state={state} idleLabel="Save changes" disabled={!dirty} />
     </div>
   )
 }

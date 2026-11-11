@@ -42,26 +42,31 @@ export default function FlowLogForm() {
   async function save() {
     setSaving(true)
     setError(null)
-    const res = await fetch('/api/mindset/flow-state/logs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        flow_session_id: sessionId,
-        sport: sport || null,
-        challenge_level: challenge,
-        skill_level: skill,
-        flow_score: flow,
-        triggers_fired: triggers,
-        journal_note: note || null,
-      }),
-    })
-    if (!res.ok) {
-      const j = await res.json().catch(() => ({}))
-      setError(j.error || 'Failed to save')
+    try {
+      const res = await fetch('/api/mindset/flow-state/logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          flow_session_id: sessionId,
+          sport: sport || null,
+          challenge_level: challenge,
+          skill_level: skill,
+          flow_score: flow,
+          triggers_fired: triggers,
+          journal_note: note || null,
+        }),
+      })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        setError(j.error || 'Failed to save')
+        setSaving(false)
+        return
+      }
+      router.push('/mindset')
+    } catch {
+      setError("Couldn't save. Try again.")
       setSaving(false)
-      return
     }
-    router.push('/mindset')
   }
 
   return (
