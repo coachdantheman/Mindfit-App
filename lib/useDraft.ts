@@ -28,6 +28,16 @@ export function clearDraft(key: string): void {
   try { localStorage.removeItem(key) } catch {}
 }
 
+// Unsent drafts carry no user id, so remove them all on sign-out or the next
+// person on this browser would see them.
+export function clearAllDrafts(): void {
+  try {
+    for (const k of Object.keys(localStorage)) {
+      if (k.startsWith('mf:draft:') || k === 'mindfit.workout-draft.v1') localStorage.removeItem(k)
+    }
+  } catch {}
+}
+
 export function useDraft<T>(name: string, initial: T): [T, (next: T | ((prev: T) => T)) => void, () => void, boolean] {
   const key = draftKey(name)
   const [value, setValueState] = useState<T>(initial)

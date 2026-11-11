@@ -45,6 +45,10 @@ export async function PATCH(req: Request) {
     }
   }
 
+  if (typeof updates.full_name === 'string' && updates.full_name.length > 120) {
+    return NextResponse.json({ error: 'Name is too long.' }, { status: 400 })
+  }
+
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'no fields to update' }, { status: 400 })
   }

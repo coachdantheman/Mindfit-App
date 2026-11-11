@@ -28,7 +28,9 @@ export async function createInvitedAccount(
 // Emails a sign-in code plus a one-click link from our own mailer, creating
 // the account first if it doesn't exist. Replaces supabase.auth.signInWithOtp,
 // whose PKCE link broke when opened in a different browser than the app.
-export async function sendSignInCode(admin: SupabaseClient, email: string, origin: string): Promise<boolean> {
+// The link uses the configured app URL, never the request Host, so a forged
+// Host header can't send a victim's token to another site.
+export async function sendSignInCode(admin: SupabaseClient, email: string): Promise<boolean> {
   const { error: createError } = await admin.auth.admin.createUser({
     email,
     email_confirm: true,
@@ -45,7 +47,7 @@ export async function sendSignInCode(admin: SupabaseClient, email: string, origi
     console.error('Sign-in code: generateLink failed:', error?.message)
     return false
   }
-  return sendSignInCodeEmail(email, code, `${origin}/auth/confirm?token_hash=${encodeURIComponent(hash)}&type=magiclink`)
+  return sendSignInCodeEmail(email, code, `${appUrl()}/auth/confirm?token_hash=${encodeURIComponent(hash)}&type=magiclink`)
 }
 
 // One-click sign-in URL for an invite email. We build the URL ourselves

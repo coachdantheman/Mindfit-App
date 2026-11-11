@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { clearAllDrafts } from '@/lib/useDraft'
 
 interface RequestInfo { status?: string | null; parentEmail?: string | null }
 
@@ -17,7 +18,7 @@ export default function ConsentWaitingPage() {
   const [deleted, setDeleted] = useState(false)
 
   const signOut = async () => {
-    await createClient().auth.signOut()
+    clearAllDrafts(); await createClient().auth.signOut()
     router.push('/')
     router.refresh()
   }
@@ -27,7 +28,7 @@ export default function ConsentWaitingPage() {
     const data: RequestInfo = await res.json().catch(() => ({}))
     if (data.status === 'deleted') {
       setDeleted(true)
-      await createClient().auth.signOut()
+      clearAllDrafts(); await createClient().auth.signOut()
     } else if (data.status && data.status !== 'pending') {
       router.push('/mindset')
       router.refresh()

@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { clearAllDrafts } from '@/lib/useDraft'
 
 interface PublicNavProps {
   email: string | null
@@ -13,7 +14,7 @@ export default function PublicNav({ email, isAdmin }: PublicNavProps) {
   const supabase = createClient()
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    clearAllDrafts(); await supabase.auth.signOut()
     router.refresh()
   }
 

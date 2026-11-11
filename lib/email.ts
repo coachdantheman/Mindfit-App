@@ -29,10 +29,11 @@ const appUrlOf = () => process.env.NEXT_PUBLIC_APP_URL || 'https://mindfit.acade
 
 // A coach or admin added this athlete; the account already exists.
 export async function sendCoachInviteEmail(to: string, coachName?: string | null, athleteName?: string | null, signInUrl?: string | null) {
-  const first = athleteName?.trim().split(/\s+/)[0]
-  const coach = coachName?.trim() || 'Your coach'
+  const firstRaw = athleteName?.trim().split(/\s+/)[0]
+  const first = firstRaw ? escapeHtml(firstRaw) : firstRaw
+  const coach = escapeHtml(coachName?.trim() || 'Your coach')
   const loginUrl = `${appUrlOf()}/login`
-  await send(to, `${coach} added you to MindFit`, emailShell(`
+  await send(to, `${coachName?.trim() || 'Your coach'} added you to MindFit`, emailShell(`
           <h2 style="color:#f3f4f6;font-size:20px;font-weight:600;margin:0 0 16px;">${first ? `${first}, your` : 'Your'} account is ready</h2>
           <p style="color:#9ca3af;font-size:15px;line-height:1.6;margin:0 0 24px;">
             ${coach} added you to the MindFit athlete development platform.${signInUrl
@@ -69,8 +70,9 @@ export function sendSignInCodeEmail(to: string, code: string, link: string): Pro
 
 // An athlete wants to share progress with this parent.
 export async function sendParentInviteEmail(to: string, athleteName?: string | null) {
-  const athlete = athleteName?.trim() || 'Your athlete'
-  await send(to, `${athlete} wants to share their MindFit progress with you`, emailShell(`
+  const athleteText = athleteName?.trim() || 'Your athlete'
+  const athlete = escapeHtml(athleteText)
+  await send(to, `${athleteText} wants to share their MindFit progress with you`, emailShell(`
           <h2 style="color:#f3f4f6;font-size:20px;font-weight:600;margin:0 0 16px;">See how ${athlete} is training</h2>
           <p style="color:#9ca3af;font-size:15px;line-height:1.6;margin:0 0 24px;">
             ${athlete} added you as a parent on MindFit. Create a free account with this email address and you will see their progress, read-only.
@@ -87,7 +89,8 @@ export async function sendWelcomeEmail(to: string, name?: string) {
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://mindfit.academy'
-  const firstName = name?.trim().split(/\s+/)[0]
+  const firstRaw = name?.trim().split(/\s+/)[0]
+  const firstName = firstRaw ? escapeHtml(firstRaw) : firstRaw
 
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',

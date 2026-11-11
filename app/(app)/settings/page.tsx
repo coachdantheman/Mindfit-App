@@ -1,6 +1,7 @@
 'use client'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { clearAllDrafts } from '@/lib/useDraft'
 import { useEffect, useState } from 'react'
 import DailyQuoteToggle from '@/components/shared/DailyQuoteToggle'
 import NotificationSettings from '@/components/settings/NotificationSettings'
@@ -122,7 +123,7 @@ export default function SettingsPage() {
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    clearAllDrafts(); await supabase.auth.signOut()
     router.push('/login')
     router.refresh()
   }

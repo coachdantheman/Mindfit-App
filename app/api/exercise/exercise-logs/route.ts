@@ -35,6 +35,14 @@ export async function POST(req: Request) {
   const body = await req.json()
   const logs = Array.isArray(body) ? body : [body]
 
+  const admin = createAdminClient()
+  const logIds = [...new Set(logs.map(l => l.workout_log_id).filter(Boolean))]
+  if (logIds.length) {
+    const { data: owned, error: ownErr } = await admin.from('workout_logs').select('id').in('id', logIds).eq('user_id', auth.userId)
+    if (ownErr) return dbError(ownErr)
+    if ((owned ?? []).length !== logIds.length) return NextResponse.json({ error: 'Workout not found' }, { status: 404 })
+  }
+
   const rows = logs.map(l => ({
     user_id: auth.userId,
     workout_log_id: l.workout_log_id || null,
@@ -46,7 +54,6 @@ export async function POST(req: Request) {
     notes: l.notes || null,
   }))
 
-  const admin = createAdminClient()
   const { data, error } = await admin
     .from('exercise_logs')
     .insert(rows)

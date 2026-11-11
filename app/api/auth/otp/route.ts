@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     (await rateLimit(`otp:email:${normalized}`, 10, 3600))
   if (limited) return limited
 
-  const sent = await sendSignInCode(createAdminClient(), normalized, new URL(req.url).origin)
+  const sent = await sendSignInCode(createAdminClient(), normalized)
   if (!sent) {
     return NextResponse.json({ error: 'Could not send the code. Please try again in a minute.' }, { status: 500 })
   }

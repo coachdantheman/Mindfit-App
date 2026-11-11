@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { clampNumber, isISODate, optionalString } from '@/lib/validate'
 import { localDateISO, shiftDate } from '@/lib/nutrition'
+import { listUserPhotoObjects, removePhotoObjects } from '@/lib/account-delete'
 
 export async function GET(req: Request) {
   const auth = await verifyApiUser()
@@ -83,5 +84,7 @@ export async function DELETE(req: Request) {
     .eq('user_id', auth.userId)
 
   if (error) return dbError(error)
+  // The row cascade drops progress_photos rows but not the stored images.
+  await removePhotoObjects(await listUserPhotoObjects(auth.userId, id))
   return NextResponse.json({ ok: true })
 }

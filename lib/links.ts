@@ -41,9 +41,19 @@ export async function linkOrQueue(
   admin: SupabaseClient,
   { email, requesterId, kind, teamId = null }: { email: string; requesterId: string; kind: LinkKind; teamId?: string | null }
 ): Promise<{ outcome: LinkOutcome; userId: string | null }> {
-  const { data: profile } = await admin.from('profiles').select('id').eq('email', email).maybeSingle()
+  // An under-13 athlete's parent is linked through the consent flow
+  // (grantConsent); letting the child add more "parents" would bypass the
+  // parent's choice about who sees their data.
+  if (kind === 'parent' && (await consentFlags(admin, requesterId)).under13) {
+    return { outcome: 'blocked', userId: null }
+  }
+
+  const { data: profile } = await admin.from('profiles').select('id, role').eq('email', email).maybeSingle()
 
   if (profile) {
+    if (kind === 'parent' && (profile.role === 'coach' || profile.role === 'admin')) {
+      return { outcome: 'blocked', userId: profile.id }
+    }
     if (kind === 'coach' && (await consentFlags(admin, profile.id)).coachesBlocked) {
       return { outcome: 'blocked', userId: profile.id }
     }

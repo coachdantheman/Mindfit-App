@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { clearAllDrafts } from '@/lib/useDraft'
 import { useKeyboardInset } from '@/lib/useKeyboardInset'
 import { UserRole } from '@/types'
 import { FlameIcon } from '@/components/shared/icons'
@@ -81,7 +82,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
   const supabase = createClient()
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    clearAllDrafts(); await supabase.auth.signOut()
     router.push('/login')
     router.refresh()
   }

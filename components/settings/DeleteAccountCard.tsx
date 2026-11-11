@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { clearAllDrafts } from '@/lib/useDraft'
 
 export default function DeleteAccountCard() {
   const router = useRouter()
@@ -18,7 +19,7 @@ export default function DeleteAccountCard() {
     })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) { setError(data.error || 'Could not delete your account.'); setBusy(false); return }
-    await createClient().auth.signOut()
+    clearAllDrafts(); await createClient().auth.signOut()
     router.push('/')
     router.refresh()
   }

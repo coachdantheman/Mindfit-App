@@ -5,6 +5,7 @@ import { verifyApiUser } from '@/lib/api-auth'
 import { isEmail } from '@/lib/validate'
 import { linkOrQueue } from '@/lib/links'
 import { sendParentInviteEmail } from '@/lib/email'
+import { rateLimit } from '@/lib/rate-limit'
 import type { LinkedPerson } from '@/types'
 
 const MAX_PARENTS = 5
@@ -66,8 +67,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `You can share with up to ${MAX_PARENTS} parents.` }, { status: 400 })
   }
 
+  // Deleting a pending invite resets the count above, so cap the sends too.
+  const limited = await rateLimit(`parent-invite:${auth.userId}`, 10, 86_400)
+  if (limited) return limited
+
   try {
     const { outcome } = await linkOrQueue(admin, { email: normalized, requesterId: auth.userId, kind: 'parent' })
+    if (outcome === 'blocked') {
+      return NextResponse.json({ error: 'That person can’t be added as a parent here. Your parent is linked through the permission email.' }, { status: 403 })
+    }
     if (outcome === 'invited') void sendParentInviteEmail(normalized, me?.full_name)
     return NextResponse.json({ outcome })
   } catch (e: any) {
