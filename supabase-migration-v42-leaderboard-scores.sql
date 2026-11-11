@@ -182,6 +182,7 @@ AS $$
   GROUP BY ev.user_id, ev.day;
 $$;
 REVOKE ALL ON FUNCTION public.get_user_activity(UUID, DATE, DATE, TEXT) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_user_activity(UUID, DATE, DATE, TEXT) TO service_role;
 
 -- One ranked page of the Board for a month. p_ids limits it to a team.
 -- The viewer is always in their own list, even when hidden from others.
@@ -236,6 +237,7 @@ AS $$
 $$;
 
 REVOKE ALL ON FUNCTION public.leaderboard_page(text, uuid, uuid[], int, int) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.leaderboard_page(text, uuid, uuid[], int, int) TO service_role;
 
 
 -- Every day one athlete logged anything since p_since, in one round trip.
@@ -263,6 +265,7 @@ AS $$
 $$;
 
 REVOKE ALL ON FUNCTION public.get_user_activity_dates(uuid, date) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_user_activity_dates(uuid, date) TO service_role;
 
 -- Per-athlete lookups on the timestamp tables (the date tables already have
 -- a unique (user_id, date) index).
