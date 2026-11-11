@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { cached } from '@/lib/api-cache'
 import { useToast } from '@/components/shared/Toast'
 import { VAULT, VaultGroup, VaultPerson, vaultQuoteIndex } from '@/lib/data/quote-vault'
 import { localDateISO } from '@/lib/dates'
@@ -26,13 +27,10 @@ export default function QuoteVault() {
   const inFlight = useRef<Set<string>>(new Set())
 
   useEffect(() => {
-    fetch('/api/mindset/vault')
-      .then(r => r.json())
-      .then((data: { favorites?: string[]; pinned?: string[] }) => {
-        setFavorites(new Set(data.favorites ?? []))
-        setPinned(new Set(data.pinned ?? []))
-      })
-      .catch(() => {})
+    cached('/api/mindset/vault', (data: { favorites?: string[]; pinned?: string[] }) => {
+      setFavorites(new Set(data.favorites ?? []))
+      setPinned(new Set(data.pinned ?? []))
+    }).catch(() => {})
   }, [])
 
   const toggle = async (kind: Kind, key: string) => {

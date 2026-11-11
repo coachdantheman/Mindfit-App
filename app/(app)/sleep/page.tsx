@@ -3,11 +3,12 @@ import TabBar from '@/components/shared/TabBar'
 import { useState, useEffect } from 'react'
 import { format, parseISO } from 'date-fns'
 import LessonLinks from '@/components/shared/LessonLinks'
-import Skeleton from '@/components/shared/Skeleton'
+import PageSkeleton from '@/components/shared/PageSkeleton'
 import SaveButton from '@/components/shared/SaveButton'
 import { useToast } from '@/components/shared/Toast'
 import { clearDraft, draftKey, readDraft, writeDraft } from '@/lib/useDraft'
 import { localDateISO } from '@/lib/dates'
+import { cachedAll } from '@/lib/api-cache'
 import { shiftDate } from '@/lib/nutrition'
 
 interface SleepDraft { bedtime: string; wakeTime: string; quality: number; sleepNotes: string }
@@ -54,11 +55,15 @@ export default function SleepPage() {
 
   useEffect(() => {
     setLoading(true)
-    Promise.all([
-      fetch(`/api/sleep/entries?date=${date}`).then(r => r.json()),
-      fetch(`/api/sleep/recovery?date=${recoveryDate}`).then(r => r.json()),
-      fetch('/api/profile').then(r => (r.ok ? r.json() : null)).catch(() => null),
-    ]).then(([sleepData, recoveryData, profile]) => {
+    cachedAll([
+      `/api/sleep/entries?date=${date}`,
+      `/api/sleep/recovery?date=${recoveryDate}`,
+      '/api/profile',
+    ], ([sleepData, recoveryData, profile]: [
+      { bedtime: string | null; wake_time: string | null; sleep_quality: number | null; notes: string | null }[],
+      { is_rest_day: boolean; activities: { type: string; duration_min: number }[] | null; notes: string | null }[],
+      { default_bedtime?: string | null; default_wake_time?: string | null } | null,
+    ]) => {
       const u = profile?.default_bedtime && profile?.default_wake_time
         ? { bedtime: hhmm(profile.default_bedtime), wakeTime: hhmm(profile.default_wake_time) }
         : null
@@ -134,38 +139,48 @@ export default function SleepPage() {
 
   const saveSleep = async () => {
     setSaving('sleep')
-    const res = await fetch('/api/sleep/entries', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        entry_date: date,
-        bedtime: bedtime || null,
-        wake_time: wakeTime || null,
-        hours_slept: hours ? parseFloat(hours) : null,
-        sleep_quality: quality,
-        notes: sleepNotes || null,
-      }),
-    })
-    if (res.ok) { setSleepSaved(true); setJustSaved('sleep'); if (isDefault) clearDraft(sleepKey); notify('Sleep log saved') }
-    else notify('Could not save your sleep log.', 'error')
-    setSaving(null)
+    try {
+      const res = await fetch('/api/sleep/entries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entry_date: date,
+          bedtime: bedtime || null,
+          wake_time: wakeTime || null,
+          hours_slept: hours ? parseFloat(hours) : null,
+          sleep_quality: quality,
+          notes: sleepNotes || null,
+        }),
+      })
+      if (res.ok) { setSleepSaved(true); setJustSaved('sleep'); if (isDefault) clearDraft(sleepKey); notify('Sleep log saved') }
+      else notify('Could not save your sleep log.', 'error')
+      } catch {
+      notify('Could not save your sleep log. Check your connection.', 'error')
+    } finally {
+      setSaving(null)
+    }
   }
 
   const saveRecovery = async () => {
     setSaving('recovery')
-    const res = await fetch('/api/sleep/recovery', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        entry_date: recoveryDate,
-        is_rest_day: isRestDay,
-        activities,
-        notes: recoveryNotes || null,
-      }),
-    })
-    if (res.ok) { setRecoverySaved(true); setJustSaved('recovery'); if (isDefault) clearDraft(recoveryKey); notify('Recovery saved') }
-    else notify('Could not save your recovery log.', 'error')
-    setSaving(null)
+    try {
+      const res = await fetch('/api/sleep/recovery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entry_date: recoveryDate,
+          is_rest_day: isRestDay,
+          activities,
+          notes: recoveryNotes || null,
+        }),
+      })
+      if (res.ok) { setRecoverySaved(true); setJustSaved('recovery'); if (isDefault) clearDraft(recoveryKey); notify('Recovery saved') }
+      else notify('Could not save your recovery log.', 'error')
+      } catch {
+      notify('Could not save your recovery log. Check your connection.', 'error')
+    } finally {
+      setSaving(null)
+    }
   }
 
   const toggleActivity = (type: string) => {
@@ -180,12 +195,7 @@ export default function SleepPage() {
   const hoursNum = hours ? parseFloat(hours) : 0
   const sleepColor = hoursNum >= 7 && hoursNum <= 9 ? 'text-green-400' : hoursNum > 0 ? 'text-orange-400' : 'text-fg-4'
 
-  if (loading) return (
-    <div>
-      <h1 className="page-title mb-2">Sleep & Recovery</h1>
-      <Skeleton />
-    </div>
-  )
+  if (loading) return <PageSkeleton variant="sleep" title="Sleep & Recovery" />
 
   return (
     <div>

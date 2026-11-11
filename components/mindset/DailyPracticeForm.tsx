@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, ReactNode } from 'react'
+import { cached } from '@/lib/api-cache'
 import Skeleton from '@/components/shared/Skeleton'
 import SaveButton, { SaveState } from '@/components/shared/SaveButton'
 import { useToast } from '@/components/shared/Toast'
@@ -35,21 +36,19 @@ export default function DailyPracticeForm({
   const key = draftKey(`practice:${endpoint}`)
 
   useEffect(() => {
-    fetch(`${endpoint}?date=${today}`)
-      .then(r => r.json())
-      .then(data => {
-        if (data.length > 0) {
-          setCompleted(data[0].completed)
-          setDuration(data[0].duration_min?.toString() || '')
-          setNotes(data[0].notes || '')
-          loadExtra?.(data[0])
-          setSaved(true)
-        } else {
-          const draft = readDraft<Draft>(key)
-          if (draft) { setCompleted(draft.completed); setDuration(draft.duration); setNotes(draft.notes) }
-        }
-        setLoading(false)
-      })
+    cached(`${endpoint}?date=${today}`, (data: { completed: boolean; duration_min: number | null; notes: string | null }[]) => {
+      if (data.length > 0) {
+        setCompleted(data[0].completed)
+        setDuration(data[0].duration_min?.toString() || '')
+        setNotes(data[0].notes || '')
+        loadExtra?.(data[0])
+        setSaved(true)
+      } else {
+        const draft = readDraft<Draft>(key)
+        if (draft) { setCompleted(draft.completed); setDuration(draft.duration); setNotes(draft.notes) }
+      }
+      setLoading(false)
+    })
   }, [today, endpoint, key])
 
   // Keep an unsaved draft so a tab switch or reload doesn't lose it.

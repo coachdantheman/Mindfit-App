@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { cached } from '@/lib/api-cache'
 
 interface CoachRequest {
   id: string
@@ -15,7 +16,7 @@ export default function CoachRequestsBanner() {
 
   useEffect(() => {
     let cancelled = false
-    fetch('/api/me/coach-requests').then(r => r.ok ? r.json() : []).then(data => {
+    cached('/api/me/coach-requests', (data: typeof requests) => {
       if (!cancelled && Array.isArray(data)) setRequests(data)
     }).catch(() => {})
     return () => { cancelled = true }

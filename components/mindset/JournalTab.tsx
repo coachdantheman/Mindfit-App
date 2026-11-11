@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { cached } from '@/lib/api-cache'
 import { format } from 'date-fns'
 import Link from 'next/link'
 import JournalForm from '@/components/journal/JournalForm'
@@ -14,16 +15,14 @@ export default function JournalTab() {
 
   useEffect(() => {
     const today = localDateISO()
-    fetch(`/api/journal?date=${today}`)
-      .then(r => r.json())
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          setTodayEntry(data[0])
-        } else if (data && !Array.isArray(data) && data.id) {
-          setTodayEntry(data)
-        }
-        setLoading(false)
-      })
+    cached(`/api/journal?date=${today}`, (data: JournalEntry[] | JournalEntry | null) => {
+      if (Array.isArray(data) && data.length > 0) {
+        setTodayEntry(data[0])
+      } else if (data && !Array.isArray(data) && data.id) {
+        setTodayEntry(data)
+      }
+      setLoading(false)
+    })
       .catch(() => setLoading(false))
   }, [])
 

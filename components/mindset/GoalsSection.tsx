@@ -1,5 +1,6 @@
 'use client'
 import CollapsibleList from '@/components/shared/CollapsibleList'
+import { cached } from '@/lib/api-cache'
 import { useState, useEffect } from 'react'
 import SaveButton from '@/components/shared/SaveButton'
 import { useToast } from '@/components/shared/Toast'
@@ -71,9 +72,7 @@ export default function GoalsSection() {
   const [editSaving, setEditSaving] = useState(false)
 
   useEffect(() => {
-    fetch('/api/mindset/goals')
-      .then(r => r.json())
-      .then(data => { setGoals(data); setLoading(false) })
+    cached('/api/mindset/goals', (data: Goal[]) => { setGoals(data); setLoading(false) })
   }, [])
 
   const addGoal = async (e: React.FormEvent) => {

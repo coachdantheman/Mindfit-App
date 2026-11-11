@@ -9,6 +9,7 @@ import Skeleton from '@/components/shared/Skeleton'
 import { clearDraft, draftStats, draftToSessionPayload, saveDraft, type WorkoutDraft } from '@/lib/workout-draft'
 import type { DetectedPr, SessionTier } from '@/lib/strength'
 import { formatTime } from '@/lib/running'
+import { cached, cachedAll } from '@/lib/api-cache'
 
 interface Props {
   draft: WorkoutDraft | null            // the open workout
@@ -55,7 +56,15 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
       .catch(() => {})
   }, [])
 
-  useEffect(() => { fetchHistory(); fetchCoach() }, [fetchHistory, fetchCoach, refreshKey])
+  useEffect(() => {
+    setLoading(true)
+    cachedAll(['/api/exercise/logs?include=sets', '/api/exercise/custom-workouts'], ([history, mine]: [WorkoutLogRow[], CustomWorkoutRow[]]) => {
+      if (Array.isArray(history)) setLogs(history)
+      if (Array.isArray(mine)) setSaved(sortSaved(mine))
+      setLoading(false)
+    }).catch(() => setLoading(false))
+    cached('/api/exercise/athlete-assignments', (data: CoachWorkout[]) => { if (Array.isArray(data)) setCoachWorkouts(data) }).catch(() => {})
+  }, [refreshKey])
 
   // Autosave every change to this device.
   useEffect(() => { if (draft) saveDraft(draft) }, [draft])

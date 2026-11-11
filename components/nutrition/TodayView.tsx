@@ -9,6 +9,7 @@ import AddFoodSheet, { AddItem } from './AddFoodSheet'
 import GameDayCard from './GameDayCard'
 import SaveMealSheet from './SaveMealSheet'
 import SupplementsCard from './SupplementsCard'
+import { cached, cachedAll } from '@/lib/api-cache'
 
 interface Props {
   goal: NutritionGoal | null
@@ -38,24 +39,23 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
     return fn().finally(() => inFlight.current.delete(key))
   }
 
-  const load = useCallback(async () => {
-    const [e, y] = await Promise.all([
-      fetch(`/api/nutrition/entries?date=${date}`).then(r => r.json()),
-      fetch(`/api/nutrition/entries?date=${shiftDate(date, -1)}`).then(r => r.json()),
-    ])
+  const load = useCallback(() => cachedAll([
+    `/api/nutrition/entries?date=${date}`,
+    `/api/nutrition/entries?date=${shiftDate(date, -1)}`,
+  ], ([e, y]: [FoodEntry[], FoodEntry[]]) => {
     setEntries(Array.isArray(e) ? e : [])
-    setYesterdayMeals(new Set((Array.isArray(y) ? y : []).map((x: FoodEntry) => x.meal_name)))
+    setYesterdayMeals(new Set((Array.isArray(y) ? y : []).map(x => x.meal_name)))
     setLoading(false)
-  }, [date])
+  }), [date])
 
   const loadRecent = useCallback(() => {
     fetch('/api/nutrition/recent').then(r => r.json()).then(d => setRecent(Array.isArray(d) ? d : []))
   }, [])
 
   useEffect(() => { setLoading(true); load() }, [load])
-  useEffect(() => { loadRecent() }, [loadRecent])
+  useEffect(() => { cached('/api/nutrition/recent', (d: RecentFood[]) => setRecent(Array.isArray(d) ? d : [])) }, [])
   useEffect(() => {
-    fetch('/api/nutrition/saved-meals').then(r => r.json()).then(d => setSavedMeals(Array.isArray(d) ? d : []))
+    cached('/api/nutrition/saved-meals', (d: SavedMeal[]) => setSavedMeals(Array.isArray(d) ? d : []))
   }, [])
 
   // Every meal the athlete builds lands in Favorites on its own. A slot

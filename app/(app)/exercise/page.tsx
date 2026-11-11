@@ -10,6 +10,7 @@ import StrengthStandards from '@/components/exercise/StrengthStandards'
 import PreBuiltWorkouts from '@/components/exercise/PreBuiltWorkouts'
 import PracticeLog from '@/components/exercise/PracticeLog'
 import LessonLinks from '@/components/shared/LessonLinks'
+import { cached } from '@/lib/api-cache'
 import { clearDraft, draftFromWorkout, draftStats, loadDraft, saveDraft, type WorkoutDraft } from '@/lib/workout-draft'
 
 type Tab = 'plan' | 'schedule' | 'track' | 'practice' | 'strength' | 'prebuilt'
@@ -47,8 +48,8 @@ export default function ExercisePage() {
   }, [])
 
   useEffect(() => {
-    fetch('/api/exercise/library').then(r => (r.ok ? r.json() : [])).then(d => { if (Array.isArray(d)) setLibrary(d) }).catch(() => {})
-    fetch('/api/exercise/profile').then(r => (r.ok ? r.json() : null)).then(d => {
+    cached('/api/exercise/library', (d: ExerciseLibraryRow[]) => { if (Array.isArray(d)) setLibrary(d) }).catch(() => {})
+    cached('/api/exercise/profile', (d: { profile?: AthleteProfile | null; suggested_bodyweight_lb?: number | null } | null) => {
       if (!d) return
       setProfile(d.profile ?? null)
       setSuggestedBodyweight(d.suggested_bodyweight_lb ?? null)

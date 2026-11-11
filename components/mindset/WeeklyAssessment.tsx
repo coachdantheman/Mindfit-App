@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { cached } from '@/lib/api-cache'
 import SaveButton from '@/components/shared/SaveButton'
 import { clearDraft, draftKey, readDraft, writeDraft } from '@/lib/useDraft'
 import { WeeklyAssessment as WeeklyAssessmentType } from '@/types'
@@ -48,7 +49,7 @@ export default function WeeklyAssessment({ mode = 'weekly', onComplete }: Weekly
 
   useEffect(() => {
     if (isBaseline) return
-    fetch('/api/mindset/weekly-assessment').then(r => r.json()).then(all => {
+    cached('/api/mindset/weekly-assessment', (all: WeeklyAssessmentType[]) => {
       const weeklies = Array.isArray(all)
         ? all.filter((e: WeeklyAssessmentType) => e.assessment_type !== 'baseline')
         : []

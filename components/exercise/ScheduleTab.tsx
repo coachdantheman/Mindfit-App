@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import Skeleton from '@/components/shared/Skeleton'
 import { toLocalDateString } from '@/lib/programs'
+import { cached } from '@/lib/api-cache'
 
 type Category = 'private_coach' | 'mindfit' | 'extra_training' | 'other_sport'
 type Source = 'coach' | 'athlete' | 'none'
@@ -99,7 +100,13 @@ export default function ScheduleTab() {
     setData(await res.json())
     setFailed(false)
   }, [])
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    cached('/api/me/events', (d: Payload) => {
+      if (!Array.isArray(d?.primary)) { setFailed(true); return }
+      setData(d)
+      setFailed(false)
+    }).catch(() => setFailed(true))
+  }, [])
 
   const set = (patch: Partial<Draft>) => setDraft(d => (d ? { ...d, ...patch } : d))
 

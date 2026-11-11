@@ -12,6 +12,7 @@ import { clearDraft, draftKey, readDraft, writeDraft } from '@/lib/useDraft'
 import { localDateISO } from '@/lib/dates'
 import type { FlowTrigger } from '@/types'
 import { loadMySchedule } from '@/lib/team-schedule'
+import { cached } from '@/lib/api-cache'
 
 type Kind = 'practice' | 'game'
 type Result = '' | 'win' | 'loss' | 'tie'
@@ -153,8 +154,8 @@ export default function PracticeLog({ notify }: Props) {
       setSaved(nextSaved)
       setLoading(false)
     })
-    fetchRecent()
-  }, [today, fetchRecent])
+    cached('/api/exercise/practice?days=14', (d: Entry[]) => { if (Array.isArray(d)) setRecent(d) }).catch(() => {})
+  }, [today])
 
   useEffect(() => {
     if (loading || saved[kind]) return

@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
+import { cached } from '@/lib/api-cache'
 import { format, parseISO, startOfWeek } from 'date-fns'
 import SaveButton from '@/components/shared/SaveButton'
 import { useToast } from '@/components/shared/Toast'
@@ -25,7 +26,7 @@ export default function GratitudeTab() {
   const [week, setWeek] = useState('')
 
   useEffect(() => {
-    fetch('/api/mindset/gratitude').then(r => (r.ok ? r.json() : [])).then((list: Entry[]) => {
+    cached('/api/mindset/gratitude', (list: Entry[]) => {
       if (!Array.isArray(list)) return
       setEntries(list)
       const t = list.find(e => e.entry_date === today)

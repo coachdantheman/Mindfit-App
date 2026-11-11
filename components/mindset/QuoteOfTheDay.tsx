@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { cached } from '@/lib/api-cache'
 import Link from 'next/link'
 
 interface Quote { id: string; text: string; author: string; date: string }
@@ -9,10 +10,7 @@ export default function QuoteOfTheDay() {
   const [shared, setShared] = useState<'copied' | 'failed' | null>(null)
 
   useEffect(() => {
-    fetch('/api/quote')
-      .then(r => (r.ok ? r.json() : null))
-      .then(q => q && setQuote(q))
-      .catch(() => {})
+    cached('/api/quote', (q: Quote) => { if (q?.text) setQuote(q) }).catch(() => {})
   }, [])
 
   const share = async () => {

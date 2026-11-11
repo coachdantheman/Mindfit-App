@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import { cached } from '@/lib/api-cache'
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
@@ -16,18 +17,16 @@ function StreakChip({ pathname }: { pathname: string }) {
   // Re-check on every navigation (throttled) so a fresh log lights the
   // flame right away instead of on the next visit.
   useEffect(() => {
-    let cached: { streak: number; ts: number } | null = null
-    try { cached = JSON.parse(sessionStorage.getItem('mf_streak') ?? 'null') } catch {}
-    if (cached && typeof cached.streak === 'number') setStreak(cached.streak)
-    if (cached && Date.now() - cached.ts < 60_000) return
-    fetch('/api/stats/overview')
-      .then(r => (r.ok ? r.json() : null))
-      .then(data => {
-        if (data && typeof data.streak === 'number') {
-          setStreak(data.streak)
-          sessionStorage.setItem('mf_streak', JSON.stringify({ streak: data.streak, ts: Date.now() }))
-        }
-      })
+    let saved: { streak: number; ts: number } | null = null
+    try { saved = JSON.parse(sessionStorage.getItem('mf_streak') ?? 'null') } catch {}
+    if (saved && typeof saved.streak === 'number') setStreak(saved.streak)
+    if (saved && Date.now() - saved.ts < 60_000) return
+    cached('/api/stats/overview', (data: { streak?: number }) => {
+      if (data && typeof data.streak === 'number') {
+        setStreak(data.streak)
+        sessionStorage.setItem('mf_streak', JSON.stringify({ streak: data.streak, ts: Date.now() }))
+      }
+    })
       .catch(() => {})
   }, [pathname])
 

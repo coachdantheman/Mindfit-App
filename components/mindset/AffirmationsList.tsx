@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { cached } from '@/lib/api-cache'
 import { useToast } from '@/components/shared/Toast'
 import { Affirmation } from '@/types'
 import {
@@ -121,9 +122,7 @@ export default function AffirmationsList() {
   )
 
   useEffect(() => {
-    fetch('/api/mindset/affirmations')
-      .then(r => r.json())
-      .then(data => { setAffirmations(data); setLoading(false) })
+    cached('/api/mindset/affirmations', (data: Affirmation[]) => { setAffirmations(data); setLoading(false) })
   }, [])
 
   const addAffirmation = async (e: React.FormEvent) => {

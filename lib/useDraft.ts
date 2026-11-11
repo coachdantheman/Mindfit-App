@@ -1,5 +1,6 @@
 'use client'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { clearApiCache } from '@/lib/api-cache'
 
 // Local-only draft of an unsaved form, keyed per calendar day so a
 // half-written entry from yesterday never resurfaces. Survives tab
@@ -30,7 +31,9 @@ export function clearDraft(key: string): void {
 
 // Unsent drafts carry no user id, so remove them all on sign-out or the next
 // person on this browser would see them.
+// Called on every sign-out, so it also drops the previous user's cached API answers.
 export function clearAllDrafts(): void {
+  clearApiCache()
   try {
     for (const k of Object.keys(localStorage)) {
       if (k.startsWith('mf:draft:') || k === 'mindfit.workout-draft.v1') localStorage.removeItem(k)

@@ -293,3 +293,50 @@ html.light .text-purple-300, html.light .text-purple-400 { color: #9333ea; }
 /* iPhone app vs website (see lib/platform.ts) */
 .native-app .web-only { display: none !important; }
 html:not(.native-app) .native-only { display: none !important; }
+
+/* App-open splash (components/shared/Splash.tsx) */
+.mf-splash {
+  position: fixed; inset: 0; z-index: 80;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+  background: rgb(var(--bg));
+  padding: 24px;
+}
+.mf-splash-mark {
+  position: relative; width: 72px; height: 72px; border-radius: 18px; overflow: hidden; background: #000;
+  box-shadow: 0 0 0 1px rgb(var(--cta-rgb) / 0.25), 0 0 24px rgb(var(--cta-rgb) / 0.12);
+}
+.mf-splash-mark img { position: absolute; inset: 0; width: 72px; height: 72px; object-fit: contain; }
+.mf-splash-ghost { opacity: 0.16; filter: grayscale(1); }
+.mf-splash-fill {
+  animation: mf-breath-fill 2.4s cubic-bezier(0.45, 0, 0.25, 1) infinite;
+  filter: drop-shadow(0 0 14px rgb(var(--cta-rgb) / 0.35));
+}
+.mf-splash-line {
+  margin: 0; font-size: 13px; letter-spacing: 0.22em; text-transform: uppercase; text-align: center;
+  color: rgb(var(--cta-rgb)); opacity: 0.9;
+  animation: mf-fade-in 0.6s ease-out 0.15s backwards;
+}
+.mf-splash-bar { width: 120px; height: 2px; border-radius: 2px; overflow: hidden; background: rgb(var(--cta-rgb) / 0.15); }
+.mf-splash-bar span {
+  display: block; width: 40%; height: 100%; border-radius: 2px; background: rgb(var(--cta-rgb));
+  animation: mf-splash-slide 1.2s ease-in-out infinite;
+}
+@keyframes mf-breath-fill {
+  0% { clip-path: inset(100% 0 0 0); }
+  55% { clip-path: inset(0 0 0 0); }
+  80% { clip-path: inset(0 0 0 0); opacity: 1; }
+  100% { clip-path: inset(0 0 0 0); opacity: 0; }
+}
+/* Fades start from hidden, so anything stays visible if animation never runs. */
+@keyframes mf-fade-in { from { opacity: 0; } }
+@keyframes mf-splash-slide { 0% { transform: translateX(-110%); } 100% { transform: translateX(260%); } }
+/* Placeholders fade in after a beat, so a fast load never flashes grey. */
+.mf-skeleton-page { animation: mf-fade-in 0.25s ease-out 0.12s backwards; }
+@media (prefers-reduced-motion: reduce) {
+  .mf-splash-fill { animation: none; }
+  .mf-splash-bar span { animation: none; width: 100%; opacity: 0.5; }
+  .mf-splash-line, .mf-skeleton-page { animation: none; }
+}
+
+/* Phone browsers: size full-height screens to the visible area, not the area behind the toolbar. */
+@supports (min-height: 100dvh) { .min-h-screen { min-height: 100dvh; } }

@@ -4,7 +4,9 @@ import dynamic from 'next/dynamic'
 import { Lesson } from '@/types'
 import TabBar from '@/components/shared/TabBar'
 import { isNativeApp } from '@/lib/platform'
+import { cached } from '@/lib/api-cache'
 
+import Skeleton from '@/components/shared/Skeleton'
 const AthleteQuiz = dynamic(() => import('@/components/learn/AthleteQuiz'))
 
 type Tab = 'lessons' | 'quiz'
@@ -24,9 +26,7 @@ export default function LearnPage() {
   useEffect(() => { if (isNativeApp()) selectTab('quiz') }, [])
 
   useEffect(() => {
-    fetch('/api/lessons')
-      .then(r => (r.ok ? r.json() : []))
-      .then(data => { if (Array.isArray(data)) setLessons(data) })
+    cached('/api/lessons', (data: Lesson[]) => { if (Array.isArray(data)) { setLessons(data); setLoading(false) } })
       .finally(() => setLoading(false))
   }, [])
 
@@ -79,9 +79,7 @@ export default function LearnPage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="w-8 h-8 border-2 border-cta/30 border-t-cta rounded-full animate-spin" />
-          </div>
+          <Skeleton rows={4} />
         ) : lessons.length === 0 ? null : (
           <div className="space-y-8">
             {Object.entries(modules).map(([moduleName, moduleLessons]) => (

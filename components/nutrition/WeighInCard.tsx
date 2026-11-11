@@ -5,6 +5,7 @@ import { WeighIn } from '@/types'
 import { linearTrend, localDateISO } from '@/lib/nutrition'
 import { isUnder13 } from '@/lib/age'
 import ProgressPhotoSheet from './ProgressPhotoSheet'
+import { cached } from '@/lib/api-cache'
 import { CameraIcon } from '@/components/shared/icons'
 
 interface Props {
@@ -22,7 +23,7 @@ export default function WeighInCard({ weighIns, targetWeight, onSaved }: Props) 
   const [photosOk, setPhotosOk] = useState(false)
 
   useEffect(() => {
-    fetch('/api/profile').then(r => r.json()).then(p => setPhotosOk(!isUnder13(p))).catch(() => {})
+    cached('/api/profile', (p: Parameters<typeof isUnder13>[0]) => setPhotosOk(!isUnder13(p))).catch(() => {})
   }, [])
 
   const save = async (e: React.FormEvent) => {

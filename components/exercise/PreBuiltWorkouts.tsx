@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { WorkoutCategory, Workout, WorkoutExercise } from '@/types'
 import Skeleton from '@/components/shared/Skeleton'
+import { cached } from '@/lib/api-cache'
 import { BalanceIcon, BodyweightIcon, BoltIcon, BurstIcon, DumbbellIcon, StretchIcon } from '@/components/shared/icons'
 
 const CATEGORY_ICONS: Record<string, (p: { className?: string }) => React.JSX.Element> = {
@@ -35,9 +36,7 @@ export default function PreBuiltWorkouts({ onStartWorkout, notify }: Props) {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    fetch('/api/exercise/categories')
-      .then(r => r.json())
-      .then(data => { setCategories(data); setLoading(false) })
+    cached('/api/exercise/categories', (data: typeof categories) => { setCategories(data); setLoading(false) })
   }, [])
 
   const openCategory = async (cat: WorkoutCategory) => {

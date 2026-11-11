@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
+import { cachedAll } from '@/lib/api-cache'
 import Skeleton from '@/components/shared/Skeleton'
 import SaveButton from '@/components/shared/SaveButton'
 import { useToast } from '@/components/shared/Toast'
@@ -109,15 +110,12 @@ export default function HabitsTab() {
   const pendingChecks = useRef<Set<string>>(new Set())
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/mindset/habits').then(r => r.json()),
-      fetch('/api/mindset/goals').then(r => r.json()),
-    ])
-      .then(([habitData, goalData]) => {
-        setHabits(habitData.habits ?? [])
-        setChecks(groupChecks(habitData.checks ?? []))
-        setGoals(Array.isArray(goalData) ? goalData : [])
-      })
+    cachedAll(['/api/mindset/habits', '/api/mindset/goals'], ([habitData, goalData]: [{ habits?: Habit[]; checks?: HabitCheck[] }, Goal[]]) => {
+      setHabits(habitData.habits ?? [])
+      setChecks(groupChecks(habitData.checks ?? []))
+      setGoals(Array.isArray(goalData) ? goalData : [])
+      setLoading(false)
+    })
       .catch(() => notify('Could not load your habits. Please refresh.', 'error'))
       .finally(() => setLoading(false))
   }, [notify])

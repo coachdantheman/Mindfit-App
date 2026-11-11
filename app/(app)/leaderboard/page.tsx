@@ -8,6 +8,7 @@ import Podium from '@/components/leaderboard/Podium'
 import HowToEarnSheet from '@/components/leaderboard/HowToEarnSheet'
 import TitlesGuideSheet from '@/components/leaderboard/TitlesGuideSheet'
 import { monthLabel, type LeaderboardResponse } from '@/components/leaderboard/types'
+import { cached } from '@/lib/api-cache'
 
 export default function LeaderboardPage() {
   const [team, setTeam] = useState('')
@@ -20,13 +21,10 @@ export default function LeaderboardPage() {
     let tz = ''
     try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone } catch {}
     setError(null)
-    fetch(`/api/leaderboard?team=${encodeURIComponent(team)}&page=${page}&tz=${encodeURIComponent(tz)}`)
-      .then(async r => {
-        const body = await r.json().catch(() => null)
-        if (!r.ok) throw new Error(body?.error || 'Could not load the board.')
-        return body as LeaderboardResponse
-      })
-      .then(setData)
+    cached(`/api/leaderboard?team=${encodeURIComponent(team)}&page=${page}&tz=${encodeURIComponent(tz)}`, (d: LeaderboardResponse & { error?: string }) => {
+      if (!d?.period) setError(d?.error || 'Could not load the board.')
+      else { setError(null); setData(d) }
+    })
       .catch(e => setError(e.message))
   }, [team, page])
 

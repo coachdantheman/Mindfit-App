@@ -30,7 +30,7 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const isPublic = PUBLIC_ROUTES.includes(pathname) || pathname.startsWith('/auth/') || pathname.startsWith('/join/') || pathname.startsWith('/consent/parent/')
 
-  if (!user && !isPublic && !pathname.startsWith('/api')) {
+  if (!user && !isPublic) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
@@ -39,6 +39,8 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // API routes check the session themselves (lib/api-auth.ts), so running
+    // this for them too only added a second round trip to the auth server.
+    '/((?!api/|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

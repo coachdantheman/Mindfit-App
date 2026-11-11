@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react'
 import { JournalEntry, SleepEntry, WorkoutLog, FoodEntry, NutritionGoal, WeeklyAssessment } from '@/types'
 import { calcSleepAverages } from '@/lib/stats'
+import { cached, cachedAll } from '@/lib/api-cache'
+import PageSkeleton from '@/components/shared/PageSkeleton'
 import dynamic from 'next/dynamic'
 import SectionTabs, { Section } from '@/components/shared/SectionTabs'
 import OverviewCards from '@/components/shared/OverviewCards'
@@ -54,45 +56,52 @@ export default function ProgressPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/journal').then(r => r.json()),
-      fetch('/api/sleep/entries').then(r => r.json()),
-      fetch('/api/exercise/logs').then(r => r.json()),
-      fetch('/api/mindset/visualization').then(r => r.json()),
-      fetch('/api/mindset/goals').then(r => r.json()),
-      fetch('/api/nutrition/entries?days=30').then(r => r.json()),
-      fetch('/api/nutrition/goals').then(r => r.json()),
-      fetch('/api/mindset/weekly-assessment').then(r => r.json()),
-      fetch('/api/stats/overview').then(r => r.json()),
-    ]).then(([journal, sleep, workouts, viz, goals, food, nutGoal, weeklyAssessments, stats]) => {
-      setJournalEntries(journal)
-      setSleepEntries(sleep)
-      setWorkoutLogs(workouts)
-      setVizCount(viz.filter((v: { completed: boolean }) => v.completed).length)
-      setMedCount(viz.filter((v: { completed: boolean }) => v.completed).reduce((sum: number, v: { duration_min: number | null }) => sum + (v.duration_min ?? 0), 0))
-      setGoalCount({ total: goals.length, completed: goals.filter((g: { is_completed: boolean }) => g.is_completed).length })
-      setFoodEntries(food)
-      setNutritionGoal(nutGoal)
+    type Answers = [
+      JournalEntry[],
+      SleepEntry[],
+      WorkoutLog[],
+      { completed: boolean; duration_min: number | null }[],
+      { is_completed: boolean }[],
+      FoodEntry[],
+      NutritionGoal | null,
+      WeeklyAssessment[],
+      { streak: number; latestMpi: number | null; baselineMpi: number | null } | null,
+    ]
+    cachedAll([
+      '/api/journal',
+      '/api/sleep/entries',
+      '/api/exercise/logs',
+      '/api/mindset/visualization',
+      '/api/mindset/goals',
+      '/api/nutrition/entries?days=30',
+      '/api/nutrition/goals',
+      '/api/mindset/weekly-assessment',
+      '/api/stats/overview',
+    ], ([journal, sleep, workouts, viz, goals, food, nutGoal, weeklyAssessments, stats]: Answers) => {
+      // A failed request answers with an error object, not a list.
+      const list = <T,>(v: T[]): T[] => (Array.isArray(v) ? v : [])
+      const done = list(viz).filter(v => v.completed)
+      setJournalEntries(list(journal))
+      setSleepEntries(list(sleep))
+      setWorkoutLogs(list(workouts))
+      setVizCount(done.length)
+      setMedCount(done.reduce((sum, v) => sum + (v.duration_min ?? 0), 0))
+      setGoalCount({ total: list(goals).length, completed: list(goals).filter(g => g.is_completed).length })
+      setFoodEntries(list(food))
+      setNutritionGoal(nutGoal && 'id' in nutGoal ? nutGoal : null)
       setAssessments(Array.isArray(weeklyAssessments) ? weeklyAssessments : [])
       if (stats && typeof stats.streak === 'number') setOverview(stats)
       setLoading(false)
     }).catch(() => setLoading(false))
     let tz = ''
     try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone } catch {}
-    fetch(`/api/leaderboard?tz=${encodeURIComponent(tz)}`)
-      .then(r => (r.ok ? r.json() : null))
-      .then(d => { if (d?.me) setBoard(d.me) })
+    cached(`/api/leaderboard?tz=${encodeURIComponent(tz)}`, (d: { me?: MyStatus }) => { if (d?.me) setBoard(d.me) })
       .catch(() => {})
   }, [])
 
   const { avgSleep, avgSleepQuality } = calcSleepAverages(sleepEntries)
 
-  if (loading) return (
-    <div>
-      <h1 className="page-title mb-2">Progress</h1>
-      <p className="text-sm text-fg-4">Loading your data…</p>
-    </div>
-  )
+  if (loading) return <PageSkeleton variant="progress" title="Progress" />
 
   return (
     <div>

@@ -128,7 +128,7 @@ export default function FiveAStackSession() {
   if (finished) {
     const logHref = `/exercise?tab=practice&session=${finished.id}`
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center px-4 py-6">
+      <div className="min-h-[calc(100dvh-4rem)] flex flex-col items-center justify-center px-4 py-6">
         <div className="w-full max-w-xl bg-surface rounded-2xl border border-cta/30 p-8 text-center">
           <p className="text-xs uppercase tracking-[0.24em] text-cta mb-2">Stack complete</p>
           <h2 className="text-3xl font-bold text-fg-1 mb-4">Go compete.</h2>
@@ -149,7 +149,7 @@ export default function FiveAStackSession() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center px-4 py-6">
+    <div className="min-h-[calc(100dvh-4rem)] flex flex-col items-center justify-center px-4 py-6">
       <div className="w-full max-w-xl">
         {paused && stepIdx === 0 && (
           <p className="mb-4 rounded-xl border border-cta/40 bg-cta/10 px-4 py-3 text-sm text-fg-2 text-center">

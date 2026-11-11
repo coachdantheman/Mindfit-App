@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { cached } from '@/lib/api-cache'
 import Link from 'next/link'
 
 // Existing accounts that pre-date the consent checkbox accept once here.
@@ -14,7 +15,7 @@ export default function TermsBanner() {
 
   useEffect(() => {
     let cancelled = false
-    fetch('/api/profile').then(r => r.ok ? r.json() : null).then(p => {
+    cached('/api/profile', (p: { id?: string; terms_accepted_at?: string | null } | null) => {
       if (cancelled || !p?.id || accepted.current) return
       if (!p.terms_accepted_at) setShow(true)
     }).catch(() => {})

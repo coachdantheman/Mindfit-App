@@ -12,6 +12,7 @@ import { loadMySchedule, type MyEvent } from '@/lib/team-schedule'
 import { trainingDayKind } from '@/lib/schedule'
 import { formatClock, parseTime } from '@/lib/game-day'
 import { toLocalDateString } from '@/lib/programs'
+import { cachedAll } from '@/lib/api-cache'
 
 interface Props {
   library: ExerciseLibraryRow[]
@@ -43,7 +44,14 @@ export default function MyPlan({ library, onStart, onCreateExercise, notify, ref
     setLoading(false)
   }, [])
 
-  useEffect(() => { load() }, [load, refreshKey])
+  useEffect(() => {
+    setLoading(true)
+    cachedAll(['/api/exercise/programs?active=true', '/api/exercise/coach-programs'], ([own, coach]: [TrainingProgramRow[], CoachProgramRow[]]) => {
+      setProgram(Array.isArray(own) && own.length > 0 ? own[0] : null)
+      setCoachPrograms(Array.isArray(coach) ? coach : [])
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [refreshKey])
 
   const startFrom = (w: ProgramWorkout, categoryName: string, source: WorkoutSource) =>
     onStart({ name: w.name, categoryName, exercises: w.exercises as WorkoutExercise[], source, programWorkoutId: w.id })

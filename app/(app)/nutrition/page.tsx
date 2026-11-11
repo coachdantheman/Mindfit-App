@@ -1,6 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { Food, NutritionGoal } from '@/types'
+import { cached } from '@/lib/api-cache'
 import TodayView from '@/components/nutrition/TodayView'
 import TrendsView from '@/components/nutrition/TrendsView'
 import GoalsView from '@/components/nutrition/GoalsView'
@@ -30,9 +31,9 @@ export default function NutritionPage() {
   }, [])
 
   useEffect(() => {
-    fetch('/api/nutrition/goals').then(r => r.json()).then(g => setGoal(g?.id ? g : null))
-    fetch('/api/nutrition/foods').then(r => r.json()).then(d => setFoods(Array.isArray(d) ? d : []))
-    fetch('/api/nutrition/favorites').then(r => r.json()).then(d => setFavorites(Array.isArray(d) ? d : []))
+    cached('/api/nutrition/goals', (g: NutritionGoal | null) => setGoal(g?.id ? g : null)).catch(() => {})
+    cached('/api/nutrition/foods', (d: Food[]) => setFoods(Array.isArray(d) ? d : [])).catch(() => {})
+    cached('/api/nutrition/favorites', (d: Food[]) => setFavorites(Array.isArray(d) ? d : [])).catch(() => {})
   }, [])
 
   const toggleFavorite = useCallback(async (food: Food) => {

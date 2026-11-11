@@ -1,5 +1,6 @@
 'use client'
 import { FormEvent, useEffect, useRef, useState } from 'react'
+import { cached } from '@/lib/api-cache'
 
 interface Supplement {
   id: string
@@ -32,15 +33,14 @@ export default function SupplementsCard({ date }: { date: string }) {
   useEffect(() => {
     let live = true
     setLoading(true)
-    fetch(`/api/nutrition/supplements?date=${date}`)
-      .then(async res => {
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error)
-        if (!live) return
-        setStack(data.supplements)
-        setChecked(new Set(data.checked))
-        setSuggest(!!data.suggest)
-      })
+    cached(`/api/nutrition/supplements?date=${date}`, (data: { supplements?: Supplement[]; checked?: string[]; suggest?: boolean }) => {
+      if (!live) return
+      if (!Array.isArray(data?.supplements)) { setError('Could not load supplements.'); return }
+      setStack(data.supplements)
+      setChecked(new Set(data.checked))
+      setSuggest(!!data.suggest)
+      setLoading(false)
+    })
       .catch(() => {
         if (live) setError('Could not load supplements.')
       })
