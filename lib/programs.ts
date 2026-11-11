@@ -243,6 +243,29 @@ export function applyTemplateToBlocks(blocks: PlanBlockInput[], days: DayTemplat
   })
 }
 
+// Remap each block's week template onto the chosen weekdays. Template days
+// with exercises, in weekday order, take trainDays in order. Extra template
+// days keep their own weekday when it is free, else the next free one.
+export function assignWeekdays(templates: DayTemplate[][], trainDays: number[]): DayTemplate[][] {
+  const slots = [...new Set(trainDays)].sort((a, b) => a - b)
+  return templates.map(block => {
+    const days = block.filter(d => d.exercises.length > 0).sort((a, b) => a.day_of_week - b.day_of_week)
+    const taken = new Set<number>()
+    const out: DayTemplate[] = []
+    days.slice(0, slots.length).forEach((d, i) => {
+      taken.add(slots[i])
+      out.push({ ...d, day_of_week: slots[i] })
+    })
+    for (const d of days.slice(slots.length)) {
+      const free = [0, 1, 2, 3, 4, 5, 6].map(k => ((d.day_of_week - 1 + k) % 7) + 1).find(day => !taken.has(day))
+      if (free === undefined) continue
+      taken.add(free)
+      out.push({ ...d, day_of_week: free })
+    }
+    return out.sort((a, b) => a.day_of_week - b.day_of_week)
+  })
+}
+
 export function blocksFromProgram(program: ProgramLike): PlanBlockInput[] {
   return (program.blocks ?? []).map(b => ({
     name: b.name,

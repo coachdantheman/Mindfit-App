@@ -6,10 +6,10 @@ import type { CoachProgramRow, ExerciseLibraryRow, MuscleGroup, StartWorkoutInpu
 import ProgramView from './ProgramView'
 import PlanBuilder from './PlanBuilder'
 import Skeleton from '@/components/shared/Skeleton'
-import { currentWeek, DAY_NAMES, isoDayOfWeek, nextWorkout, parseLocalDate, todaysWorkout, workoutsForWeek } from '@/lib/programs'
+import { currentWeek, DAY_NAMES, DAY_NAMES_LONG, isoDayOfWeek, nextWorkout, parseLocalDate, todaysWorkout, workoutsForWeek } from '@/lib/programs'
 import { DumbbellIcon } from '@/components/shared/icons'
 import { loadMySchedule, type MyEvent } from '@/lib/team-schedule'
-import { trainingDayKind } from '@/lib/schedule'
+import { suggestMove, trainingDayKind } from '@/lib/schedule'
 import { formatClock, parseTime } from '@/lib/game-day'
 import { toLocalDateString } from '@/lib/programs'
 import { cachedAll } from '@/lib/api-cache'
@@ -101,6 +101,8 @@ export default function MyPlan({ library, onStart, onCreateExercise, notify, ref
           title={program.title}
           subtitle={[program.sport, `${program.duration_weeks} weeks`].filter(Boolean).join(' · ')}
           onStart={w => startFrom(w, 'My Plan', 'program')}
+          onMoved={load}
+          notify={notify}
           actions={(
             <div className="flex gap-1">
               <button type="button" onClick={() => setBuilding(true)} className="btn-ghost">Edit</button>
@@ -147,7 +149,14 @@ export default function MyPlan({ library, onStart, onCreateExercise, notify, ref
   )
 }
 
-function ThisWeekCard({ program, title, subtitle, accent, onStart, actions, gameDates }: {
+// Monday of plan week `week` (week 1 is the Mon–Sun week containing start_date).
+function planWeekMonday(startDate: string | null, week: number, today: Date): string {
+  const d = startDate ? parseLocalDate(startDate) : new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  d.setDate(d.getDate() - (isoDayOfWeek(d) - 1) + (week - 1) * 7)
+  return toLocalDateString(d)
+}
+
+function ThisWeekCard({ program, title, subtitle, accent, onStart, actions, gameDates, onMoved, notify }: {
   program: TrainingProgramRow
   gameDates: string[]
   title: string
@@ -155,7 +164,11 @@ function ThisWeekCard({ program, title, subtitle, accent, onStart, actions, game
   accent?: boolean
   onStart: (w: ProgramWorkout) => void
   actions?: React.ReactNode
+  onMoved?: () => void
+  notify?: (msg: string, kind?: 'success' | 'error') => void
 }) {
+  const [moveKept, setMoveKept] = useState(false)
+  const [moving, setMoving] = useState(false)
   const today = new Date()
   const { week, status } = currentWeek(program.start_date, program.duration_weeks, today)
   const todays = todaysWorkout(program, today)
@@ -164,6 +177,29 @@ function ThisWeekCard({ program, title, subtitle, accent, onStart, actions, game
   const dow = isoDayOfWeek(today)
   const start = program.start_date ? parseLocalDate(program.start_date) : null
   const dayKind = trainingDayKind(toLocalDateString(today), gameDates)
+  const move = onMoved && status === 'active'
+    ? suggestMove(weekWorkouts.map(w => w.day_of_week), planWeekMonday(program.start_date, week, today), toLocalDateString(today), gameDates)
+    : null
+
+  const moveIt = async () => {
+    const w = move && weekWorkouts.find(x => x.day_of_week === move.from)
+    if (!w || !move) return
+    setMoving(true)
+    try {
+      const res = await fetch('/api/exercise/programs', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workout_id: w.id, day_of_week: move.to }),
+      })
+      if (!res.ok) throw new Error('move failed')
+      onMoved?.()
+      notify?.('Workout moved')
+    } catch {
+      notify?.("Couldn't move it. Try again.", 'error')
+    } finally {
+      setMoving(false)
+    }
+  }
 
   return (
     <div className={`card p-4 space-y-3 ${accent ? 'border-cta/30' : ''}`}>
@@ -180,6 +216,16 @@ function ThisWeekCard({ program, title, subtitle, accent, onStart, actions, game
 
       {status === 'active' && weekWorkouts.length === 0 && (
         <p className="text-sm text-fg-4">No workouts scheduled this week.</p>
+      )}
+
+      {move && !moveKept && (
+        <div className="rounded-xl bg-surface-2/60 border border-edge p-3 space-y-2">
+          <p className="text-sm text-fg-2">Game {DAY_NAMES_LONG[move.from]}. Move that day&apos;s workout to {DAY_NAMES_LONG[move.to]}?</p>
+          <div className="flex items-center justify-end gap-2">
+            <button type="button" onClick={() => setMoveKept(true)} disabled={moving} className="btn-ghost text-xs">Keep</button>
+            <button type="button" onClick={moveIt} disabled={moving} className="btn-primary text-xs">{moving ? 'Moving…' : 'Move it'}</button>
+          </div>
+        </div>
       )}
 
       {todays && dayKind ? (

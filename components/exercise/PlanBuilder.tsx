@@ -1,14 +1,16 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import PlanSetupForm, { type BuilderMode, type PlanSetup } from './PlanSetupForm'
 import PlanDayEditor from './PlanDayEditor'
 import PlanReview from './PlanReview'
 import { generatePlanTemplate, sportOptional } from '@/lib/workout-templates'
 import { useAiConsent } from '@/components/shared/AiConsentSheet'
 import {
-  applyTemplateToBlocks, blocksFromProgram, expandAiBlocks, expandTemplate, toLocalDateString,
+  applyTemplateToBlocks, assignWeekdays, blocksFromProgram, expandAiBlocks, expandTemplate, parseLocalDate, toLocalDateString,
   type DayTemplate, type PlanBlockInput,
 } from '@/lib/programs'
+import { suggestTrainingDays, weekdayLoad, type WeekdayLoad } from '@/lib/schedule'
+import { loadMySchedule, type MyEvent } from '@/lib/team-schedule'
 import type { ExerciseLibraryRow, MuscleGroup, TrainingProgramRow } from '@/types/exercise'
 
 type Step = 'choose' | 'setup' | 'days' | 'review'
@@ -42,12 +44,15 @@ function fitBlocks(blocks: PlanBlockInput[], duration: number): PlanBlockInput[]
   return kept.map((b, i) => (i === kept.length - 1 ? { ...b, week_end: duration } : { ...b, week_end: Math.min(b.week_end, duration) }))
 }
 
+const EMPTY_LOAD: WeekdayLoad[] = Array.from({ length: 8 }, () => ({ games: 0, practices: 0 }))
+
 const defaultSetup = (p: TrainingProgramRow | null, coach = false): PlanSetup => ({
   title: p?.title ?? '',
   description: p?.description ?? '',
   sport: p?.sport ?? '',
   goals: p?.goals ?? [],
   experience: 'intermediate',
+  trainDays: suggestTrainingDays(EMPTY_LOAD, 4),
   daysPerWeek: 4,
   durationWeeks: p?.duration_weeks ?? 8,
   startDate: coach ? '' : p?.start_date ?? toLocalDateString(new Date()),
@@ -63,13 +68,48 @@ export default function PlanBuilder({ program, library, onCreateExercise, onSave
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [aiProgress, setAiProgress] = useState(0)
+  const [events, setEvents] = useState<MyEvent[]>([])
+  const [touched, setTouched] = useState(false)
   const { ensure, sheet } = useAiConsent()
+
+  useEffect(() => {
+    if (coach) return
+    loadMySchedule().then(setEvents)
+  }, [coach])
+
+  const load = useMemo(() => {
+    if (coach || !setup.startDate) return undefined
+    const end = parseLocalDate(setup.startDate)
+    end.setDate(end.getDate() + setup.durationWeeks * 7)
+    return weekdayLoad(events, setup.startDate, toLocalDateString(end))
+  }, [coach, events, setup.startDate, setup.durationWeeks])
+
+  useEffect(() => {
+    if (!load || touched) return
+    setSetup(s => {
+      const days = suggestTrainingDays(load, s.trainDays.length)
+      return { ...s, trainDays: days, daysPerWeek: days.length }
+    })
+  }, [load, touched])
+
+  const changeSetup = (next: PlanSetup) => {
+    if (next.trainDays !== setup.trainDays) setTouched(true)
+    setSetup(next)
+  }
 
   const choose = (m: BuilderMode) => {
     setMode(m)
     setError('')
+    setTouched(false)
     setSetup(m === 'edit' ? defaultSetup(program, coach) : defaultSetup(null, coach))
     setStep('setup')
+  }
+
+  const moveDay = (bi: number, from: number, to: number) => {
+    if (from === to) return
+    setTemplates(ts => ts.map((t, i) => (i !== bi ? t : t.map(d =>
+      d.day_of_week === from ? { ...d, day_of_week: to } : d.day_of_week === to ? { ...d, day_of_week: from } : d,
+    ))))
   }
 
   const continueFromSetup = async () => {
@@ -85,8 +125,9 @@ export default function PlanBuilder({ program, library, onCreateExercise, onSave
     if (mode === 'generate') {
       const tpl = generatePlanTemplate(setup.sport, setup.goals, setup.experience, setup.daysPerWeek, duration)
       const b = expandTemplate(tpl, duration)
-      setBlocks(b)
-      setTemplates(templatesFromBlocks(b))
+      const t = assignWeekdays(templatesFromBlocks(b), setup.trainDays)
+      setBlocks(b.map((blk, i) => applyTemplateToBlocks([blk], t[i] ?? [])[0]))
+      setTemplates(t)
       setSetup(s => ({ ...s, title: s.title || tpl.title, description: s.description || tpl.description }))
       setStep('days')
       return
@@ -123,8 +164,9 @@ export default function PlanBuilder({ program, library, onCreateExercise, onSave
         const data = await res.json()
         const b = expandAiBlocks(data, duration)
         if (b.length === 0) { setError("The AI plan came back incomplete. Try again, or pick the instant plan instead."); return }
-        setBlocks(b)
-        setTemplates(templatesFromBlocks(b))
+        const t = assignWeekdays(templatesFromBlocks(b), setup.trainDays)
+        setBlocks(b.map((blk, i) => applyTemplateToBlocks([blk], t[i] ?? [])[0]))
+        setTemplates(t)
         setSetup(s => ({ ...s, title: s.title || data.title || `${s.sport || 'Bodybuilding'} AI plan`, description: s.description || data.description || '' }))
         setStep('days')
       } catch {
@@ -213,7 +255,7 @@ export default function PlanBuilder({ program, library, onCreateExercise, onSave
     return (
       <div className="space-y-4">
         {header(mode === 'edit' ? 'Edit plan' : 'Set up', () => setStep('choose'))}
-        <PlanSetupForm mode={mode} setup={setup} onChange={setSetup} error={error} hideStartDate={coach} />
+        <PlanSetupForm mode={mode} setup={setup} onChange={changeSetup} error={error} hideStartDate={coach} load={load} />
         {sheet}
         {busy && mode === 'ai' && (
           <div className="card p-4 space-y-2">
@@ -248,7 +290,7 @@ export default function PlanBuilder({ program, library, onCreateExercise, onSave
   return (
     <div className="space-y-4">
       {header('Review', () => setStep('days'))}
-      <PlanReview setup={setup} blocks={fitBlocks(blocks, setup.durationWeeks)} templates={templates} isEdit={mode === 'edit'} saving={busy} error={error} onSave={save} />
+      <PlanReview setup={setup} blocks={fitBlocks(blocks, setup.durationWeeks)} templates={templates} isEdit={mode === 'edit'} saving={busy} error={error} onSave={save} load={load} onMoveDay={moveDay} />
     </div>
   )
 }

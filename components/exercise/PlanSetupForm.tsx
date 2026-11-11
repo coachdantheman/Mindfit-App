@@ -1,5 +1,7 @@
 'use client'
 import { PLAN_GOALS, PLAN_SPORTS, sportOptional } from '@/lib/workout-templates'
+import { DAY_NAMES } from '@/lib/programs'
+import { weekdayNote, type WeekdayLoad } from '@/lib/schedule'
 
 export const SPORTS = PLAN_SPORTS
 export const GOALS = PLAN_GOALS
@@ -12,6 +14,7 @@ export interface PlanSetup {
   sport: string
   goals: string[]
   experience: 'beginner' | 'intermediate' | 'advanced'
+  trainDays: number[]
   daysPerWeek: number
   durationWeeks: number
   startDate: string
@@ -23,16 +26,28 @@ interface Props {
   onChange: (next: PlanSetup) => void
   error?: string
   hideStartDate?: boolean
+  load?: WeekdayLoad[]
 }
 
 const chip = (on: boolean) =>
   `px-3 min-h-[44px] rounded-full text-xs font-medium border transition-colors ${on ? 'bg-cta/20 text-cta border-cta/30' : 'bg-surface-2 text-fg-3 border-edge hover:border-fg-4'}`
 
-export default function PlanSetupForm({ mode, setup, onChange, error, hideStartDate }: Props) {
+const NOTE_LABEL = { game: 'Game', pre_game: 'Pre-game', practice: 'Practice' } as const
+
+export default function PlanSetupForm({ mode, setup, onChange, error, hideStartDate, load }: Props) {
   const set = <K extends keyof PlanSetup>(k: K, v: PlanSetup[K]) => onChange({ ...setup, [k]: v })
   const needsSportGoals = mode === 'generate' || mode === 'ai'
   const sportRequired = needsSportGoals && !sportOptional(setup.goals)
   const showTitle = mode === 'scratch' || mode === 'edit'
+  const hasSchedule = !!load?.some(l => l.games || l.practices)
+
+  const toggleDay = (d: number) => {
+    const on = setup.trainDays.includes(d)
+    if (on && setup.trainDays.length <= 2) return
+    if (!on && setup.trainDays.length >= 6) return
+    const next = on ? setup.trainDays.filter(x => x !== d) : [...setup.trainDays, d].sort((a, b) => a - b)
+    onChange({ ...setup, trainDays: next, daysPerWeek: next.length })
+  }
 
   return (
     <div className="card p-5 space-y-5">
@@ -92,9 +107,22 @@ export default function PlanSetupForm({ mode, setup, onChange, error, hideStartD
             </div>
           </div>
           <div>
-            <label className="text-xs text-fg-4 block mb-1">Days per week: {setup.daysPerWeek}</label>
-            <input type="range" min={3} max={6} value={setup.daysPerWeek} onChange={e => set('daysPerWeek', parseInt(e.target.value))} className="w-full h-2 rounded-full appearance-none bg-surface-3 accent-cta" />
-            <div className="flex justify-between text-xs text-fg-4 mt-1"><span>3</span><span>4</span><span>5</span><span>6</span></div>
+            <label className="text-xs text-fg-4 block mb-2">Which days can you train?</label>
+            <div className="grid grid-cols-7 gap-1">
+              {[1, 2, 3, 4, 5, 6, 7].map(d => {
+                const on = setup.trainDays.includes(d)
+                const note = load ? weekdayNote(load, d) : null
+                return (
+                  <div key={d} className="flex flex-col items-center gap-1">
+                    <button type="button" onClick={() => toggleDay(d)} aria-pressed={on} className={`${chip(on)} w-full px-0`}>
+                      {DAY_NAMES[d]}
+                    </button>
+                    <span className="h-3 text-[10px] leading-3 text-fg-4">{note ? NOTE_LABEL[note] : ''}</span>
+                  </div>
+                )
+              })}
+            </div>
+            {hasSchedule && <p className="text-xs text-fg-4 mt-2">Picked around your schedule. Change any day.</p>}
           </div>
         </>
       )}

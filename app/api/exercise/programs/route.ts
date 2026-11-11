@@ -126,6 +126,35 @@ export async function PUT(req: Request) {
   return NextResponse.json(full)
 }
 
+// Move one planned workout to another weekday. Only the row's day changes.
+export async function PATCH(req: Request) {
+  const auth = await verifyApiUser()
+  if (auth instanceof NextResponse) return auth
+
+  const body = await req.json().catch(() => ({}))
+  const workoutId = typeof body.workout_id === 'string' ? body.workout_id : null
+  const day = body.day_of_week
+  if (!workoutId || !Number.isInteger(day) || day < 1 || day > 7) {
+    return NextResponse.json({ error: 'workout_id and day_of_week (1-7) are required.' }, { status: 400 })
+  }
+
+  const admin = createAdminClient()
+  const { data: row } = await admin.from('program_workouts').select('id, program_id').eq('id', workoutId).maybeSingle()
+  if (!row) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  const { data: owned } = await admin
+    .from('training_programs')
+    .select('id')
+    .eq('id', row.program_id)
+    .eq('user_id', auth.userId)
+    .maybeSingle()
+  if (!owned) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  const { error } = await admin.from('program_workouts').update({ day_of_week: day }).eq('id', workoutId)
+  if (error) return dbError(error)
+  return NextResponse.json({ ok: true })
+}
+
 export async function DELETE(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth

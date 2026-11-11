@@ -59,3 +59,54 @@ test('effectivePrimary: coach schedule wins over the athlete own primary', async
   assert.deepEqual(effectivePrimary([], [3]), { source: 'athlete', events: [3], hiddenOwn: 0 })
   assert.deepEqual(effectivePrimary([], []), { source: 'none', events: [], hiddenOwn: 0 })
 })
+
+// ─── Training days around the schedule ─────────────────────────────────────
+import { suggestMove, suggestTrainingDays, weekdayLoad, weekdayNote } from '../lib/schedule'
+
+const ev = (kind: 'game' | 'practice', event_date: string) => ({ kind, event_date })
+
+test('weekdayLoad counts games and practices by weekday inside the window', () => {
+  // 2026-11-13 is a Friday, 2026-11-10 a Tuesday.
+  const load = weekdayLoad([ev('game', '2026-11-13'), ev('game', '2026-11-20'), ev('practice', '2026-11-10'), ev('game', '2027-03-05')], '2026-11-09', '2026-12-06')
+  assert.equal(load[5].games, 2)
+  assert.equal(load[2].practices, 1)
+  assert.equal(weekdayNote(load, 5), 'game')
+  assert.equal(weekdayNote(load, 4), 'pre_game')
+  assert.equal(weekdayNote(load, 2), 'practice')
+  assert.equal(weekdayNote(load, 1), null)
+})
+
+test('suggestTrainingDays spreads evenly with no schedule', () => {
+  const empty = weekdayLoad([], '2026-11-09', '2026-12-06')
+  assert.deepEqual(suggestTrainingDays(empty, 3), [1, 3, 5])
+  assert.deepEqual(suggestTrainingDays(empty, 4), [1, 2, 4, 5])
+  assert.deepEqual(suggestTrainingDays(empty, 2), [1, 4])
+})
+
+test('suggestTrainingDays skips game days and the day before', () => {
+  const load = weekdayLoad([ev('game', '2026-11-13')], '2026-11-09', '2026-12-06')
+  const days = suggestTrainingDays(load, 3)
+  assert.equal(days.includes(5), false)
+  assert.equal(days.includes(4), false)
+  assert.equal(days.length, 3)
+})
+
+test('suggestTrainingDays prefers days without practice', () => {
+  const load = weekdayLoad([ev('practice', '2026-11-09'), ev('practice', '2026-11-11'), ev('game', '2026-11-13')], '2026-11-09', '2026-12-06')
+  assert.deepEqual(suggestTrainingDays(load, 3), [2, 6, 7])
+})
+
+test('suggestTrainingDays still returns the count when every day is busy', () => {
+  const all = ['09', '10', '11', '12', '13', '14', '15'].map(d => ev('game', `2026-11-${d}`))
+  assert.equal(suggestTrainingDays(weekdayLoad(all, '2026-11-09', '2026-11-15'), 4).length, 4)
+})
+
+test('suggestMove moves a lift off a game day to the nearest open day', () => {
+  // Week of Mon 2026-11-09; lifts Mon/Wed/Fri; game Fri 13th.
+  assert.deepEqual(suggestMove([1, 3, 5], '2026-11-09', '2026-11-09', ['2026-11-13']), { from: 5, to: 6 })
+})
+
+test('suggestMove ignores days already past and returns null with no clash', () => {
+  assert.equal(suggestMove([1, 3, 5], '2026-11-09', '2026-11-09', ['2026-11-12']), null)
+  assert.equal(suggestMove([1, 3, 5], '2026-11-09', '2026-11-14', ['2026-11-13']), null)
+})

@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   currentWeek, isoDayOfWeek, workoutsForWeek, todaysWorkout, nextWorkout,
-  buildFromScratch, expandAiBlocks, expandTemplate, dayTemplatesFromProgram, applyTemplateToBlocks,
+  buildFromScratch, expandAiBlocks, expandTemplate, dayTemplatesFromProgram, applyTemplateToBlocks, assignWeekdays,
 } from '../lib/programs'
 import { generatePlanTemplate } from '../lib/workout-templates'
 import type { ProgramWorkout } from '../types'
@@ -115,4 +115,30 @@ test('dayTemplatesFromProgram / applyTemplateToBlocks round-trip', () => {
   const blocks = applyTemplateToBlocks([{ name: 'Plan', focus: '', week_start: 1, week_end: 4, workouts: [] }], days)
   assert.equal(blocks[0].workouts.length, 12)
   assert.equal(blocks[0].workouts.filter(w => w.day_of_week === 1).every(w => w.exercises.length === 2), true)
+})
+
+test('assignWeekdays — template days map in order onto the chosen weekdays', () => {
+  const dt = (day_of_week: number) => ({ day_of_week, name: `D${day_of_week}`, description: '', exercises: [{ name: 'Row', sets: 3, reps: '8', notes: '' }] })
+  const out = assignWeekdays([[dt(5), dt(1)]], [2, 4, 6])
+  assert.deepEqual(out[0].map(d => d.day_of_week), [2, 4])
+  assert.deepEqual(out[0].map(d => d.name), ['D1', 'D5'])
+})
+
+test('assignWeekdays — extra template days keep a free weekday, else take the next free one', () => {
+  const dt = (day_of_week: number) => ({ day_of_week, name: `D${day_of_week}`, description: '', exercises: [{ name: 'Row', sets: 3, reps: '8', notes: '' }] })
+  const kept = assignWeekdays([[dt(1), dt(2), dt(3)]], [1, 2])
+  assert.deepEqual(kept[0].map(d => d.day_of_week), [1, 2, 3])
+  const moved = assignWeekdays([[dt(1), dt(2), dt(3), dt(4), dt(5)]], [1, 3])
+  const days = moved[0].map(d => d.day_of_week)
+  assert.equal(days.length, 5)
+  assert.deepEqual(days, [1, 3, 4, 5, 6])
+})
+
+test('assignWeekdays — never produces duplicate weekdays', () => {
+  const dt = (day_of_week: number) => ({ day_of_week, name: `D${day_of_week}`, description: '', exercises: [{ name: 'Row', sets: 3, reps: '8', notes: '' }] })
+  const out = assignWeekdays([[dt(1), dt(2), dt(6), dt(7)], [dt(3)]], [6, 7, 1])
+  for (const block of out) {
+    const days = block.map(d => d.day_of_week)
+    assert.equal(new Set(days).size, days.length)
+  }
 })

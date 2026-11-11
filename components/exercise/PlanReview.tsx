@@ -1,8 +1,10 @@
 'use client'
 import { format } from 'date-fns'
 import { DAY_NAMES, parseLocalDate, type DayTemplate, type PlanBlockInput } from '@/lib/programs'
+import { weekdayNote, type WeekdayLoad } from '@/lib/schedule'
 import type { PlanSetup } from './PlanSetupForm'
 import SaveButton from '@/components/shared/SaveButton'
+import { SortableList, SortableRow } from './Sortable'
 
 interface Props {
   setup: PlanSetup
@@ -12,9 +14,13 @@ interface Props {
   saving: boolean
   error?: string
   onSave: () => void
+  load?: WeekdayLoad[]
+  onMoveDay: (blockIndex: number, fromDay: number, toDay: number) => void
 }
 
-export default function PlanReview({ setup, blocks, templates, isEdit, saving, error, onSave }: Props) {
+const WEEK = [1, 2, 3, 4, 5, 6, 7]
+
+export default function PlanReview({ setup, blocks, templates, isEdit, saving, error, onSave, load, onMoveDay }: Props) {
   const start = setup.startDate ? parseLocalDate(setup.startDate) : null
   const end = start ? new Date(start.getFullYear(), start.getMonth(), start.getDate() + setup.durationWeeks * 7 - 1) : null
   const trainingDays = new Set(templates.flat().filter(d => d.exercises.length > 0).map(d => d.day_of_week)).size
@@ -36,26 +42,49 @@ export default function PlanReview({ setup, blocks, templates, isEdit, saving, e
         </div>
       </div>
 
-      {blocks.map((b, i) => (
-        <div key={i} className="card p-4 space-y-2">
-          <div>
-            <p className="font-semibold text-fg-1">{b.name}</p>
-            <p className="text-xs text-fg-4">Weeks {b.week_start}–{b.week_end}{b.focus ? ` · ${b.focus}` : ''}</p>
-          </div>
-          {(templates[i] ?? []).filter(d => d.exercises.length > 0).length === 0 ? (
-            <p className="text-xs text-amber-400">No training days in this block yet.</p>
-          ) : (
-            <div className="space-y-1">
-              {(templates[i] ?? []).filter(d => d.exercises.length > 0).map(d => (
-                <div key={d.day_of_week} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-surface-2/50">
-                  <p className="text-sm text-fg-2 truncate"><span className="text-fg-4">{DAY_NAMES[d.day_of_week]}</span> · {d.name || 'Workout'}</p>
-                  <p className="text-xs text-fg-4 shrink-0">{d.exercises.length} exercises</p>
-                </div>
-              ))}
+      <p className="text-xs text-fg-4">Drag a day to move it.</p>
+
+      {blocks.map((b, i) => {
+        const days = templates[i] ?? []
+        return (
+          <div key={i} className="card p-4 space-y-2">
+            <div>
+              <p className="font-semibold text-fg-1">{b.name}</p>
+              <p className="text-xs text-fg-4">Weeks {b.week_start}–{b.week_end}{b.focus ? ` · ${b.focus}` : ''}</p>
             </div>
-          )}
-        </div>
-      ))}
+            {days.filter(d => d.exercises.length > 0).length === 0 && (
+              <p className="text-xs text-amber-400">No training days in this block yet.</p>
+            )}
+            <SortableList items={WEEK} ids={WEEK.map(d => `${i}-${d}`)} onReorder={(_, from, to) => onMoveDay(i, from + 1, to + 1)}>
+              <div className="space-y-1">
+                {WEEK.map(day => {
+                  const d = days.find(x => x.day_of_week === day && x.exercises.length > 0)
+                  const note = load ? weekdayNote(load, day) : null
+                  return (
+                    <SortableRow key={day} id={`${i}-${day}`} className="flex items-center gap-2 py-1 pr-2.5 rounded-lg bg-surface-2/50">
+                      {handle => (<>
+                        {handle}
+                        <span className="w-9 shrink-0 text-xs text-fg-4">{DAY_NAMES[day]}</span>
+                        {d ? (
+                          <p className="flex-1 min-w-0 text-sm text-fg-2 truncate">{d.name || 'Workout'}</p>
+                        ) : (
+                          <p className="flex-1 min-w-0 text-sm text-fg-4">Rest</p>
+                        )}
+                        {d && note === 'game' ? (
+                          <span className="shrink-0 text-[10px] text-amber-400">Game day</span>
+                        ) : note ? (
+                          <span className="shrink-0 text-[10px] text-fg-4">{note === 'game' ? 'Game' : note === 'pre_game' ? 'Pre-game' : 'Practice'}</span>
+                        ) : null}
+                        {d && <span className="shrink-0 text-xs text-fg-4">{d.exercises.length} exercises</span>}
+                      </>)}
+                    </SortableRow>
+                  )
+                })}
+              </div>
+            </SortableList>
+          </div>
+        )
+      })}
 
       {isEdit && (
         <p className="text-xs text-fg-4">

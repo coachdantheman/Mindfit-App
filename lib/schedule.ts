@@ -139,3 +139,60 @@ export function effectivePrimary<T, U>(teamEvents: T[], ownPrimary: U[]): { sour
   if (ownPrimary.length > 0) return { source: 'athlete', events: ownPrimary, hiddenOwn: 0 }
   return { source: 'none', events: [], hiddenOwn: 0 }
 }
+
+// ─── Training days around the schedule ─────────────────────────────────────
+
+export interface WeekdayLoad { games: number; practices: number }
+export type WeekdayNote = 'game' | 'pre_game' | 'practice' | null
+
+// Games and practices per weekday between two dates. Index 1=Mon..7=Sun.
+export function weekdayLoad(events: Pick<ScheduleEvent, 'kind' | 'event_date'>[], from: string, to: string): WeekdayLoad[] {
+  const load: WeekdayLoad[] = Array.from({ length: 8 }, () => ({ games: 0, practices: 0 }))
+  for (const e of events) {
+    if (e.event_date < from || e.event_date > to) continue
+    if (e.kind === 'game') load[isoDow(e.event_date)].games++
+    else if (e.kind === 'practice') load[isoDow(e.event_date)].practices++
+  }
+  return load
+}
+
+export function weekdayNote(load: WeekdayLoad[], day: number): WeekdayNote {
+  if (load[day]?.games) return 'game'
+  if (load[day === 7 ? 1 : day + 1]?.games) return 'pre_game'
+  if (load[day]?.practices) return 'practice'
+  return null
+}
+
+const SPREAD: Record<number, number[]> = {
+  1: [1], 2: [1, 4], 3: [1, 3, 5], 4: [1, 2, 4, 5], 5: [1, 2, 3, 5, 6], 6: [1, 2, 3, 4, 5, 6], 7: [1, 2, 3, 4, 5, 6, 7],
+}
+
+// Which weekdays to train on: never a usual game day, avoid the day before
+// one, and prefer days without practice. With no schedule, an even spread.
+export function suggestTrainingDays(load: WeekdayLoad[], count: number): number[] {
+  const n = Math.max(1, Math.min(7, Math.round(count)))
+  const spread = SPREAD[n]
+  const cost = (d: number) => {
+    const note = weekdayNote(load, d)
+    return note === 'game' ? 100 : note === 'pre_game' ? 10 : note === 'practice' ? 1 : 0
+  }
+  return [1, 2, 3, 4, 5, 6, 7]
+    .sort((a, b) => cost(a) - cost(b) || Number(spread.includes(b)) - Number(spread.includes(a)) || a - b)
+    .slice(0, n)
+    .sort((a, b) => a - b)
+}
+
+// One planned workout this week lands on a game day: where to move it.
+// Looks only at today or later, and never suggests a day that already has
+// a workout or a game. Prefers a day that is not the day before a game.
+export function suggestMove(workoutDays: number[], weekMonday: string, today: string, gameDates: Iterable<string>): { from: number; to: number } | null {
+  const games = new Set(gameDates)
+  const dateOf = (d: number) => addDays(weekMonday, d - 1)
+  const from = workoutDays.find(d => dateOf(d) >= today && games.has(dateOf(d)))
+  if (!from) return null
+  const open = [1, 2, 3, 4, 5, 6, 7].filter(d => !workoutDays.includes(d) && dateOf(d) >= today && !games.has(dateOf(d)))
+  if (open.length === 0) return null
+  const pre = (d: number) => (games.has(addDays(dateOf(d), 1)) ? 1 : 0)
+  const to = open.sort((a, b) => pre(a) - pre(b) || Math.abs(a - from) - Math.abs(b - from) || a - b)[0]
+  return { from, to }
+}

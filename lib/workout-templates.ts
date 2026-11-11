@@ -436,7 +436,7 @@ export function generatePlanTemplate(
   daysPerWeek: number,
   durationWeeks: number,
 ): PlanTemplate {
-  const splits = getDaySplits(daysPerWeek, goals)
+  const splits = getDaySplits(daysPerWeek, goals).slice(0, daysPerWeek)
   const blocksCount = Math.ceil(durationWeeks / 4)
   const bodybuilding = goals.includes('bodybuilding')
 
