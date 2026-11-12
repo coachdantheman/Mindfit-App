@@ -47,6 +47,10 @@ export default function GoalsView({ goal, onSaved, notify }: Props) {
     const input: QuizInput = {
       goal_type: goal.goal_type, activity_level: goal.activity_level,
       current_weight_lb: Number(goal.current_weight_lb), target_weight_lb: Number(goal.target_weight_lb),
+      height_in: goal.height_in ? Number(goal.height_in) : null,
+      age: goal.age ? Number(goal.age) : null,
+      sex: goal.sex ?? null,
+      protein_level: goal.protein_level ?? null,
     }
     return saveQuiz(input, computeGoalFromQuiz(input))
   }
@@ -55,7 +59,12 @@ export default function GoalsView({ goal, onSaved, notify }: Props) {
     return (
       <div className="space-y-4">
         <GoalQuiz
-          initial={goal ? { goal_type: goal.goal_type ?? undefined, activity_level: goal.activity_level ?? undefined, current_weight_lb: goal.current_weight_lb ?? undefined, target_weight_lb: goal.target_weight_lb ?? undefined } : undefined}
+          initial={goal ? {
+            goal_type: goal.goal_type ?? undefined, activity_level: goal.activity_level ?? undefined,
+            current_weight_lb: goal.current_weight_lb ?? undefined, target_weight_lb: goal.target_weight_lb ?? undefined,
+            height_in: goal.height_in ? Number(goal.height_in) : undefined, age: goal.age ? Number(goal.age) : undefined,
+            sex: goal.sex ?? undefined, protein_level: goal.protein_level ?? undefined,
+          } : undefined}
           onSave={saveQuiz}
           onCancel={hasQuiz ? () => setRetaking(false) : undefined}
         />

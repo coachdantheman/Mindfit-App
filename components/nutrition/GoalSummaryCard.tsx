@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { NutritionGoal } from '@/types'
-import { ACTIVITY_MULTIPLIER, CALORIE_FLOOR, FAT_PCT, PROTEIN_PER_LB, GoalType, ActivityLevel } from '@/lib/nutrition'
+import { ACTIVITY_FACTOR, ACTIVITY_MULTIPLIER, CALORIE_FLOOR, FAT_PCT, PROTEIN_PER_LB, GoalType, ActivityLevel, ProteinLevel, restingCalories } from '@/lib/nutrition'
 
 const GOAL_LABEL: Record<GoalType, string> = { gain: 'Build muscle', lose: 'Lean out', maintain: 'Maintain' }
 const ACTIVITY_LABEL: Record<ActivityLevel, string> = { light: 'light', moderate: 'moderate', high: 'high' }
@@ -11,7 +11,11 @@ export default function GoalSummaryCard({ goal, onRetake }: { goal: NutritionGoa
   const gt = goal.goal_type as GoalType | null
   const al = goal.activity_level as ActivityLevel | null
   const w = goal.current_weight_lb ? Number(goal.current_weight_lb) : null
-  const maintenance = w && al ? Math.round(w * ACTIVITY_MULTIPLIER[al]) : null
+  const protein: ProteinLevel = goal.protein_level ?? 'standard'
+  const body = goal.height_in && goal.age && goal.sex ? { height_in: Number(goal.height_in), age: Number(goal.age), sex: goal.sex } : null
+  const maintenance = w && al
+    ? Math.round(body ? restingCalories(w, body.height_in, body.age, body.sex) * ACTIVITY_FACTOR[al] : w * ACTIVITY_MULTIPLIER[al])
+    : null
 
   return (
     <div className="card p-5 space-y-4">
@@ -46,9 +50,9 @@ export default function GoalSummaryCard({ goal, onRetake }: { goal: NutritionGoa
           </button>
           {why && (
             <ul className="mt-2 text-xs text-fg-3 space-y-1.5 list-disc pl-4">
-              <li>Maintenance ≈ {w} lb × {ACTIVITY_MULTIPLIER[al]} kcal/lb ({ACTIVITY_LABEL[al]} activity) = {maintenance.toLocaleString()} kcal. This bodyweight method is the quick estimate sports dietitians use when height and age aren&rsquo;t on file.</li>
+              <li>Calories are {body ? 'based on your height, age, weight and training' : 'based on your weight and training'}. Maintenance ≈ {maintenance.toLocaleString()} kcal at {ACTIVITY_LABEL[al]} activity.</li>
               <li>{gt === 'maintain' ? 'Maintain: no surplus or deficit.' : gt === 'gain' ? 'Build muscle: a moderate +350 kcal surplus — enough to grow, not enough to add much fat.' : `Lean out: a −400 kcal deficit, never below ${CALORIE_FLOOR.toLocaleString()} kcal. Growing athletes should not cut harder than this.`}</li>
-              <li>Protein {PROTEIN_PER_LB[gt]} g per lb of bodyweight — the range research supports for athletes in training.</li>
+              <li>{goal.protein_level ? `Protein ${PROTEIN_PER_LB[protein]} g per lb of your ${gt === 'maintain' ? 'current' : 'target'} weight.` : `Protein ${Math.round(Number(goal.protein_g))} g a day.`}</li>
               <li>Fat ≈ {FAT_PCT}% of calories for hormones and recovery; carbs fill the rest to fuel practice and games.</li>
               <li>Weight-class or appearance sport? Talk this through with a parent or coach before cutting.</li>
             </ul>

@@ -8,6 +8,11 @@ import { macrosFromCalories } from '@/lib/nutrition'
 const GOAL_TYPES = ['gain', 'lose', 'maintain']
 const ACTIVITY_LEVELS = ['light', 'moderate', 'high']
 
+function inRange(value: unknown, min: number, max: number): number | null {
+  const n = typeof value === 'number' ? value : NaN
+  return Number.isFinite(n) && n >= min && n <= max ? n : null
+}
+
 export async function GET() {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
@@ -26,6 +31,7 @@ export async function GET() {
     calories: 2000, protein_g: 150, carbs_g: 250, fat_g: 65,
     mode: 'absolute', protein_pct: 30, carbs_pct: 40, fat_pct: 30,
     goal_type: null, activity_level: null, current_weight_lb: null, target_weight_lb: null,
+    height_in: null, age: null, sex: null, protein_level: null,
     quiz_completed_at: null,
   })
 }
@@ -70,11 +76,20 @@ export async function PUT(req: Request) {
     if (cur == null || target == null) {
       return NextResponse.json({ error: 'Weights must be between 50 and 500 lb' }, { status: 400 })
     }
+    // Height, age and sex are used only as a set; a partial set is stored as nulls.
+    const height = inRange(body.height_in, 36, 96)
+    const age = inRange(body.age, 10, 100)
+    const sex = body.sex === 'male' || body.sex === 'female' ? body.sex : null
+    const bodyComplete = height != null && age != null && sex != null
     Object.assign(quiz, {
       goal_type: body.goal_type,
       activity_level: body.activity_level,
       current_weight_lb: cur,
       target_weight_lb: target,
+      height_in: bodyComplete ? height : null,
+      age: bodyComplete ? age : null,
+      sex: bodyComplete ? sex : null,
+      protein_level: body.protein_level === 'high' || body.protein_level === 'standard' ? body.protein_level : null,
       quiz_completed_at: new Date().toISOString(),
     })
   } else if (body.current_weight_lb != null) {

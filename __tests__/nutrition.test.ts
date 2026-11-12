@@ -22,8 +22,30 @@ test('quiz — 150 lb moderate maintain', () => {
 test('quiz — 180 lb high gain', () => {
   const r = computeGoalFromQuiz({ goal_type: 'gain', activity_level: 'high', current_weight_lb: 180, target_weight_lb: 190 })
   assert.equal(r.calories, 3600)
-  assert.equal(r.grams.protein_g, 162)
+  assert.equal(r.grams.protein_g, 152) // 0.8 g per lb of the 190 lb target
   assert.equal(r.weeks_to_target, 20)
+})
+
+test('quiz — protein is 0.8 g per lb of target weight, 1.0 when chosen', () => {
+  const base = { goal_type: 'gain' as const, activity_level: 'high' as const, current_weight_lb: 160, target_weight_lb: 170 }
+  assert.equal(computeGoalFromQuiz(base).grams.protein_g, 136)
+  assert.equal(computeGoalFromQuiz(base).protein_per_lb, 0.8)
+  assert.equal(computeGoalFromQuiz({ ...base, protein_level: 'high' }).grams.protein_g, 170)
+  const cut = computeGoalFromQuiz({ goal_type: 'lose', activity_level: 'high', current_weight_lb: 200, target_weight_lb: 185 })
+  assert.equal(cut.grams.protein_g, 148)
+})
+
+test('quiz — height, age and sex switch to the body-based calorie method', () => {
+  const base = { goal_type: 'maintain' as const, activity_level: 'moderate' as const, current_weight_lb: 150, target_weight_lb: 150 }
+  const boy = computeGoalFromQuiz({ ...base, height_in: 69, age: 16, sex: 'male' })
+  // 10*68.04 + 6.25*175.26 - 5*16 + 5 = 1700.8; x1.7 = 2891
+  assert.equal(boy.method, 'body')
+  assert.equal(boy.maintenance, 2891)
+  assert.equal(boy.calories, 2900)
+  const girl = computeGoalFromQuiz({ ...base, height_in: 69, age: 16, sex: 'female' })
+  assert.equal(boy.maintenance - girl.maintenance, Math.round(166 * 1.7))
+  assert.equal(computeGoalFromQuiz({ ...base, height_in: 69, age: 16 }).method, 'weight')
+  assert.equal(computeGoalFromQuiz(base).maintenance, 2400)
 })
 
 test('quiz — small athlete losing clamps to floor with warning', () => {

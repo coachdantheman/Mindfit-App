@@ -116,7 +116,7 @@ export default function BarcodeScanner({ onAdd, onFoodCreated, onNotFound, busy 
           <p className="text-base font-medium text-fg-1">{food.name}</p>
           <p className="text-xs text-fg-4">{food.brand ? `${food.brand} · ` : ''}per {food.serving_size}</p>
         </div>
-        <ServingStepper value={servings} onChange={setServings} servingSize={food.serving_size} />
+        <ServingStepper value={servings} onChange={setServings} servingSize={food.serving_size} servingGrams={food.serving_grams != null ? Number(food.serving_grams) : null} />
         <div className="grid grid-cols-4 gap-2 text-center">
           {[['kcal', scaled.calories], ['P', scaled.protein_g], ['C', scaled.carbs_g], ['F', scaled.fat_g]].map(([l, v]) => (
             <div key={l} className="rounded-xl bg-surface-2 py-2">

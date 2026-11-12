@@ -33,6 +33,18 @@ export async function POST(req: Request) {
   if (!name) return NextResponse.json({ error: 'Name required' }, { status: 400 })
 
   const admin = createAdminClient()
+  const fdcId = body.source === 'usda' && Number.isInteger(body.fdc_id) && body.fdc_id > 0 ? body.fdc_id : null
+  if (fdcId != null) {
+    const { data: existing } = await admin
+      .from('foods')
+      .select('*')
+      .eq('user_id', auth.userId)
+      .eq('fdc_id', fdcId)
+      .limit(1)
+      .maybeSingle()
+    if (existing) return NextResponse.json(existing)
+  }
+
   const { data, error } = await admin
     .from('foods')
     .insert({
@@ -46,11 +58,17 @@ export async function POST(req: Request) {
       protein_g: clampNumber(body.protein_g ?? 0, 0, 500) ?? 0,
       carbs_g: clampNumber(body.carbs_g ?? 0, 0, 500) ?? 0,
       fat_g: clampNumber(body.fat_g ?? 0, 0, 500) ?? 0,
-      source: body.source === 'ai' ? 'ai' : 'user',
+      source: fdcId != null ? 'usda' : body.source === 'ai' ? 'ai' : 'user',
+      ...(fdcId != null ? { fdc_id: fdcId } : {}),
     })
     .select()
     .single()
 
+  // Two taps at once: the second insert hits the unique index, so hand back the first row.
+  if (error?.code === '23505' && fdcId != null) {
+    const { data: existing } = await admin.from('foods').select('*').eq('user_id', auth.userId).eq('fdc_id', fdcId).maybeSingle()
+    if (existing) return NextResponse.json(existing)
+  }
   if (error) return dbError(error)
   return NextResponse.json(data, { status: 201 })
 }

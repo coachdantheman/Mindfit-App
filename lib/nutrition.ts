@@ -13,11 +13,19 @@ export interface MacroSplit { protein_pct: number; carbs_pct: number; fat_pct: n
 export interface MacroGrams { protein_g: number; carbs_g: number; fat_g: number }
 export interface FoodMacros extends MacroGrams { calories: number }
 
+export type Sex = 'male' | 'female'
+export type ProteinLevel = 'standard' | 'high'
+
 export interface QuizInput {
   goal_type: GoalType
   activity_level: ActivityLevel
   current_weight_lb: number
   target_weight_lb: number
+  // Optional. With all three, calories use height, age and sex instead of weight alone.
+  height_in?: number | null
+  age?: number | null
+  sex?: Sex | null
+  protein_level?: ProteinLevel | null
 }
 
 export interface GoalResult {
@@ -27,6 +35,7 @@ export interface GoalResult {
   split: MacroSplit
   grams: MacroGrams
   protein_per_lb: number
+  method: 'body' | 'weight'
   weeks_to_target: number | null
   warnings: string[]
 }
@@ -35,7 +44,16 @@ export interface GoalResult {
 // height/age aren't collected.
 export const ACTIVITY_MULTIPLIER: Record<ActivityLevel, number> = { light: 14, moderate: 16, high: 18 }
 export const GOAL_ADJUSTMENT: Record<GoalType, number> = { gain: 350, lose: -400, maintain: 0 }
-export const PROTEIN_PER_LB: Record<GoalType, number> = { gain: 0.9, lose: 1.0, maintain: 0.8 }
+// Grams per lb of TARGET body weight. 0.8 is the floor; 1.0 is the opt-in.
+export const PROTEIN_PER_LB: Record<ProteinLevel, number> = { standard: 0.8, high: 1.0 }
+// Mifflin-St Jeor resting energy × an activity factor for athletes in training.
+export const ACTIVITY_FACTOR: Record<ActivityLevel, number> = { light: 1.5, moderate: 1.7, high: 1.9 }
+const LB_TO_KG = 0.45359237
+const IN_TO_CM = 2.54
+
+export function restingCalories(weightLb: number, heightIn: number, age: number, sex: Sex): number {
+  return 10 * weightLb * LB_TO_KG + 6.25 * heightIn * IN_TO_CM - 5 * age + (sex === 'male' ? 5 : -161)
+}
 export const FAT_PCT = 28
 export const CALORIE_FLOOR = 1600
 export const CALORIE_CEILING = 6000
@@ -95,7 +113,10 @@ export function weeksToTarget(current: number, target: number, goal: GoalType): 
 export function computeGoalFromQuiz(q: QuizInput): GoalResult {
   const warnings: string[] = []
   const weight = q.current_weight_lb
-  const maintenance = Math.round(weight * ACTIVITY_MULTIPLIER[q.activity_level])
+  const hasBody = !!(q.height_in && q.age && q.sex)
+  const maintenance = hasBody
+    ? Math.round(restingCalories(weight, q.height_in!, q.age!, q.sex!) * ACTIVITY_FACTOR[q.activity_level])
+    : Math.round(weight * ACTIVITY_MULTIPLIER[q.activity_level])
   const raw = maintenance + GOAL_ADJUSTMENT[q.goal_type]
   let calories = Math.round(raw / 50) * 50
   if (calories < CALORIE_FLOOR) {
@@ -105,9 +126,10 @@ export function computeGoalFromQuiz(q: QuizInput): GoalResult {
   if (calories > CALORIE_CEILING) calories = CALORIE_CEILING
   const adjustment = calories - maintenance
 
-  const protein_per_lb = PROTEIN_PER_LB[q.goal_type]
+  const protein_per_lb = PROTEIN_PER_LB[q.protein_level ?? 'standard']
+  const proteinWeight = q.goal_type === 'maintain' ? weight : q.target_weight_lb || weight
   const proteinCap = Math.floor((calories * MAX_PROTEIN_PCT / 100) / CAL_PER_G.protein)
-  const protein_g = Math.min(Math.round(weight * protein_per_lb), proteinCap)
+  const protein_g = Math.min(Math.round(proteinWeight * protein_per_lb), proteinCap)
   const fat_g = Math.round((calories * FAT_PCT / 100) / CAL_PER_G.fat)
   const carbs_g = Math.max(0, Math.round((calories - protein_g * CAL_PER_G.protein - fat_g * CAL_PER_G.fat) / CAL_PER_G.carbs))
   const grams = { protein_g, carbs_g, fat_g }
@@ -129,6 +151,7 @@ export function computeGoalFromQuiz(q: QuizInput): GoalResult {
     split: splitFromGrams(grams),
     grams,
     protein_per_lb,
+    method: hasBody ? 'body' : 'weight',
     weeks_to_target: weeksToTarget(weight, q.target_weight_lb, q.goal_type),
     warnings,
   }

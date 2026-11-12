@@ -134,6 +134,10 @@ export interface NutritionGoal {
   activity_level: 'light' | 'moderate' | 'high' | null
   current_weight_lb: number | null
   target_weight_lb: number | null
+  height_in: number | null
+  age: number | null
+  sex: 'male' | 'female' | null
+  protein_level: 'standard' | 'high' | null
   quiz_completed_at: string | null
   updated_at: string
 }
@@ -193,8 +197,9 @@ export interface Food {
   protein_g: number
   carbs_g: number
   fat_g: number
-  source: 'curated' | 'user' | 'ai' | 'barcode'
+  source: 'curated' | 'user' | 'ai' | 'barcode' | 'usda'
   barcode: string | null
+  fdc_id?: number | null
   created_at: string
 }
 

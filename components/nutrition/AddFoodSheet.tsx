@@ -81,7 +81,7 @@ export default function AddFoodSheet({ meal, foods, recent, favorites, savedMeal
             <>
               {scanMiss && <p className="text-xs text-amber-400 mb-2">That barcode isn’t in the database yet — search for it or add it manually.</p>}
               <FoodSearchList foods={foods} favoriteIds={favoriteIds} onToggleFavorite={onToggleFavorite} busy={busy}
-                onAdd={(item, save) => add([item], save)} />
+                onAdd={(item, save) => add([item], save)} onFoodCreated={onFoodCreated} />
             </>
           )}
           {tab === 'scan' && (

@@ -1,7 +1,8 @@
 'use client'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Food } from '@/types'
 import { scaleFood, searchFoods } from '@/lib/nutrition'
+import type { UsdaFood } from '@/lib/usda'
 import type { AddItem } from './AddFoodSheet'
 import ServingStepper from './ServingStepper'
 import AiEstimateCard from './AiEstimateCard'
@@ -12,16 +13,70 @@ interface Props {
   favoriteIds: Set<string>
   onToggleFavorite: (food: Food) => void
   onAdd: (item: AddItem, saveToFoods?: boolean) => void
+  onFoodCreated?: (food: Food) => void
   busy?: boolean
 }
 
-export default function FoodSearchList({ foods, favoriteIds, onToggleFavorite, onAdd, busy }: Props) {
+export default function FoodSearchList({ foods, favoriteIds, onToggleFavorite, onAdd, onFoodCreated, busy }: Props) {
   const [q, setQ] = useState('')
   const [selected, setSelected] = useState<Food | null>(null)
   const [servings, setServings] = useState(1)
   const [manual, setManual] = useState(false)
+  const [usda, setUsda] = useState<UsdaFood[]>([])
+  const [usdaLoading, setUsdaLoading] = useState(false)
+  const [usdaSaving, setUsdaSaving] = useState(false)
+  const [usdaError, setUsdaError] = useState(false)
 
   const results = useMemo(() => searchFoods(foods, q, 30), [foods, q])
+  const trimmed = q.trim()
+
+  useEffect(() => {
+    setUsda([])
+    if (trimmed.length < 3) { setUsdaLoading(false); return }
+    const controller = new AbortController()
+    setUsdaLoading(true)
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/nutrition/usda?q=${encodeURIComponent(trimmed)}`, { signal: controller.signal })
+        const data = await res.json().catch(() => [])
+        if (!controller.signal.aborted) setUsda(Array.isArray(data) ? data : [])
+      } catch {
+        if (!controller.signal.aborted) setUsda([])
+      } finally {
+        if (!controller.signal.aborted) setUsdaLoading(false)
+      }
+    }, 400)
+    return () => { clearTimeout(timer); controller.abort() }
+  }, [trimmed])
+
+  const localNames = new Set(results.map(r => r.name.toLowerCase()))
+  const usdaRows = usda.filter(f => !localNames.has(f.name.toLowerCase()))
+
+  const pickUsda = async (f: UsdaFood) => {
+    if (usdaSaving) return
+    setUsdaSaving(true)
+    setUsdaError(false)
+    try {
+      const res = await fetch('/api/nutrition/foods', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: f.name, brand: f.brand, serving_size: f.serving_size, serving_grams: f.serving_grams,
+          calories: f.calories, protein_g: f.protein_g, carbs_g: f.carbs_g, fat_g: f.fat_g,
+          source: 'usda', fdc_id: f.fdc_id,
+        }),
+      })
+      if (!res.ok) { setUsdaError(true); return }
+      const food: Food = await res.json()
+      onFoodCreated?.(food)
+      setSelected(food)
+      setServings(1)
+    } catch {
+      setUsdaError(true)
+    } finally {
+      setUsdaSaving(false)
+    }
+  }
 
   if (selected) {
     const scaled = scaleFood(selected, servings)
@@ -32,7 +87,7 @@ export default function FoodSearchList({ foods, favoriteIds, onToggleFavorite, o
           <p className="text-base font-medium text-fg-1">{selected.name}</p>
           <p className="text-xs text-fg-4">{selected.brand ? `${selected.brand} · ` : ''}per {selected.serving_size}</p>
         </div>
-        <ServingStepper value={servings} onChange={setServings} servingSize={selected.serving_size} />
+        <ServingStepper value={servings} onChange={setServings} servingSize={selected.serving_size} servingGrams={selected.serving_grams != null ? Number(selected.serving_grams) : null} />
         <div className="grid grid-cols-4 gap-2 text-center">
           {[['kcal', scaled.calories], ['P', scaled.protein_g], ['C', scaled.carbs_g], ['F', scaled.fat_g]].map(([l, v]) => (
             <div key={l} className="rounded-xl bg-surface-2 py-2">
@@ -86,6 +141,28 @@ export default function FoodSearchList({ foods, favoriteIds, onToggleFavorite, o
               </button>
             </div>
           ))}
+        </div>
+      )}
+      {trimmed.length >= 3 && usdaLoading && (
+        <p className="text-xs text-fg-4 text-center">Searching more foods…</p>
+      )}
+      {trimmed.length >= 3 && usdaRows.length > 0 && (
+        <div className="space-y-1">
+          <p className="text-xs uppercase tracking-wider text-fg-4 pt-1">More foods (USDA)</p>
+          <div className="divide-y divide-edge-muted max-h-[40vh] overflow-y-auto -mx-1">
+            {usdaRows.map(f => (
+              <div key={f.fdc_id} className="flex items-center gap-2 px-1">
+                <button type="button" disabled={usdaSaving || busy} onClick={() => pickUsda(f)} aria-label={`${f.name}${f.brand ? `, ${f.brand}` : ''}, ${f.calories} kcal per ${f.serving_size}`} className="flex-1 flex items-center justify-between py-2.5 text-left min-w-0 disabled:opacity-50">
+                  <div className="min-w-0">
+                    <p className="text-sm text-fg-1 truncate">{f.name}</p>
+                    <p className="text-xs text-fg-4 truncate">{f.brand ? `${f.brand} · ` : ''}{f.serving_size} · {Math.round(f.protein_g)}P · {Math.round(f.carbs_g)}C · {Math.round(f.fat_g)}F</p>
+                  </div>
+                  <span className="text-sm font-semibold text-fg-2 tabular-nums ml-3 shrink-0">{f.calories}</span>
+                </button>
+              </div>
+            ))}
+          </div>
+          {usdaError && <p className="text-xs text-amber-400">Couldn&rsquo;t add that food. Try again.</p>}
         </div>
       )}
       {q.trim() !== '' && results.length === 0 && !manual && (
