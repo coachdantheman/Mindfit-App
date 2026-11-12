@@ -11,7 +11,7 @@ test('bodybuilding — 3-6 day splits generate, every exercise resolves to the l
   for (const days of [3, 4, 5, 6]) {
     const tpl = generatePlanTemplate('', ['bodybuilding'], 'intermediate', days, 16)
     assert.equal(tpl.title, '16-Week Bodybuilding Program')
-    assert.deepEqual(tpl.blocks.map(b => b.name), ['Foundation — Accumulation', 'Build — Intensification', 'Peak — Intensification', 'Taper — Deload'])
+    assert.deepEqual(tpl.blocks.map(b => b.name), ['Foundation: Accumulation', 'Build: Intensification', 'Peak: Intensification', 'Taper: Deload'])
     const muscles = new Set<string>()
     for (const block of tpl.blocks) {
       const dayNums = new Set(block.workouts.map(w => w.day_of_week))

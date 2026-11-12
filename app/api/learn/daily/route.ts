@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { isISODate } from '@/lib/validate'
 import { DAILY_LESSONS } from '@/lib/data/daily-lessons'
+import { refreshScoreThrottled } from '@/lib/leaderboard-scores'
 
 const IDS = new Set(DAILY_LESSONS.map(l => l.id))
 
@@ -29,10 +30,12 @@ export async function POST(req: Request) {
   if (!IDS.has(body.lesson_id) || !isISODate(body.date) || !Number.isInteger(score) || score < 0 || score > 3) {
     return NextResponse.json({ error: 'Invalid lesson result.' }, { status: 400 })
   }
-  const { error } = await createAdminClient().from('lesson_completions').upsert(
+  const admin = createAdminClient()
+  const { error } = await admin.from('lesson_completions').upsert(
     { user_id: auth.userId, lesson_id: body.lesson_id, completed_on: body.date, score },
     { onConflict: 'user_id,lesson_id,completed_on' },
   )
   if (error) return dbError(error)
+  if (auth.role !== 'parent') await refreshScoreThrottled(admin, auth.userId, null).catch(() => {})
   return NextResponse.json({ ok: true })
 }

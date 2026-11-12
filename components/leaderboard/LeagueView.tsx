@@ -2,10 +2,10 @@
 import { Fragment, useEffect, useState } from 'react'
 import Link from 'next/link'
 import Skeleton from '@/components/shared/Skeleton'
-import Celebrate from '@/components/shared/Celebrate'
 import ReportButton from '@/components/shared/ReportButton'
 import { cached } from '@/lib/api-cache'
 import { initialsOf } from './types'
+import WeekResultSheet from './WeekResultSheet'
 
 type Zone = 'up' | 'down' | null
 
@@ -22,15 +22,15 @@ export interface LeagueResponse {
   last: { tier: number; name: string; rank: number | null; size: number; moved: 'up' | 'down' | 'same' } | null
 }
 
-const SEEN_KEY = 'mf_league_seen'
+const RESULT_SEEN_KEY = 'mf_league_result_seen'
 const MIN_FOR_MOVES = 10
 
-function readSeen(): string | null {
-  try { return localStorage.getItem(SEEN_KEY) } catch { return null }
+function readResultSeen(): string | null {
+  try { return localStorage.getItem(RESULT_SEEN_KEY) } catch { return null }
 }
 
-function writeSeen(week: string) {
-  try { localStorage.setItem(SEEN_KEY, week) } catch {}
+function writeResultSeen(week: string) {
+  try { localStorage.setItem(RESULT_SEEN_KEY, week) } catch {}
 }
 
 function Divider({ caption, tone }: { caption: string; tone: 'gold' | 'muted' }) {
@@ -46,9 +46,14 @@ function Divider({ caption, tone }: { caption: string; tone: 'gold' | 'muted' })
 }
 
 function Row({ r }: { r: LeagueRow }) {
+  const zoneBg = r.zone === 'up' ? 'bg-emerald-500/[0.06]' : r.zone === 'down' ? 'bg-red-400/[0.06]' : ''
   return (
-    <li className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border ${r.isMe ? 'border-cta/40 bg-cta/5' : 'border-transparent'}`}>
-      <span className="w-7 text-center text-sm font-bold tabular-nums text-fg-2 shrink-0">{r.rank}</span>
+    <li className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border ${r.isMe ? 'border-cta/40 bg-cta/5' : `border-transparent ${zoneBg}`}`}>
+      <span className="w-9 flex items-center justify-center gap-0.5 text-sm font-bold tabular-nums text-fg-2 shrink-0">
+        {r.rank}
+        {r.zone === 'up' && <span aria-hidden className="text-[10px] text-emerald-400">▲</span>}
+        {r.zone === 'down' && <span aria-hidden className="text-[10px] text-red-400">▼</span>}
+      </span>
       <span className="w-9 h-9 rounded-full bg-gradient-to-br from-cta to-brand-700 text-fg-inverse flex items-center justify-center text-xs font-bold shrink-0" aria-hidden>
         {initialsOf(r.displayName)}
       </span>
@@ -70,7 +75,7 @@ export default function LeagueView() {
   const [data, setData] = useState<LeagueResponse | null>(null)
   const [error, setError] = useState(false)
   const [attempt, setAttempt] = useState(0)
-  const [fire, setFire] = useState<number | null>(null)
+  const [resultOpen, setResultOpen] = useState(false)
 
   useEffect(() => {
     let tz = ''
@@ -82,10 +87,7 @@ export default function LeagueView() {
     })
       .then(d => {
         if (!d || !('week' in d)) { setError(true); return }
-        if (d.last && d.last.moved !== 'same' && readSeen() !== d.week) {
-          writeSeen(d.week)
-          setFire(Date.now())
-        }
+        if (d.last && readResultSeen() !== d.week) setResultOpen(true)
       })
       .catch(() => setError(true))
   }, [attempt])
@@ -121,26 +123,34 @@ export default function LeagueView() {
 
   return (
     <div className="space-y-4">
-      <Celebrate fire={fire}>
-        <div className="card p-5 space-y-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-xs uppercase tracking-wider font-semibold font-mono text-fg-4">This week</p>
-              <h2 className="text-xl font-bold text-fg-1 leading-tight">{data.name}</h2>
-              <p className="text-sm text-fg-3 mt-0.5">{endsIn}</p>
-            </div>
-            {data.me && (
-              <div className="text-right shrink-0">
-                <p className="text-2xl font-bold text-fg-1 tabular-nums leading-none">{data.me.rank}</p>
-                <p className="text-xs text-fg-4 tabular-nums mt-1">of {data.size}</p>
-              </div>
-            )}
+      {resultOpen && data.last && (
+        <WeekResultSheet
+          rank={data.last.rank}
+          size={data.last.size}
+          lastName={data.last.name}
+          name={data.name ?? data.last.name}
+          moved={data.last.moved}
+          onClose={() => { writeResultSeen(data.week); setResultOpen(false) }}
+        />
+      )}
+      <div className="card p-5 space-y-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs uppercase tracking-wider font-semibold font-mono text-fg-4">This week</p>
+            <h2 className="text-xl font-bold text-fg-1 leading-tight">{data.name}</h2>
+            <p className="text-sm text-fg-3 mt-0.5">{endsIn}</p>
           </div>
-          {moveText && (
-            <p role="status" className="text-sm text-cta border-t border-edge-muted pt-3">{moveText}</p>
+          {data.me && (
+            <div className="text-right shrink-0">
+              <p className="text-2xl font-bold text-fg-1 tabular-nums leading-none">{data.me.rank}</p>
+              <p className="text-xs text-fg-4 tabular-nums mt-1">of {data.size}</p>
+            </div>
           )}
         </div>
-      </Celebrate>
+        {moveText && (
+          <p role="status" className="text-sm text-cta border-t border-edge-muted pt-3">{moveText}</p>
+        )}
+      </div>
 
       <div className="card p-3 sm:p-4">
         <ol className="space-y-1">

@@ -11,6 +11,8 @@ import { clearDraft, draftKey, readDraft, writeDraft } from '@/lib/useDraft'
 import { localDateISO } from '@/lib/dates'
 import { cachedAll } from '@/lib/api-cache'
 import { shiftDate } from '@/lib/nutrition'
+import WindDown from '@/components/sleep/WindDown'
+import SleepDebt from '@/components/sleep/SleepDebt'
 
 interface SleepDraft { bedtime: string; wakeTime: string; quality: number; sleepNotes: string }
 interface RecoveryDraft { isRestDay: boolean; activities: { type: string; duration_min: number }[]; recoveryNotes: string }
@@ -33,6 +35,7 @@ export default function SleepPage() {
   const isDefault = date === lastNight
   const [usual, setUsual] = useState<{ bedtime: string; wakeTime: string } | null>(null)
   const [savingUsual, setSavingUsual] = useState(false)
+  const [trend, setTrend] = useState<{ entry_date: string; hours_slept: number | null }[]>([])
 
   // Sleep form state
   const [bedtime, setBedtime] = useState('')
@@ -60,15 +63,18 @@ export default function SleepPage() {
       `/api/sleep/entries?date=${date}`,
       `/api/sleep/recovery?date=${recoveryDate}`,
       '/api/profile',
-    ], ([sleepData, recoveryData, profile]: [
+      '/api/sleep/entries',
+    ], ([sleepData, recoveryData, profile, allSleep]: [
       { bedtime: string | null; wake_time: string | null; sleep_quality: number | null; notes: string | null }[],
       { is_rest_day: boolean; activities: { type: string; duration_min: number }[] | null; notes: string | null }[],
       { default_bedtime?: string | null; default_wake_time?: string | null } | null,
+      { entry_date: string; hours_slept: number | null }[],
     ]) => {
       const u = profile?.default_bedtime && profile?.default_wake_time
         ? { bedtime: hhmm(profile.default_bedtime), wakeTime: hhmm(profile.default_wake_time) }
         : null
       setUsual(u)
+      setTrend(Array.isArray(allSleep) ? allSleep : [])
       const draft = isDefault ? readDraft<SleepDraft>(sleepKey) : null
       if (sleepData.length > 0) {
         const s = sleepData[0]
@@ -198,6 +204,12 @@ export default function SleepPage() {
     })
   }
 
+  const nights = Array.from({ length: 14 }, (_, i) => {
+    const d = shiftDate(lastNight, i - 13)
+    const row = trend.find(t => t.entry_date === d)
+    return { date: d, hours: row?.hours_slept == null ? null : Number(row.hours_slept) }
+  })
+
   const hoursNum = hours ? parseFloat(hours) : 0
   const sleepColor = hoursNum >= 7 && hoursNum <= 9 ? 'text-green-400' : hoursNum > 0 ? 'text-orange-400' : 'text-fg-4'
 
@@ -215,6 +227,9 @@ export default function SleepPage() {
       {/* Both tabs stay mounted so unsaved edits survive switching. */}
       {(
         <div className={`space-y-5 ${tab === 'track' ? '' : 'hidden'}`}>
+          <WindDown />
+          <SleepDebt nights={nights} />
+
           {/* Sleep Tracking */}
           <div className="card p-6">
             <div className="flex items-start justify-between gap-3 mb-1">

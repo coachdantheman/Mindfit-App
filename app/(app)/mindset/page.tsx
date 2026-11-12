@@ -21,12 +21,13 @@ const GratitudeTab = dynamic(() => import('@/components/mindset/GratitudeTab'))
 const HabitsTab = dynamic(() => import('@/components/mindset/HabitsTab'))
 const QuoteVault = dynamic(() => import('@/components/mindset/QuoteVault'))
 const MusicTab = dynamic(() => import('@/components/mindset/MusicTab'))
+const DailyRoutine = dynamic(() => import('@/components/mindset/DailyRoutine'))
 
-const tabs = ['Journal', 'Gratitude', 'MPI Weekly Assessment', 'Flow State', 'Visualization', 'Affirmations', 'Goals', 'Habits', 'Quote Vault', 'Music'] as const
+const tabs = ['Journal', 'Routine', 'Gratitude', 'MPI Weekly Assessment', 'Flow State', 'Visualization', 'Affirmations', 'Goals', 'Habits', 'Quote Vault', 'Music'] as const
 type Tab = typeof tabs[number]
 
 // Old ?tab= names still land on the right tab.
-const tabAliases: Record<string, Tab> = { 'Weekly Assessment': 'MPI Weekly Assessment', 'Meditation': 'Visualization' }
+const tabAliases: Record<string, Tab> = { 'Weekly Assessment': 'MPI Weekly Assessment', 'Meditation': 'Visualization', 'routine': 'Routine' }
 
 const tabSections: Partial<Record<Tab, LessonSection>> = {
   'Journal': 'journal',
@@ -70,6 +71,7 @@ function MindsetContent() {
 
   const tabContent: Record<Tab, React.ReactNode> = {
     'Journal': <JournalTab />,
+    'Routine': <DailyRoutine />,
     'Gratitude': <GratitudeTab />,
     'MPI Weekly Assessment': <WeeklyAssessment />,
     'Flow State': <FlowStateTab />,

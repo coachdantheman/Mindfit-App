@@ -11,6 +11,9 @@ import { Habit, HabitCheck } from '@/lib/habits'
 import { localDateISO } from '@/lib/dates'
 import GoalTracker from '@/components/mindset/GoalTracker'
 
+type GoalAuto = { checks: number; days: number; progress: number; habit_name: string }
+type GoalRow = Goal & { habit_id?: string | null; auto?: GoalAuto }
+
 const GOAL_LABELS: Record<GoalType, string> = {
   weekly: 'Weekly Goals',
   season: 'Season Goals',
@@ -22,13 +25,16 @@ interface GoalFieldsProps {
   title: string
   desc: string
   endDate: string
+  habits: Habit[]
+  habitId: string
   onType: (t: GoalType) => void
   onTitle: (v: string) => void
   onDesc: (v: string) => void
   onEndDate: (v: string) => void
+  onHabit: (v: string) => void
 }
 
-function GoalFields({ type, title, desc, endDate, onType, onTitle, onDesc, onEndDate }: GoalFieldsProps) {
+function GoalFields({ type, title, desc, endDate, habits, habitId, onType, onTitle, onDesc, onEndDate, onHabit }: GoalFieldsProps) {
   return (
     <>
       <div className="flex gap-2">
@@ -70,19 +76,34 @@ function GoalFields({ type, title, desc, endDate, onType, onTitle, onDesc, onEnd
           className="input-field !w-auto"
         />
       </label>
+      {habits.length > 0 && (
+        <label className="flex items-center justify-between gap-3 text-sm text-fg-3">
+          <span>Link a habit <span className="text-fg-4">(optional)</span></span>
+          <select
+            value={habitId}
+            onChange={e => onHabit(e.target.value)}
+            aria-label="Link a habit"
+            className="input-field !w-auto max-w-[60%]"
+          >
+            <option value="">None</option>
+            {habits.map(h => <option key={h.id} value={h.id}>{h.title}</option>)}
+          </select>
+        </label>
+      )}
     </>
   )
 }
 
 export default function GoalsSection() {
   const notify = useToast()
-  const [goals, setGoals] = useState<Goal[]>([])
+  const [goals, setGoals] = useState<GoalRow[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [formType, setFormType] = useState<GoalType>('weekly')
   const [formTitle, setFormTitle] = useState('')
   const [formDesc, setFormDesc] = useState('')
   const [formEnd, setFormEnd] = useState('')
+  const [formHabit, setFormHabit] = useState('')
   const [formActions, setFormActions] = useState<string[]>([''])
   const [habits, setHabits] = useState<Habit[]>([])
   const [checks, setChecks] = useState<HabitCheck[]>([])
@@ -92,18 +113,28 @@ export default function GoalsSection() {
   const [editTitle, setEditTitle] = useState('')
   const [editDesc, setEditDesc] = useState('')
   const [editEnd, setEditEnd] = useState('')
+  const [editHabit, setEditHabit] = useState('')
   const [editSaving, setEditSaving] = useState(false)
+  const [showCompleted, setShowCompleted] = useState(false)
   const progressTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>())
   const confirmedProgress = useRef(new Map<string, number>())
   const latestProgress = useRef(new Map<string, number>())
 
   useEffect(() => {
-    cached('/api/mindset/goals', (data: Goal[]) => { setGoals(data); setLoading(false) })
+    cached('/api/mindset/goals', (data: GoalRow[]) => { setGoals(data); setLoading(false) })
     fetch('/api/mindset/habits')
       .then(r => (r.ok ? r.json() : null))
       .then(d => { if (d?.habits) { setHabits(d.habits); setChecks(d.checks ?? []) } })
       .catch(() => {})
   }, [])
+
+  // Habit-linked goals need the server's auto progress, so re-read after a save.
+  const reloadGoals = () => {
+    fetch('/api/mindset/goals')
+      .then(r => (r.ok ? r.json() : null))
+      .then((d: GoalRow[] | null) => { if (d) setGoals(d) })
+      .catch(() => {})
+  }
 
   const addGoal = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -114,14 +145,16 @@ export default function GoalsSection() {
       const res = await fetch('/api/mindset/goals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ goal_type: formType, title: formTitle, description: formDesc || null, target_date: formEnd || null }),
+        body: JSON.stringify({ goal_type: formType, title: formTitle, description: formDesc || null, target_date: formEnd || null, habit_id: formHabit || null }),
       })
       if (res.ok) {
         const data = await res.json()
         setGoals(prev => [data, ...prev])
+        if (formHabit) reloadGoals()
         setFormTitle('')
         setFormDesc('')
         setFormEnd('')
+        setFormHabit('')
         setFormActions([''])
         setShowForm(false)
         const created: Habit[] = []
@@ -179,12 +212,13 @@ export default function GoalsSection() {
     }, 400))
   }
 
-  const startEdit = (g: Goal) => {
+  const startEdit = (g: GoalRow) => {
     setEditingId(g.id)
     setEditType(g.goal_type)
     setEditTitle(g.title)
     setEditDesc(g.description ?? '')
     setEditEnd(g.target_date ?? '')
+    setEditHabit(g.habit_id ?? '')
   }
 
   const saveEdit = async (e: React.FormEvent) => {
@@ -194,14 +228,16 @@ export default function GoalsSection() {
     const title = editTitle.trim()
     const description = editDesc.trim() || null
     const target_date = editEnd || null
+    const habit_id = editHabit || null
     try {
       const res = await fetch('/api/mindset/goals', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: editingId, title, description, goal_type: editType, target_date }),
+        body: JSON.stringify({ id: editingId, title, description, goal_type: editType, target_date, habit_id }),
       })
       if (res.ok) {
-        setGoals(prev => prev.map(g => g.id === editingId ? { ...g, title, description, goal_type: editType, target_date } : g))
+        setGoals(prev => prev.map(g => g.id === editingId ? { ...g, title, description, goal_type: editType, target_date, habit_id } : g))
+        reloadGoals()
         setEditingId(null)
         notify('Goal updated ✓')
       } else {
@@ -231,12 +267,12 @@ export default function GoalsSection() {
 
   if (loading) return <Skeleton />
 
-  // Active goals first; completed ones fold behind "Show N completed".
-  const byType = (t: GoalType) => {
-    const list = goals.filter(g => g.goal_type === t)
-    return [...list.filter(g => !g.is_completed), ...list.filter(g => g.is_completed)]
-  }
-  const grouped = { weekly: byType('weekly'), season: byType('season'), year: byType('year') }
+  // Active goals by type; completed goals sit on the shelf at the bottom.
+  const activeOf = (t: GoalType) => goals.filter(g => g.goal_type === t && !g.is_completed)
+  const grouped = { weekly: activeOf('weekly'), season: activeOf('season'), year: activeOf('year') }
+  const completed = goals
+    .filter(g => g.is_completed)
+    .sort((a, b) => (b.completed_at ?? '').localeCompare(a.completed_at ?? ''))
 
   const weekDays = new Set(Array.from({ length: 7 }, (_, i) => {
     const d = new Date()
@@ -270,10 +306,13 @@ export default function GoalsSection() {
               title={formTitle}
               desc={formDesc}
               endDate={formEnd}
+              habits={habits}
+              habitId={formHabit}
               onType={setFormType}
               onTitle={setFormTitle}
               onDesc={setFormDesc}
               onEndDate={setFormEnd}
+              onHabit={setFormHabit}
             />
             <div className="space-y-2">
               <p className="text-sm text-fg-2">What daily action will get you there?</p>
@@ -322,17 +361,20 @@ export default function GoalsSection() {
           return (
             <div key={type} className="mb-5 last:mb-0">
               <h4 className="text-xs uppercase tracking-wider text-fg-4 font-medium mb-3">{GOAL_LABELS[type]}</h4>
-              <CollapsibleList className="space-y-2" items={items} visible={Math.max(1, items.filter(g => !g.is_completed).length)} noun="completed" render={g => editingId === g.id ? (
+              <CollapsibleList className="space-y-2" items={items} visible={items.length} noun="completed" render={g => editingId === g.id ? (
                   <form key={g.id} onSubmit={saveEdit} className="p-3 rounded-xl bg-surface-2/50 border border-edge-muted space-y-3">
                     <GoalFields
                       type={editType}
                       title={editTitle}
                       desc={editDesc}
                       endDate={editEnd}
+                      habits={habits}
+                      habitId={editHabit}
                       onType={setEditType}
                       onTitle={setEditTitle}
                       onDesc={setEditDesc}
                       onEndDate={setEditEnd}
+                      onHabit={setEditHabit}
                     />
                     <div className="flex gap-2">
                       <SaveButton
@@ -350,11 +392,9 @@ export default function GoalsSection() {
                   <div key={g.id} className="p-3 rounded-xl bg-surface-2/50 border border-edge-muted">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div>
-                        <p className={`text-sm font-medium ${g.is_completed ? 'text-green-400 line-through' : 'text-fg-2'}`}>
-                          {g.title}
-                        </p>
+                        <p className="text-sm font-medium text-fg-2">{g.title}</p>
                         {g.description && <p className="text-xs text-fg-3 mt-0.5 italic">{g.description}</p>}
-                        {g.target_date && !g.is_completed && <DaysLeft date={g.target_date} />}
+                        {g.target_date && <DaysLeft date={g.target_date} />}
                         {habits.some(h => h.goal_id === g.id) && (
                           <div className="mt-2 space-y-1">
                             {habits.filter(h => h.goal_id === g.id).map(h => (
@@ -382,12 +422,49 @@ export default function GoalsSection() {
                         </button>
                       </div>
                     </div>
-                    <GoalTracker value={g.progress} label={g.title} onChange={v => updateProgress(g.id, v)} />
+                    {g.auto ? (
+                      <GoalTracker
+                        value={g.auto.progress}
+                        label={g.title}
+                        readOnly
+                        note={`Fills from your habit: ${g.auto.habit_name}. ${g.auto.checks} of ${g.auto.days} days.`}
+                      />
+                    ) : (
+                      <GoalTracker value={g.progress} label={g.title} onChange={v => updateProgress(g.id, v)} />
+                    )}
                   </div>
                 )} />
             </div>
           )
         })}
+
+        {completed.length > 0 && (
+          <div className="mt-6 pt-4 border-t border-edge-muted">
+            <button
+              type="button"
+              onClick={() => setShowCompleted(v => !v)}
+              aria-expanded={showCompleted}
+              className="w-full flex items-center justify-between py-2 text-xs uppercase tracking-wider text-fg-4 font-medium"
+            >
+              <span>Completed goals ({completed.length})</span>
+              <span aria-hidden="true">{showCompleted ? '−' : '+'}</span>
+            </button>
+            {showCompleted && (
+              <ul className="mt-2 space-y-2">
+                {completed.map(g => (
+                  <li key={g.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-surface-2/50 border border-edge-muted">
+                    <span className="text-sm text-fg-3 line-through truncate">{g.title}</span>
+                    {g.completed_at && (
+                      <span className="text-xs text-fg-4 shrink-0">
+                        {new Date(g.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

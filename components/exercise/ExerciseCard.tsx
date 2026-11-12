@@ -1,7 +1,8 @@
 'use client'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import SetRow, { setFields } from './SetRow'
 import { format, parseISO } from 'date-fns'
+import { haptic } from '@/lib/haptics'
 import { emptySet, type DraftExercise, type DraftSet } from '@/lib/workout-draft'
 import { DISTANCE_UNITS, formatPace, formatTime, isPaceUnit, paceSec, parseTime } from '@/lib/running'
 import type { DistanceUnit } from '@/types/exercise'
@@ -135,6 +136,18 @@ export default function ExerciseCard({ exercise, last, onChange, onRemove, onSet
   const lastDistanceFor = (i: number) => (last?.sets.length ? last.sets[Math.min(i, last.sets.length - 1)].distance ?? null : null)
   const live = liveLine(exercise)
 
+  const wr = exercise.measure === 'weight_reps'
+  const volume = wr ? exercise.sets.reduce((sum, s) => sum + (Number(s.weight) || 0) * (Number(s.reps) || 0), 0) : 0
+  const lastVolume = wr && last ? last.sets.reduce((sum, s) => sum + (s.weight ?? 0) * (s.reps ?? 0), 0) : 0
+  const volumePassed = lastVolume > 0 && volume > lastVolume
+  const hapticFired = useRef(false)
+  useEffect(() => {
+    if (volumePassed && !hapticFired.current) {
+      hapticFired.current = true
+      haptic.success()
+    }
+  }, [volumePassed])
+
   return (
     <div className="card p-4 space-y-3">
       <div className="flex items-start justify-between gap-2">
@@ -160,6 +173,19 @@ export default function ExerciseCard({ exercise, last, onChange, onRemove, onSet
         </div>
         <button type="button" onClick={onRemove} aria-label="Remove exercise" className="btn-ghost px-2 -mr-2 shrink-0">✕</button>
       </div>
+
+      {wr && lastVolume > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-xs text-fg-4">
+            {volumePassed
+              ? <span className="text-cta font-medium">New best volume. +{volume - lastVolume} lb</span>
+              : <>Volume <span className="text-fg-2 tabular-nums">{volume} lb</span> vs {lastVolume} lb last time</>}
+          </p>
+          <div className="h-1 rounded-full bg-surface-2 overflow-hidden" role="progressbar" aria-label="Volume against last time" aria-valuemin={0} aria-valuemax={lastVolume} aria-valuenow={Math.min(volume, lastVolume)}>
+            <div className={`h-full rounded-full transition-all ${volumePassed ? 'bg-cta' : 'bg-fg-3'}`} style={{ width: `${Math.min(100, (volume / lastVolume) * 100)}%` }} />
+          </div>
+        </div>
+      )}
 
       {timed && (
         <div className="flex items-center gap-1.5" role="radiogroup" aria-label="Distance unit">
@@ -197,6 +223,7 @@ export default function ExerciseCard({ exercise, last, onChange, onRemove, onSet
             unit={exercise.unit}
             lastWeight={lastWeightFor(i)}
             lastDistance={lastDistanceFor(i)}
+            lastSet={last?.sets[i] ?? null}
             onChange={next => updateSet(i, next)}
             onRemove={exercise.sets.length > 1 ? () => removeSet(i) : undefined}
           />

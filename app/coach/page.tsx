@@ -7,6 +7,7 @@ import CreateWorkout from '@/components/coach/CreateWorkout'
 import CoachPrograms from '@/components/coach/CoachPrograms'
 import ScheduleManager from '@/components/coach/ScheduleManager'
 import TeamPregame from '@/components/coach/TeamPregame'
+import MealPlanEditor from '@/components/coach/MealPlanEditor'
 import CoachOverview from '@/components/coach/CoachOverview'
 import Link from 'next/link'
 import Skeleton from '@/components/shared/Skeleton'
@@ -149,7 +150,7 @@ function AthleteTable({ athletes, onChanged, notify }: { athletes: MemberWithCou
 export default function CoachPage() {
   const [athletes, setAthletes] = useState<MemberWithCount[]>([])
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<'overview' | 'athletes' | 'teams' | 'schedule' | 'pregame' | 'workouts' | 'programs'>('overview')
+  const [tab, setTab] = useState<'overview' | 'athletes' | 'teams' | 'schedule' | 'pregame' | 'workouts' | 'programs' | 'meals'>('overview')
   const [teams, setTeams] = useState<{ id: string; name: string; members: { id: string }[] }[]>([])
   const [teamFilter, setTeamFilter] = useState('')
   const notify = useToast()
@@ -183,6 +184,7 @@ export default function CoachPage() {
           { key: 'pregame' as const, label: 'Pregame' },
           { key: 'programs' as const, label: 'Plans' },
           { key: 'workouts' as const, label: 'Workouts' },
+          { key: 'meals' as const, label: 'Meal plans' },
         ]}
         active={tab}
         onSelect={setTab}
@@ -201,6 +203,8 @@ export default function CoachPage() {
           <TeamsManager onChanged={fetchAthletes} />
         ) : tab === 'workouts' ? (
           <CreateWorkout />
+        ) : tab === 'meals' ? (
+          <MealPlanEditor teams={teams} />
         ) : loading ? (
           <Skeleton />
         ) : athletes.length === 0 ? (

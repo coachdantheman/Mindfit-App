@@ -14,7 +14,7 @@ test('readinessScore rounds to a whole number', () => {
 })
 
 test('readinessVerdict maps score bands to the existing verdict strings', () => {
-  assert.equal(readinessVerdict(80), 'Locked in — peak window.')
+  assert.equal(readinessVerdict(80), 'Locked in: peak window.')
   assert.equal(readinessVerdict(65), 'Solid. Execute with intent.')
   assert.equal(readinessVerdict(50), 'Steady. Protect your focus.')
   assert.equal(readinessVerdict(49), 'Recover first. Identity over output.')

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { headers } from 'next/headers'
 import LaunchSplash from '@/components/shared/LaunchSplash'
 import { Inter, Questrial, JetBrains_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
@@ -47,7 +48,8 @@ export const viewport: Viewport = {
   themeColor: '#0A0F1A',
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const nonce = (await headers()).get('x-nonce') ?? undefined
   return (
     <html
       lang="en"
@@ -56,6 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <head>
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `(function(){try{if(navigator.userAgent.indexOf('MindFitApp')>-1)document.documentElement.classList.add('native-app')}catch(e){}try{var t=localStorage.getItem('theme');if(t==='light'){document.documentElement.classList.add('light');document.addEventListener('DOMContentLoaded',function(){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content','#F1F0EE')})}}catch(e){}})()`,
           }}

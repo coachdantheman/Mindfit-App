@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Lesson } from '@/types'
 import { LOW_NOTE, MAX_ANSWER, NEED_LABELS, NEEDS, Need, NeedScores, QUESTION_ORDER, QuizAnswers, RESULTS, SCALE, scoreQuiz } from '@/lib/quiz'
+import { STARTER_PLANS } from '@/lib/data/starter-plans'
+import { localDateISO } from '@/lib/dates'
 
 type Stage = 'loading' | 'intro' | 'questions' | 'result'
 
@@ -11,7 +13,16 @@ const NEED_MAX = 2 * MAX_ANSWER
 
 interface SavedAttempt {
   answers: QuizAnswers
+  created_at?: string
   previous?: { answers: QuizAnswers } | null
+}
+
+// Day 1 is the result's own day. Clamped to the 7-day plan.
+function planDay(resultAt: string): number {
+  const [sy, sm, sd] = localDateISO(new Date(resultAt)).split('-').map(Number)
+  const [ty, tm, td] = localDateISO().split('-').map(Number)
+  const diff = Math.round((Date.UTC(ty, tm - 1, td) - Date.UTC(sy, sm - 1, sd)) / 86_400_000)
+  return Math.min(7, Math.max(1, diff + 1))
 }
 
 export default function AthleteQuiz({ lessons }: { lessons: Lesson[] }) {
@@ -19,7 +30,9 @@ export default function AthleteQuiz({ lessons }: { lessons: Lesson[] }) {
   const [step, setStep] = useState(0)
   const [answers, setAnswers] = useState<QuizAnswers>({})
   const [prior, setPrior] = useState<NeedScores | null>(null)
+  const [resultAt, setResultAt] = useState(() => new Date().toISOString())
   const shownScores = useRef<NeedScores | null>(null)
+  const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
 
@@ -29,6 +42,7 @@ export default function AthleteQuiz({ lessons }: { lessons: Lesson[] }) {
       .then((data: SavedAttempt | null) => {
         if (data?.answers) {
           setAnswers(data.answers)
+          if (data.created_at) setResultAt(data.created_at)
           shownScores.current = scoreQuiz(data.answers).scores
           setPrior(data.previous?.answers ? scoreQuiz(data.previous.answers).scores : null)
           setStage('result')
@@ -36,35 +50,50 @@ export default function AthleteQuiz({ lessons }: { lessons: Lesson[] }) {
         else setStage('intro')
       })
       .catch(() => setStage('intro'))
+    return () => { if (advanceTimer.current) clearTimeout(advanceTimer.current) }
   }, [])
 
-  const start = () => { setAnswers({}); setStep(0); setSaveError(''); setStage('questions') }
+  const cancelAdvance = () => {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current)
+    advanceTimer.current = null
+  }
+
+  const start = () => { cancelAdvance(); setAnswers({}); setStep(0); setSaveError(''); setStage('questions') }
 
   const question = QUESTION_ORDER[step]
   const last = step === QUESTION_ORDER.length - 1
 
+  // Picking an answer moves on after a short beat; the last one shows the result.
   const pick = (value: number) => {
+    if (saving) return
     try { navigator.vibrate?.(8) } catch {}
-    setAnswers(a => ({ ...a, [question.id]: value }))
-    if (!last) setStep(s => s + 1)
+    const next = { ...answers, [question.id]: value }
+    setAnswers(next)
+    cancelAdvance()
+    advanceTimer.current = setTimeout(() => {
+      advanceTimer.current = null
+      if (last) finish(next)
+      else setStep(s => s + 1)
+    }, 250)
   }
 
-  const finish = async () => {
+  const finish = async (final: QuizAnswers) => {
     setSaving(true)
     setSaveError('')
     if (shownScores.current) setPrior(shownScores.current)
-    shownScores.current = scoreQuiz(answers).scores
+    shownScores.current = scoreQuiz(final).scores
     try {
       const res = await fetch('/api/quiz', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ answers }),
+        body: JSON.stringify({ answers: final }),
       })
       if (!res.ok) setSaveError("Your result couldn't be saved. It's shown below, but won't be here next time.")
     } catch {
       setSaveError("Your result couldn't be saved. It's shown below, but won't be here next time.")
     } finally {
       setSaving(false)
+      setResultAt(new Date().toISOString())
       setStage('result')
     }
   }
@@ -93,7 +122,6 @@ export default function AthleteQuiz({ lessons }: { lessons: Lesson[] }) {
   }
 
   if (stage === 'questions') {
-    const answered = answers[question.id] !== undefined
     return (
       <div className="card p-5 space-y-5">
         <div className="space-y-2">
@@ -128,16 +156,14 @@ export default function AthleteQuiz({ lessons }: { lessons: Lesson[] }) {
         </div>
 
         <div className="flex items-center justify-between">
-          <button type="button" onClick={() => step === 0 ? setStage('intro') : setStep(s => s - 1)} className="btn-ghost">
+          <button
+            type="button"
+            onClick={() => { cancelAdvance(); if (step === 0) setStage('intro'); else setStep(s => s - 1) }}
+            className="btn-ghost"
+          >
             {step === 0 ? 'Cancel' : 'Back'}
           </button>
-          {last ? (
-            <button type="button" onClick={finish} disabled={!answered || saving} className="btn-primary">
-              {saving ? 'Saving…' : 'See my result'}
-            </button>
-          ) : (
-            <button type="button" onClick={() => setStep(s => s + 1)} disabled={!answered} className="btn-primary">Next</button>
-          )}
+          {saving && <span className="text-xs text-fg-4">Saving…</span>}
         </div>
       </div>
     )
@@ -195,24 +221,33 @@ export default function AthleteQuiz({ lessons }: { lessons: Lesson[] }) {
 
         <div className="rounded-2xl border border-edge p-4 space-y-3">
           <div>
-            <h3 className="font-semibold text-fg-1">Your next 7 days</h3>
-            <p className="text-sm text-fg-3 mt-0.5">Do these three every day this week, then retake the quiz.</p>
+            <p className="text-xs uppercase tracking-wider text-fg-4 font-mono">Your 7-day starter plan</p>
+            <p className="text-sm text-fg-2 font-semibold mt-1">{STARTER_PLANS[top_need].headline}</p>
           </div>
-          <div className="space-y-2">
-            {result.actions.map(a => (
-              <Link
-                key={a.href}
-                href={a.href}
-                className="flex items-center justify-between gap-3 rounded-xl px-4 py-3.5 bg-surface border border-edge hover:border-cta/40 transition-colors group"
-              >
-                <span className="flex items-center gap-3">
-                  <span className="w-4 h-4 rounded-full border border-edge shrink-0" />
-                  <span className="text-sm text-fg-2 group-hover:text-fg-1">{a.label}</span>
-                </span>
-                <span className="text-cta shrink-0">→</span>
-              </Link>
-            ))}
-          </div>
+          <ol className="space-y-2">
+            {STARTER_PLANS[top_need].days.map(d => {
+              const isToday = d.day === planDay(resultAt)
+              return (
+                <li
+                  key={d.day}
+                  aria-current={isToday ? 'date' : undefined}
+                  className={`rounded-xl border p-3.5 ${isToday ? 'border-cta/50 bg-cta/10' : 'border-edge bg-surface'}`}
+                >
+                  <p className={`text-xs font-mono uppercase tracking-wider ${isToday ? 'text-cta' : 'text-fg-4'}`}>
+                    Day {d.day}{isToday ? ' · Today' : ''}
+                  </p>
+                  <p className="text-sm font-semibold text-fg-1 mt-1">{d.title}</p>
+                  <p className="text-sm text-fg-3 mt-0.5">{d.task}</p>
+                  <Link
+                    href={d.href}
+                    className="inline-flex mt-2.5 text-xs font-semibold text-cta border border-cta/40 rounded-lg px-3 py-1.5 hover:bg-cta/10 transition-colors"
+                  >
+                    {d.cta}
+                  </Link>
+                </li>
+              )
+            })}
+          </ol>
         </div>
 
         {matched.length > 0 && (

@@ -139,7 +139,7 @@ export default function SettingsPage() {
 
       <div className="space-y-8">
         {/* Profile */}
-        <Section title="Profile">
+        <Section id="profile" title="Profile">
           <div className="card p-5">
             <div className="flex items-center gap-3 mb-5">
               <span className="w-12 h-12 rounded-full bg-cta/15 border border-cta/40 text-cta font-semibold flex items-center justify-center uppercase">
@@ -242,11 +242,11 @@ export default function SettingsPage() {
           </div>
         </Section>
 
-        <Section title="My people">
+        <Section id="people" title="My people">
           <SharingCard role={role} />
         </Section>
 
-        <Section title="Notifications">
+        <Section id="notifications" title="Notifications">
         <div className="card p-5">
           <h3 className="font-semibold text-fg-1 mb-4 text-sm">Notifications</h3>
           <DailyQuoteToggle />
@@ -257,12 +257,12 @@ export default function SettingsPage() {
 
         </Section>
 
-        <Section title="Board and privacy">
+        <Section id="board" title="Board and privacy">
           {role !== 'parent' && <LeaderboardCard />}
           <AiFeaturesCard />
         </Section>
 
-        <Section title="Appearance">
+        <Section id="appearance" title="Appearance">
         <div className="card p-5">
           <h3 className="font-semibold text-fg-1 mb-1 text-sm">Appearance</h3>
           <p className="text-sm text-fg-4 mb-4">Switch between dark and light mode.</p>
@@ -287,7 +287,7 @@ export default function SettingsPage() {
         </Section>
 
         <div className="web-only">
-          <Section title="Community">
+          <Section id="community" title="Community">
         <div className="card p-5">
           <h3 className="font-semibold text-fg-1 mb-1 text-sm">MindFit Community</h3>
           <p className="text-sm text-fg-4 mb-4">Connect with other athletes, access courses, and get coached.</p>
@@ -304,7 +304,7 @@ export default function SettingsPage() {
           </Section>
         </div>
 
-        <Section title="Help and legal">
+        <Section id="help" title="Help and legal">
         <div className="card p-5">
           <h3 className="font-semibold text-fg-1 mb-1 text-sm">Help &amp; safety</h3>
           <p className="text-sm text-fg-4 mb-3">
@@ -326,7 +326,7 @@ export default function SettingsPage() {
 
         </Section>
 
-        <Section title="Account">
+        <Section id="account" title="Account">
           <div className="card p-5 space-y-4">
             <form onSubmit={savePassword}>
               <label htmlFor="settings-password" className="block text-xs uppercase tracking-wide text-fg-4 mb-1">Set or change password</label>
@@ -364,11 +364,67 @@ export default function SettingsPage() {
   )
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+const OPEN_KEY = 'mf-settings-open'
+
+const ICON_PATHS: Record<string, React.ReactNode> = {
+  profile: <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" /></>,
+  people: <><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6" /><path d="M16 4.6a3.5 3.5 0 010 6.8M18.5 14.2c2 .9 3 2.9 3 5.8" /></>,
+  notifications: <><path d="M6 16V11a6 6 0 1112 0v5l1.5 2h-15z" /><path d="M10 20.5a2 2 0 004 0" /></>,
+  board: <path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.2-7.5 9.5-4.3-1.3-7.5-4.9-7.5-9.5V6z" />,
+  appearance: <path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z" />,
+  community: <path d="M4 5h16v11H9l-5 4z" />,
+  help: <><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1.1-1.5 2.2" /><path d="M12 17v.01" /></>,
+  account: <><circle cx="8" cy="15" r="4" /><path d="M11 12l9-9M17 6l3 3M14 9l2 2" /></>,
+}
+
+function readOpen(): Record<string, boolean> {
+  try {
+    const saved = JSON.parse(localStorage.getItem(OPEN_KEY) ?? '{}')
+    return saved && typeof saved === 'object' ? saved : {}
+  } catch {
+    return {}
+  }
+}
+
+function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(id === 'profile')
+  useEffect(() => {
+    const saved = readOpen()
+    if (typeof saved[id] === 'boolean') setOpen(saved[id])
+  }, [id])
+
+  const toggle = () => {
+    const next = !open
+    setOpen(next)
+    try {
+      localStorage.setItem(OPEN_KEY, JSON.stringify({ ...readOpen(), [id]: next }))
+    } catch {}
+  }
+
   return (
     <section className="space-y-3">
-      <h2 className="text-[11px] uppercase tracking-[0.22em] text-cta font-semibold px-1">{title}</h2>
-      {children}
+      <h2>
+        <button
+          type="button"
+          onClick={toggle}
+          aria-expanded={open}
+          aria-controls={`settings-${id}`}
+          className="w-full flex items-center gap-2.5 px-1 py-1 text-[11px] uppercase tracking-[0.22em] text-cta font-semibold text-left"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="text-cta shrink-0" aria-hidden="true">
+            {ICON_PATHS[id]}
+          </svg>
+          <span className="flex-1">{title}</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className={`text-fg-4 shrink-0 transition-transform duration-300 ${open ? 'rotate-180' : ''}`} aria-hidden="true">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </button>
+      </h2>
+      <div className={`grid transition-[grid-template-rows] duration-300 ease-out ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+        <div id={`settings-${id}`} aria-hidden={!open} inert={!open} className="min-h-0 overflow-hidden">
+          <div className="space-y-3">{children}</div>
+        </div>
+      </div>
     </section>
   )
 }

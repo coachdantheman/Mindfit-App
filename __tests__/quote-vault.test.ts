@@ -23,12 +23,11 @@ test('vault — keys, ids and texts are unique, nobody is empty', () => {
   for (const p of VAULT) assert.ok(p.quotes.length > 0, p.key)
 })
 
-test('vault — featured people stay first and in order; the rest reshuffle by day', () => {
+test('vault — everyone reshuffles by day, stable within a day', () => {
   const a = vaultOrder(VAULT, '2026-11-11')
   const b = vaultOrder(VAULT, '2026-11-12')
-  const featured = VAULT.filter(p => p.featured).map(p => p.key)
-  assert.deepEqual(a.slice(0, featured.length).map(p => p.key), featured)
   assert.equal(a.length, VAULT.length)
+  assert.deepEqual([...a.map(p => p.key)].sort(), [...VAULT.map(p => p.key)].sort())
   assert.notDeepEqual(a.map(p => p.key), b.map(p => p.key))
   assert.deepEqual(a.map(p => p.key), vaultOrder(VAULT, '2026-11-11').map(p => p.key))
 })

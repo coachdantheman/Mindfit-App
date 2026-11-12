@@ -23,6 +23,12 @@ test('Sunday check-in and recap, first-of-month reset', () => {
   assert.deepEqual(scheduledKinds({ ...base, loggedToday: true, clock: clock(9, 3, 1) }), ['month_start'])
 })
 
+test('Sunday 3 pm final hours for the league', () => {
+  assert.deepEqual(scheduledKinds({ ...base, loggedToday: true, clock: clock(15, 0) }), ['league_final'])
+  assert.deepEqual(scheduledKinds({ ...base, loggedToday: true, clock: clock(15, 1) }), [])
+  assert.deepEqual(scheduledKinds({ ...base, loggedToday: true, clock: clock(14, 0) }), [])
+})
+
 test('quiet hours send nothing', () => {
   assert.deepEqual(scheduledKinds({ ...base, reminderHour: 18, clock: clock(23) }), [])
   assert.deepEqual(scheduledKinds({ ...base, clock: clock(6, 0, 1) }), [])

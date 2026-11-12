@@ -3,9 +3,10 @@ import { createHmac, timingSafeEqual } from 'crypto'
 export const EMAIL_CATEGORIES = ['email_progress', 'email_weekly', 'email_coach', 'all'] as const
 export type EmailCategory = (typeof EMAIL_CATEGORIES)[number]
 
-// UNSUBSCRIBE_SECRET signs new links. Links already sent were signed with
-// the service-role key, so those still verify.
-const legacyKey = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
+// UNSUBSCRIBE_SECRET signs new links. Links sent before it existed were signed
+// with the service-role key; those verify only until LEGACY_UNTIL.
+const LEGACY_UNTIL = Date.parse('2027-01-01T00:00:00Z')
+const legacyKey = () => (Date.now() < LEGACY_UNTIL ? process.env.SUPABASE_SERVICE_ROLE_KEY ?? '' : '')
 const key = () => process.env.UNSUBSCRIBE_SECRET || legacyKey()
 
 function sign(userId: string, category: EmailCategory, k = key()): string {

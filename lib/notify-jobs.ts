@@ -1,6 +1,6 @@
 // Pure scheduling rules for the hourly notification job. No I/O, unit-tested.
 
-export type ScheduledKind = 'reminder' | 'streak' | 'weekly_assessment' | 'weekly_recap' | 'month_start'
+export type ScheduledKind = 'reminder' | 'streak' | 'weekly_assessment' | 'weekly_recap' | 'month_start' | 'league_final'
 
 export interface LocalClock { hour: number; weekday: number; date: string; dayOfMonth: number }
 
@@ -32,6 +32,7 @@ export function scheduledKinds(s: MemberState): ScheduledKind[] {
   if (weekday === 0 && hour === 17) out.push('weekly_assessment')
   if (weekday === 0 && hour === 18) out.push('weekly_recap')
   if (dayOfMonth === 1 && hour === 9) out.push('month_start')
+  if (weekday === 0 && hour === 15) out.push('league_final')
   return out
 }
 

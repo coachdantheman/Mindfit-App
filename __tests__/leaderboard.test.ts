@@ -12,7 +12,7 @@ function row(user_id: string, day: string, counts: Partial<ActivityRow> = {}): A
     journal: 0, assessments: 0, flow_sessions: 0, flow_logs: 0, flow_checkins: 0,
     visualization: 0, meditation: 0, affirmations: 0, goals_done: 0,
     workouts: 0, sets: 0, food: 0, sleep: 0, recovery: 0,
-    gratitude: 0, baseline: 0, mpi_gain: 0, prs: 0, tier_ups: 0,
+    gratitude: 0, baseline: 0, mpi_gain: 0, prs: 0, tier_ups: 0, lessons: 0,
     ...counts,
   }
 }

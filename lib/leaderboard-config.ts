@@ -5,7 +5,7 @@
 export type Pillar = 'mind' | 'body' | 'fuel' | 'rest'
 
 export const PILLARS: { key: Pillar; name: string; emoji: string; blurb: string }[] = [
-  { key: 'mind', name: 'Mind', emoji: '🧠', blurb: 'Journal, gratitude, flow, visualization, goals, MPI growth' },
+  { key: 'mind', name: 'Mind', emoji: '🧠', blurb: 'Journal, gratitude, flow, visualization, goals, daily lessons, MPI growth' },
   { key: 'body', name: 'Body', emoji: '💪', blurb: 'Workouts, sets, PRs and strength tiers' },
   { key: 'fuel', name: 'Fuel', emoji: '🍽️', blurb: 'Meals logged' },
   { key: 'rest', name: 'Rest', emoji: '😴', blurb: 'Sleep and recovery check-ins' },
@@ -16,7 +16,7 @@ export type ActionKey =
   | 'journal' | 'assessments' | 'flow_sessions' | 'flow_logs' | 'flow_checkins'
   | 'visualization' | 'meditation' | 'affirmations' | 'goals_done'
   | 'workouts' | 'sets' | 'sleep' | 'recovery'
-  | 'gratitude' | 'baseline' | 'mpi_gain' | 'prs' | 'tier_ups'
+  | 'gratitude' | 'baseline' | 'mpi_gain' | 'prs' | 'tier_ups' | 'lessons'
 
 export interface ActionRule {
   key: ActionKey
@@ -33,7 +33,7 @@ export interface ActionRule {
 export const ACTIONS: ActionRule[] = [
   // The database counts a full journal as 2 and a quick check-in as 1 (v47),
   // so a check-in earns half and finishing the journal earns the rest.
-  { key: 'journal',       pillar: 'mind', label: 'Daily journal',            points: 5,  cap: 2, show: '+10 · check-in alone +5' },
+  { key: 'journal',       pillar: 'mind', label: 'Daily journal',           points: 5,  cap: 2, show: '+10 · check-in alone +5' },
   { key: 'gratitude',     pillar: 'mind', label: '3 things I’m grateful for', points: 10, cap: 1 },
   { key: 'baseline',      pillar: 'mind', label: 'First MPI assessment',     points: 50, cap: 1 },
   { key: 'assessments',   pillar: 'mind', label: 'Weekly assessment',        points: 25, cap: 1, per: 'week' },
@@ -44,6 +44,7 @@ export const ACTIONS: ActionRule[] = [
   { key: 'visualization', pillar: 'mind', label: 'Visualization / meditation', points: 10, cap: 1 },
   { key: 'affirmations',  pillar: 'mind', label: 'New affirmation',          points: 5,  cap: 2 },
   { key: 'goals_done',    pillar: 'mind', label: 'Goal completed',           points: 20, cap: 2 },
+  { key: 'lessons',       pillar: 'mind', label: 'Daily lesson',             points: 10, cap: 1 },
   { key: 'workouts',      pillar: 'body', label: 'Workout logged',           points: 25, cap: 2 },
   { key: 'sets',          pillar: 'body', label: 'Each set logged',          points: 1,  cap: 10 },
   { key: 'prs',           pillar: 'body', label: 'New personal record',      points: 10, cap: 3 },

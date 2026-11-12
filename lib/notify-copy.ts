@@ -102,6 +102,17 @@ export const copy = {
       ? `${total} habit${total === 1 ? '' : 's'} to check off today. Close the day like the athlete you are building.`
       : `${left} of ${total} habits left today. Finish strong and check them off.`,
   }),
+  leagueFinal: (r: { zone: 'up' | 'down' | null; rank: number; league: string }) => {
+    const spots = r.rank - 5
+    const body = r.zone === 'up'
+      ? `Final hours. You're #${r.rank} in the ${r.league}. Hold the top 5 to move up.`
+      : r.zone === null && r.rank >= 6 && r.rank <= 8
+        ? `Final hours. You're #${r.rank} in the ${r.league}, ${spots} ${spots === 1 ? 'spot' : 'spots'} from moving up. One more log could do it.`
+        : r.zone === 'down'
+          ? `Final hours. You're in the bottom 5 of the ${r.league}. Log today to stay up.`
+          : `Final hours in the ${r.league}. You're #${r.rank}. Every point counts before midnight.`
+    return { title: 'Final hours', body }
+  },
   quizRetake: () => ({
     title: 'Retake the Athlete Quiz',
     body: 'It has been 30 days. See what changed, and what you need most now.',

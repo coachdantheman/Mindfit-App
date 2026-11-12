@@ -51,12 +51,14 @@ Athletes can remove any coach or parent at any time (Settings → My people). No
   - AI features: 30 calls per user per day.
 - **Input validation:** write routes type-check and length-cap every field and pick fields explicitly before saving (`lib/validate.ts`).
 - **API keys:** secrets live only in Vercel environment variables. Only the Supabase URL and anon key, Sentry DSN, push public key and app URL are exposed to the browser, and all of those are designed to be public. `.env.local` is git-ignored.
-- **Headers:** strict Content Security Policy, no framing, HSTS, nosniff, referrer policy (`next.config.js`).
+- **Headers:** no framing, HSTS, nosniff, referrer policy (`next.config.js`). Content Security Policy is set per request in `proxy.ts` with a nonce on every script, and `'unsafe-inline'` is gone from `script-src`.
+- **Health check:** `/api/health` returns 503 `{"status":"degraded"}` when a required server env var is missing, without naming it. Production logs the missing names once at startup (`instrumentation.ts`, `lib/env-check.ts`).
 - **Webhooks and crons:** shared secrets compared in constant time.
+- **Unsubscribe links:** signed with `UNSUBSCRIBE_SECRET`. Links signed with the service-role key (sent before that secret existed) stop verifying on 2027-01-01 (`lib/unsubscribe.ts`).
 
 ## Still open (owner actions)
 
 1. Supabase dashboard → Authentication: turn off "Allow new users to sign up" (the app has its own signup) and turn on "Prevent use of leaked passwords".
 2. Attorney: confirm the COPPA parental consent method.
 3. Rotate any key that was ever pasted into a chat or document.
-4. Later: CSP nonces to remove `'unsafe-inline'` from `script-src`; merge the duplicate RLS policies Supabase flags; retire the old unsubscribe signing fallback in `lib/unsubscribe.ts` once links sent before `UNSUBSCRIBE_SECRET` existed have expired.
+4. Duplicate RLS policies are merged in migration v53. Apply it, then confirm Supabase's advisor no longer flags them.

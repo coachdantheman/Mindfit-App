@@ -6,7 +6,8 @@ export type MusicMoment = 'hype' | 'focus' | 'reset' | 'grind' | 'recovery'
 
 // `apple` is the exact track (clean version where one exists), looked up once
 // from the iTunes Search API on 2026-11-11.
-export interface Song { title: string; artist: string; clean?: boolean; apple?: string }
+// `spotify` is the exact track, filled in by scripts/spotify-links.mjs.
+export interface Song { title: string; artist: string; clean?: boolean; apple?: string; spotify?: string }
 
 export const MOMENTS: { key: MusicMoment; name: string; when: string; why: string; songs: Song[] }[] = [
   {
@@ -52,7 +53,7 @@ export const MOMENTS: { key: MusicMoment; name: string; when: string; why: strin
       { title: 'Experience', artist: 'Ludovico Einaudi', apple: 'https://music.apple.com/us/album/experience/1696816863?i=1696817959' },
       { title: 'River Flows in You', artist: 'Yiruma', apple: 'https://music.apple.com/us/album/river-flows-in-you/1436677753?i=1436677761' },
       { title: 'Clair de Lune', artist: 'Claude Debussy', apple: 'https://music.apple.com/us/album/clair-de-lune/1465829316?i=1465829317' },
-      { title: 'Holocene', artist: 'Bon Iver' },
+      { title: 'Holocene', artist: 'Bon Iver', apple: 'https://music.apple.com/us/album/holocene/438685974?i=438685989' },
       { title: 'Rise Up', artist: 'Andra Day', apple: 'https://music.apple.com/us/album/rise-up/996787628?i=996788062' },
     ],
   },
@@ -94,6 +95,6 @@ export const MOMENTS: { key: MusicMoment; name: string; when: string; why: strin
 
 const query = (s: Song) => `${s.title} ${s.artist}${s.clean ? ' clean' : ''}`
 
-// Spotify has no keyless track lookup, so this opens the track results for the exact song.
-export const spotifyUrl = (s: Song) => `https://open.spotify.com/search/${encodeURIComponent(query(s))}/tracks`
+// Exact track when scripts/spotify-links.mjs has filled `spotify`, otherwise opens the track search.
+export const spotifyUrl = (s: Song) => s.spotify ?? `https://open.spotify.com/search/${encodeURIComponent(query(s))}/tracks`
 export const appleMusicUrl = (s: Song) => s.apple ?? `https://music.apple.com/us/search?term=${encodeURIComponent(query(s))}`

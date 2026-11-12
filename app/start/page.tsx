@@ -57,6 +57,7 @@ export default function StartPage() {
   const [code, setCode] = useState('')
   const [teamCode, setTeamCode] = useState('')
   const [teamMsg, setTeamMsg] = useState('')
+  const [parentEmail, setParentEmail] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [resendIn, setResendIn] = useState(0)
@@ -180,10 +181,20 @@ export default function StartPage() {
       if (!r.ok) return setTeamMsg(r.error)
       clearPendingTeamCode()
     }
+    const parent = parentEmail.trim()
+    if (isTeen && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parent)) {
+      try {
+        await fetch('/api/me/links', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ kind: 'parent', email: parent }),
+        })
+      } catch {}
+    }
     router.push('/mindset')
     router.refresh()
   }
 
+  const isTeen = d.birthYear != null && d.birthMonth != null && !isUnder13({ birth_year: d.birthYear, birth_month: d.birthMonth })
   const mpi = calcMPI(d.scores)
   const { edge, gap } = edgeAndGap(d.scores)
   const progress = step === 'mpi' ? PROGRESS.mpi! + q : PROGRESS[step]
@@ -421,6 +432,22 @@ export default function StartPage() {
               className="input-field h-14 text-center font-mono tracking-[0.4em]"
             />
             {teamMsg && <p role="alert" className="error-box mt-3">{teamMsg}</p>}
+            {isTeen && (
+              <div className="mt-6">
+                <label htmlFor="start-parent" className="block text-sm text-fg-2 mb-2">Parent or guardian email <span className="text-fg-4">(optional)</span></label>
+                <input
+                  id="start-parent"
+                  type="email"
+                  inputMode="email"
+                  autoComplete="off"
+                  value={parentEmail}
+                  onChange={e => setParentEmail(e.target.value)}
+                  placeholder="parent@example.com"
+                  className="input-field h-14"
+                />
+                <p className="text-xs text-fg-4 mt-2">We&apos;ll send them an invite to follow your progress. They see nothing until they accept.</p>
+              </div>
+            )}
             <div className="flex-1" />
             <Primary disabled={busy || (teamCode.length > 0 && teamCode.length < 6)}>{busy ? 'Joining…' : 'Start training'}</Primary>
           </form>

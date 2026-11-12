@@ -10,6 +10,44 @@ import GameDayCard from './GameDayCard'
 import SaveMealSheet from './SaveMealSheet'
 import SupplementsCard from './SupplementsCard'
 import { cached, cachedAll } from '@/lib/api-cache'
+import { MEAL_SLOTS } from '@/components/coach/MealPlanEditor'
+
+interface TeamPlan {
+  team_id: string
+  team_name: string
+  coach_first_name: string | null
+  title: string
+  meals: { slot: string; text: string }[]
+  notes: string | null
+}
+
+function TeamMealPlanCard({ plan }: { plan: TeamPlan }) {
+  const [open, setOpen] = useState(false)
+  const filled = MEAL_SLOTS.filter(s => plan.meals.some(m => m.slot === s.key))
+  return (
+    <div className="card p-4">
+      <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} className="w-full flex items-center justify-between gap-3 text-left min-h-[44px]">
+        <div className="min-w-0">
+          <p className="text-xs text-fg-4">Team meal plan</p>
+          <p className="font-semibold text-fg-1 truncate">{plan.title}</p>
+          <p className="text-xs text-fg-4">From Coach {plan.coach_first_name ?? 'your coach'} · {plan.team_name}</p>
+        </div>
+        <span className="text-sm text-fg-4 shrink-0">{open ? 'Hide' : 'Show'}</span>
+      </button>
+      {open && (
+        <div className="mt-3 pt-3 border-t border-edge-muted space-y-2.5">
+          {filled.map(s => (
+            <div key={s.key}>
+              <p className="text-xs uppercase tracking-wider text-fg-4">{s.label}</p>
+              <p className="text-sm text-fg-2 whitespace-pre-line">{plan.meals.find(m => m.slot === s.key)?.text}</p>
+            </div>
+          ))}
+          {plan.notes && <p className="text-xs text-fg-3 whitespace-pre-line pt-1">{plan.notes}</p>}
+        </div>
+      )}
+    </div>
+  )
+}
 
 interface Props {
   goal: NutritionGoal | null
@@ -32,6 +70,7 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
   const [sheetMeal, setSheetMeal] = useState<MealName | null>(null)
   const [savedMeals, setSavedMeals] = useState<SavedMeal[]>([])
   const [saveMeal, setSaveMeal] = useState<MealName | null>(null)
+  const [teamPlans, setTeamPlans] = useState<TeamPlan[]>([])
   const inFlight = useRef(new Set<string>())
   const once = (key: string, fn: () => Promise<void>) => {
     if (inFlight.current.has(key)) return Promise.resolve()
@@ -53,6 +92,9 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
   }, [])
 
   useEffect(() => { setLoading(true); load() }, [load])
+  useEffect(() => {
+    fetch('/api/me/meal-plan').then(r => (r.ok ? r.json() : [])).then(d => setTeamPlans(Array.isArray(d) ? d : [])).catch(() => {})
+  }, [])
   useEffect(() => { cached('/api/nutrition/recent', (d: RecentFood[]) => setRecent(Array.isArray(d) ? d : [])) }, [])
   useEffect(() => {
     cached('/api/nutrition/saved-meals', (d: SavedMeal[]) => setSavedMeals(Array.isArray(d) ? d : []))
@@ -223,6 +265,7 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
       <DateStrip date={date} onChange={setDate} />
       <DailySummary totals={totals} goal={goal} onSetGoal={onSetGoal} />
       <GameDayCard today={date} onOpenGameDay={onOpenGameDay} />
+      {teamPlans.filter(p => p.meals.length > 0 || p.notes).map(p => <TeamMealPlanCard key={p.team_id} plan={p} />)}
       {loading ? (
         <div className="space-y-3">{[0, 1, 2].map(i => <div key={i} className="skeleton h-16" />)}</div>
       ) : (

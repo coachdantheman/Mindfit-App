@@ -8,6 +8,7 @@ interface Props {
   unit?: DistanceUnit | null
   lastWeight?: number | null
   lastDistance?: number | null
+  lastSet?: { weight: number | null; reps: number | null } | null
   onChange: (next: DraftSet) => void
   onRemove?: () => void
 }
@@ -32,8 +33,18 @@ function leadingNumber(s: string | null): string {
   return m ? m[0] : ''
 }
 
-export default function SetRow({ set, measure, unit, lastWeight, lastDistance, onChange, onRemove }: Props) {
+export default function SetRow({ set, measure, unit, lastWeight, lastDistance, lastSet, onChange, onRemove }: Props) {
   const fields = setFields(measure, unit)
+  const beat = (() => {
+    if (measure !== 'weight_reps' || !lastSet || lastSet.weight == null || lastSet.reps == null) return null
+    const w = Number(set.weight) || 0
+    const r = Number(set.reps) || 0
+    if (w <= 0 || r <= 0) return null
+    const diff = w * r - lastSet.weight * lastSet.reps
+    if (diff > 0) return { mark: '▲', cls: 'text-emerald-400', label: 'Beat last time' }
+    if (diff === 0) return { mark: '=', cls: 'text-fg-4', label: 'Same as last time' }
+    return null
+  })()
   const toggleDone = () => {
     if (set.done) { onChange({ ...set, done: false }); return }
     // Tapping ✓ on an empty row confirms the plan target as performed.
@@ -95,6 +106,9 @@ export default function SetRow({ set, measure, unit, lastWeight, lastDistance, o
           disabled={set.done}
         />
       ) : <span className="flex-1" />}
+      {measure === 'weight_reps' && (
+        <span title={beat?.label} className={`w-4 shrink-0 text-center text-sm font-bold ${beat?.cls ?? ''}`}>{beat?.mark}</span>
+      )}
       <button
         type="button"
         onClick={toggleDone}

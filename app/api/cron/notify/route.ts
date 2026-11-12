@@ -9,6 +9,18 @@ import { scheduledKinds, localClock, shiftDate, inQuietHours, HABIT_HOUR } from 
 import { levelFor, titleFor, monthBounds, isValidTimeZone, displayNameFor } from '@/lib/leaderboard'
 import { refreshScore, liveStreak, pillarsOf, type ScoreRow } from '@/lib/leaderboard-scores'
 import { LEVELS } from '@/lib/leaderboard-config'
+import { LEAGUE_MIN_FOR_MOVES, leagueName, weekStartOf, zoneOf } from '@/lib/leagues'
+
+// This member's zone and rank in this week's league, or null when there is
+// no league row or the group is too small for moves.
+async function leagueFinalFor(admin: ReturnType<typeof createAdminClient>, userId: string, today: string) {
+  const { data } = await admin.rpc('league_standings', { p_user: userId, p_week: weekStartOf(today) })
+  const st = data as { tier: number; size: number; rows: { id: string; rank: number; points: number }[] } | null
+  if (!st || st.size < LEAGUE_MIN_FOR_MOVES) return null
+  const me = st.rows.find(r => r.id === userId)
+  if (!me) return null
+  return { zone: zoneOf(me.rank, st.size, me.points, st.tier), rank: me.rank, league: leagueName(st.tier) }
+}
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -133,6 +145,10 @@ export async function GET(req: Request) {
         if (kind === 'streak') send(u.id, { type: kind, category: 'reminders', url: '/mindset', dedupeKey: key, ...copy.streakRisk(streak) })
         if (kind === 'weekly_assessment') send(u.id, { type: kind, category: 'reminders', url: '/mindset', dedupeKey: key, ...copy.weeklyAssessment() })
         if (kind === 'month_start') send(u.id, { type: kind, category: 'progress', url: '/leaderboard', dedupeKey: key, ...copy.monthStart() })
+        if (kind === 'league_final') {
+          const league = await leagueFinalFor(admin, u.id, clock.date)
+          if (league) send(u.id, { type: kind, category: 'reminders', url: '/leaderboard', dedupeKey: key, ...copy.leagueFinal(league) })
+        }
         if (kind === 'weekly_recap') {
           const weekStart = shiftDate(clock.date, -6)
           const activeDays = recent.filter(d => d >= weekStart && d <= clock.date).length

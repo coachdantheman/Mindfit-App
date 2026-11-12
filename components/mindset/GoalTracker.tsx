@@ -12,7 +12,7 @@ const MILESTONE_LINE: Record<number, string> = {
 
 // Drag the gold bar or tap the steps. Snaps to 5%, ticks on every step and
 // lights up each milestone as you pass it.
-export default function GoalTracker({ value, onChange, label }: { value: number; onChange: (v: number) => void; label: string }) {
+export default function GoalTracker({ value, onChange, label, readOnly, note }: { value: number; onChange?: (v: number) => void; label: string; readOnly?: boolean; note?: string }) {
   const track = useRef<HTMLDivElement>(null)
   const [dragging, setDragging] = useState(false)
   const [burst, setBurst] = useState<string | null>(null)
@@ -30,7 +30,7 @@ export default function GoalTracker({ value, onChange, label }: { value: number;
       setBurst(MILESTONE_LINE[crossed])
       setTimeout(() => setBurst(null), 2600)
     }
-    onChange(v)
+    onChange?.(v)
   }
 
   const fromPointer = (clientX: number) => {
@@ -41,6 +41,27 @@ export default function GoalTracker({ value, onChange, label }: { value: number;
 
   last.current = dragging ? last.current : value
   const done = value >= 100
+
+  if (readOnly) {
+    return (
+      <div className="mt-3">
+        <span className={`text-2xl font-light tabular-nums ${done ? 'text-cta' : 'text-fg-1'}`}>
+          {value}<span className="text-sm text-fg-4">%</span>
+        </span>
+        <div className="relative h-3 mt-2 rounded-full bg-surface-3/70 overflow-hidden">
+          <div
+            className="h-full rounded-full transition-[width] duration-300 ease-out"
+            style={{
+              width: `${value}%`,
+              background: 'linear-gradient(90deg, #9A8B00 0%, rgb(var(--cta-rgb)) 70%, var(--gold-light) 100%)',
+              boxShadow: value > 0 ? '0 0 12px rgb(var(--cta-rgb) / 0.45)' : undefined,
+            }}
+          />
+        </div>
+        {note && <p className="text-xs text-fg-3 mt-2">{note}</p>}
+      </div>
+    )
+  }
 
   return (
     <div className="mt-3">
