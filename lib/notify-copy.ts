@@ -13,7 +13,7 @@ export const copy = {
   }),
   streakRisk: (streak: number) => ({
     title: `${streak}-day streak on the line`,
-    body: 'One log before midnight keeps it alive. Consistency is part of who you are now.',
+    body: 'One log before midnight keeps it growing. Consistency is part of who you are now.',
   }),
   levelUp: (level: string, points: number) => ({
     title: `You reached ${level}`,

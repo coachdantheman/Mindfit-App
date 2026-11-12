@@ -4,6 +4,7 @@ import {
   ACTIONS, FUEL, CLUTCH_DAY_BONUS, LEVELS, MIN_TITLE_POINTS, STREAK_MULTIPLIERS, TITLE_RULES, TITLES,
   type ActionKey, type Level, type Pillar, type Title,
 } from './leaderboard-config'
+import { withFreezes } from '@/lib/streak-freeze'
 
 export type ActivityRow = { user_id: string; day: string; food: number } & Record<ActionKey, number>
 
@@ -75,7 +76,10 @@ export function shiftDayBy(day: string, by: number): string {
   return shiftDay(day, by)
 }
 
-function activeDaysByUser(rows: ActivityRow[]): Map<string, Set<string>> {
+// Days that keep a streak alive: active days plus days covered by a streak
+// freeze (lib/streak-freeze.ts). `through` is the last day that can count
+// as missed, normally yesterday.
+function streakDaysByUser(rows: ActivityRow[], through?: string): Map<string, Set<string>> {
   const days = new Map<string, Set<string>>()
   for (const r of rows) {
     if (!isActive(r)) continue
@@ -83,7 +87,14 @@ function activeDaysByUser(rows: ActivityRow[]): Map<string, Set<string>> {
     if (!set) { set = new Set(); days.set(r.user_id, set) }
     set.add(r.day)
   }
+  for (const [user, set] of days) days.set(user, new Set(withFreezes(set, through).days))
   return days
+}
+
+/** One athlete's streak days (active or frozen), sorted, and the freezes they hold. */
+export function streakDaysOf(rows: ActivityRow[], today: string): { days: string[]; bank: number } {
+  const f = withFreezes(activeDaysOf(rows), shiftDay(today, -1))
+  return { days: f.days, bank: f.bank }
 }
 
 /** Consecutive active days ending on `day` (0 when `day` itself is inactive). */
@@ -105,7 +116,7 @@ export function multiplierFor(streak: number): number {
  */
 export function scoreMonth(rows: ActivityRow[], history: ActivityRow[] = []): Map<string, Score> {
   const out = new Map<string, Score>()
-  const active = activeDaysByUser([...history, ...rows])
+  const active = streakDaysByUser([...history, ...rows])
   const weekly = new Map<string, Map<string, number>>() // user -> weekKey -> count
   const weeklyRules = ACTIONS.filter(a => a.per === 'week')
 
@@ -154,7 +165,7 @@ export function scoreMonth(rows: ActivityRow[], history: ActivityRow[] = []): Ma
  * yet today). Only spans the rows given, so it is floored by the fetch window.
  */
 export function activityStreaks(rows: ActivityRow[], today: string): Map<string, number> {
-  const days = activeDaysByUser(rows)
+  const days = streakDaysByUser(rows, shiftDay(today, -1))
   const out = new Map<string, number>()
   for (const [user, set] of days) {
     let cursor = set.has(today) ? today : shiftDay(today, -1)

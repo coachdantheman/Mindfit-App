@@ -15,18 +15,18 @@ function Row({ e }: { e: Entry }) {
         {initialsOf(e.displayName)}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-fg-1 truncate">
-          {e.displayName}{e.isMe && <span className="text-fg-4 font-normal"> (you)</span>}
-          {e.streak > 0 && <span className="ml-1.5 inline-flex items-center gap-0.5 text-xs font-medium text-fg-3 tabular-nums" title={`${e.streak}-day streak`}><FlameIcon className="w-3 h-3" />{e.streak}</span>}
+        <p className="flex items-center gap-1.5 min-w-0 text-sm font-semibold text-fg-1">
+          <span className="truncate">{e.displayName}{e.isMe && <span className="text-fg-4 font-normal"> (you)</span>}</span>
+          {e.streak > 0 && <span className="shrink-0 inline-flex items-center gap-0.5 text-xs font-medium text-fg-3 tabular-nums" title={`${e.streak}-day streak`}><FlameIcon className="w-3 h-3" />{e.streak}</span>}
         </p>
         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
           <TitleBadge title={e.title} />
           <LevelBadge level={e.level} />
           {e.sport && <span className="text-xs text-fg-4 truncate">{e.sport}</span>}
+          {!e.isMe && <span className="ml-auto"><ReportButton kind="leaderboard_name" targetUserId={e.id} compact /></span>}
         </div>
       </div>
       <span className="text-sm font-bold tabular-nums text-fg-1 shrink-0">{e.points}<span className="text-xs font-medium text-fg-4 ml-0.5">pts</span></span>
-      {!e.isMe && <ReportButton kind="leaderboard_name" targetUserId={e.id} />}
     </li>
   )
 }

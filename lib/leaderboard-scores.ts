@@ -1,9 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import {
-  scoreMonth, activityStreaks, activeDaysOf, shiftDayBy, monthBounds, todayIn, isValidTimeZone,
+  scoreMonth, activityStreaks, activeDaysOf, streakDaysOf, shiftDayBy, monthBounds, todayIn, isValidTimeZone,
   displayNameFor, titleFor, levelFor, PAGE_SIZE,
   type ActivityRow, type Entry, type PillarPoints,
 } from '@/lib/leaderboard'
+import { weekPoints, weekStartOf } from '@/lib/leagues'
 
 // Stored month score per athlete (table leaderboard_scores, migration v42).
 // A score is rebuilt from that one athlete's activity, never everyone's.
@@ -37,10 +38,13 @@ export function buildScoreRows(userId: string, rows: ActivityRow[], tz: string, 
   const b = monthBounds(now, tz)
   const today = todayIn(tz, now)
   const days = activeDaysOf(rows)
+  // A day covered by a streak freeze keeps the streak standing, so it counts
+  // as the last day the streak was kept.
+  const kept = streakDaysOf(rows, today).days
   const shared = {
     user_id: userId,
     streak: activityStreaks(rows, today).get(userId) ?? 0,
-    last_active_day: days.length ? days[days.length - 1] : null,
+    last_active_day: kept.length ? kept[kept.length - 1] : null,
     recent_days: days.filter(d => d >= shiftDayBy(today, -(RECENT_WINDOW_DAYS - 1))),
   }
   const periods = [
@@ -74,6 +78,13 @@ export async function refreshScore(admin: SupabaseClient, userId: string, tz: st
   const { error: wErr } = await admin.from('leaderboard_scores')
     .upsert(built.map(r => ({ ...r, updated_at: stamp })), { onConflict: 'user_id,month' })
   if (wErr) console.error('score save failed:', wErr.message)
+  // Keep this week's league points current. The database places the athlete
+  // in a group the first time they score in a week (migration v47).
+  const week = weekStartOf(todayIn(tz, now))
+  const { error: lErr } = await admin.rpc('league_join', {
+    p_user: userId, p_week: week, p_points: weekPoints((data ?? []) as ActivityRow[], week, userId),
+  })
+  if (lErr) console.error('league update failed:', lErr.message)
   return built[0]
 }
 

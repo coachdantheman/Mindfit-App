@@ -13,8 +13,8 @@ const tz = 'America/New_York'
 
 test('buildScoreRows matches scoreMonth for this month and last month', () => {
   const rows = [
-    row('2026-10-30', { journal: 1 }), row('2026-10-31', { journal: 1, food: 3 }),
-    row('2026-11-09', { journal: 1 }), row('2026-11-10', { journal: 1, workouts: 1 }), row('2026-11-11', { food: 2 }),
+    row('2026-10-30', { journal: 2 }), row('2026-10-31', { journal: 2, food: 3 }),
+    row('2026-11-09', { journal: 2 }), row('2026-11-10', { journal: 2, workouts: 1 }), row('2026-11-11', { food: 2 }),
   ]
   const [thisMonth, lastMonth] = buildScoreRows('u1', rows, tz, now)
   assert.equal(thisMonth.month, '2026-11')
@@ -26,7 +26,7 @@ test('buildScoreRows matches scoreMonth for this month and last month', () => {
 })
 
 test('streak, last active day and recent days come from the activity', () => {
-  const rows = [row('2026-10-20', { journal: 1 }), row('2026-11-09', { journal: 1 }), row('2026-11-10', { journal: 1 }), row('2026-11-11', { food: 1 })]
+  const rows = [row('2026-10-20', { journal: 2 }), row('2026-11-09', { journal: 2 }), row('2026-11-10', { journal: 2 }), row('2026-11-11', { food: 1 })]
   const [r] = buildScoreRows('u1', rows, tz, now)
   assert.equal(r.streak, 3)
   assert.equal(r.last_active_day, '2026-11-11')

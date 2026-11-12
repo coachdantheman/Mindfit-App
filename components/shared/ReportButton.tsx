@@ -4,7 +4,8 @@ import { useState } from 'react'
 type Kind = 'leaderboard_name' | 'coach_note'
 
 // Inline two-step report: Report → confirm row. No prompt, no free text.
-export default function ReportButton({ kind, targetUserId, targetId }: { kind: Kind; targetUserId?: string; targetId?: string }) {
+// `compact` shows a small flag instead of the word, for tight rows.
+export default function ReportButton({ kind, targetUserId, targetId, compact = false }: { kind: Kind; targetUserId?: string; targetId?: string; compact?: boolean }) {
   const [step, setStep] = useState<'idle' | 'confirm' | 'sending' | 'done' | 'error'>('idle')
 
   const send = async () => {
@@ -34,6 +35,15 @@ export default function ReportButton({ kind, targetUserId, targetId }: { kind: K
           {step === 'sending' ? 'Sending…' : 'Report'}
         </button>
       </div>
+    )
+  }
+
+  if (compact) {
+    return (
+      <button type="button" onClick={() => setStep('confirm')} aria-label={kind === 'leaderboard_name' ? 'Report this name' : 'Report this note'} title="Report"
+        className="w-9 h-9 -my-2 inline-flex items-center justify-center rounded-lg text-fg-4/60 hover:text-fg-2">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 21V4M5 4h11l-2 4 2 4H5" /></svg>
+      </button>
     )
   }
 

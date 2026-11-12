@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import Skeleton from '@/components/shared/Skeleton'
 import BulkClaimForm from '@/components/coach/BulkClaimForm'
+import TeamChallenge from '@/components/coach/TeamChallenge'
 import { useToast } from '@/components/shared/Toast'
 import { ENCOURAGEMENT, type EncouragementKey } from '@/lib/notify-copy'
 
@@ -208,6 +209,8 @@ export default function TeamsManager({ isAdmin = false, athleteHref = (id: strin
                       <EncourageControl target={{ team_id: t.id }} label="Encourage team" className="btn-secondary text-sm" disabled={t.members.length === 0} />
                       <button type="button" onClick={() => removeTeam(t)} className="btn-ghost text-xs text-fg-4 hover:text-red-400">Delete team</button>
                     </div>
+
+                    <TeamChallenge teamId={t.id} />
 
                     {t.members.length === 0 ? (
                       <p className="text-sm text-fg-4">Nobody on this team yet. Share the link or add athletes below.</p>

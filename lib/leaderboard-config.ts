@@ -26,10 +26,14 @@ export interface ActionRule {
   /** Max times per day (or per ISO week when `per` is 'week') that count. */
   cap: number
   per?: 'day' | 'week'
+  /** Shown in "How to earn" instead of the default "+points · max cap". */
+  show?: string
 }
 
 export const ACTIONS: ActionRule[] = [
-  { key: 'journal',       pillar: 'mind', label: 'Daily journal',            points: 10, cap: 1 },
+  // The database counts a full journal as 2 and a quick check-in as 1 (v47),
+  // so a check-in earns half and finishing the journal earns the rest.
+  { key: 'journal',       pillar: 'mind', label: 'Daily journal',            points: 5,  cap: 2, show: '+10 · check-in alone +5' },
   { key: 'gratitude',     pillar: 'mind', label: '3 things I’m grateful for', points: 10, cap: 1 },
   { key: 'baseline',      pillar: 'mind', label: 'First MPI assessment',     points: 50, cap: 1 },
   { key: 'assessments',   pillar: 'mind', label: 'Weekly assessment',        points: 25, cap: 1, per: 'week' },

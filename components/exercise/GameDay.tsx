@@ -277,11 +277,11 @@ export default function GameDay({ notify, onOpenSchedule }: Props) {
                     </button>
                   ))}
 
-                  <div className="flex items-center gap-4 mt-2">
-                    {info.href && <Link href={info.href} className="text-sm text-cta font-medium hover:underline">Open →</Link>}
+                  <div className="flex items-center gap-2 mt-1">
+                    {info.href && <Link href={info.href} className="inline-flex items-center min-h-[44px] pr-2 text-sm text-cta font-medium hover:underline">Open →</Link>}
                     {info.why && (
                       <button type="button" onClick={() => setWhyOpen(w => ({ ...w, [s.id]: !w[s.id] }))} aria-expanded={!!whyOpen[s.id]}
-                        className="text-xs text-fg-4 hover:text-fg-2">
+                        className="inline-flex items-center min-h-[44px] px-2 text-sm text-fg-3 hover:text-fg-1">
                         Why {whyOpen[s.id] ? '▲' : '▼'}
                       </button>
                     )}

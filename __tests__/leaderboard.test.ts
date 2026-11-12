@@ -39,11 +39,11 @@ test('scoreMonth — weekly assessment counts once per ISO week', () => {
 })
 
 test('scoreMonth — Clutch Day only with all four pillars', () => {
-  const clutch = scoreMonth([row('u', '2026-10-05', { journal: 1, workouts: 1, food: 1, sleep: 1 })]).get('u')!
+  const clutch = scoreMonth([row('u', '2026-10-05', { journal: 2, workouts: 1, food: 1, sleep: 1 })]).get('u')!
   assert.equal(clutch.pillars.bonus, CLUTCH_DAY_BONUS)
   assert.equal(clutch.clutchDays, 1)
   assert.equal(clutch.total, 10 + 25 + 10 + 10 + CLUTCH_DAY_BONUS)
-  const three = scoreMonth([row('u', '2026-10-05', { journal: 1, workouts: 1, food: 1 })]).get('u')!
+  const three = scoreMonth([row('u', '2026-10-05', { journal: 2, workouts: 1, food: 1 })]).get('u')!
   assert.equal(three.pillars.bonus, 0)
   assert.equal(three.activeDays, 1)
 })
@@ -150,7 +150,7 @@ test('isoWeekKey', () => {
 })
 
 test('activityStreaks — consecutive active days ending today or yesterday', () => {
-  const r = (user_id: string, day: string, journal = 1) =>
+  const r = (user_id: string, day: string, journal = 2) =>
     ({ user_id, day, food: 0, journal } as any)
   const rows = [
     r('a', '2026-11-04'), r('a', '2026-11-03'), r('a', '2026-11-02'), r('a', '2026-10-31'),
@@ -186,15 +186,27 @@ test('streak multiplier — tiers and history carry-over', () => {
   assert.equal(multiplierFor(45), 2)
 
   // Seven straight journal days: days 1-6 at x1, day 7 at x1.25.
-  const week = Array.from({ length: 7 }, (_, i) => row('u', `2026-11-0${i + 1}`, { journal: 1 }))
+  const week = Array.from({ length: 7 }, (_, i) => row('u', `2026-11-0${i + 1}`, { journal: 2 }))
   assert.equal(scoreMonth(week).get('u')!.pillars.mind, 6 * 10 + Math.round(10 * 1.25))
 
   // A run that started last month keeps its multiplier on the 1st.
-  const history = Array.from({ length: 13 }, (_, i) => row('u', `2026-10-${String(19 + i).padStart(2, '0')}`, { journal: 1 }))
-  const first = scoreMonth([row('u', '2026-11-01', { journal: 1 })], history).get('u')!
+  const history = Array.from({ length: 13 }, (_, i) => row('u', `2026-10-${String(19 + i).padStart(2, '0')}`, { journal: 2 }))
+  const first = scoreMonth([row('u', '2026-11-01', { journal: 2 })], history).get('u')!
   assert.equal(first.pillars.mind, 15)
 
   // The Clutch Day bonus is not multiplied.
-  const clutch = scoreMonth([row('u', '2026-11-01', { journal: 1, workouts: 1, food: 1, sleep: 1 })], history).get('u')!
+  const clutch = scoreMonth([row('u', '2026-11-01', { journal: 2, workouts: 1, food: 1, sleep: 1 })], history).get('u')!
   assert.equal(clutch.pillars.bonus, CLUTCH_DAY_BONUS)
+})
+
+test('a quick check-in earns half a journal; finishing it earns the rest', () => {
+  assert.equal(scoreDay(row('u', '2026-10-05', { journal: 1 })).mind, 5)
+  assert.equal(scoreDay(row('u', '2026-10-05', { journal: 2 })).mind, 10)
+})
+
+test('a streak freeze keeps the multiplier through one missed day', () => {
+  // Nov 1-7 active (earns a freeze), Nov 8 missed, Nov 9 active: still a 9-day run, x1.25.
+  const days = ['01', '02', '03', '04', '05', '06', '07', '09'].map(d => row('u', `2026-11-${d}`, { journal: 2 }))
+  const s = scoreMonth(days).get('u')!
+  assert.equal(s.pillars.mind, 6 * 10 + 13 + 13)
 })

@@ -13,29 +13,39 @@ import NotificationBell from '@/components/layout/NotificationBell'
 
 function StreakChip({ pathname }: { pathname: string }) {
   const [streak, setStreak] = useState<number | null>(null)
+  const [freezes, setFreezes] = useState(0)
 
   // Re-check on every navigation (throttled) so a fresh log lights the
   // flame right away instead of on the next visit.
   useEffect(() => {
-    let saved: { streak: number; ts: number } | null = null
+    let saved: { streak: number; freezes?: number; ts: number } | null = null
     try { saved = JSON.parse(sessionStorage.getItem('mf_streak') ?? 'null') } catch {}
-    if (saved && typeof saved.streak === 'number') setStreak(saved.streak)
+    if (saved && typeof saved.streak === 'number') {
+      setStreak(saved.streak)
+      setFreezes(typeof saved.freezes === 'number' ? saved.freezes : 0)
+    }
     if (saved && Date.now() - saved.ts < 60_000) return
-    cached('/api/stats/overview', (data: { streak?: number }) => {
+    cached('/api/stats/overview', (data: { streak?: number; freezes?: number }) => {
       if (data && typeof data.streak === 'number') {
+        const held = typeof data.freezes === 'number' ? data.freezes : 0
         setStreak(data.streak)
-        sessionStorage.setItem('mf_streak', JSON.stringify({ streak: data.streak, ts: Date.now() }))
+        setFreezes(held)
+        sessionStorage.setItem('mf_streak', JSON.stringify({ streak: data.streak, freezes: held, ts: Date.now() }))
       }
     })
       .catch(() => {})
   }, [pathname])
 
   if (!streak) return null
+  const label = freezes > 0
+    ? `${streak}-day training streak · ${freezes === 1 ? '1 freeze' : `${freezes} freezes`} held`
+    : `${streak}-day training streak`
   return (
     <Link
       href="/progress"
       className="flex items-center gap-1 px-2.5 py-1.5 sm:px-2 sm:py-1 rounded-full bg-cta/10 text-cta text-xs font-semibold tabular-nums"
-      title={`${streak}-day training streak`}
+      title={label}
+      aria-label={label}
     >
       <FlameIcon className="w-3.5 h-3.5" /> {streak}
     </Link>

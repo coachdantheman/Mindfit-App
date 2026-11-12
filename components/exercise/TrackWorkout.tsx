@@ -276,8 +276,8 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
               <div key={w.id} className={`flex items-center justify-between gap-2 bg-surface rounded-xl border p-3 ${w.pinned_at ? 'border-cta/40' : 'border-edge'}`}>
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-fg-2 truncate">{w.name}</p>
-                  <p className="text-xs text-fg-4">
-                    {w.exercises.length} exercise{w.exercises.length === 1 ? '' : 's'} · done {w.times_done}× · last {format(parseISO(w.last_done_at), 'MMM d')}
+                  <p className="text-xs text-fg-4 truncate">
+                    {w.exercises.length} ex · {w.times_done}× · {format(parseISO(w.last_done_at), 'MMM d')}
                   </p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">

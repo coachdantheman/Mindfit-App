@@ -7,6 +7,9 @@ import LeaderboardList from '@/components/leaderboard/LeaderboardList'
 import Podium from '@/components/leaderboard/Podium'
 import HowToEarnSheet from '@/components/leaderboard/HowToEarnSheet'
 import TitlesGuideSheet from '@/components/leaderboard/TitlesGuideSheet'
+import WeekRecap from '@/components/leaderboard/WeekRecap'
+import LeagueView from '@/components/leaderboard/LeagueView'
+import TeamChallengeCard from '@/components/leaderboard/TeamChallengeCard'
 import { monthLabel, type LeaderboardResponse } from '@/components/leaderboard/types'
 import { cached } from '@/lib/api-cache'
 
@@ -16,6 +19,7 @@ export default function LeaderboardPage() {
   const [data, setData] = useState<LeaderboardResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [sheet, setSheet] = useState<'earn' | 'titles' | null>(null)
+  const [view, setView] = useState<'week' | 'month'>('week')
 
   useEffect(() => {
     let tz = ''
@@ -33,7 +37,7 @@ export default function LeaderboardPage() {
       <div className="mb-6 flex items-start justify-between gap-3">
         <div>
           <h1 className="page-title">The Board</h1>
-          <p className="page-subtitle">{data ? `${monthLabel(data.period.month)} · resets in ${data.period.daysLeft} day${data.period.daysLeft === 1 ? '' : 's'}` : 'Monthly standings.'}</p>
+          <p className="page-subtitle">{view === 'week' ? 'Weekly leagues.' : data ? `${monthLabel(data.period.month)} · resets in ${data.period.daysLeft} day${data.period.daysLeft === 1 ? '' : 's'}` : 'Monthly standings.'}</p>
         </div>
         <div className="flex gap-2 shrink-0">
           <button type="button" onClick={() => setSheet('titles')} className="btn-secondary text-xs px-3">Titles</button>
@@ -41,6 +45,19 @@ export default function LeaderboardPage() {
         </div>
       </div>
 
+      <div role="tablist" aria-label="Board view" className="flex gap-2 mb-6">
+        <button type="button" role="tab" aria-selected={view === 'week'} onClick={() => setView('week')} className={view === 'week' ? 'tab-btn tab-btn-active' : 'tab-btn'}>This week</button>
+        <button type="button" role="tab" aria-selected={view === 'month'} onClick={() => setView('month')} className={view === 'month' ? 'tab-btn tab-btn-active' : 'tab-btn'}>Month</button>
+      </div>
+
+      {view === 'week' ? (
+        <div className="space-y-6">
+          <WeekRecap />
+          <TeamChallengeCard />
+          <LeagueView />
+        </div>
+      ) : (
+      <>
       {error && <p role="alert" className="text-sm text-red-400 mb-4">{error}</p>}
 
       {!data && !error && <Skeleton rows={5} />}
@@ -88,6 +105,8 @@ export default function LeaderboardPage() {
 
           <Podium podium={data.lastMonth.podium} month={data.period.lastMonth} myRank={data.lastMonth.myRank} of={data.lastMonth.of} />
         </div>
+      )}
+      </>
       )}
 
       {sheet === 'earn' && <HowToEarnSheet onClose={() => setSheet(null)} />}

@@ -17,8 +17,12 @@ export default function HowToEarnSheet({ onClose }: { onClose: () => void }) {
                   <li key={a.key} className="flex items-center justify-between py-1.5 text-sm">
                     <span className="text-fg-2">{a.label}</span>
                     <span className="text-fg-3 tabular-nums text-right">
-                      <span className="font-semibold text-fg-1">+{a.points}</span>
-                      <span className="text-xs text-fg-4"> · max {a.cap}/{a.per === 'week' ? 'week' : 'day'}</span>
+                      {a.show ? <span className="font-semibold text-fg-1">{a.show}</span> : (
+                        <>
+                          <span className="font-semibold text-fg-1">+{a.points}</span>
+                          <span className="text-xs text-fg-4"> · max {a.cap}/{a.per === 'week' ? 'week' : 'day'}</span>
+                        </>
+                      )}
                     </span>
                   </li>
                 ))}
@@ -49,6 +53,7 @@ export default function HowToEarnSheet({ onClose }: { onClose: () => void }) {
               </li>
             ))}
           </ul>
+          <p className="text-sm text-fg-2 mt-3">Every 7 days in a row earns a streak freeze, up to 2. Miss a day and a freeze keeps your streak and its bonus.</p>
         </div>
         <div>
           <p className="text-xs uppercase tracking-wide text-fg-4 mb-1.5">⭐ Clutch Day</p>

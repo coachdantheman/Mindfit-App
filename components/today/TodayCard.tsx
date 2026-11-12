@@ -1,6 +1,7 @@
 'use client'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { cached } from '@/lib/api-cache'
 import { localDateISO } from '@/lib/dates'
 import { loadNextGame, type UpcomingGame } from '@/lib/team-schedule'
 import { readinessScore, readinessVerdict } from '@/lib/readiness'
@@ -105,6 +106,7 @@ export default function TodayCard() {
   const [failed, setFailed] = useState(false)
   const [checkInOpen, setCheckInOpen] = useState(false)
   const [justCompleted, setJustCompleted] = useState(false)
+  const [freezeInfo, setFreezeInfo] = useState<{ freezes: number; savedYesterday: boolean }>({ freezes: 0, savedYesterday: false })
   // null until the first load, so a Clutch Day already complete on arrival does not celebrate.
   const wasAllFour = useRef<boolean | null>(null)
 
@@ -129,6 +131,9 @@ export default function TodayCard() {
   useEffect(() => {
     load()
     loadNextGame(localDateISO()).then(setGame).catch(() => setGame(null))
+    cached('/api/stats/overview', (d: { freezes?: number; savedYesterday?: boolean }) => {
+      if (d && typeof d.freezes === 'number') setFreezeInfo({ freezes: d.freezes, savedYesterday: d.savedYesterday === true })
+    }).catch(() => {})
   }, [load])
 
   if (!data && failed) return null
@@ -177,6 +182,12 @@ export default function TodayCard() {
             <p className="text-xs text-center text-fg-4">
               {allFour ? <span className="text-cta font-semibold uppercase tracking-[0.16em]">Clutch Day</span> : `${doneCount} of 4 today`}
             </p>
+            {freezeInfo.freezes > 0 && (
+              <p className="text-xs text-center text-fg-4">{freezeInfo.freezes === 1 ? '1 freeze held' : `${freezeInfo.freezes} freezes held`}</p>
+            )}
+            {freezeInfo.savedYesterday && (
+              <p className="text-xs text-center text-cta">A freeze saved your streak yesterday.</p>
+            )}
           </div>
 
           <div className="border-t border-edge pt-4">
