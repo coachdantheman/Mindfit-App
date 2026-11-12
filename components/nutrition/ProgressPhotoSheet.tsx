@@ -4,6 +4,7 @@ import { useFocusTrap } from '@/lib/useFocusTrap'
 import { ProgressPhoto, WeighIn } from '@/types'
 import { PHOTO_SLOTS, PhotoSlot, downscaleImage } from '@/lib/images'
 import { useToast } from '@/components/shared/Toast'
+import { showWeight, useUnits, weightUnit } from '@/lib/units'
 
 interface Props {
   weighIn: WeighIn
@@ -15,6 +16,7 @@ const LABEL: Record<PhotoSlot, string> = { front: 'Front', side: 'Side', back: '
 
 export default function ProgressPhotoSheet({ weighIn, onChange, onClose }: Props) {
   const notify = useToast()
+  const u = useUnits()
   const [photos, setPhotos] = useState<ProgressPhoto[]>([])
   const [busy, setBusy] = useState<PhotoSlot | null>(null)
   const inputs = useRef<Record<string, HTMLInputElement | null>>({})
@@ -60,7 +62,7 @@ export default function ProgressPhotoSheet({ weighIn, onChange, onClose }: Props
         <div className="flex items-center justify-between px-5 pt-4 pb-2">
           <div>
             <h3 id="progress-photos-title" className="font-semibold text-fg-1">Progress photos</h3>
-            <p className="text-xs text-fg-4">{weighIn.entry_date} · {Number(weighIn.weight_lb)} lb</p>
+            <p className="text-xs text-fg-4">{weighIn.entry_date} · {showWeight(Number(weighIn.weight_lb), u)} {weightUnit(u)}</p>
           </div>
           <button type="button" onClick={onClose} className="btn-ghost px-2" aria-label="Close">✕</button>
         </div>

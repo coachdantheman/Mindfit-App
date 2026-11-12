@@ -2,16 +2,19 @@
 import { useState } from 'react'
 import { NutritionGoal } from '@/types'
 import { ACTIVITY_FACTOR, ACTIVITY_MULTIPLIER, CALORIE_FLOOR, FAT_PCT, PROTEIN_PER_LB, GoalType, ActivityLevel, ProteinLevel, restingCalories } from '@/lib/nutrition'
+import { showWeight, useUnits, weightUnit } from '@/lib/units'
 
 const GOAL_LABEL: Record<GoalType, string> = { gain: 'Build muscle', lose: 'Lean out', maintain: 'Maintain' }
 const ACTIVITY_LABEL: Record<ActivityLevel, string> = { light: 'light', moderate: 'moderate', high: 'high' }
 
 export default function GoalSummaryCard({ goal, onRetake }: { goal: NutritionGoal; onRetake: () => void }) {
   const [why, setWhy] = useState(false)
+  const u = useUnits()
   const gt = goal.goal_type as GoalType | null
   const al = goal.activity_level as ActivityLevel | null
   const w = goal.current_weight_lb ? Number(goal.current_weight_lb) : null
   const protein: ProteinLevel = goal.protein_level ?? 'standard'
+  const perWeight = u === 'metric' ? `${(PROTEIN_PER_LB[protein] * 2.20462).toFixed(1)} g per kg` : `${PROTEIN_PER_LB[protein]} g per lb`
   const body = goal.height_in && goal.age && goal.sex ? { height_in: Number(goal.height_in), age: Number(goal.age), sex: goal.sex } : null
   const maintenance = w && al
     ? Math.round(body ? restingCalories(w, body.height_in, body.age, body.sex) * ACTIVITY_FACTOR[al] : w * ACTIVITY_MULTIPLIER[al])
@@ -25,7 +28,7 @@ export default function GoalSummaryCard({ goal, onRetake }: { goal: NutritionGoa
           <p className="text-3xl font-bold text-fg-1 tabular-nums mt-1">{goal.calories.toLocaleString()} <span className="text-base font-medium text-fg-3">kcal</span></p>
           {gt && (
             <p className="text-xs text-fg-4 mt-1">
-              {GOAL_LABEL[gt]}{w ? ` · ${w} lb` : ''}{goal.target_weight_lb && gt !== 'maintain' ? ` → ${Number(goal.target_weight_lb)} lb` : ''}
+              {GOAL_LABEL[gt]}{w ? ` · ${showWeight(w, u)} ${weightUnit(u)}` : ''}{goal.target_weight_lb && gt !== 'maintain' ? ` → ${showWeight(Number(goal.target_weight_lb), u)} ${weightUnit(u)}` : ''}
             </p>
           )}
         </div>
@@ -52,7 +55,7 @@ export default function GoalSummaryCard({ goal, onRetake }: { goal: NutritionGoa
             <ul className="mt-2 text-xs text-fg-3 space-y-1.5 list-disc pl-4">
               <li>Calories are {body ? 'based on your height, age, weight and training' : 'based on your weight and training'}. Maintenance ≈ {maintenance.toLocaleString()} kcal at {ACTIVITY_LABEL[al]} activity.</li>
               <li>{gt === 'maintain' ? 'Maintain: no surplus or deficit.' : gt === 'gain' ? 'Build muscle: a moderate +350 kcal surplus (enough to grow, not enough to add much fat).' : `Lean out: a −400 kcal deficit, never below ${CALORIE_FLOOR.toLocaleString()} kcal. Growing athletes should not cut harder than this.`}</li>
-              <li>{goal.protein_level ? `Protein ${PROTEIN_PER_LB[protein]} g per lb of your ${gt === 'maintain' ? 'current' : 'target'} weight.` : `Protein ${Math.round(Number(goal.protein_g))} g a day.`}</li>
+              <li>{goal.protein_level ? `Protein ${perWeight} of your ${gt === 'maintain' ? 'current' : 'target'} weight.` :`Protein ${Math.round(Number(goal.protein_g))} g a day.`}</li>
               <li>Fat ≈ {FAT_PCT}% of calories for hormones and recovery; carbs fill the rest to fuel practice and games.</li>
               <li>Weight-class or appearance sport? Talk this through with a parent or coach before cutting.</li>
             </ul>

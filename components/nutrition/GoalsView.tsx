@@ -5,6 +5,7 @@ import { GoalResult, MacroSplit, QuizInput, computeGoalFromQuiz } from '@/lib/nu
 import GoalQuiz from './GoalQuiz'
 import GoalEditor from './GoalEditor'
 import GoalSummaryCard from './GoalSummaryCard'
+import { showWeight, useUnits, weightUnit } from '@/lib/units'
 
 interface Props {
   goal: NutritionGoal | null
@@ -14,6 +15,7 @@ interface Props {
 
 export default function GoalsView({ goal, onSaved, notify }: Props) {
   const [retaking, setRetaking] = useState(false)
+  const u = useUnits()
   const hasQuiz = !!goal?.quiz_completed_at
 
   const put = async (payload: Record<string, unknown>) => {
@@ -80,7 +82,7 @@ export default function GoalsView({ goal, onSaved, notify }: Props) {
       <GoalSummaryCard goal={goal!} onRetake={() => setRetaking(true)} />
       <GoalEditor goal={goal!} onSave={saveEditor} />
       <button type="button" onClick={recalc} className="btn-ghost w-full text-xs">
-        Recalculate from my latest weight ({Number(goal!.current_weight_lb)} lb)
+        Recalculate from my latest weight ({showWeight(Number(goal!.current_weight_lb), u)} {weightUnit(u)})
       </button>
     </div>
   )

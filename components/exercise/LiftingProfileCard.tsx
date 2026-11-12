@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import type { AthleteProfile, Sex } from '@/types/exercise'
+import { showWeight, toLb, useUnits, weightUnit } from '@/lib/units'
 
 interface Props {
   profile: AthleteProfile | null
@@ -10,24 +11,33 @@ interface Props {
 }
 
 export default function LiftingProfileCard({ profile, suggestedBodyweight, onSaved, notify }: Props) {
+  const units = useUnits()
+  const wu = weightUnit(units)
   const [editing, setEditing] = useState(!profile)
   const [sex, setSex] = useState<Sex | ''>(profile?.sex ?? '')
-  const [bw, setBw] = useState(profile ? String(profile.bodyweight_lb) : suggestedBodyweight ? String(suggestedBodyweight) : '')
+  const [bw, setBw] = useState('')
   const [age, setAge] = useState(profile ? String(profile.age) : '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
+  // Set on mount and again once the athlete's unit is known.
   useEffect(() => {
-    if (!profile && suggestedBodyweight && !bw) setBw(String(suggestedBodyweight))
+    const lb = profile ? Number(profile.bodyweight_lb) : suggestedBodyweight
+    setBw(lb ? String(showWeight(lb, units)) : '')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [units])
+
+  useEffect(() => {
+    if (!profile && suggestedBodyweight && !bw) setBw(String(showWeight(suggestedBodyweight, units)))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [suggestedBodyweight])
 
   const save = async () => {
     setError('')
-    const b = parseFloat(bw)
+    const b = toLb(parseFloat(bw), units) ?? NaN
     const a = parseInt(age, 10)
     if (!sex) { setError('Pick male or female. Standards differ.'); return }
-    if (!(b >= 50 && b <= 500)) { setError('Bodyweight should be 50–500 lb.'); return }
+    if (!(b >= 50 && b <= 500)) { setError(units === 'metric' ? 'Bodyweight should be 23–227 kg.' : 'Bodyweight should be 50–500 lb.'); return }
     if (!(a >= 10 && a <= 80)) { setError('Age should be 10–80.'); return }
     setSaving(true)
     try {
@@ -57,13 +67,13 @@ export default function LiftingProfileCard({ profile, suggestedBodyweight, onSav
         <div>
           <p className="text-xs uppercase tracking-wider text-fg-4">Lifting profile</p>
           <p className="text-sm text-fg-1">
-            {profile.sex === 'male' ? 'Male' : 'Female'} · {Number(profile.bodyweight_lb)} lb · {profile.age} yrs
+            {profile.sex === 'male' ? 'Male' : 'Female'} · {showWeight(Number(profile.bodyweight_lb), units)} {wu} · {profile.age} yrs
           </p>
           {suggestedBodyweight && Math.abs(suggestedBodyweight - Number(profile.bodyweight_lb)) >= 3 && (
-            <p className="text-xs text-fg-4">Latest weigh-in: {suggestedBodyweight} lb</p>
+            <p className="text-xs text-fg-4">Latest weigh-in: {showWeight(suggestedBodyweight, units)} {wu}</p>
           )}
         </div>
-        <button type="button" onClick={() => { setBw(String(profile.bodyweight_lb)); setAge(String(profile.age)); setSex(profile.sex); setEditing(true) }} className="btn-ghost">Edit</button>
+        <button type="button" onClick={() => { setBw(String(showWeight(Number(profile.bodyweight_lb), units))); setAge(String(profile.age)); setSex(profile.sex); setEditing(true) }} className="btn-ghost">Edit</button>
       </div>
     )
   }
@@ -87,8 +97,8 @@ export default function LiftingProfileCard({ profile, suggestedBodyweight, onSav
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs text-fg-4 block mb-1.5" htmlFor="lp-bw">Bodyweight (lb)</label>
-          <input id="lp-bw" type="number" inputMode="decimal" value={bw} onChange={e => setBw(e.target.value)} placeholder="e.g. 165" className="input-field" />
+          <label className="text-xs text-fg-4 block mb-1.5" htmlFor="lp-bw">Bodyweight ({wu})</label>
+          <input id="lp-bw" type="number" inputMode="decimal" value={bw} onChange={e => setBw(e.target.value)} placeholder={units === 'metric' ? 'e.g. 75' : 'e.g. 165'} className="input-field" />
           {suggestedBodyweight && !profile && <p className="text-xs text-fg-4 mt-1">From your latest weigh-in</p>}
         </div>
         <div>

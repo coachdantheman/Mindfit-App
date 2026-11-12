@@ -7,7 +7,7 @@ import { matchExercise } from '@/lib/exercise-library'
 import type { ExerciseLibraryRow } from '@/types/exercise'
 
 const MUSCLE_GROUPS = ['chest', 'back', 'shoulders', 'arms', 'legs', 'glutes', 'core', 'full_body', 'conditioning', 'mobility']
-const MEASURES = ['weight_reps', 'reps', 'distance_in', 'time_sec']
+const MEASURES = ['weight_reps', 'reps', 'distance_in', 'time_sec', 'distance_time']
 
 async function loadLibrary(admin: ReturnType<typeof createAdminClient>, userId: string) {
   const { data, error } = await admin

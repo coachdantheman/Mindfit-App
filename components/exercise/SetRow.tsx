@@ -1,5 +1,6 @@
 'use client'
-import type { DraftSet } from '@/lib/workout-draft'
+import { shownWeight, storedWeight, type DraftSet } from '@/lib/workout-draft'
+import { useUnits, weightUnit, type Units } from '@/lib/units'
 import type { DistanceUnit, ExerciseMeasure } from '@/types/exercise'
 
 interface Props {
@@ -18,13 +19,13 @@ const FIELD = 'w-full bg-surface-2 border border-edge rounded-lg px-2 py-2 text-
 // Which columns a set shows, by how the exercise is measured. Seconds ride
 // in `reps`, inches ride in `weight`, so the payload shape never changes.
 // distance_time has its own columns (distance + time).
-export function setFields(measure: ExerciseMeasure, unit?: DistanceUnit | null): { reps?: string; weight?: string; distance?: string; time?: string } {
+export function setFields(measure: ExerciseMeasure, unit?: DistanceUnit | null, units: Units = 'imperial'): { reps?: string; weight?: string; distance?: string; time?: string } {
   switch (measure) {
-    case 'reps': return { reps: 'reps', weight: '+lb' }
+    case 'reps': return { reps: 'reps', weight: `+${weightUnit(units)}` }
     case 'time_sec': return { reps: 'sec' }
     case 'distance_in': return { weight: 'in' }
     case 'distance_time': return { distance: unit ?? 'yd', time: 'time' }
-    default: return { reps: 'reps', weight: 'lb' }
+    default: return { reps: 'reps', weight: weightUnit(units) }
   }
 }
 
@@ -34,10 +35,12 @@ function leadingNumber(s: string | null): string {
 }
 
 export default function SetRow({ set, measure, unit, lastWeight, lastDistance, lastSet, onChange, onRemove }: Props) {
-  const fields = setFields(measure, unit)
+  const units = useUnits()
+  const fields = setFields(measure, unit, units)
+  const lastWeightShown = shownWeight(measure, lastWeight, units)
   const beat = (() => {
     if (measure !== 'weight_reps' || !lastSet || lastSet.weight == null || lastSet.reps == null) return null
-    const w = Number(set.weight) || 0
+    const w = storedWeight(measure, Number(set.weight) || 0, units) ?? 0
     const r = Number(set.reps) || 0
     if (w <= 0 || r <= 0) return null
     const diff = w * r - lastSet.weight * lastSet.reps
@@ -49,7 +52,7 @@ export default function SetRow({ set, measure, unit, lastWeight, lastDistance, l
     if (set.done) { onChange({ ...set, done: false }); return }
     // Tapping ✓ on an empty row confirms the plan target as performed.
     const reps = set.reps || (fields.reps ? leadingNumber(set.targetReps) : set.reps)
-    const weight = set.weight || (fields.weight && lastWeight ? String(lastWeight) : set.weight)
+    const weight = set.weight || (fields.weight && lastWeight ? String(lastWeightShown) : set.weight)
     const distance = set.distance || (fields.distance ? leadingNumber(set.targetReps) || (lastDistance ? String(lastDistance) : '') : set.distance)
     onChange({ ...set, reps, weight, distance, done: true })
   }
@@ -100,7 +103,7 @@ export default function SetRow({ set, measure, unit, lastWeight, lastDistance, l
           step="0.5"
           value={set.weight}
           onChange={e => onChange({ ...set, weight: e.target.value })}
-          placeholder={lastWeight ? String(lastWeight) : fields.weight}
+          placeholder={lastWeight ? String(lastWeightShown) : fields.weight}
           aria-label={`Set ${set.setNumber} ${fields.weight}`}
           className={FIELD}
           disabled={set.done}

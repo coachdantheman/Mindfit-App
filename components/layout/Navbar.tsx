@@ -9,6 +9,8 @@ import { useKeyboardInset } from '@/lib/useKeyboardInset'
 import { UserRole } from '@/types'
 import { FlameIcon } from '@/components/shared/icons'
 import NotificationBell from '@/components/layout/NotificationBell'
+import { useToast } from '@/components/shared/Toast'
+import { syncUnits, takeUnitsNote } from '@/lib/units'
 
 function StreakChip({ pathname }: { pathname: string }) {
   const [streak, setStreak] = useState<number | null>(null)
@@ -88,6 +90,16 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
   const pathname = usePathname()
   useKeyboardInset()
   const supabase = createClient()
+  const notify = useToast()
+
+  useEffect(() => {
+    cached<{ units?: string | null } | null>('/api/profile', () => {})
+      .then(p => {
+        syncUnits(p?.units)
+        if (takeUnitsNote()) notify('Using metric (kg, km). Change it in Settings.')
+      })
+      .catch(() => {})
+  }, [notify])
 
   const signOut = async () => {
     clearAllDrafts(); await supabase.auth.signOut()

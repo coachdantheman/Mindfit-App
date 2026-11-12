@@ -1,5 +1,6 @@
 'use client'
 import type { DetectedPr, SessionTier } from '@/lib/strength'
+import { showWeight, useUnits, weightUnit } from '@/lib/units'
 import { TrophyIcon } from '@/components/shared/icons'
 import { TierBadge, TierBar, TIER_LABEL } from './TierResult'
 
@@ -15,6 +16,8 @@ export interface FinishResult {
 }
 
 export default function FinishSummary({ result, onClose, onAddBodyweight }: { result: FinishResult; onClose: () => void; onAddBodyweight: () => void }) {
+  const units = useUnits()
+  const wu = weightUnit(units)
   return (
     <div className="card p-5 space-y-4 border-cta/40">
       <div>
@@ -23,7 +26,7 @@ export default function FinishSummary({ result, onClose, onAddBodyweight }: { re
       </div>
       <div className="grid grid-cols-3 gap-2">
         <Stat label="Sets" value={String(result.doneSets)} />
-        <Stat label="Volume" value={result.volume > 0 ? `${result.volume.toLocaleString()} lb` : '-'} />
+        <Stat label="Volume" value={result.volume > 0 ? `${(showWeight(result.volume, units) ?? 0).toLocaleString()} ${wu}` : '-'} />
         <Stat label="Time" value={result.durationMin ? `${result.durationMin} min` : '-'} />
       </div>
       {result.prs.length > 0 && (
@@ -32,8 +35,8 @@ export default function FinishSummary({ result, onClose, onAddBodyweight }: { re
           <div className="flex flex-wrap gap-1.5">
             {result.prs.map(pr => (
               <span key={pr.exercise_id ?? pr.exercise_name} className="inline-flex items-center gap-1 bg-cta/15 text-cta border border-cta/30 rounded-full px-2.5 py-1 text-xs font-semibold">
-                <TrophyIcon className="w-3.5 h-3.5" /> {pr.exercise_name} · {pr.e1rm} lb
-                {pr.previous ? <span className="text-fg-4 font-normal">(was {pr.previous})</span> : null}
+                <TrophyIcon className="w-3.5 h-3.5" /> {pr.exercise_name} · {showWeight(pr.e1rm, units)} {wu}
+                {pr.previous ? <span className="text-fg-4 font-normal">(was {showWeight(pr.previous, units)})</span> : null}
               </span>
             ))}
           </div>
@@ -43,7 +46,8 @@ export default function FinishSummary({ result, onClose, onAddBodyweight }: { re
         <div className="space-y-2">
           <p className="text-xs font-semibold text-fg-2">Strength rank</p>
           {result.tiers.map(t => {
-            const unit = t.evaluation.unit === 'lb' ? 'lb' : t.evaluation.unit === 'in' ? 'in' : 'reps'
+            const unit = t.evaluation.unit === 'lb' ? wu : t.evaluation.unit === 'in' ? 'in' : 'reps'
+            const val = (v: number) => (t.evaluation.unit === 'lb' ? showWeight(v, units) : v)
             return (
               <div key={t.exercise_id ?? t.exercise_name} className={`rounded-xl p-3 space-y-2 ${t.tierUp ? 'bg-cta/15 border border-cta/40' : 'bg-surface-2/60'}`}>
                 {t.tierUp && (
@@ -55,8 +59,8 @@ export default function FinishSummary({ result, onClose, onAddBodyweight }: { re
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-fg-1 truncate">{t.exercise_name}</p>
                     <p className="text-xs text-fg-4 tabular-nums">
-                      {t.evaluation.e1rm} {unit}{t.evaluation.unit === 'lb' ? ' est. 1RM' : ''}
-                      {t.evaluation.nextTier ? ` · ${TIER_LABEL[t.evaluation.nextTier.tier]} at ${t.evaluation.nextTier.value}` : ''}
+                      {val(t.evaluation.e1rm)} {unit}{t.evaluation.unit === 'lb' ? ' est. 1RM' : ''}
+                      {t.evaluation.nextTier ? ` · ${TIER_LABEL[t.evaluation.nextTier.tier]} at ${val(t.evaluation.nextTier.value)}` : ''}
                     </p>
                   </div>
                   <TierBadge tier={t.evaluation.tier} size="sm" />

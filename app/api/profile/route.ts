@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { isISODate, isPlainObject } from '@/lib/validate'
 
-const FIELDS = ['full_name', 'primary_sport', 'secondary_sport', 'next_competition_at', 'next_competition_time', 'terms_accepted_at', 'default_bedtime', 'default_wake_time'] as const
+const FIELDS = ['full_name', 'primary_sport', 'secondary_sport', 'next_competition_at', 'next_competition_time', 'terms_accepted_at', 'default_bedtime', 'default_wake_time', 'units'] as const
 const TIME_FIELDS = ['next_competition_time', 'default_bedtime', 'default_wake_time'] as const
 const TIME_RE = /^\d{2}:\d{2}(:\d{2})?$/
 
@@ -51,6 +51,9 @@ export async function PATCH(req: Request) {
     updates[key] = value
   }
   if (body.terms_accepted_at !== undefined) updates.terms_accepted_at = true
+  if (updates.units !== undefined && updates.units !== 'imperial' && updates.units !== 'metric') {
+    return NextResponse.json({ error: 'units must be imperial or metric' }, { status: 400 })
+  }
 
   if (typeof updates.full_name === 'string' && updates.full_name.length > 120) {
     return NextResponse.json({ error: 'Name is too long.' }, { status: 400 })

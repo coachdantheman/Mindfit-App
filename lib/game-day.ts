@@ -24,14 +24,16 @@ const kg = (lb: number) => lb / 2.2046
 const r5 = (n: number) => Math.round(n / 5) * 5
 
 // Targets scale with body weight when known; otherwise generic ranges.
-function targets(bodyWeightLb?: number | null) {
+function targets(bodyWeightLb?: number | null, metric = false) {
   const w = bodyWeightLb && bodyWeightLb > 0 ? kg(bodyWeightLb) : null
   return {
     dinnerCarbs: w ? `${r5(w * 1.5)}–${r5(w * 2)} g` : '100–150 g',
     dayCarbs: w ? `${r5(w * 5)}–${r5(w * 7)} g` : '350–500 g',
     preMealCarbs: w ? `${r5(w * 1)}–${r5(w * 2)} g` : '75–150 g',
     protein: w ? `${r5(w * 0.4)} g` : '25–35 g',
-    fluidOz: w ? `${Math.round(w * 6 / 29.57)}–${Math.round(w * 8 / 29.57)} oz` : '16–20 oz',
+    fluidOz: metric
+      ? (w ? `${r5(w * 6 / 5) * 5}–${r5(w * 8 / 5) * 5} ml` : '475–600 ml')
+      : (w ? `${Math.round(w * 6 / 29.57)}–${Math.round(w * 8 / 29.57)} oz` : '16–20 oz'),
   }
 }
 
@@ -74,8 +76,8 @@ const WINDOW_OFFSETS: Record<WindowKey, [number, number]> = {
   after: [0, 120],
 }
 
-export function gameDayWindows(gameTime: string | null | undefined, bodyWeightLb?: number | null): GameWindow[] {
-  const t = targets(bodyWeightLb)
+export function gameDayWindows(gameTime: string | null | undefined, bodyWeightLb?: number | null, metric = false): GameWindow[] {
+  const t = targets(bodyWeightLb, metric)
   const start = parseTime(gameTime)
   const when = (key: WindowKey, fallback: string) => {
     if (start === null) return fallback
@@ -97,7 +99,7 @@ export function gameDayWindows(gameTime: string | null | undefined, bodyWeightLb
       title: 'Top-up snack',
       when: when('topup', '45–60 minutes before'),
       eat: 'Around 30 g of quick carbs: a banana, granola bar, applesauce pouch, pretzels or a sports drink.',
-      drink: '8–16 oz of water or an electrolyte drink. Stop chugging 20 minutes before start.',
+      drink: `${metric ? '250–500 ml' : '8–16 oz'} of water or an electrolyte drink. Stop chugging 20 minutes before start.`,
       tip: 'Caffeine only if you have used it in practice. Never try it first on game day.',
     },
     {
@@ -113,7 +115,7 @@ export function gameDayWindows(gameTime: string | null | undefined, bodyWeightLb
       title: 'Refuel',
       when: when('after', 'Within 2 hours after'),
       eat: `${t.protein} protein plus carbs: chocolate milk, a chicken burrito, pasta with meat sauce or a yogurt smoothie.`,
-      drink: '16–24 oz of fluid for every pound lost in sweat.',
+      drink: metric ? '1–1.5 L of fluid for every kg lost in sweat.' : '16–24 oz of fluid for every pound lost in sweat.',
       tip: `Game-day carb target: ${t.dayCarbs}, spread across the day.`,
     },
   ]
@@ -131,8 +133,8 @@ export function currentWindow(gameTime: string | null | undefined, nowMinutes: n
   return 'after'
 }
 
-export function gameDayGuide(phase: Exclude<GameDayPhase, 'none'>, bodyWeightLb?: number | null, gameTime?: string | null): GameDayGuide {
-  const t = targets(bodyWeightLb)
+export function gameDayGuide(phase: Exclude<GameDayPhase, 'none'>, bodyWeightLb?: number | null, gameTime?: string | null, metric = false): GameDayGuide {
+  const t = targets(bodyWeightLb, metric)
   if (phase === 'night_before') {
     return {
       title: 'Tomorrow is game day. Fuel tonight',
@@ -159,7 +161,7 @@ export function gameDayGuide(phase: Exclude<GameDayPhase, 'none'>, bodyWeightLb?
   return {
     title: 'Game day: here’s the plan',
     summary: 'Eat on a schedule, not on nerves. Carbs power the engine, fluids keep it cool.',
-    blocks: gameDayWindows(gameTime, bodyWeightLb).map(w => ({
+    blocks: gameDayWindows(gameTime, bodyWeightLb, metric).map(w => ({
       heading: `${w.title} · ${w.when}`,
       items: [w.eat, w.drink, w.tip],
     })),

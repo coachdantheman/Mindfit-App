@@ -10,6 +10,7 @@ import BottomSheet from '@/components/shared/BottomSheet'
 import { clearDraft, draftStats, draftToSessionPayload, saveDraft, type WorkoutDraft } from '@/lib/workout-draft'
 import type { DetectedPr, SessionTier } from '@/lib/strength'
 import { formatTime } from '@/lib/running'
+import { showWeight, useUnits } from '@/lib/units'
 import { cached, cachedAll } from '@/lib/api-cache'
 
 const ex = (name: string, sets: number, reps = '') => ({ name, sets, reps, notes: '' })
@@ -64,6 +65,7 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [picking, setPicking] = useState(false)
   const [enduranceOpen, setEnduranceOpen] = useState(false)
+  const units = useUnits()
 
   const fetchHistory = useCallback(async () => {
     setLoading(true)
@@ -101,12 +103,12 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
 
   const finish = async () => {
     if (!draft || saving) return
-    const stats = draftStats(draft)
+    const stats = draftStats(draft, units)
     if (stats.doneSets === 0 && !confirm('No sets are marked ✓. Save this workout with no sets?')) return
     if (!draft.name.trim()) { notify('Give the workout a name first.', 'error'); return }
     setSaving(true)
     try {
-      const payload = draftToSessionPayload(draft)
+      const payload = draftToSessionPayload(draft, new Date(), units)
       const res = await fetch('/api/exercise/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -408,7 +410,7 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
                                   <span key={s.id} className="text-xs text-fg-4 bg-surface-3/50 px-1.5 py-0.5 rounded tabular-nums">
                                     {s.distance != null || s.duration_sec != null
                                       ? `${s.distance != null ? `${Number(s.distance)} ${s.distance_unit ?? ''}` : ''}${s.duration_sec != null ? `${s.distance != null ? ' · ' : ''}${formatTime(Number(s.duration_sec))}${Number(s.duration_sec) < 60 ? 's' : ''}` : ''}`
-                                      : `${s.reps ?? '-'}${s.weight ? ` × ${Number(s.weight)}` : ''}`}{s.rpe ? ` @${s.rpe}` : ''}
+                                      : `${s.reps ?? '-'}${s.weight ? ` × ${s.reps == null ? Number(s.weight) : showWeight(Number(s.weight), units)}` : ''}`}{s.rpe ? ` @${s.rpe}` : ''}
                                   </span>
                                 ))}
                               </div>

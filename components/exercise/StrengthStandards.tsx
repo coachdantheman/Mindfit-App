@@ -5,6 +5,7 @@ import TierResult, { TIER_LABEL } from './TierResult'
 import LiftProgress from './LiftProgress'
 import { evaluateLift, isBodyweightKey, thresholdsFor } from '@/lib/strength'
 import { STANDARD_LABELS, STANDARD_UNITS, TIER_NAMES } from '@/lib/data/strength-standards'
+import { showWeight, toLb, useUnits, weightUnit } from '@/lib/units'
 import type { AthleteProfile, ExerciseLibraryRow, StandardKey } from '@/types/exercise'
 
 interface Props {
@@ -27,10 +28,13 @@ export default function StrengthStandards({ profile, suggestedBodyweight, librar
   const [value, setValue] = useState('')
   const [table, setTable] = useState(false)
   const [progress, setProgress] = useState(false)
+  const units = useUnits()
+  const wu = weightUnit(units)
 
   const bodyweightTest = isBodyweightKey(key)
   const unit = STANDARD_UNITS[key]
 
+  // Tiers are computed in lb; the typed weight converts at this edge only.
   const result = useMemo(() => {
     if (!profile) return null
     const base = { key, sex: profile.sex, bodyweight_lb: Number(profile.bodyweight_lb), age: profile.age }
@@ -39,11 +43,11 @@ export default function StrengthStandards({ profile, suggestedBodyweight, librar
       if (!(v >= 0) || value === '') return null
       return evaluateLift({ ...base, value: v })
     }
-    const w = parseFloat(weight)
+    const w = toLb(parseFloat(weight), units) ?? NaN
     const r = parseInt(reps, 10)
     if (!(w > 0) || !(r >= 1)) return null
     return evaluateLift({ ...base, weight: w, reps: r })
-  }, [profile, key, weight, reps, value, bodyweightTest])
+  }, [profile, key, weight, reps, value, bodyweightTest, units])
 
   const thresholds = profile ? thresholdsFor(key, profile.sex, Number(profile.bodyweight_lb), profile.age) : null
   const libRow = library.find(e => e.standard_key === key) ?? null
@@ -76,8 +80,8 @@ export default function StrengthStandards({ profile, suggestedBodyweight, librar
             ) : (
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-fg-4 block mb-1.5" htmlFor="lift-weight">Weight (lb)</label>
-                  <input id="lift-weight" type="number" inputMode="decimal" value={weight} onChange={e => setWeight(e.target.value)} placeholder="e.g. 185" className="input-field" />
+                  <label className="text-xs text-fg-4 block mb-1.5" htmlFor="lift-weight">Weight ({wu})</label>
+                  <input id="lift-weight" type="number" inputMode="decimal" value={weight} onChange={e => setWeight(e.target.value)} placeholder={units === 'metric' ? 'e.g. 85' : 'e.g. 185'} className="input-field" />
                 </div>
                 <div>
                   <label className="text-xs text-fg-4 block mb-1.5" htmlFor="lift-reps">Reps</label>
@@ -105,14 +109,14 @@ export default function StrengthStandards({ profile, suggestedBodyweight, librar
                         <tr key={t} className="border-b border-edge-muted last:border-0">
                           <td className="py-2 text-fg-3">{TIER_LABEL[t]}</td>
                           <td className="py-2 text-right text-fg-1 tabular-nums font-medium">
-                            {unit === 'in' ? Math.round(thresholds[i] * 10) / 10 : Math.round(thresholds[i])} {unit}
+                            {unit === 'in' ? Math.round(thresholds[i] * 10) / 10 : Math.round(unit === 'lb' ? showWeight(thresholds[i], units) ?? 0 : thresholds[i])} {unit === 'lb' ? wu : unit}
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                   <p className="text-xs text-fg-4 mt-2">
-                    Approximate, modeled on published strength standards for {profile.sex === 'male' ? 'men' : 'women'} at {Number(profile.bodyweight_lb)} lb{profile.age < 18 ? `, scaled for age ${profile.age}` : ''}. Not a medical or coaching assessment.
+                    Approximate, modeled on published strength standards for {profile.sex === 'male' ? 'men' : 'women'} at {showWeight(Number(profile.bodyweight_lb), units)} {wu}{profile.age < 18 ? `, scaled for age ${profile.age}` : ''}. Not a medical or coaching assessment.
                   </p>
                 </div>
               )}

@@ -2,8 +2,10 @@
 import { useEffect, useState } from 'react'
 import { ProgressPhoto, WeighIn } from '@/types'
 import { PHOTO_SLOTS, pickCompareDates } from '@/lib/images'
+import { showWeight, useUnits, weightUnit } from '@/lib/units'
 
 export default function ProgressCompare({ weighIns }: { weighIns: WeighIn[] }) {
+  const u = useUnits()
   const withPhotos = weighIns.filter(w => (w.photo_slots?.length ?? 0) > 0)
   const defaults = pickCompareDates(weighIns)
   const [aId, setAId] = useState<string | null>(null)
@@ -25,7 +27,7 @@ export default function ProgressCompare({ weighIns }: { weighIns: WeighIn[] }) {
 
   const Select = ({ value, onChange }: { value: WeighIn | null; onChange: (id: string) => void }) => (
     <select value={value?.id ?? ''} onChange={e => onChange(e.target.value)} className="input-field py-2 text-sm">
-      {withPhotos.map(w => <option key={w.id} value={w.id}>{w.entry_date} · {Number(w.weight_lb)} lb</option>)}
+      {withPhotos.map(w => <option key={w.id} value={w.id}>{w.entry_date} · {showWeight(Number(w.weight_lb), u)} {weightUnit(u)}</option>)}
     </select>
   )
 
@@ -37,7 +39,7 @@ export default function ProgressCompare({ weighIns }: { weighIns: WeighIn[] }) {
         <h3 className="font-semibold text-fg-1 text-sm">Progress photos</h3>
         {a && b && a.id !== b.id && (
           <span className={`text-xs tabular-nums ${delta > 0 ? 'text-green-400' : delta < 0 ? 'text-orange-400' : 'text-fg-4'}`}>
-            {delta > 0 ? '+' : ''}{Math.round(delta * 10) / 10} lb
+            {delta > 0 ? '+' : ''}{u === 'metric' ? Math.round((delta / 2.20462) * 10) / 10 : Math.round(delta * 10) / 10} {weightUnit(u)}
           </span>
         )}
       </div>

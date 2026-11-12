@@ -26,6 +26,7 @@ import { STAGE_META } from '@/components/mindset/flow/flow-constants'
 import { formatDistanceToNow } from 'date-fns'
 import { localDateISO } from '@/lib/dates'
 import { FlameIcon } from '@/components/shared/icons'
+import { showWeight, useUnits, weightUnit } from '@/lib/units'
 import SaveButton, { type SaveState } from '@/components/shared/SaveButton'
 import InsightsCard from '@/components/dashboard/InsightsCard'
 import { progressInsights, type InsightData } from '@/lib/insights'
@@ -94,6 +95,7 @@ function averageOver(days: string[], byDay: Map<string, DayTotals>, pick: (t: Da
 }
 
 export default function AthleteDetail({ athleteId, backHref, backLabel = 'Back', readOnly }: { athleteId: string; backHref: string; backLabel?: string; readOnly?: boolean }) {
+  const units = useUnits()
   const [data, setData] = useState<AthleteData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -350,7 +352,7 @@ export default function AthleteDetail({ athleteId, backHref, backLabel = 'Back',
                       <div className="flex flex-wrap gap-1">
                         {l.exercise_logs!.map(el => (
                           <span key={el.id} className="text-xs text-fg-4 bg-surface-3/50 px-1.5 py-0.5 rounded">
-                            {el.exercise_name} S{el.set_number}: {el.reps ?? '-'}r{el.weight ? ` @${el.weight}lbs` : ''}{el.rpe ? ` RPE${el.rpe}` : ''}
+                            {el.exercise_name} S{el.set_number}: {el.reps ?? '-'}r{el.weight ? ` @${showWeight(Number(el.weight), units)}${weightUnit(units)}` : ''}{el.rpe ? ` RPE${el.rpe}` : ''}
                           </span>
                         ))}
                       </div>

@@ -2,9 +2,21 @@ import type { DistanceUnit, ExerciseLibraryRow, ExerciseMeasure, StartWorkoutInp
 import { defaultUnit, parseTime } from '@/lib/running'
 import { matchExercise } from '@/lib/exercise-library'
 import { toLocalDateString } from '@/lib/programs'
+import { defaultDistanceUnit, showWeight, toLb, type Units } from '@/lib/units'
 
 export const DRAFT_KEY = 'mindfit.workout-draft.v1'
 export const DRAFT_VERSION = 1 as const
+
+// Weights are typed and shown in the athlete's unit and stored in lb. Inches (distance_in) never convert.
+export function storedWeight(measure: ExerciseMeasure, typed: number | null, units: Units): number | null {
+  return measure === 'distance_in' ? typed : toLb(typed, units)
+}
+
+export function shownWeight(measure: ExerciseMeasure, stored: number | string | null | undefined, units: Units): number | null {
+  if (stored == null) return null
+  if (stored == null || stored === '') return null
+  return measure === 'distance_in' ? Number(stored) : showWeight(Number(stored), units)
+}
 
 export interface DraftSet {
   setNumber: number
@@ -55,7 +67,7 @@ export function emptySet(setNumber: number, targetReps: string | null = null): D
 
 // Plan "reps" strings like "8-10", "30 sec", "5 each" are targets, never
 // performed reps: they go to targetReps (placeholder) and reps stays ''.
-export function exerciseFromPlan(name: string, sets: number, targetReps: string | null, library: ExerciseLibraryRow[]): DraftExercise {
+export function exerciseFromPlan(name: string, sets: number, targetReps: string | null, library: ExerciseLibraryRow[], units: Units = 'imperial'): DraftExercise {
   const match = matchExercise(library, name)
   const count = Math.max(1, Math.min(20, Math.round(sets || 3)))
   const measure = match?.measure ?? 'weight_reps'
@@ -64,7 +76,7 @@ export function exerciseFromPlan(name: string, sets: number, targetReps: string 
     exerciseId: match?.id ?? null,
     name: match?.name ?? name,
     measure,
-    unit: measure === 'distance_time' ? defaultUnit(match?.slug, name) : null,
+    unit: measure === 'distance_time' ? defaultDistanceUnit(defaultUnit(match?.slug, name), units) : null,
     isBodyweight: measure !== 'weight_reps',
     notes: '',
     sets: Array.from({ length: count }, (_, i) => emptySet(i + 1, targetReps)),
@@ -72,26 +84,26 @@ export function exerciseFromPlan(name: string, sets: number, targetReps: string 
 }
 
 // Repeat of a logged workout: one set per previous set, previous reps as placeholder.
-export function exerciseFromHistory(name: string, reps: (string | null)[], library: ExerciseLibraryRow[]): DraftExercise {
-  const ex = exerciseFromPlan(name, Math.max(1, reps.length), null, library)
+export function exerciseFromHistory(name: string, reps: (string | null)[], library: ExerciseLibraryRow[], units: Units = 'imperial'): DraftExercise {
+  const ex = exerciseFromPlan(name, Math.max(1, reps.length), null, library, units)
   ex.sets = ex.sets.map((s, i) => ({ ...s, targetReps: reps[i] || null }))
   return ex
 }
 
-export function exerciseFromLibrary(row: ExerciseLibraryRow, sets = 3): DraftExercise {
+export function exerciseFromLibrary(row: ExerciseLibraryRow, sets = 3, units: Units = 'imperial'): DraftExercise {
   return {
     key: nextKey(),
     exerciseId: row.id,
     name: row.name,
     measure: row.measure,
-    unit: row.measure === 'distance_time' ? defaultUnit(row.slug, row.name) : null,
+    unit: row.measure === 'distance_time' ? defaultDistanceUnit(defaultUnit(row.slug, row.name), units) : null,
     isBodyweight: row.measure !== 'weight_reps',
     notes: '',
     sets: Array.from({ length: sets }, (_, i) => emptySet(i + 1)),
   }
 }
 
-export function draftFromWorkout(input: StartWorkoutInput, library: ExerciseLibraryRow[], now: Date = new Date()): WorkoutDraft {
+export function draftFromWorkout(input: StartWorkoutInput, library: ExerciseLibraryRow[], now: Date = new Date(), units: Units = 'imperial'): WorkoutDraft {
   const iso = now.toISOString()
   return {
     version: DRAFT_VERSION,
@@ -105,8 +117,8 @@ export function draftFromWorkout(input: StartWorkoutInput, library: ExerciseLibr
     coachWorkoutId: input.coachWorkoutId ?? null,
     notes: '',
     exercises: input.prefill?.length
-      ? input.prefill.map(p => exerciseFromHistory(p.name, p.reps, library))
-      : input.exercises.map(ex => exerciseFromPlan(ex.name, ex.sets, ex.reps || null, library)),
+      ? input.prefill.map(p => exerciseFromHistory(p.name, p.reps, library, units))
+      : input.exercises.map(ex => exerciseFromPlan(ex.name, ex.sets, ex.reps || null, library, units)),
   }
 }
 
@@ -160,7 +172,7 @@ const toNum = (s: string): number | null => {
 
 // Only sets marked done that carry reps or weight are saved; set numbers
 // are renumbered so history reads 1..n.
-export function draftToSessionPayload(draft: WorkoutDraft, finishedAt: Date = new Date()): SessionPayload {
+export function draftToSessionPayload(draft: WorkoutDraft, finishedAt: Date = new Date(), units: Units = 'imperial'): SessionPayload {
   const started = new Date(draft.startedAt)
   const minutes = Math.max(0, Math.round((finishedAt.getTime() - started.getTime()) / 60000))
   const exercises: SessionExercisePayload[] = []
@@ -171,7 +183,7 @@ export function draftToSessionPayload(draft: WorkoutDraft, finishedAt: Date = ne
     for (const s of ex.sets) {
       if (!s.done) continue
       const reps = timed ? null : toInt(s.reps)
-      const weight = timed ? null : toNum(s.weight)
+      const weight = timed ? null : storedWeight(ex.measure, toNum(s.weight), units)
       const distance = timed ? toNum(s.distance) : null
       const duration_sec = timed ? parseTime(s.time) : null
       if (reps === null && weight === null && distance === null && duration_sec === null) continue
@@ -212,7 +224,8 @@ export function draftToSessionPayload(draft: WorkoutDraft, finishedAt: Date = ne
   }
 }
 
-export function draftStats(draft: WorkoutDraft): { doneSets: number; totalSets: number; volume: number } {
+// Volume is in lb, like everything stored.
+export function draftStats(draft: WorkoutDraft, units: Units = 'imperial'): { doneSets: number; totalSets: number; volume: number } {
   let doneSets = 0
   let totalSets = 0
   let volume = 0
@@ -222,7 +235,7 @@ export function draftStats(draft: WorkoutDraft): { doneSets: number; totalSets: 
       if (!s.done) continue
       doneSets++
       const r = toInt(s.reps) ?? 0
-      const w = toNum(s.weight) ?? 0
+      const w = storedWeight(ex.measure, toNum(s.weight), units) ?? 0
       volume += r * w
     }
   }

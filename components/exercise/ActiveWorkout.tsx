@@ -6,6 +6,7 @@ import RestTimer from './RestTimer'
 import LiftProgress from './LiftProgress'
 import { SortableList, SortableRow } from './Sortable'
 import { draftStats, exerciseFromLibrary, type DraftExercise, type WorkoutDraft } from '@/lib/workout-draft'
+import { useUnits } from '@/lib/units'
 import type { ExerciseLibraryRow, MuscleGroup } from '@/types/exercise'
 
 interface Props {
@@ -37,6 +38,7 @@ export default function ActiveWorkout({ draft, library, saving, onChange, onFini
   const [restEndsAt, setRestEndsAt] = useState<number | null>(null)
   const [last, setLast] = useState<Record<string, LastSets>>({})
   const [progressFor, setProgressFor] = useState<DraftExercise | null>(null)
+  const units = useUnits()
   const stats = draftStats(draft)
 
   const ids = useMemo(() => draft.exercises.map(e => e.exerciseId).filter((v): v is string => !!v), [draft.exercises])
@@ -72,7 +74,7 @@ export default function ActiveWorkout({ draft, library, saving, onChange, onFini
     onChange({ ...draft, exercises: draft.exercises.filter((_, i) => i !== idx) })
   }
   const addFromLibrary = (row: ExerciseLibraryRow) => {
-    onChange({ ...draft, exercises: [...draft.exercises, exerciseFromLibrary(row)] })
+    onChange({ ...draft, exercises: [...draft.exercises, exerciseFromLibrary(row, 3, units)] })
     setPicker(false)
   }
   const onSetDone = useCallback((restSec?: number | null) => setRestEndsAt(Date.now() + (restSec ?? 90) * 1000), [])

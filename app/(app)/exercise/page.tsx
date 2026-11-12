@@ -14,6 +14,7 @@ import LessonLinks from '@/components/shared/LessonLinks'
 import PendingGameBanner from '@/components/shared/PendingGameBanner'
 import { cached } from '@/lib/api-cache'
 import { clearDraft, draftFromWorkout, draftStats, loadDraft, saveDraft, type WorkoutDraft } from '@/lib/workout-draft'
+import { useUnits } from '@/lib/units'
 
 type Tab = 'plan' | 'schedule' | 'track' | 'practice' | 'gameday' | 'strength' | 'prebuilt'
 type ToastKind = 'success' | 'error'
@@ -30,6 +31,7 @@ const TABS: { key: Tab; label: string }[] = [
 
 export default function ExercisePage() {
   const [tab, setTab] = useState<Tab>('plan')
+  const units = useUnits()
   // Deep links like /exercise?tab=gameday&session=<id> from the Flow Stack.
   useEffect(() => {
     const t = new URLSearchParams(window.location.search).get('tab')
@@ -87,12 +89,12 @@ export default function ExercisePage() {
   const startSession = useCallback((input: StartWorkoutInput) => {
     const pending = draft ?? savedDraft
     if (pending && draftStats(pending).doneSets > 0 && !confirm(`You have an unfinished workout (${pending.name || 'Workout'}). Replace it?`)) return
-    const d = draftFromWorkout(input, library)
+    const d = draftFromWorkout(input, library, new Date(), units)
     saveDraft(d)
     setSavedDraft(null)
     setDraft(d)
     setTab('track')
-  }, [draft, savedDraft, library])
+  }, [draft, savedDraft, library, units])
 
   const handlePrebuilt = useCallback((workout: Workout, categoryName: string) => {
     startSession({ name: workout.name, categoryName, exercises: workout.exercises, source: 'prebuilt', workoutId: workout.id })

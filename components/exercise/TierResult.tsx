@@ -3,6 +3,7 @@ import { useState } from 'react'
 import type { LiftEvaluation } from '@/lib/strength'
 import type { StrengthTier } from '@/types/exercise'
 import { TIER_NAMES } from '@/lib/data/strength-standards'
+import { showWeight, useUnits, weightUnit } from '@/lib/units'
 
 export const TIER_LABEL: Record<StrengthTier, string> = {
   untrained: 'Untrained',
@@ -49,8 +50,10 @@ interface Props {
 
 export default function TierResult({ result, label, onViewProgress }: Props) {
   const [why, setWhy] = useState(false)
-  const unit = result.unit === 'lb' ? 'lb' : result.unit === 'in' ? 'in' : 'reps'
+  const units = useUnits()
+  const unit = result.unit === 'lb' ? weightUnit(units) : result.unit === 'in' ? 'in' : 'reps'
   const valueLabel = result.unit === 'lb' ? 'Est. 1RM' : result.unit === 'in' ? 'Jump' : 'Reps'
+  const val = (v: number) => (result.unit === 'lb' ? showWeight(v, units) : v)
 
   return (
     <div className="card p-5 space-y-4">
@@ -58,7 +61,7 @@ export default function TierResult({ result, label, onViewProgress }: Props) {
         <div>
           <p className="text-xs text-fg-4">{label}</p>
           <p className="text-2xl font-bold text-fg-1 tabular-nums">
-            {result.e1rm} <span className="text-sm font-medium text-fg-4">{unit}</span>
+            {val(result.e1rm)} <span className="text-sm font-medium text-fg-4">{unit}</span>
           </p>
           <p className="text-xs text-fg-4">{valueLabel}{result.ratio ? ` · ${result.ratio}× bodyweight` : ''}</p>
         </div>
@@ -92,7 +95,7 @@ export default function TierResult({ result, label, onViewProgress }: Props) {
       <div className="flex items-center justify-between gap-2 pt-1">
         {result.nextTier ? (
           <p className="text-xs text-fg-3">
-            Next: <span className="font-semibold text-fg-1">{TIER_LABEL[result.nextTier.tier]}</span> at {result.nextTier.value} {unit}
+            Next: <span className="font-semibold text-fg-1">{TIER_LABEL[result.nextTier.tier]}</span> at {val(result.nextTier.value)} {unit}
           </p>
         ) : <p className="text-xs text-fg-3">Top tier. Keep building.</p>}
         {onViewProgress && (

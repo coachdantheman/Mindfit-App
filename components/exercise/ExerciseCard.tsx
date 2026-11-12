@@ -3,8 +3,9 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import SetRow, { setFields } from './SetRow'
 import { format, parseISO } from 'date-fns'
 import { haptic } from '@/lib/haptics'
-import { emptySet, type DraftExercise, type DraftSet } from '@/lib/workout-draft'
+import { emptySet, shownWeight, storedWeight, type DraftExercise, type DraftSet } from '@/lib/workout-draft'
 import { DISTANCE_UNITS, formatPace, formatTime, isPaceUnit, paceSec, parseTime } from '@/lib/running'
+import { showWeight, useUnits, weightUnit, type Units } from '@/lib/units'
 import type { DistanceUnit } from '@/types/exercise'
 
 export interface LastSets {
@@ -26,8 +27,8 @@ interface Props {
   dragHandle?: ReactNode
 }
 
-function summarizeLast(last: LastSets, exercise: DraftExercise): string {
-  const f = setFields(exercise.measure, exercise.unit)
+function summarizeLast(last: LastSets, exercise: DraftExercise, units: Units): string {
+  const f = setFields(exercise.measure, exercise.unit, units)
   const sets = last.sets
   if (sets.length === 0) return ''
   if (exercise.measure === 'distance_time') {
@@ -46,10 +47,11 @@ function summarizeLast(last: LastSets, exercise: DraftExercise): string {
   }
   const reps = sets.map(s => s.reps ?? 0)
   const weights = sets.map(s => s.weight ?? 0)
+  const shown = weights.map(w => shownWeight(exercise.measure, w, units) ?? 0)
   const sameReps = reps.every(r => r === reps[0])
-  const sameW = weights.every(w => w === weights[0])
+  const sameW = shown.every(w => w === shown[0])
   const repsPart = f.reps ? (sameReps ? `${sets.length}×${reps[0]}` : `${sets.length}× ${reps.join('/')}`) : `${sets.length} sets`
-  const wPart = f.weight && weights.some(w => w > 0) ? ` @ ${sameW ? weights[0] : weights.join('/')} ${f.weight === 'in' ? 'in' : 'lb'}` : ''
+  const wPart = f.weight && weights.some(w => w > 0) ? ` @ ${sameW ? shown[0] : shown.join('/')} ${f.weight === 'in' ? 'in' : weightUnit(units)}` : ''
   return `${repsPart}${wPart}`
 }
 
@@ -70,7 +72,9 @@ function liveLine(exercise: DraftExercise): string | null {
 
 export default function ExerciseCard({ exercise, last, onChange, onRemove, onSetDone, onViewProgress, dragHandle }: Props) {
   const [more, setMore] = useState(false)
-  const fields = setFields(exercise.measure, exercise.unit)
+  const units = useUnits()
+  const wu = weightUnit(units)
+  const fields = setFields(exercise.measure, exercise.unit, units)
   const timed = exercise.measure === 'distance_time'
 
   const updateSet = (idx: number, next: DraftSet) => {
@@ -97,13 +101,13 @@ export default function ExerciseCard({ exercise, last, onChange, onRemove, onSet
         const src = last.sets[Math.min(i, last.sets.length - 1)]
         if (s.done) return s
         if (timed) return { ...s, distance: src.distance != null ? String(src.distance) : s.distance }
-        return { ...s, weight: src.weight != null && fields.weight ? String(src.weight) : s.weight }
+        return { ...s, weight: src.weight != null && fields.weight ? String(shownWeight(exercise.measure, src.weight, units)) : s.weight }
       }),
     })
   }
   const setUnit = (unit: DistanceUnit) => onChange({ ...exercise, unit })
 
-  const lastLine = last && last.sets.length > 0 ? summarizeLast(last, exercise) : null
+  const lastLine = last && last.sets.length > 0 ? summarizeLast(last, exercise, units) : null
   const bestSet = last?.bestSet ?? null
   const bestDate = bestSet?.date ? ` (${format(parseISO(bestSet.date), 'MMM d')})` : ''
   const split = last?.bestSplit ?? null
@@ -112,7 +116,7 @@ export default function ExerciseCard({ exercise, last, onChange, onRemove, onSet
       ? `${split.distance} ${split.unit} in ${formatTime(split.sec)}s${split.date ? ` (${format(parseISO(split.date), 'MMM d')})` : ''}`
       : null
     : exercise.measure === 'weight_reps' && bestSet && bestSet.weight > 0
-      ? `${bestSet.weight} lb × ${bestSet.reps}${bestDate}${last?.best ? ` · est. 1RM ${last.best} lb` : ''}`
+      ? `${showWeight(bestSet.weight, units)} ${wu} × ${bestSet.reps}${bestDate}${last?.best ? ` · est. 1RM ${showWeight(last.best, units)} ${wu}` : ''}`
       : exercise.measure === 'reps' && bestSet && bestSet.reps > 0
         ? `${bestSet.reps} reps${bestDate}`
         : last?.best
@@ -126,7 +130,7 @@ export default function ExerciseCard({ exercise, last, onChange, onRemove, onSet
       return parseFloat(s.distance) === split.distance && t != null && t > 0 && t < split.sec
     }
     if (!bestSet) return false
-    const w = Number(s.weight) || 0
+    const w = storedWeight(exercise.measure, Number(s.weight) || 0, units) ?? 0
     const r = Number(s.reps) || 0
     if (exercise.measure === 'weight_reps') return w > bestSet.weight || (w === bestSet.weight && r > bestSet.reps)
     if (exercise.measure === 'reps') return r > bestSet.reps
@@ -137,7 +141,7 @@ export default function ExerciseCard({ exercise, last, onChange, onRemove, onSet
   const live = liveLine(exercise)
 
   const wr = exercise.measure === 'weight_reps'
-  const volume = wr ? exercise.sets.reduce((sum, s) => sum + (Number(s.weight) || 0) * (Number(s.reps) || 0), 0) : 0
+  const volume = wr ? exercise.sets.reduce((sum, s) => sum + (storedWeight(exercise.measure, Number(s.weight) || 0, units) ?? 0) * (Number(s.reps) || 0), 0) : 0
   const lastVolume = wr && last ? last.sets.reduce((sum, s) => sum + (s.weight ?? 0) * (s.reps ?? 0), 0) : 0
   const volumePassed = lastVolume > 0 && volume > lastVolume
   const hapticFired = useRef(false)
@@ -178,8 +182,8 @@ export default function ExerciseCard({ exercise, last, onChange, onRemove, onSet
         <div className="space-y-1.5">
           <p className="text-xs text-fg-4">
             {volumePassed
-              ? <span className="text-cta font-medium">New best volume. +{volume - lastVolume} lb</span>
-              : <>Volume <span className="text-fg-2 tabular-nums">{volume} lb</span> vs {lastVolume} lb last time</>}
+              ? <span className="text-cta font-medium">New best volume. +{showWeight(volume - lastVolume, units)} {wu}</span>
+              : <>Volume <span className="text-fg-2 tabular-nums">{showWeight(volume, units)} {wu}</span> vs {showWeight(lastVolume, units)} {wu} last time</>}
           </p>
           <div className="h-1 rounded-full bg-surface-2 overflow-hidden" role="progressbar" aria-label="Volume against last time" aria-valuemin={0} aria-valuemax={lastVolume} aria-valuenow={Math.min(volume, lastVolume)}>
             <div className={`h-full rounded-full transition-all ${volumePassed ? 'bg-cta' : 'bg-fg-3'}`} style={{ width: `${Math.min(100, (volume / lastVolume) * 100)}%` }} />

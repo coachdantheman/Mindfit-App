@@ -11,6 +11,7 @@ import AiFeaturesCard from '@/components/settings/AiFeaturesCard'
 import DeleteAccountCard from '@/components/settings/DeleteAccountCard'
 import Link from 'next/link'
 import type { UserRole } from '@/types'
+import { saveUnits, useUnits } from '@/lib/units'
 
 type Status = { ok: boolean; msg: string } | null
 
@@ -33,6 +34,7 @@ export default function SettingsPage() {
   const [profileLoaded, setProfileLoaded] = useState(false)
   const [sportsSaving, setSportsSaving] = useState(false)
   const [sportsStatus, setSportsStatus] = useState<Status>(null)
+  const units = useUnits()
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -282,6 +284,24 @@ export default function SettingsPage() {
             )}
             <span className="text-fg-2">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
           </button>
+        </div>
+        <div className="card p-5">
+          <h3 className="font-semibold text-fg-1 mb-1 text-sm">Units</h3>
+          <p className="text-sm text-fg-4 mb-4">Weight, height and distance across workouts, nutrition and progress.</p>
+          <div role="radiogroup" aria-label="Units" className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-surface-2/60">
+            {([['imperial', 'Imperial (lb, mi)'], ['metric', 'Metric (kg, km)']] as const).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                role="radio"
+                aria-checked={units === key}
+                onClick={() => { void saveUnits(key) }}
+                className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${units === key ? 'bg-cta/15 text-cta' : 'text-fg-3 hover:text-fg-1'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
 
         </Section>

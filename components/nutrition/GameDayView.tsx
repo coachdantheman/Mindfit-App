@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { currentWindow, daysUntil, formatClock, gameDayGuide, gameDayPhase, gameDayWindows, parseTime } from '@/lib/game-day'
 import { localDateISO } from '@/lib/nutrition'
+import { useUnits } from '@/lib/units'
 import { loadNextGame, type UpcomingGame } from '@/lib/team-schedule'
 
 interface Props {
@@ -58,13 +59,14 @@ export default function GameDayView({ bodyWeightLb, notify }: Props) {
     }
   }
 
+  const metric = useUnits() === 'metric'
   const today = localDateISO(now)
   const phase = gameDayPhase(gameDate || null, today)
   const days = daysUntil(gameDate || null, today)
   const upcoming = !!gameDate && days !== null && days >= 0
   const start = parseTime(gameTime || null)
 
-  const night = gameDayGuide('night_before', bodyWeightLb)
+  const night = gameDayGuide('night_before', bodyWeightLb, null, metric)
   const steps: Step[] = [
     {
       key: 'night',
@@ -74,7 +76,7 @@ export default function GameDayView({ bodyWeightLb, notify }: Props) {
       drink: night.blocks[1].items[0],
       details: night.blocks.map(b => ({ heading: b.heading, items: b.items })),
     },
-    ...gameDayWindows(gameTime || null, bodyWeightLb).map(w => ({
+    ...gameDayWindows(gameTime || null, bodyWeightLb, metric).map(w => ({
       key: w.key, title: w.title, when: w.when, eat: w.eat, drink: w.drink, details: [{ items: [w.tip] }],
     })),
   ]

@@ -7,6 +7,7 @@ import { TierBadge } from './TierResult'
 import type { LiftEvaluation, SessionPoint } from '@/lib/strength'
 import type { DistanceUnit, ExerciseLibraryRow, ExerciseMeasure } from '@/types/exercise'
 import { formatTime } from '@/lib/running'
+import { showWeight, useUnits, weightUnit } from '@/lib/units'
 
 interface ProgressData {
   measure: ExerciseMeasure
@@ -24,12 +25,13 @@ interface Props {
   onClose: () => void
 }
 
-const UNIT: Record<ExerciseMeasure, string> = { weight_reps: 'lb', reps: 'reps', distance_in: 'in', time_sec: 'sec', distance_time: 's' }
+const UNIT: Record<ExerciseMeasure, string> = { weight_reps: '', reps: 'reps', distance_in: 'in', time_sec: 'sec', distance_time: 's' }
 const METRIC: Record<ExerciseMeasure, string> = { weight_reps: 'Est. 1RM', reps: 'Max reps', distance_in: 'Best distance', time_sec: 'Longest hold', distance_time: 'Fastest' }
 
 export default function LiftProgress({ exerciseId, name, onClose }: Props) {
   const [data, setData] = useState<ProgressData | null>(null)
   const [error, setError] = useState('')
+  const units = useUnits()
 
   useEffect(() => {
     const qs = exerciseId ? `exercise_id=${exerciseId}` : `name=${encodeURIComponent(name)}`
@@ -41,9 +43,10 @@ export default function LiftProgress({ exerciseId, name, onClose }: Props) {
   const measure = data?.measure ?? 'weight_reps'
   const timed = data?.timed ?? null
   const metricLabel = timed ? (timed.metric === 'pace' ? 'Best pace' : `Fastest ${timed.refDistance} ${timed.unit}`) : METRIC[measure]
-  const unitLabel = timed ? (timed.metric === 'pace' ? `/${timed.unit}` : 's') : UNIT[measure]
-  const fmt = (v: number) => (timed ? formatTime(v) : String(v))
-  const chart = (data?.series ?? []).map(p => ({ date: format(parseISO(p.date), 'MMM d'), value: p.e1rm }))
+  const unitLabel = timed ? (timed.metric === 'pace' ? `/${timed.unit}` : 's') : measure === 'weight_reps' ? weightUnit(units) : UNIT[measure]
+  const conv = (v: number) => (measure === 'weight_reps' ? showWeight(v, units) ?? v : v)
+  const fmt = (v: number) => (timed ? formatTime(v) : String(conv(v)))
+  const chart = (data?.series ?? []).map(p => ({ date: format(parseISO(p.date), 'MMM d'), value: conv(p.e1rm) }))
 
   return (
     <BottomSheet title={name} onClose={onClose}>
@@ -90,7 +93,7 @@ export default function LiftProgress({ exerciseId, name, onClose }: Props) {
                     <span className="text-fg-3">{format(parseISO(p.date), 'MMM d, yyyy')}</span>
                     <span className="text-fg-1 tabular-nums font-medium">
                       {fmt(p.e1rm)} {unitLabel}
-                      {p.topSet && measure === 'weight_reps' ? <span className="text-fg-4 font-normal"> · {p.topSet.weight}×{p.topSet.reps}</span> : null}
+                      {p.topSet && measure === 'weight_reps' ? <span className="text-fg-4 font-normal"> · {conv(p.topSet.weight)}×{p.topSet.reps}</span> : null}
                     </span>
                   </div>
                 ))}

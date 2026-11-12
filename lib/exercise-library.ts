@@ -55,6 +55,8 @@ export function searchExercises<T extends SearchableExercise>(list: T[], q: stri
   return scored.sort((a, b) => b.score - a.score).slice(0, limit).map(s => s.ex)
 }
 
+const isUserRow = (ex: object) => (ex as { source?: string }).source === 'user'
+
 const indexCache = new WeakMap<object, Map<string, unknown>>()
 
 function indexFor<T extends SearchableExercise>(list: T[]): Map<string, T> {
@@ -69,9 +71,11 @@ function indexFor<T extends SearchableExercise>(list: T[]): Map<string, T> {
     put(compact(n), ex)
     put(compact(singularize(n)), ex)
   }
-  // Names first so a name always wins over another row's alias.
-  for (const ex of list) putAll(ex.name, ex)
-  for (const ex of list) for (const a of ex.aliases ?? []) putAll(a, ex)
+  // Built-in rows before an athlete's own, so a custom "Walk" logged as
+  // reps never shadows the curated distance/time one. Names before aliases.
+  const rows = [...list].sort((a, b) => Number(isUserRow(a)) - Number(isUserRow(b)))
+  for (const ex of rows) putAll(ex.name, ex)
+  for (const ex of rows) for (const a of ex.aliases ?? []) putAll(a, ex)
   indexCache.set(list, idx)
   return idx
 }
