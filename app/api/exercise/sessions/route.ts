@@ -166,7 +166,7 @@ export async function POST(req: Request) {
 
   if (error || !id) {
     console.error('log_workout_session failed:', error?.message)
-    return NextResponse.json({ error: "Couldn't save the workout. Nothing was written — try again." }, { status: 500 })
+    return NextResponse.json({ error: "Couldn't save the workout. Nothing was written. Try again." }, { status: 500 })
   }
 
   // Every tracked session with sets lands in My Workouts, one row per name,

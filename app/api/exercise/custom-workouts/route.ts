@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { isPlainObject, isUUID } from '@/lib/validate'
 
 export async function GET() {
   const auth = await verifyApiUser()
@@ -25,7 +26,7 @@ export async function PATCH(req: Request) {
   if (auth instanceof NextResponse) return auth
 
   const body = await req.json().catch(() => null)
-  if (!body || typeof body.id !== 'string' || typeof body.pinned !== 'boolean') {
+  if (!isPlainObject(body) || !isUUID(body.id) || typeof body.pinned !== 'boolean') {
     return NextResponse.json({ error: 'id and pinned are required' }, { status: 400 })
   }
 
@@ -48,7 +49,7 @@ export async function DELETE(req: Request) {
   if (auth instanceof NextResponse) return auth
 
   const id = new URL(req.url).searchParams.get('id')
-  if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 })
+  if (!isUUID(id)) return NextResponse.json({ error: 'id is required' }, { status: 400 })
 
   const admin = createAdminClient()
   const { data, error } = await admin

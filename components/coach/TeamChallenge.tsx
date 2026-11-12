@@ -2,134 +2,213 @@
 import { useEffect, useId, useState } from 'react'
 import SaveButton, { type SaveState } from '@/components/shared/SaveButton'
 import { useToast } from '@/components/shared/Toast'
-import { CHALLENGE_KINDS, CHALLENGE_LABELS, suggestedTarget, type ChallengeKind } from '@/lib/team-challenge'
+import { CHALLENGE_KINDS, CHALLENGE_LABELS, GOAL_DURATIONS, suggestedTarget, type ChallengeKind, type GoalDuration, type GoalView } from '@/lib/team-challenge'
 
-interface Challenge { kind: ChallengeKind; target: number; label: string; progress: number; daysLeft: number }
-interface Loaded { members: number; challenge: Challenge | null }
+const MAX_ACTIVE_GOALS = 3
 
 const KIND_CHIP: Record<ChallengeKind, string> = {
   journal: 'Journal',
   workouts: 'Workouts',
   sleep: 'Sleep',
   meals: 'Meals',
+  flow_stacks: 'Flow Stacks',
+  gratitude: 'Gratitude',
+  habits: 'Habits',
+  practices: 'Practices',
+  visualization: 'Visualization',
+  mpi: 'MPI check-ins',
+  custom: 'Custom',
 }
 
-// One weekly goal for a team: athletes' combined logs, shown as a progress bar.
+const DURATION_CHIP: Record<GoalDuration, string> = { '1w': '1 week', '2w': '2 weeks', '4w': '4 weeks', season: 'Season' }
+const DURATIONS = Object.keys(GOAL_DURATIONS) as GoalDuration[]
+
+const tz = () => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone } catch { return '' } }
+
+const unitOf = (g: GoalView) => (g.kind === 'custom' ? 'check-ins' : g.label.toLowerCase())
+
+// Team goals the coach pushes to a team. Several can run at once, each for a set duration.
 export default function TeamChallenge({ teamId }: { teamId: string }) {
   const notify = useToast()
-  const inputId = useId()
-  const [loaded, setLoaded] = useState<Loaded | null>(null)
+  const titleId = useId()
+  const targetId = useId()
+  const [goals, setGoals] = useState<GoalView[]>([])
+  const [members, setMembers] = useState(0)
+  const [open, setOpen] = useState(false)
   const [kind, setKind] = useState<ChallengeKind>('journal')
+  const [title, setTitle] = useState('')
+  const [duration, setDuration] = useState<GoalDuration>('1w')
   const [target, setTarget] = useState('')
   const [save, setSave] = useState<SaveState>('idle')
 
-  const apply = (next: Loaded) => {
-    setLoaded(next)
-    const k = next.challenge?.kind ?? 'journal'
-    setKind(k)
-    setTarget(String(next.challenge?.target ?? suggestedTarget(k, next.members)))
-  }
-
   useEffect(() => {
-    let tz = ''
-    try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone } catch {}
-    fetch(`/api/coach/challenge?team_id=${encodeURIComponent(teamId)}&tz=${encodeURIComponent(tz)}`)
+    fetch(`/api/coach/challenge?team_id=${encodeURIComponent(teamId)}&tz=${encodeURIComponent(tz())}`)
       .then(r => r.ok ? r.json() : null)
-      .then((d: Loaded | null) => { if (d) apply(d) })
+      .then((d: { members: number; goals: GoalView[] } | null) => {
+        if (!d) return
+        setMembers(d.members)
+        setGoals(d.goals)
+      })
       .catch(() => {})
   }, [teamId])
 
+  const suggest = (k: ChallengeKind, d: GoalDuration) => String(suggestedTarget(k, members, GOAL_DURATIONS[d]))
+
   const pickKind = (k: ChallengeKind) => {
     setKind(k)
-    if (loaded) setTarget(String(suggestedTarget(k, loaded.members)))
+    setTarget(suggest(k, duration))
   }
 
-  const tz = () => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone } catch { return '' } }
+  const pickDuration = (d: GoalDuration) => {
+    setDuration(d)
+    setTarget(suggest(kind, d))
+  }
 
-  const saveGoal = async () => {
+  const openForm = () => {
+    setKind('journal')
+    setTitle('')
+    setDuration('1w')
+    setTarget(suggest('journal', '1w'))
+    setSave('idle')
+    setOpen(true)
+  }
+
+  const start = async () => {
     const n = Number(target)
     if (!Number.isInteger(n) || n < 1 || n > 100000) { notify('Set a target from 1 to 100,000.', 'error'); return }
+    if (kind === 'custom' && title.trim() === '') { notify('Write what the team is working on.', 'error'); return }
     setSave('saving')
     try {
       const res = await fetch('/api/coach/challenge', {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ team_id: teamId, kind, target: n, tz: tz() }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ team_id: teamId, kind, title: kind === 'custom' ? title.trim() : undefined, duration, target: n, tz: tz() }),
       })
       const data = await res.json().catch(() => ({}))
-      if (!res.ok) { setSave('error'); notify(data.error || 'Could not save the goal', 'error'); return }
-      setSave('saved')
-      setLoaded(prev => ({ members: data.members ?? prev?.members ?? 0, challenge: data.challenge ?? null }))
+      if (!res.ok) { setSave('error'); notify(data.error || 'Could not start the goal', 'error'); return }
+      setSave('idle')
+      setMembers(data.members ?? members)
+      setGoals(prev => [data.goal as GoalView, ...prev])
+      setOpen(false)
     } catch {
       setSave('error')
-      notify('Could not save the goal', 'error')
+      notify('Could not start the goal', 'error')
     }
   }
 
-  const remove = async () => {
-    const res = await fetch(`/api/coach/challenge?team_id=${encodeURIComponent(teamId)}&tz=${encodeURIComponent(tz())}`, { method: 'DELETE' })
-    if (!res.ok) { notify('Could not remove the goal', 'error'); return }
-    const members = loaded?.members ?? 0
-    setLoaded({ members, challenge: null })
-    setKind('journal')
-    setTarget(String(suggestedTarget('journal', members)))
-    setSave('idle')
+  const end = async (id: string) => {
+    const res = await fetch(`/api/coach/challenge?id=${encodeURIComponent(id)}`, { method: 'DELETE' })
+    if (!res.ok) { notify('Could not end the goal', 'error'); return }
+    setGoals(prev => prev.filter(g => g.id !== id))
   }
 
-  const challenge = loaded?.challenge ?? null
-  const pct = challenge ? Math.min(100, Math.round((challenge.progress / challenge.target) * 100)) : 0
+  const full = goals.length >= MAX_ACTIVE_GOALS
 
   return (
     <div className="border border-edge rounded-2xl p-4 space-y-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h4 className="font-semibold text-fg-1 text-sm">This week&apos;s team goal</h4>
-        {challenge && <span className="text-xs text-fg-4 tabular-nums">{challenge.daysLeft} day{challenge.daysLeft === 1 ? '' : 's'} left</span>}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h4 className="font-semibold text-fg-1 text-sm">Team goals</h4>
+        {!open && (
+          <button type="button" onClick={openForm} disabled={full} className="btn-secondary text-xs">
+            {full ? `${MAX_ACTIVE_GOALS} goals running` : '+ New team goal'}
+          </button>
+        )}
       </div>
 
-      {challenge && (
-        <div className="space-y-2">
-          <div className="h-2 rounded-full bg-surface-3 overflow-hidden" role="progressbar" aria-valuemin={0} aria-valuemax={challenge.target} aria-valuenow={Math.min(challenge.progress, challenge.target)} aria-label="Team goal progress">
-            <div className="h-full bg-cta rounded-full transition-[width]" style={{ width: `${Math.max(challenge.progress > 0 ? 2 : 0, pct)}%` }} />
-          </div>
-          <p className="text-xs text-fg-3 tabular-nums">{challenge.progress} of {challenge.target} {CHALLENGE_LABELS[challenge.kind].toLowerCase()}</p>
-        </div>
+      {goals.length === 0 && !open && (
+        <p className="text-xs text-fg-4">No goals running. Set one for the team.</p>
       )}
 
-      <div role="group" aria-label="Goal type" className="flex flex-wrap gap-2">
-        {CHALLENGE_KINDS.map(k => (
-          <button
-            key={k}
-            type="button"
-            aria-pressed={kind === k}
-            onClick={() => pickKind(k)}
-            className={`text-xs font-medium rounded-full border px-3 py-1.5 transition-colors ${
-              kind === k ? 'border-cta/50 bg-cta/10 text-cta' : 'border-edge text-fg-3 hover:text-fg-1'
-            }`}
-          >
-            {KIND_CHIP[k]}
-          </button>
-        ))}
-      </div>
+      {goals.map(g => {
+        const pct = g.target > 0 ? Math.min(100, Math.round((g.progress / g.target) * 100)) : 0
+        return (
+          <div key={g.id} className="border border-edge rounded-xl p-3 space-y-2">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-fg-1 break-words">{g.label}</p>
+                <p className="text-xs text-fg-4 tabular-nums">{g.daysLeft} day{g.daysLeft === 1 ? '' : 's'} left</p>
+              </div>
+              <button type="button" onClick={() => end(g.id)} className="text-xs text-fg-4 hover:text-red-400 shrink-0">End</button>
+            </div>
+            <div className="h-2 rounded-full bg-surface-3 overflow-hidden" role="progressbar" aria-valuemin={0} aria-valuemax={g.target} aria-valuenow={Math.min(g.progress, g.target)} aria-label={`${g.label} progress`}>
+              <div className="h-full bg-cta rounded-full transition-[width]" style={{ width: `${Math.max(g.progress > 0 ? 2 : 0, pct)}%` }} />
+            </div>
+            <p className="text-xs text-fg-3 tabular-nums">{g.progress} of {g.target} {unitOf(g)}</p>
+          </div>
+        )
+      })}
 
-      <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
-        <div>
-          <label htmlFor={inputId} className="text-xs uppercase tracking-wide text-fg-4 block mb-1">{CHALLENGE_LABELS[kind]} for the team</label>
-          <input
-            id={inputId}
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={100000}
-            value={target}
-            onChange={e => { setTarget(e.target.value); setSave('idle') }}
-            className="input-field"
-          />
-          {loaded && <p className="text-xs text-fg-4 mt-1">Suggested: {suggestedTarget(kind, loaded.members)} for {loaded.members} athlete{loaded.members === 1 ? '' : 's'}.</p>}
+      {open && (
+        <div className="space-y-4 border-t border-edge pt-4">
+          <div className="space-y-2">
+            <p className="text-xs uppercase tracking-wide text-fg-4">Goal</p>
+            <div role="group" aria-label="Goal type" className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {CHALLENGE_KINDS.map(k => (
+                <button
+                  key={k}
+                  type="button"
+                  aria-pressed={kind === k}
+                  onClick={() => pickKind(k)}
+                  className={kind === k ? 'tab-btn-active' : 'tab-btn'}
+                >
+                  {KIND_CHIP[k]}
+                </button>
+              ))}
+            </div>
+            {kind === 'custom' && (
+              <div>
+                <label htmlFor={titleId} className="text-xs uppercase tracking-wide text-fg-4 block mb-1">Goal in words</label>
+                <input
+                  id={titleId}
+                  type="text"
+                  maxLength={80}
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  placeholder="e.g. 10 minutes of film every day"
+                  className="input-field"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-xs uppercase tracking-wide text-fg-4">Duration</p>
+            <div role="group" aria-label="Duration" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {DURATIONS.map(d => (
+                <button
+                  key={d}
+                  type="button"
+                  aria-pressed={duration === d}
+                  onClick={() => pickDuration(d)}
+                  className={duration === d ? 'tab-btn-active' : 'tab-btn'}
+                >
+                  {DURATION_CHIP[d]}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor={targetId} className="text-xs uppercase tracking-wide text-fg-4 block mb-1">
+              {kind === 'custom' ? 'Check-ins for the team' : `${CHALLENGE_LABELS[kind]} for the team`}
+            </label>
+            <input
+              id={targetId}
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={100000}
+              value={target}
+              onChange={e => { setTarget(e.target.value); setSave('idle') }}
+              className="input-field"
+            />
+            <p className="text-xs text-fg-4 mt-1">Suggested: {suggest(kind, duration)} for {members} athlete{members === 1 ? '' : 's'}.</p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <SaveButton state={save} idleLabel="Start goal" onClick={start} type="button" className="sm:w-auto sm:px-5" />
+            <button type="button" onClick={() => setOpen(false)} className="btn-secondary text-xs">Cancel</button>
+          </div>
         </div>
-        <SaveButton state={save} idleLabel={challenge ? 'Update goal' : 'Set goal'} onClick={saveGoal} type="button" className="sm:w-auto sm:px-5" />
-      </div>
-
-      {challenge && (
-        <button type="button" onClick={remove} className="text-xs text-fg-4 hover:text-red-400">Remove goal</button>
       )}
     </div>
   )

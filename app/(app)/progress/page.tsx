@@ -142,7 +142,7 @@ export default function ProgressPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
           <StatCard
             label="MPI Score"
-            value={overview.latestMpi ?? '—'}
+            value={overview.latestMpi ?? '-'}
             unit={overview.latestMpi != null ? '/ 100' : undefined}
             delta={
               overview.latestMpi != null && overview.baselineMpi != null
@@ -241,7 +241,7 @@ export default function ProgressPage() {
                     <ReadinessHero
                       score={score}
                       verdict={verdict}
-                      subtitle={avgSleep !== '—' ? `Sleep avg ${avgSleep}h · ${workoutLogs.length} workouts logged` : `${workoutLogs.length} workouts logged`}
+                      subtitle={avgSleep !== '-' ? `Sleep avg ${avgSleep}h · ${workoutLogs.length} workouts logged` : `${workoutLogs.length} workouts logged`}
                       date={`Today · ${entryDate}`}
                       pills={[
                         ...(delta !== null ? [{ label: 'Δ', value: `${delta > 0 ? '+' : ''}${delta}`, delta: delta > 0 ? `+${delta}` : delta < 0 ? `${delta}` : undefined }] : []),

@@ -3,6 +3,7 @@ import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { fetchAll } from '@/lib/fetch-all'
+import { isPlainObject, isUUID, oneOf } from '@/lib/validate'
 
 export async function GET() {
   const auth = await verifyApiUser('admin')
@@ -40,10 +41,12 @@ export async function POST(req: Request) {
   const auth = await verifyApiUser('admin')
   if (auth instanceof NextResponse) return auth
 
-  const { userId, newRole } = await req.json()
-  if (!userId || !['coach', 'member'].includes(newRole)) {
+  const body = await req.json().catch(() => null)
+  const newRole = isPlainObject(body) ? oneOf(body.newRole, ['coach', 'member'] as const) : null
+  if (!isPlainObject(body) || !isUUID(body.userId) || !newRole) {
     return NextResponse.json({ error: 'Invalid userId or role' }, { status: 400 })
   }
+  const userId = body.userId
 
   const admin = createAdminClient()
 

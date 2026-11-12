@@ -1,6 +1,6 @@
 'use client'
 import TabBar from '@/components/shared/TabBar'
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter, useSearchParams } from 'next/navigation'
 import LessonLinks from '@/components/shared/LessonLinks'
@@ -8,6 +8,8 @@ import QuoteOfTheDay from '@/components/mindset/QuoteOfTheDay'
 import PushPrompt from '@/components/shared/PushPrompt'
 import { LessonSection } from '@/types'
 import TodayCard from '@/components/today/TodayCard'
+import PendingGameBanner from '@/components/shared/PendingGameBanner'
+import InviteParentCard from '@/components/shared/InviteParentCard'
 
 const JournalTab = dynamic(() => import('@/components/mindset/JournalTab'))
 const VisualizationForm = dynamic(() => import('@/components/mindset/VisualizationForm'))
@@ -54,6 +56,12 @@ function MindsetContent() {
   // Tabs stay mounted once visited so half-written forms survive switching.
   const [visited, setVisited] = useState<Tab[]>([initialTab])
 
+  // Same-page links (e.g. Goals → "Open Habits") only change the URL, so follow it.
+  useEffect(() => {
+    setActiveTab(initialTab)
+    setVisited(v => v.includes(initialTab) ? v : [...v, initialTab])
+  }, [initialTab])
+
   const selectTab = (tab: Tab) => {
     setActiveTab(tab)
     setVisited(v => v.includes(tab) ? v : [...v, tab])
@@ -80,9 +88,13 @@ function MindsetContent() {
         <p className="page-subtitle">Train your mind. Build your identity.</p>
       </div>
 
+      <PendingGameBanner />
+
       <TodayCard />
 
       <PushPrompt />
+
+      <InviteParentCard />
 
       <QuoteOfTheDay />
 

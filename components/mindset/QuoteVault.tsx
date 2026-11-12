@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { cached } from '@/lib/api-cache'
 import { useToast } from '@/components/shared/Toast'
 import { VAULT, VaultGroup, VaultPerson, vaultQuoteIndex, vaultOrder } from '@/lib/data/quote-vault'
@@ -84,7 +85,7 @@ export default function QuoteVault() {
   return (
     <div className="space-y-6">
       <p className="text-sm text-fg-2 leading-relaxed">
-        Words from the people who’ve been where you’re going. One quote per person, rotating daily. Pin the voices you need and save the lines that hit.
+        Words from the people who’ve been where you’re going. The voices and their quotes rotate daily. Pin the people you need, save the lines that hit, and share your favorites.
       </p>
 
       <div className="flex flex-wrap gap-2">
@@ -116,6 +117,9 @@ export default function QuoteVault() {
                 >
                   ♥ Saved
                 </button>
+                <Link href={`/quote?id=${quote.id}`} className="tab-btn text-xs min-h-[44px] sm:min-h-0 inline-flex items-center ml-2">
+                  Share
+                </Link>
               </div>
             ))}
           </div>
@@ -153,6 +157,11 @@ export default function QuoteVault() {
                   >
                     {isFav ? '♥ Saved' : '♡ Save'}
                   </button>
+                  {isFav && (
+                    <Link href={`/quote?id=${quote.id}`} className="tab-btn text-xs min-h-[44px] sm:min-h-0 inline-flex items-center">
+                      Share
+                    </Link>
+                  )}
                   <button
                     type="button"
                     onClick={() => toggle('pin_person', p.key)}

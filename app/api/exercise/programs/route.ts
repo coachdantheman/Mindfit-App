@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
-import { clampNumber, isISODate, optionalString, requireString } from '@/lib/validate'
+import { clampNumber, isISODate, isPlainObject, isUUID, optionalString, requireString } from '@/lib/validate'
+
+const goalList = (v: unknown) => Array.isArray(v) ? v.filter((g): g is string => typeof g === 'string').slice(0, 10).map(g => g.slice(0, 120)) : []
+const blockList = (v: unknown) => Array.isArray(v) ? v.slice(0, 200).filter(isPlainObject) : []
 import { insertBlocks, loadPrograms } from '@/lib/program-store'
 
 export async function GET(req: Request) {
@@ -26,7 +29,8 @@ export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const title = requireString(body.title, 120)
   if (!title) return NextResponse.json({ error: 'Title is required.' }, { status: 400 })
   const admin = createAdminClient()
@@ -44,7 +48,7 @@ export async function POST(req: Request) {
       created_by: auth.userId,
       title,
       sport: optionalString(body.sport, 60),
-      goals: Array.isArray(body.goals) ? body.goals.slice(0, 10) : [],
+      goals: goalList(body.goals),
       description: optionalString(body.description, 600),
       duration_weeks: clampNumber(body.duration_weeks, 1, 52) ?? 4,
       is_active: true,
@@ -56,12 +60,11 @@ export async function POST(req: Request) {
 
   if (pErr || !program) return NextResponse.json({ error: pErr?.message ?? 'insert failed' }, { status: 500 })
 
-  const blocks: any[] = Array.isArray(body.blocks) ? body.blocks : []
-  const failure = await insertBlocks(admin, program.id, blocks)
+  const failure = await insertBlocks(admin, program.id, blockList(body.blocks))
   if (failure) {
     await admin.from('training_programs').delete().eq('id', program.id)
     console.error('program insert failed, rolled back:', failure)
-    return NextResponse.json({ error: "Couldn't save the plan. Nothing was saved — try again." }, { status: 500 })
+    return NextResponse.json({ error: "Couldn't save the plan. Nothing was saved. Try again." }, { status: 500 })
   }
 
   const [full] = await loadPrograms(admin, [program.id])
@@ -75,8 +78,9 @@ export async function PUT(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json().catch(() => ({}))
-  const id = typeof body.id === 'string' ? body.id : null
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
+  const id = isUUID(body.id) ? body.id : null
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
   const admin = createAdminClient()
@@ -96,7 +100,7 @@ export async function PUT(req: Request) {
   }
   if (body.description !== undefined) patch.description = optionalString(body.description, 600)
   if (body.sport !== undefined) patch.sport = optionalString(body.sport, 60)
-  if (Array.isArray(body.goals)) patch.goals = body.goals.slice(0, 10)
+  if (Array.isArray(body.goals)) patch.goals = goalList(body.goals)
   if (body.duration_weeks !== undefined) patch.duration_weeks = clampNumber(body.duration_weeks, 1, 52) ?? 4
   if (body.start_date !== undefined) {
     if (!isISODate(body.start_date)) return NextResponse.json({ error: 'start_date must be YYYY-MM-DD' }, { status: 400 })
@@ -115,7 +119,7 @@ export async function PUT(req: Request) {
   if (Array.isArray(body.blocks)) {
     const { error: delErr } = await admin.from('program_blocks').delete().eq('program_id', id)
     if (delErr) return dbError(delErr)
-    const failure = await insertBlocks(admin, id, body.blocks)
+    const failure = await insertBlocks(admin, id, blockList(body.blocks))
     if (failure) {
       console.error('program block replace failed:', failure)
       return NextResponse.json({ error: "Couldn't save the schedule. Re-open the plan and try again." }, { status: 500 })
@@ -131,10 +135,11 @@ export async function PATCH(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json().catch(() => ({}))
-  const workoutId = typeof body.workout_id === 'string' ? body.workout_id : null
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
+  const workoutId = isUUID(body.workout_id) ? body.workout_id : null
   const day = body.day_of_week
-  if (!workoutId || !Number.isInteger(day) || day < 1 || day > 7) {
+  if (!workoutId || !Number.isInteger(day) || (day as number) < 1 || (day as number) > 7) {
     return NextResponse.json({ error: 'workout_id and day_of_week (1-7) are required.' }, { status: 400 })
   }
 
@@ -159,13 +164,14 @@ export async function DELETE(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const { id } = await req.json()
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body) || !isUUID(body.id)) return NextResponse.json({ error: 'id required' }, { status: 400 })
   const admin = createAdminClient()
 
   const { error } = await admin
     .from('training_programs')
     .delete()
-    .eq('id', id)
+    .eq('id', body.id)
     .eq('user_id', auth.userId)
 
   if (error) return dbError(error)

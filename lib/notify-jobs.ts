@@ -15,6 +15,8 @@ export interface MemberState {
 export const QUIET_START = 21
 export const QUIET_END = 7
 export const STREAK_HOUR = 19
+// End-of-day habit check-in, before quiet hours start.
+export const HABIT_HOUR = 20
 
 export function inQuietHours(hour: number): boolean {
   return hour < QUIET_END || hour > QUIET_START

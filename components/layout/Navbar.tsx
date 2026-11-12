@@ -1,7 +1,6 @@
 'use client'
 import Link from 'next/link'
 import { cached } from '@/lib/api-cache'
-import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
@@ -108,22 +107,17 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
 
   return (
     <>
-      <nav className="sticky top-0 z-40 bg-surface border-b border-edge pt-safe">
+      <nav className="sticky top-0 z-40 bg-surface border-b border-edge pt-safe-bar">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-14">
-            {/* Logo lockup */}
-            <Link href="/mindset" className="flex items-center gap-2.5">
-              <span className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-page flex items-center justify-center ring-1 ring-cta/25 shadow-[0_0_12px_rgb(var(--cta-rgb)/0.18)]">
-                <Image
-                  src="/brand/logo-color.png"
-                  alt="MindFit"
-                  width={24}
-                  height={24}
-                  priority
-                  unoptimized
-                />
-              </span>
-              <span className="text-fg-1 font-bold text-sm tracking-[0.18em] uppercase hidden sm:inline">
+            {/* Logo lockup: vector mark (crisp at any size) + thin wordmark */}
+            <Link href="/mindset" aria-label="MindFit home" className="flex items-center gap-2.5 min-h-[44px]">
+              <svg viewBox="168 86 176 340" className="h-8 w-auto shrink-0" aria-hidden="true">
+                <polyline points="180,246 180,97 256,224 332,97 332,246" fill="none" stroke="var(--gold-light, #E3CF86)" strokeWidth="13" strokeLinejoin="miter" />
+                <rect x="203" y="247" width="106" height="11" fill="#9A8B00" />
+                <path d="M203 330 H309 V341 H214 V416 H203 Z" fill="#9A8B00" />
+              </svg>
+              <span className="font-display text-[15px] tracking-[0.32em] uppercase text-fg-1 leading-none pt-px">
                 Mind<span className="text-cta">fit</span>
               </span>
             </Link>

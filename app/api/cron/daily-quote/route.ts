@@ -54,8 +54,8 @@ export async function GET(req: Request) {
   const deadline = Date.now() + 250_000
 
   const payload = {
-    title: 'MindFit — Quote of the Day',
-    body: `“${quote.text}” — ${quote.author}`,
+    title: 'MindFit: Quote of the Day',
+    body: `“${quote.text}” (${quote.author})`,
     url: `/quote?id=${quote.id}`,
     tag: `mindfit-daily-quote-${quote.date}`,
   }

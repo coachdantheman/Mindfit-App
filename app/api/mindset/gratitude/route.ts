@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
-import { isISODate, optionalString, requireString } from '@/lib/validate'
+import { isISODate, isPlainObject, optionalString, requireString } from '@/lib/validate'
 
 const COLS = 'id, entry_date, item_1, item_2, item_3'
 
@@ -22,8 +22,8 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
-  const body = await req.json().catch(() => ({}))
-  if (!isISODate(body.entry_date)) return NextResponse.json({ error: 'entry_date required' }, { status: 400 })
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body) || !isISODate(body.entry_date)) return NextResponse.json({ error: 'entry_date required' }, { status: 400 })
   const items = [body.item_1, body.item_2, body.item_3].map(v => optionalString(v, 300)).filter((v): v is string => !!v)
   const first = requireString(items[0], 300)
   if (!first) return NextResponse.json({ error: 'Write at least one thing you’re grateful for.' }, { status: 400 })

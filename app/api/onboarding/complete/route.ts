@@ -5,7 +5,7 @@ import { AGE_BLOCK_COOKIE, isUnder13, validBirth } from '@/lib/age'
 import { deleteUserCompletely } from '@/lib/account-delete'
 import { recordBirth } from '@/lib/consent'
 import { MPI_DIMENSIONS } from '@/lib/mpi'
-import { clampNumber, isISODate, optionalString } from '@/lib/validate'
+import { clampNumber, isISODate, isPlainObject, optionalString } from '@/lib/validate'
 import { pushGhlEvent, ghlEligible } from '@/lib/ghl'
 
 // Saves everything from the pre-account /start flow right after signup.
@@ -14,7 +14,8 @@ export async function POST(req: Request) {
   const auth = await verifyLockedApiUser('member')
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const admin = createAdminClient()
 
   const { data: existing } = await admin
@@ -44,8 +45,9 @@ export async function POST(req: Request) {
   }
 
   const scores: Record<string, number> = {}
+  const scoresIn: Record<string, unknown> = isPlainObject(body.scores) ? body.scores : {}
   for (const d of MPI_DIMENSIONS) {
-    const v = clampNumber(body.scores?.[d.key], 1, 10)
+    const v = clampNumber(scoresIn[d.key], 1, 10)
     if (v === null) return NextResponse.json({ error: 'All ten scores must be numbers between 1 and 10.' }, { status: 400 })
     scores[d.key] = v
   }

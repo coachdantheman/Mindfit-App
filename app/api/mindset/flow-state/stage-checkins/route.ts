@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { isDateTime, isPlainObject, oneOf, optionalString } from '@/lib/validate'
 
 const STAGES = ['struggle', 'release', 'flow', 'recovery'] as const
 
@@ -33,8 +34,9 @@ export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json()
-  if (!STAGES.includes(body.stage)) {
+  const body = await req.json().catch(() => null)
+  const stage = isPlainObject(body) ? oneOf(body.stage, STAGES) : null
+  if (!isPlainObject(body) || !stage) {
     return NextResponse.json({ error: 'invalid stage' }, { status: 400 })
   }
 
@@ -43,9 +45,9 @@ export async function POST(req: Request) {
     .from('flow_stage_checkins')
     .insert({
       user_id: auth.userId,
-      stage: body.stage,
-      note: body.note?.trim() || null,
-      checked_at: body.checked_at || new Date().toISOString(),
+      stage,
+      note: optionalString(body.note, 280),
+      checked_at: isDateTime(body.checked_at) ? body.checked_at : new Date().toISOString(),
     })
     .select()
     .single()

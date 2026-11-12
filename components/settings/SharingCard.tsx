@@ -6,7 +6,7 @@ import JoinTeamForm from '@/components/shared/JoinTeamForm'
 
 interface Person { linkId: string; id: string; full_name: string | null; email: string }
 interface MyTeam { id: string; name: string; sport: string | null; coach_name: string | null }
-interface Links { coaches: Person[]; parents: Person[]; pendingParents: { linkId: string; email: string }[]; athletes: Person[] }
+interface Links { coaches: Person[]; parents: Person[]; pendingParents: { linkId: string; email: string; kind?: 'pending_parent' | 'parent_request' }[]; athletes: Person[] }
 
 export default function SharingCard({ role }: { role: UserRole }) {
   const [links, setLinks] = useState<Links | null>(null)
@@ -33,7 +33,11 @@ export default function SharingCard({ role }: { role: UserRole }) {
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) { setStatus({ ok: false, msg: data.error || 'Could not share.' }); return }
-      setStatus({ ok: true, msg: data.outcome === 'invited' ? 'Invite sent. They get access when they create an account.' : 'Shared.' })
+      setStatus({ ok: true, msg:
+        data.outcome === 'invited' ? 'Invite emailed. They get access when they create their free account.'
+        : data.outcome === 'requested' ? 'Invite emailed. They see your progress once they accept in the app.'
+        : data.outcome === 'already_linked' ? 'That parent can already see your progress.'
+        : 'Invite sent.' })
       setEmail('')
       load()
     } catch {
@@ -43,14 +47,14 @@ export default function SharingCard({ role }: { role: UserRole }) {
     }
   }
 
-  const revoke = async (kind: 'coach' | 'parent' | 'pending_parent', id: string, label: string) => {
+  const revoke = async (kind: 'coach' | 'parent' | 'pending_parent' | 'parent_request', id: string, label: string) => {
     if (!confirm(`Stop sharing your progress with ${label}?`)) return
     const before = links
     setLinks(prev => prev && {
       ...prev,
       coaches: kind === 'coach' ? prev.coaches.filter(c => c.linkId !== id) : prev.coaches,
       parents: kind === 'parent' ? prev.parents.filter(p => p.linkId !== id) : prev.parents,
-      pendingParents: kind === 'pending_parent' ? prev.pendingParents.filter(p => p.linkId !== id) : prev.pendingParents,
+      pendingParents: kind === 'pending_parent' || kind === 'parent_request' ? prev.pendingParents.filter(p => p.linkId !== id) : prev.pendingParents,
     })
     const res = await fetch('/api/me/links', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind, id }) }).catch(() => null)
     if (!res?.ok) {
@@ -130,6 +134,7 @@ export default function SharingCard({ role }: { role: UserRole }) {
 
         <div>
           <p className="text-xs uppercase tracking-wide text-fg-4 mb-1">Parents</p>
+          <p className="text-sm text-fg-3 mb-3">Invite a parent by email. They get an invite linked to you and see your progress once they accept.</p>
           {links && (links.parents.length > 0 || links.pendingParents.length > 0) && (
             <ul className="divide-y divide-edge-muted mb-3">
               {links.parents.map(p => (
@@ -140,8 +145,8 @@ export default function SharingCard({ role }: { role: UserRole }) {
               ))}
               {links.pendingParents.map(p => (
                 <li key={p.linkId} className="flex items-center justify-between gap-3 py-2 text-sm">
-                  <span className="text-fg-3 truncate">{p.email} <span className="text-xs text-fg-4">· invited</span></span>
-                  <button type="button" onClick={() => revoke('pending_parent', p.linkId, p.email)} className="text-xs text-fg-4 hover:text-red-400">Cancel</button>
+                  <span className="text-fg-3 truncate">{p.email} <span className="text-xs text-fg-4">· invite sent, waiting to accept</span></span>
+                  <button type="button" onClick={() => revoke(p.kind ?? 'pending_parent', p.linkId, p.email)} className="text-xs text-fg-4 hover:text-red-400">Cancel</button>
                 </li>
               ))}
             </ul>
@@ -159,7 +164,7 @@ export default function SharingCard({ role }: { role: UserRole }) {
                 className="input-field"
               />
             </div>
-            <button type="submit" disabled={busy || !email} className="btn-primary shrink-0">{busy ? 'Sharing…' : 'Share'}</button>
+            <button type="submit" disabled={busy || !email} className="btn-primary shrink-0">{busy ? 'Sending…' : 'Send invite'}</button>
           </form>
           {status && <p role="status" className={`text-sm mt-2 ${status.ok ? 'text-green-400' : 'text-red-400'}`}>{status.msg}</p>}
           <p className="text-xs text-fg-4 mt-2">A parent sees your journal, training, nutrition and sleep. Weigh-ins and progress photos stay private.</p>

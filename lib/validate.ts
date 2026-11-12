@@ -31,3 +31,19 @@ export function intOrNull(value: unknown, min: number, max: number): number | nu
   const n = clampNumber(value, min, max)
   return n === null ? null : Math.round(n)
 }
+
+export function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+export function isDateTime(value: unknown): value is string {
+  return typeof value === 'string' && value.length <= 40 && !isNaN(Date.parse(value))
+}
+
+export function isUUID(value: unknown): value is string {
+  return typeof value === 'string' && /^[0-9a-f-]{36}$/i.test(value)
+}
+
+export function oneOf<T extends string>(value: unknown, allowed: readonly T[]): T | null {
+  return typeof value === 'string' && (allowed as readonly string[]).includes(value) ? (value as T) : null
+}

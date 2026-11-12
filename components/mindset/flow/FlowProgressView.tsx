@@ -103,10 +103,10 @@ export default function FlowProgressView() {
 
   return (
     <div className="space-y-6">
-      <ReadinessHero
+      <ReadinessHero storageKey="flow"
         score={readiness.score}
         verdict={readiness.verdict}
-        subtitle={`Flow avg ${flowAvg != null ? flowAvg.toFixed(1) : '—'} · ${logs.length} competition${logs.length === 1 ? '' : 's'} · ${sessions.length} 5A session${sessions.length === 1 ? '' : 's'}`}
+        subtitle={`Flow avg ${flowAvg != null ? flowAvg.toFixed(1) : '-'} · ${logs.length} competition${logs.length === 1 ? '' : 's'} · ${sessions.length} 5A session${sessions.length === 1 ? '' : 's'}`}
         date="Flow Readiness · last 14 days"
         pills={[
           { label: 'Streak', value: `${streak}` },
@@ -122,7 +122,7 @@ export default function FlowProgressView() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
           label="Flow Score"
-          value={flowAvg != null ? flowAvg.toFixed(1) : '—'}
+          value={flowAvg != null ? flowAvg.toFixed(1) : '-'}
           unit="/10"
           delta={flowDelta != null ? {
             value: `${flowDelta > 0 ? '+' : ''}${flowDelta.toFixed(1)}`,
@@ -281,7 +281,7 @@ function RitualAdherenceCard({
         <span className="text-xs text-fg-4">{sessionCount} session{sessionCount === 1 ? '' : 's'}</span>
       </div>
       {sessionCount === 0 ? (
-        <p className="text-sm text-fg-4 mt-3">No 5A sessions yet — run one before your next competition.</p>
+        <p className="text-sm text-fg-4 mt-3">No 5A sessions yet. Run one before your next competition.</p>
       ) : (
         <>
           <div className="grid grid-cols-5 gap-2 mt-3">
@@ -303,7 +303,7 @@ function RitualAdherenceCard({
           </div>
           {worst && worst[1] >= 30 && (
             <p className="text-xs text-orange-400 mt-3">
-              <span className="font-semibold">{worst[0]} is your weakest step</span> — skipped in {worst[1]}% of sessions.
+              <span className="font-semibold">{worst[0]} is your weakest step</span>, skipped in {worst[1]}% of sessions.
               Make it non-negotiable next week.
             </p>
           )}
@@ -327,7 +327,7 @@ function TriggerEffectivenessCard({
         <h3 className="font-semibold text-fg-1 text-sm">Trigger Effectiveness</h3>
         <span className="text-xs text-fg-4">Avg flow score when fired</span>
       </div>
-      <p className="text-xs text-fg-4 mb-4">Sorted by average flow score — top triggers drive your best performances.</p>
+      <p className="text-xs text-fg-4 mb-4">Sorted by average flow score. Top triggers drive your best performances.</p>
       <div className="space-y-2">
         {stats.map(s => (
           <div key={s.trigger} className="flex items-center gap-3">

@@ -6,6 +6,7 @@ import { rateLimit } from '@/lib/rate-limit'
 import { displayNameFor } from '@/lib/leaderboard'
 import { sendReportEmail } from '@/lib/email'
 import { openId } from '@/lib/report-token'
+import { isPlainObject, isUUID } from '@/lib/validate'
 
 const KINDS = ['leaderboard_name', 'coach_note'] as const
 type Kind = typeof KINDS[number]
@@ -19,7 +20,8 @@ export async function POST(req: Request) {
   const limited = await rateLimit(`report:${auth.userId}`, 10, 86_400)
   if (limited) return limited
 
-  const body = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Unknown report type.' }, { status: 400 })
   const kind = body.kind as Kind
   if (!KINDS.includes(kind)) return NextResponse.json({ error: 'Unknown report type.' }, { status: 400 })
   const reason = typeof body.reason === 'string' && body.reason.trim() ? body.reason.trim().slice(0, 500) : null
@@ -93,8 +95,8 @@ export async function PATCH(req: Request) {
   const auth = await verifyApiUser('admin')
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json().catch(() => ({}))
-  if (typeof body.id !== 'string' || body.status !== 'resolved') {
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body) || !isUUID(body.id) || body.status !== 'resolved') {
     return NextResponse.json({ error: 'id and status "resolved" required' }, { status: 400 })
   }
 

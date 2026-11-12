@@ -71,7 +71,7 @@ export default function ProgramView({ program, currentWeek, onStartWorkout }: Pr
                                 >
                                   <div className="min-w-0">
                                     <p className="text-sm font-medium text-fg-2 truncate">
-                                      {DAY_NAMES[workout.day_of_week]} — {workout.name}
+                                      {DAY_NAMES[workout.day_of_week]}: {workout.name}
                                     </p>
                                     {workout.description && <p className="text-xs text-fg-4 truncate">{workout.description}</p>}
                                   </div>

@@ -7,6 +7,7 @@ import CreateWorkout from '@/components/coach/CreateWorkout'
 import CoachPrograms from '@/components/coach/CoachPrograms'
 import ScheduleManager from '@/components/coach/ScheduleManager'
 import TeamPregame from '@/components/coach/TeamPregame'
+import CoachOverview from '@/components/coach/CoachOverview'
 import Link from 'next/link'
 import Skeleton from '@/components/shared/Skeleton'
 import TabBar from '@/components/shared/TabBar'
@@ -103,13 +104,13 @@ function AthleteTable({ athletes, onChanged, notify }: { athletes: MemberWithCou
                 </td>
                 <td className="px-2 py-3 text-fg-3">{lastActive(a)}</td>
                 <td className="px-2 py-3 text-right tabular-nums text-fg-2">
-                  {a.overview?.streak ? <span className="inline-flex items-center gap-1"><FlameIcon className="w-3.5 h-3.5 text-cta" />{a.overview.streak}</span> : '—'}
+                  {a.overview?.streak ? <span className="inline-flex items-center gap-1"><FlameIcon className="w-3.5 h-3.5 text-cta" />{a.overview.streak}</span> : '-'}
                 </td>
                 <td className="px-2 py-3 text-right tabular-nums">
                   {a.overview?.latest_mpi != null ? (
                     <span className="font-semibold text-cta">{a.overview.latest_mpi}</span>
                   ) : (
-                    <span className="text-fg-4">—</span>
+                    <span className="text-fg-4">-</span>
                   )}
                 </td>
                 <td className="px-2 py-3">
@@ -148,7 +149,7 @@ function AthleteTable({ athletes, onChanged, notify }: { athletes: MemberWithCou
 export default function CoachPage() {
   const [athletes, setAthletes] = useState<MemberWithCount[]>([])
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<'athletes' | 'teams' | 'schedule' | 'pregame' | 'workouts' | 'programs'>('athletes')
+  const [tab, setTab] = useState<'overview' | 'athletes' | 'teams' | 'schedule' | 'pregame' | 'workouts' | 'programs'>('overview')
   const [teams, setTeams] = useState<{ id: string; name: string; members: { id: string }[] }[]>([])
   const [teamFilter, setTeamFilter] = useState('')
   const notify = useToast()
@@ -169,17 +170,18 @@ export default function CoachPage() {
     <div>
       <div className="mb-6">
         <h1 className="page-title">Coach Dashboard</h1>
-        <p className="page-subtitle">Manage and monitor your athletes.</p>
+        <p className="page-subtitle">Build the identity of your team, one day at a time.</p>
       </div>
 
       <TabBar
         label="Coach sections"
         tabs={[
-          { key: 'athletes' as const, label: 'My Athletes' },
-          { key: 'teams' as const, label: 'Teams' },
-          { key: 'programs' as const, label: 'Plans' },
+          { key: 'overview' as const, label: 'Overview' },
+          { key: 'athletes' as const, label: 'Athletes' },
+          { key: 'teams' as const, label: 'Teams & Goals' },
           { key: 'schedule' as const, label: 'Schedule' },
           { key: 'pregame' as const, label: 'Pregame' },
+          { key: 'programs' as const, label: 'Plans' },
           { key: 'workouts' as const, label: 'Workouts' },
         ]}
         active={tab}
@@ -187,7 +189,9 @@ export default function CoachPage() {
       />
 
       <div className="card p-6">
-        {tab === 'programs' ? (
+        {tab === 'overview' ? (
+          loading ? <Skeleton /> : <CoachOverview athletes={athletes} teams={teams} onOpen={setTab} />
+        ) : tab === 'programs' ? (
           <CoachPrograms />
         ) : tab === 'schedule' ? (
           <ScheduleManager />

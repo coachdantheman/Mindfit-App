@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
-import { clampNumber } from '@/lib/validate'
+import { clampNumber, isPlainObject, oneOf } from '@/lib/validate'
 import { macrosFromCalories } from '@/lib/nutrition'
 
-const GOAL_TYPES = ['gain', 'lose', 'maintain']
-const ACTIVITY_LEVELS = ['light', 'moderate', 'high']
+const GOAL_TYPES = ['gain', 'lose', 'maintain'] as const
+const ACTIVITY_LEVELS = ['light', 'moderate', 'high'] as const
 
 function inRange(value: unknown, min: number, max: number): number | null {
   const n = typeof value === 'number' ? value : NaN
@@ -40,7 +40,8 @@ export async function PUT(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json()
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const admin = createAdminClient()
 
   // Fields omitted from the payload fall back to the saved row, not
@@ -52,7 +53,7 @@ export async function PUT(req: Request) {
     .eq('user_id', auth.userId)
     .maybeSingle()
 
-  const mode = body.mode || existing?.mode || 'absolute'
+  const mode = oneOf(body.mode, ['absolute', 'percentage'] as const) ?? existing?.mode ?? 'absolute'
   const calories = clampNumber(body.calories ?? existing?.calories ?? 2000, 0, 20000) ?? 2000
   let protein_g = clampNumber(body.protein_g ?? existing?.protein_g ?? 150, 0, 2000) ?? 150
   let carbs_g = clampNumber(body.carbs_g ?? existing?.carbs_g ?? 250, 0, 2000) ?? 250
@@ -69,8 +70,9 @@ export async function PUT(req: Request) {
   }
 
   const quiz: Record<string, unknown> = {}
-  const hasQuiz = GOAL_TYPES.includes(body.goal_type) && ACTIVITY_LEVELS.includes(body.activity_level)
-  if (hasQuiz) {
+  const goalType = oneOf(body.goal_type, GOAL_TYPES)
+  const activityLevel = oneOf(body.activity_level, ACTIVITY_LEVELS)
+  if (goalType && activityLevel) {
     const cur = clampNumber(body.current_weight_lb, 50, 500)
     const target = clampNumber(body.target_weight_lb, 50, 500)
     if (cur == null || target == null) {
@@ -82,8 +84,8 @@ export async function PUT(req: Request) {
     const sex = body.sex === 'male' || body.sex === 'female' ? body.sex : null
     const bodyComplete = height != null && age != null && sex != null
     Object.assign(quiz, {
-      goal_type: body.goal_type,
-      activity_level: body.activity_level,
+      goal_type: goalType,
+      activity_level: activityLevel,
       current_weight_lb: cur,
       target_weight_lb: target,
       height_in: bodyComplete ? height : null,

@@ -373,7 +373,7 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
                                   <span key={s.id} className="text-xs text-fg-4 bg-surface-3/50 px-1.5 py-0.5 rounded tabular-nums">
                                     {s.distance != null || s.duration_sec != null
                                       ? `${s.distance != null ? `${Number(s.distance)} ${s.distance_unit ?? ''}` : ''}${s.duration_sec != null ? `${s.distance != null ? ' · ' : ''}${formatTime(Number(s.duration_sec))}${Number(s.duration_sec) < 60 ? 's' : ''}` : ''}`
-                                      : `${s.reps ?? '—'}${s.weight ? ` × ${Number(s.weight)}` : ''}`}{s.rpe ? ` @${s.rpe}` : ''}
+                                      : `${s.reps ?? '-'}${s.weight ? ` × ${Number(s.weight)}` : ''}`}{s.rpe ? ` @${s.rpe}` : ''}
                                   </span>
                                 ))}
                               </div>

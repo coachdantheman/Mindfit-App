@@ -151,7 +151,7 @@ export async function grantConsent(
   if (pErr) throw pErr
 
   if (profile.consent_status !== 'granted') {
-    await linkOrQueue(admin, { email: consent.parent_email.toLowerCase(), requesterId: consent.athlete_id, kind: 'parent' }).catch(e => {
+    await linkOrQueue(admin, { email: consent.parent_email.toLowerCase(), requesterId: consent.athlete_id, kind: 'parent', direct: true }).catch(e => {
       console.error('parent link after consent failed:', e?.message)
     })
   }

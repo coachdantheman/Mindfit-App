@@ -486,6 +486,7 @@ export interface FlowCueWord {
   id: string
   user_id: string
   cue_word: string
+  kind?: 'cue' | 'trigger'
   is_active: boolean
   created_at: string
 }

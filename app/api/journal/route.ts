@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { verifyApiUser } from '@/lib/api-auth'
 import { createAdminClient } from '@/lib/supabase-server'
-import { clampNumber, isISODate } from '@/lib/validate'
+import { clampNumber, isISODate, isPlainObject } from '@/lib/validate'
 
 const TEXT_FIELDS = ['objective', 'action_step_1', 'action_step_2', 'action_step_3', 'strength_1', 'strength_2', 'strength_3', 'weakness', 'extra_notes'] as const
 
@@ -68,7 +68,8 @@ export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const parsed = parseJournalBody(body)
   if ('error' in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 })
 
@@ -101,20 +102,23 @@ export async function PUT(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = (await req.json().catch(() => null)) ?? {}
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const parsed = parseJournalBody(body)
   if ('error' in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 })
 
-  // Only a quick check-in entry can be finished this way; a full entry is never overwritten.
+  // Today's entry (yesterday too, for time zones behind UTC) can be edited, so
+  // an athlete can fix a rating they tapped wrong. Older full entries stay
+  // locked; an older quick check-in can still be finished.
+  const recent = parsed.entry_date >= new Date(Date.now() - 36 * 3_600_000).toISOString().slice(0, 10)
   const adminSupabase = createAdminClient()
-  const { data, error } = await adminSupabase
+  let query = adminSupabase
     .from('journal_entries')
     .update(parsed.fields)
     .eq('user_id', auth.userId)
     .eq('entry_date', parsed.entry_date)
-    .eq('action_step_1', '').eq('strength_1', '').eq('weakness', '')
-    .select()
-    .maybeSingle()
+  if (!recent) query = query.eq('action_step_1', '').eq('strength_1', '').eq('weakness', '')
+  const { data, error } = await query.select().maybeSingle()
 
   if (error) return dbError(error)
   if (!data) return NextResponse.json({ error: 'No journal entry for that date.' }, { status: 404 })

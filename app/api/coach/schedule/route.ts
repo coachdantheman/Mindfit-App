@@ -5,6 +5,7 @@ import { verifyApiUser } from '@/lib/api-auth'
 import { managedTeam } from '@/lib/teams'
 import { cleanEvent } from '@/lib/schedule'
 import { chunk } from '@/lib/fetch-all'
+import { isPlainObject, isUUID } from '@/lib/validate'
 
 const COLS = 'id, team_id, kind, event_date, start_time, opponent, location, home_away, notes'
 
@@ -25,7 +26,8 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
-  const body = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const admin = createAdminClient()
   const team = await managedTeam(admin, auth, typeof body.team_id === 'string' ? body.team_id : '')
   if (!team) return NextResponse.json({ error: 'Team not found' }, { status: 404 })
@@ -39,11 +41,12 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
-  const body = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const admin = createAdminClient()
   const team = await managedTeam(admin, auth, typeof body.team_id === 'string' ? body.team_id : '')
   if (!team) return NextResponse.json({ error: 'Team not found' }, { status: 404 })
-  const ids: string[] = Array.isArray(body.ids) ? body.ids.filter((x: unknown) => typeof x === 'string') : []
+  const ids: string[] = Array.isArray(body.ids) ? body.ids.filter(isUUID).slice(0, 300) : []
   if (ids.length === 0) return NextResponse.json({ error: 'ids required' }, { status: 400 })
   for (const c of chunk(ids, 100)) {
     const { error } = await admin.from('team_events').delete().eq('team_id', team.id).in('id', c)

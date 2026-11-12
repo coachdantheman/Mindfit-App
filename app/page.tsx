@@ -16,7 +16,7 @@ export default async function HomePage() {
             Peak performance is an identity achievement.
           </h1>
           <p className="text-fg-3 text-sm mt-3">
-            Train your mind like you train your body — mindset, nutrition, exercise, and
+            Train your mind like you train your body: mindset, nutrition, exercise, and
             recovery in one place.
           </p>
         </div>
@@ -24,7 +24,7 @@ export default async function HomePage() {
         <div className="space-y-4">
           <div className="bg-brand-600/10 border border-brand-600/30 rounded-2xl p-5 text-center">
             <p className="text-cta font-medium">
-              Track your mindset, nutrition, exercise, and recovery — free
+              Track your mindset, nutrition, exercise, and recovery, free
             </p>
             <a
               href="/start"

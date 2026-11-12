@@ -12,6 +12,7 @@ import { localDateISO } from '@/lib/dates'
 export default function JournalTab() {
   const [todayEntry, setTodayEntry] = useState<JournalEntry | null>(null)
   const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState(false)
 
   useEffect(() => {
     const today = localDateISO()
@@ -43,8 +44,21 @@ export default function JournalTab() {
           <p className="text-sm text-fg-3 mb-4">Your check-in is saved. Finish the full journal when you are ready.</p>
           <JournalForm existing={todayEntry} onSaved={entry => setTimeout(() => setTodayEntry(entry), 1500)} />
         </>
+      ) : todayEntry && editing ? (
+        <>
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <p className="text-sm text-fg-3">Editing today&apos;s entry. Fix any rating you tapped by mistake.</p>
+            <button type="button" onClick={() => setEditing(false)} className="btn-ghost shrink-0">Cancel</button>
+          </div>
+          <JournalForm existing={todayEntry} onSaved={entry => setTimeout(() => { setTodayEntry(entry); setEditing(false) }, 1200)} />
+        </>
       ) : todayEntry ? (
-        <TodayEntry entry={todayEntry} />
+        <>
+          <TodayEntry entry={todayEntry} />
+          <button type="button" onClick={() => setEditing(true)} className="btn-secondary mt-4">
+            Edit today&apos;s entry
+          </button>
+        </>
       ) : (
         <JournalForm onSaved={entry => setTimeout(() => setTodayEntry(entry), 1500)} />
       )}

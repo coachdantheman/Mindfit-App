@@ -23,8 +23,8 @@ export default function FinishSummary({ result, onClose, onAddBodyweight }: { re
       </div>
       <div className="grid grid-cols-3 gap-2">
         <Stat label="Sets" value={String(result.doneSets)} />
-        <Stat label="Volume" value={result.volume > 0 ? `${result.volume.toLocaleString()} lb` : '—'} />
-        <Stat label="Time" value={result.durationMin ? `${result.durationMin} min` : '—'} />
+        <Stat label="Volume" value={result.volume > 0 ? `${result.volume.toLocaleString()} lb` : '-'} />
+        <Stat label="Time" value={result.durationMin ? `${result.durationMin} min` : '-'} />
       </div>
       {result.prs.length > 0 && (
         <div>

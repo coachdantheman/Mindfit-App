@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og'
-import { getQuoteById, getQuoteOfTheDay } from '@/lib/data/quotes'
+import { getShareableQuote, getQuoteOfTheDay } from '@/lib/data/quotes'
+import { clientIp, memoryLimit } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,12 +9,15 @@ const GOLD_DIM = '#9A8B00'
 const BG = '#0A0F1A'
 
 // /api/quote/image            → today's quote, 1080x1080 (feed post)
-// /api/quote/image?id=mf-001  → a specific quote
+// /api/quote/image?id=mf-001  → a specific quote (daily or Quote Vault id)
 // /api/quote/image?format=story → 1080x1920 (Instagram/TikTok story)
 export async function GET(req: Request) {
+  // Image rendering is the heaviest public route, so it gets the tightest cap.
+  const limited = memoryLimit(`quote-image:${clientIp(req)}`, 30, 60_000)
+  if (limited) return limited
   const url = new URL(req.url)
   const id = url.searchParams.get('id')
-  const quote = (id && getQuoteById(id)) || getQuoteOfTheDay()
+  const quote = (id && getShareableQuote(id)) || { ...getQuoteOfTheDay(), vault: false }
   const story = url.searchParams.get('format') === 'story'
   const width = 1080
   const height = story ? 1920 : 1080
@@ -43,17 +47,17 @@ export async function GET(req: Request) {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
           <div style={{ fontSize: 26, letterSpacing: 6, color: GOLD_DIM, textTransform: 'uppercase' }}>
-            Quote of the day
+            {quote.vault ? 'From the Quote Vault' : 'Quote of the day'}
           </div>
           <div style={{ fontSize, lineHeight: 1.2, fontWeight: 500, letterSpacing: -1 }}>
             {`“${quote.text}”`}
           </div>
-          <div style={{ fontSize: 34, color: '#9CA3AF' }}>{`— ${quote.author}`}</div>
+          <div style={{ fontSize: 34, color: '#9CA3AF' }}>{quote.author}</div>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 24, color: '#6B7280', letterSpacing: 2 }}>
           <div>Peak performance is an identity achievement.</div>
-          <div style={{ color: GOLD_DIM }}>mindfit.academy</div>
+          <div style={{ color: GOLD, fontSize: 30, letterSpacing: 1 }}>@mindfitdan</div>
         </div>
       </div>
     ),

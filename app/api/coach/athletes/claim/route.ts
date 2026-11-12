@@ -4,6 +4,7 @@ import { notify } from '@/lib/notify'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { rateLimit } from '@/lib/rate-limit'
+import { isPlainObject, isUUID } from '@/lib/validate'
 import { sendCoachInviteEmail } from '@/lib/email'
 import { extractEmails, extractNames, linkOrQueue, MAX_BULK } from '@/lib/links'
 import { createInvitedAccount, signInLinkFor } from '@/lib/invites'
@@ -20,15 +21,18 @@ export async function POST(req: Request) {
   const limited = await rateLimit(`coach-invite:${auth.userId}`, 30, 3600)
   if (limited) return limited
 
-  const body = await req.json().catch(() => ({}))
-  const text: string = typeof body.text === 'string' ? body.text : Array.isArray(body.emails) ? body.emails.join('\n') : ''
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
+  const text: string = typeof body.text === 'string'
+    ? body.text.slice(0, 20000)
+    : Array.isArray(body.emails) ? body.emails.filter((e: unknown) => typeof e === 'string').slice(0, 500).join('\n') : ''
   const emails = extractEmails(text)
   const names = extractNames(text)
   if (emails.length === 0) return NextResponse.json({ error: 'No email addresses found.' }, { status: 400 })
 
   const admin = createAdminClient()
-  const team = typeof body.team_id === 'string' ? await managedTeam(admin, auth, body.team_id) : null
-  if (typeof body.team_id === 'string' && !team) return NextResponse.json({ error: 'Team not found.' }, { status: 404 })
+  const team = isUUID(body.team_id) ? await managedTeam(admin, auth, body.team_id) : null
+  if (body.team_id !== undefined && body.team_id !== null && !team) return NextResponse.json({ error: 'Team not found.' }, { status: 404 })
   if (auth.role === 'admin' && !team) return NextResponse.json({ error: 'Pick the team these athletes belong to.' }, { status: 400 })
   const coachId = team?.coach_id ?? auth.userId
   const { data: me } = await admin.from('profiles').select('full_name').eq('id', coachId).single()

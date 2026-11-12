@@ -182,7 +182,7 @@ export default function ScheduleManager() {
                     <input aria-label="Start time" type="time" value={e.start_time ?? ''} onChange={ev => editReview(i, { start_time: ev.target.value || null })} className="input-field min-w-0 w-full text-sm" />
                     <input aria-label="Opponent" value={e.opponent ?? ''} onChange={ev => editReview(i, { opponent: ev.target.value || null })} placeholder="Opponent" className="input-field min-w-0 w-full text-sm" disabled={e.kind === 'practice'} />
                     <select aria-label="Home or away" value={e.home_away ?? ''} onChange={ev => editReview(i, { home_away: (ev.target.value || null) as ScheduleEvent['home_away'] })} className="input-field min-w-0 w-full text-sm" disabled={e.kind === 'practice'}>
-                      <option value="">—</option><option value="home">Home</option><option value="away">Away</option><option value="neutral">Neutral</option>
+                      <option value="">-</option><option value="home">Home</option><option value="away">Away</option><option value="neutral">Neutral</option>
                     </select>
                     <button type="button" onClick={() => setReview(r => r?.filter((_, j) => j !== i) ?? null)} className="btn-ghost text-xs text-fg-4" aria-label="Remove row">✕</button>
                   </li>
@@ -236,7 +236,7 @@ export default function ScheduleManager() {
               <input id="g-opp" value={game.opponent ?? ''} onChange={e => setGame(g => ({ ...g, opponent: e.target.value || null }))} className="input-field" /></div>
             <div><label htmlFor="g-ha" className="text-xs uppercase tracking-wide text-fg-4 block mb-1">Home or away</label>
               <select id="g-ha" value={game.home_away ?? ''} onChange={e => setGame(g => ({ ...g, home_away: (e.target.value || null) as ScheduleEvent['home_away'] }))} className="input-field">
-                <option value="">—</option><option value="home">Home</option><option value="away">Away</option><option value="neutral">Neutral</option>
+                <option value="">-</option><option value="home">Home</option><option value="away">Away</option><option value="neutral">Neutral</option>
               </select></div>
           </div>
           <button type="submit" disabled={busy || !game.event_date} className="btn-primary text-sm">Add game</button>

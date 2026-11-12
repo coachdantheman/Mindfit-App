@@ -15,7 +15,7 @@ export default function OverviewCards({ journalCount, workoutCount, avgSleep, go
         <p className="text-xs text-fg-4 mt-1">Workouts Logged</p>
       </div>
       <div className="card p-4 text-center">
-        <p className={`text-2xl font-bold ${avgSleep !== '—' && parseFloat(avgSleep) >= 7 ? 'text-green-400' : 'text-orange-400'}`}>{avgSleep}h</p>
+        <p className={`text-2xl font-bold ${avgSleep !== '-' && parseFloat(avgSleep) >= 7 ? 'text-green-400' : 'text-orange-400'}`}>{avgSleep}h</p>
         <p className="text-xs text-fg-4 mt-1">Avg Sleep</p>
       </div>
       <div className="card p-4 text-center">

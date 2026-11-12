@@ -5,7 +5,7 @@ import { DEFAULT_PREFS, type Prefs, type Message } from '@/lib/notify'
 import { enqueue, drainQueue } from '@/lib/notify-queue'
 import { fetchAll } from '@/lib/fetch-all'
 import { copy } from '@/lib/notify-copy'
-import { scheduledKinds, localClock, shiftDate, inQuietHours } from '@/lib/notify-jobs'
+import { scheduledKinds, localClock, shiftDate, inQuietHours, HABIT_HOUR } from '@/lib/notify-jobs'
 import { levelFor, titleFor, monthBounds, isValidTimeZone, displayNameFor } from '@/lib/leaderboard'
 import { refreshScore, liveStreak, pillarsOf, type ScoreRow } from '@/lib/leaderboard-scores'
 import { LEVELS } from '@/lib/leaderboard-config'
@@ -88,6 +88,26 @@ export async function GET(req: Request) {
     .gte('created_at', new Date(now.getTime() - 32 * 86_400_000).toISOString())
     .lte('created_at', new Date(now.getTime() - 29 * 86_400_000).toISOString())
     .order('id').range(from, to))
+  // End-of-day habit check-in: only load habits for people at that hour now.
+  const habitUsers = users.filter(u => (u.role === 'member' || u.role === 'admin') && localClock(tzOf(u.id), now).hour === HABIT_HOUR)
+  const habitsLeft = new Map<string, { left: number; total: number }>()
+  for (let i = 0; i < habitUsers.length; i += 200) {
+    const ids = habitUsers.slice(i, i + 200).map(u => u.id)
+    const dates = [...new Set(ids.map(id => localClock(tzOf(id), now).date))]
+    const [{ data: hs }, { data: cs }] = await Promise.all([
+      admin.from('habits').select('id, user_id').in('user_id', ids).eq('frequency', 'daily').is('archived_at', null),
+      admin.from('habit_checks').select('habit_id, user_id, check_date').in('user_id', ids).in('check_date', dates),
+    ])
+    for (const id of ids) {
+      const mine = (hs ?? []).filter((h: any) => h.user_id === id)
+      if (!mine.length) continue
+      const today = localClock(tzOf(id), now).date
+      const done = new Set((cs ?? []).filter((c: any) => c.user_id === id && c.check_date === today).map((c: any) => c.habit_id))
+      const left = mine.filter((h: any) => !done.has(h.id)).length
+      if (left > 0) habitsLeft.set(id, { left, total: mine.length })
+    }
+  }
+
   const teamsOf = new Map<string, Set<string>>()
   for (const m of gameMembers) teamsOf.set(m.athlete_id, (teamsOf.get(m.athlete_id) ?? new Set<string>()).add(m.team_id))
   const quizzesOf = new Map<string, any[]>()
@@ -118,6 +138,11 @@ export async function GET(req: Request) {
           const activeDays = recent.filter(d => d >= weekStart && d <= clock.date).length
           send(u.id, { type: kind, category: 'weekly', url: '/leaderboard', dedupeKey: key, ...copy.weeklyRecap({ level: levelFor(points).name, points, streak, activeDays }) })
         }
+      }
+
+      const habit = habitsLeft.get(u.id)
+      if (habit) {
+        send(u.id, { type: 'habit_checkin', category: 'reminders', url: '/mindset?tab=Habits', dedupeKey: `habit_checkin:${u.id}:${clock.date}`, ...copy.habitCheckIn(habit.left, habit.total) })
       }
 
       // Level-ups and new titles. The first look at a month only records

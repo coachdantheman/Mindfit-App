@@ -1,9 +1,14 @@
+'use client'
+import { useEffect, useState } from 'react'
+
 interface ReadinessHeroProps {
   score: number              // 0–100
   verdict: string            // short sentence
   subtitle?: string
   date?: string              // e.g. "Today · Apr 21"
   pills?: { label: string; value: string; delta?: string }[]
+  // Minimized state is remembered per card per day, so it returns tomorrow.
+  storageKey?: string
 }
 
 export default function ReadinessHero({
@@ -12,13 +17,40 @@ export default function ReadinessHero({
   subtitle,
   date = 'Today',
   pills = [],
+  storageKey = 'readiness',
 }: ReadinessHeroProps) {
+  const [min, setMin] = useState(false)
+  const key = `mf-hero-min:${storageKey}`
+  const today = new Date().toLocaleDateString('en-CA')
+  useEffect(() => {
+    try { setMin(localStorage.getItem(key) === today) } catch {}
+  }, [key, today])
+  const toggle = (next: boolean) => {
+    setMin(next)
+    try { next ? localStorage.setItem(key, today) : localStorage.removeItem(key) } catch {}
+  }
   const r = 82
   const c = 2 * Math.PI * r
   const offset = c * (1 - score / 100)
 
+  if (min) {
+    return (
+      <button type="button" onClick={() => toggle(false)} aria-label="Expand readiness card"
+        className="w-full flex items-center gap-3 rounded-2xl bg-surface border border-edge px-4 min-h-[52px] text-left">
+        <span className="text-xs text-cta uppercase tracking-[0.18em] font-semibold font-mono shrink-0">Readiness</span>
+        <span className="text-lg font-bold text-fg-1 tabular-nums shrink-0">{score}</span>
+        <span className="text-sm text-fg-3 truncate flex-1">{verdict}</span>
+        <span className="text-fg-4 shrink-0" aria-hidden>▾</span>
+      </button>
+    )
+  }
+
   return (
     <div className="relative overflow-hidden rounded-[18px] bg-surface border border-edge p-6">
+      <button type="button" onClick={() => toggle(true)} aria-label="Minimize readiness card" title="Minimize"
+        className="absolute top-2 right-2 z-10 w-11 h-11 inline-flex items-center justify-center rounded-full text-fg-4 hover:text-fg-1">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M6 15l6-6 6 6" /></svg>
+      </button>
       <div className="absolute inset-0 bg-gradient-to-br from-cta/[0.08] via-cta/[0.02] to-transparent pointer-events-none" />
       <div className="absolute top-0 right-0 w-[200px] h-[200px] rounded-full bg-cta/15 blur-3xl pointer-events-none" />
 

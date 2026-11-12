@@ -64,7 +64,7 @@ export default function NutritionPage() {
     <div>
       <div className="mb-6">
         <h1 className="page-title">Nutrition</h1>
-        <p className="page-subtitle">Fuel like it&rsquo;s part of training — because it is.</p>
+        <p className="page-subtitle">Fuel like it&rsquo;s part of training, because it is.</p>
       </div>
 
       <TabBar label="Nutrition sections" tabs={TABS} active={tab} onSelect={setTab} />

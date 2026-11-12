@@ -118,7 +118,7 @@ export default function FlowLogForm() {
           </span>
         </div>
 
-        <RatingSlider label="Flow score — how in the zone were you?" value={flow} onChange={setFlow} color="bg-cta" />
+        <RatingSlider label="Flow score: how in the zone were you?" value={flow} onChange={setFlow} color="bg-cta" />
 
         <div>
           <p className="text-sm text-fg-3 mb-2">Which triggers fired today?</p>

@@ -95,7 +95,7 @@ export default function JournalForm({ previewMode = false, onSaved, existing }: 
       clearTimeout(timer.current)
       clearDraft(key)
       setState('saved')
-      notify('Journal saved — streak kept 🔥')
+      notify('Journal saved. Streak kept 🔥')
       onSaved?.(json)
     } catch {
       setError('Failed to save. Please try again.')
@@ -109,7 +109,7 @@ export default function JournalForm({ previewMode = false, onSaved, existing }: 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
       {restored && (
-        <p className="text-xs text-fg-4 -mb-4">Picked up where you left off — your draft was saved.</p>
+        <p className="text-xs text-fg-4 -mb-4">Picked up where you left off. Your draft was saved.</p>
       )}
 
       {/* Section 1: Objective */}

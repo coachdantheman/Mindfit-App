@@ -67,7 +67,7 @@ export default function AiEstimateCard({ query, onAdd, busy }: Props) {
         ))}
       </div>
       <ServingStepper value={servings} onChange={setServings} servingSize={est.serving_size} />
-      <p className="text-xs text-fg-4">Estimates are approximate — adjust if you know the label.</p>
+      <p className="text-xs text-fg-4">Estimates are approximate. Adjust if you know the label.</p>
       <button
         type="button"
         disabled={busy}

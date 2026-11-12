@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { intOrNull, isISODate, isPlainObject, optionalString } from '@/lib/validate'
 
 export async function GET(req: Request) {
   const auth = await verifyApiUser()
@@ -28,7 +29,9 @@ export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json()
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
+  if (body.entry_date && !isISODate(body.entry_date)) return NextResponse.json({ error: 'Invalid date.' }, { status: 400 })
   const admin = createAdminClient()
 
   const { data, error } = await admin
@@ -36,10 +39,10 @@ export async function POST(req: Request) {
     .upsert({
       user_id: auth.userId,
       entry_date: body.entry_date || new Date().toISOString().split('T')[0],
-      completed: body.completed ?? true,
-      duration_min: body.duration_min || null,
-      notes: body.notes || null,
-      viz_type: typeof body.viz_type === 'string' && body.viz_type.length <= 40 ? body.viz_type : null,
+      completed: typeof body.completed === 'boolean' ? body.completed : true,
+      duration_min: intOrNull(body.duration_min, 0, 600),
+      notes: optionalString(body.notes, 4000),
+      viz_type: optionalString(body.viz_type, 40),
     }, { onConflict: 'user_id,entry_date' })
     .select()
     .single()

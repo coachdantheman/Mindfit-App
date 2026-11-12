@@ -275,13 +275,13 @@ export function vaultQuoteIndex(person: VaultPerson, dateKey: string): number {
   return ((days % person.quotes.length) + person.quotes.length) % person.quotes.length
 }
 
-// Featured people keep their order. Everyone else follows in an order that
-// changes each day, so a different set of new voices surfaces first.
+// Everyone rotates: the order changes each day, so different voices surface
+// first. Pinned people are moved to the top by the caller.
 export function vaultOrder(people: VaultPerson[], dateKey: string): VaultPerson[] {
   const rank = (k: string) => {
     let h = 2166136261
     for (const c of k + dateKey) h = Math.imul(h ^ c.charCodeAt(0), 16777619)
     return h >>> 0
   }
-  return [...people.filter(x => x.featured), ...people.filter(x => !x.featured).sort((a, b) => rank(a.key) - rank(b.key))]
+  return [...people].sort((a, b) => rank(a.key) - rank(b.key))
 }

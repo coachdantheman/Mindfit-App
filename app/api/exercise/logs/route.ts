@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { intOrNull, isISODate, isPlainObject, isUUID, optionalString, requireString } from '@/lib/validate'
 
 export async function GET(req: Request) {
   const auth = await verifyApiUser()
@@ -35,22 +36,27 @@ export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json()
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
+  const category_name = requireString(body.category_name, 120)
+  const workout_name = requireString(body.workout_name, 120)
+  if (!category_name || !workout_name) return NextResponse.json({ error: 'Category and workout name required.' }, { status: 400 })
+  if (body.log_date && !isISODate(body.log_date)) return NextResponse.json({ error: 'Invalid date.' }, { status: 400 })
   const admin = createAdminClient()
 
   const { data, error } = await admin
     .from('workout_logs')
     .insert({
       user_id: auth.userId,
-      workout_id: body.workout_id || null,
-      program_workout_id: body.program_workout_id || null,
-      coach_workout_id: body.coach_workout_id || null,
+      workout_id: isUUID(body.workout_id) ? body.workout_id : null,
+      program_workout_id: isUUID(body.program_workout_id) ? body.program_workout_id : null,
+      coach_workout_id: isUUID(body.coach_workout_id) ? body.coach_workout_id : null,
       log_date: body.log_date || new Date().toISOString().split('T')[0],
-      category_name: body.category_name,
-      workout_name: body.workout_name,
-      duration_min: body.duration_min || null,
-      notes: body.notes || null,
-      source: body.source || 'custom',
+      category_name,
+      workout_name,
+      duration_min: intOrNull(body.duration_min, 0, 600),
+      notes: optionalString(body.notes, 4000),
+      source: optionalString(body.source, 40) ?? 'custom',
     })
     .select()
     .single()

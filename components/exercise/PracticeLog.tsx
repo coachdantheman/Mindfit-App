@@ -173,6 +173,7 @@ export default function PracticeLog({ notify, fixedKind }: Props) {
 
   const save = async () => {
     if (state === 'saving') return
+    const isGame = kind === 'game'
     setState('saving')
     try {
       const res = await fetch('/api/exercise/practice', {
@@ -194,7 +195,7 @@ export default function PracticeLog({ notify, fixedKind }: Props) {
           went_well: form.wentWell || null,
           to_improve: form.toImprove || null,
           playing_time_min: form.playingTime ? parseInt(form.playingTime, 10) : null,
-          flow: form.flowOn ? { skill_level: form.skill, flow_score: form.flow, triggers_fired: form.triggers } : null,
+          flow: isGame && form.flowOn ? { skill_level: form.skill, flow_score: form.flow, triggers_fired: form.triggers } : null,
           flow_session_id: kind === 'game' ? stackSession : null,
         }),
       })
@@ -242,7 +243,7 @@ export default function PracticeLog({ notify, fixedKind }: Props) {
           </div>
           <p className="text-sm text-fg-4">
             {isGame
-              ? 'Reflect on who you were out there — not just the scoreboard.'
+              ? 'Reflect on who you were out there, not just the scoreboard.'
               : 'Log what you trained and how hard it was. Difficulty feeds your flow state.'}
           </p>
         </div>
@@ -291,8 +292,8 @@ export default function PracticeLog({ notify, fixedKind }: Props) {
                   onChange={e => update({ playingTime: e.target.value })} placeholder="e.g. 28" className="w-28 input-field" />
               </div>
             </div>
-            <RatingSlider label="Performance — how well did you play?" value={form.performance} onChange={v => update({ performance: v })} color="bg-cta" />
-            <RatingSlider label="Difficulty — how hard was the opponent / moment?" value={form.difficulty} onChange={v => update({ difficulty: v })} color="bg-cta" />
+            <RatingSlider label="Performance: how well did you play?" value={form.performance} onChange={v => update({ performance: v })} color="bg-cta" />
+            <RatingSlider label="Difficulty: how hard was the opponent / moment?" value={form.difficulty} onChange={v => update({ difficulty: v })} color="bg-cta" />
             <Area label="What went well?" value={form.wentWell} onChange={v => update({ wentWell: v })} placeholder="The plays, decisions or moments you want more of." />
             <Area label="What will you improve?" value={form.toImprove} onChange={v => update({ toImprove: v })} placeholder="One or two things to take into the next practice." />
             <Area label="What did you learn about yourself?" value={form.learned} onChange={v => update({ learned: v })} placeholder="How did you respond under pressure? Who showed up?" />
@@ -301,7 +302,7 @@ export default function PracticeLog({ notify, fixedKind }: Props) {
           <>
             <Area label="What did you train?" value={form.trained} onChange={v => update({ trained: v })} placeholder="Skills, drills, situations, film…" />
             <Area label="What did you learn?" value={form.learned} onChange={v => update({ learned: v })} placeholder="One thing that clicked, or one thing you still need." />
-            <RatingSlider label="Difficulty — how hard was practice?" value={form.difficulty} onChange={v => update({ difficulty: v })} color="bg-cta" />
+            <RatingSlider label="Difficulty: how hard was practice?" value={form.difficulty} onChange={v => update({ difficulty: v })} color="bg-cta" />
           </>
         )}
 
@@ -311,8 +312,8 @@ export default function PracticeLog({ notify, fixedKind }: Props) {
           </p>
         )}
 
-        {/* Flow thread — difficulty is the challenge; flow needs it within 1 of skill */}
-        <div className="rounded-xl border border-cta/30 overflow-hidden">
+        {/* Flow thread (games only): difficulty is the challenge; flow needs it within 1 of skill */}
+        {isGame && <div className="rounded-xl border border-cta/30 overflow-hidden">
           <button type="button" onClick={() => update({ flowOn: !form.flowOn })} aria-expanded={form.flowOn}
             className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left">
             <div>
@@ -330,7 +331,7 @@ export default function PracticeLog({ notify, fixedKind }: Props) {
                 <span className="text-sm font-semibold">{ZONE_COLOR[zone].label}</span>
                 <span className="text-xs tabular-nums">challenge {form.difficulty} vs skill {form.skill} · {diff > 0 ? '+' : ''}{diff} (flow = within 1)</span>
               </div>
-              <RatingSlider label="Flow score — how in the zone were you?" value={form.flow} onChange={v => update({ flow: v })} color="bg-cta" />
+              <RatingSlider label="Flow score: how in the zone were you?" value={form.flow} onChange={v => update({ flow: v })} color="bg-cta" />
               <div>
                 <p className="text-sm text-fg-3 mb-2">Which triggers fired?</p>
                 <div className="flex flex-wrap gap-2">
@@ -344,10 +345,10 @@ export default function PracticeLog({ notify, fixedKind }: Props) {
                   ))}
                 </div>
               </div>
-              <p className="text-xs text-fg-4">Saved to Mindset → Flow State as a flow log, so your insights include {isGame ? 'games' : 'practices'}.</p>
+              <p className="text-xs text-fg-4">Saved to Mindset → Flow State as a flow log, so your insights include your games.</p>
             </div>
           )}
-        </div>
+        </div>}
 
         {/* Daily objective from the Journal tab */}
         <div className="rounded-xl bg-surface-2/50 border border-edge-muted p-4">

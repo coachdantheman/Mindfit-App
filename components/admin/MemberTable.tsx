@@ -151,7 +151,7 @@ export default function MemberTable() {
                     <td className="py-2.5 pr-4 text-fg-3 whitespace-nowrap">{lastUsed(a)}</td>
                     <td className="py-2.5 pr-4 text-right tabular-nums font-semibold text-cta">{a.entry_count}</td>
                     <td className="py-2.5 pr-4 text-right tabular-nums">
-                      {a.overview?.latest_mpi != null ? <span className="font-semibold text-cta">{a.overview.latest_mpi}</span> : <span className="text-fg-4">—</span>}
+                      {a.overview?.latest_mpi != null ? <span className="font-semibold text-cta">{a.overview.latest_mpi}</span> : <span className="text-fg-4">-</span>}
                     </td>
                     <td className="py-2.5 pl-4 pr-4"><StatusChips a={a} /></td>
                     <td className="py-2.5 text-right"><Actions m={a} /></td>

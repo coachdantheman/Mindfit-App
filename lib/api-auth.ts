@@ -3,6 +3,7 @@ import { getVerifiedUser } from '@/lib/supabase-client'
 import { createAdminClient } from '@/lib/supabase-server'
 import { UserRole } from '@/types'
 import { touchLastSeen } from '@/lib/last-seen'
+import { memoryLimit } from '@/lib/rate-limit'
 
 interface ApiUser {
   userId: string
@@ -30,6 +31,11 @@ export async function verifyLockedApiUser(...allowedRoles: UserRole[]): Promise<
 async function verify(allowedRoles: UserRole[], allowLocked: boolean): Promise<ApiUser | NextResponse> {
   const user = await getVerifiedUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // Every signed-in route: 240 calls a minute per user is far above normal
+  // use (a page load is about 10) and stops scripted abuse of one account.
+  const limited = memoryLimit(`api:${user.id}`, 240, 60_000)
+  if (limited) return limited
 
   const admin = createAdminClient()
   let profile = profileCache.get(user.id)

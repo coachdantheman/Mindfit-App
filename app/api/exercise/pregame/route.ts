@@ -3,6 +3,7 @@ import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { cleanSteps } from '@/lib/pregame'
+import { isPlainObject } from '@/lib/validate'
 
 const ROUTINE_COLS = 'id, user_id, team_id, name, steps, is_default'
 const RUN_COLS = 'game_date, routine_id, routine_name, steps_done, total_steps, completed_at'
@@ -61,7 +62,8 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
-  const body = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const name = typeof body.name === 'string' ? body.name.trim() : ''
   if (!name || name.length > 60) {
     return NextResponse.json({ error: 'Name your routine (up to 60 characters).' }, { status: 400 })

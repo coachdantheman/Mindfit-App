@@ -171,7 +171,7 @@ export default function AthleteDetail({ athleteId, backHref, backLabel = 'Back',
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
         <StatCard
           label="MPI Score"
-          value={overview.latestMpi ?? '—'}
+          value={overview.latestMpi ?? '-'}
           unit={overview.latestMpi != null ? '/ 100' : undefined}
           delta={
             overview.latestMpi != null && overview.baselineMpi != null
@@ -326,7 +326,7 @@ export default function AthleteDetail({ athleteId, backHref, backLabel = 'Back',
                   .slice(0, 10)
                   .map(l => (
                     <div key={l.id} className="p-2 rounded-lg bg-surface-2/30 min-w-0">
-                      <p className="text-xs text-fg-3 mb-1 truncate">{l.workout_name} — {l.log_date}</p>
+                      <p className="text-xs text-fg-3 mb-1 truncate">{l.workout_name}, {l.log_date}</p>
                       <div className="flex flex-wrap gap-1">
                         {l.exercise_logs!.map(el => (
                           <span key={el.id} className="text-xs text-fg-4 bg-surface-3/50 px-1.5 py-0.5 rounded">
@@ -478,9 +478,9 @@ function NutritionAverages({ byDay, targets }: { byDay: Map<string, DayTotals>; 
         {rows.map(r => (
           <div key={r.label} className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 text-sm items-baseline">
             <span className="text-fg-3">{r.label}</span>
-            <span className="text-right tabular-nums text-fg-2">{r.avg7 != null ? Math.round(r.avg7) : '—'}</span>
-            <span className="text-right tabular-nums text-fg-2">{r.avg30 != null ? Math.round(r.avg30) : '—'}</span>
-            <span className="text-right tabular-nums text-fg-4">{r.target > 0 ? `${Math.round(r.target)} ${r.unit}` : '—'}</span>
+            <span className="text-right tabular-nums text-fg-2">{r.avg7 != null ? Math.round(r.avg7) : '-'}</span>
+            <span className="text-right tabular-nums text-fg-2">{r.avg30 != null ? Math.round(r.avg30) : '-'}</span>
+            <span className="text-right tabular-nums text-fg-4">{r.target > 0 ? `${Math.round(r.target)} ${r.unit}` : '-'}</span>
           </div>
         ))}
       </div>
@@ -612,11 +612,11 @@ function FlowSectionPanel({
           <p className="text-xs text-fg-4">Competition streak</p>
         </div>
         <div className="bg-surface rounded-xl border border-edge p-3 text-center">
-          <p className="text-lg font-bold text-fg-2">{avgRecent ?? '—'}</p>
+          <p className="text-lg font-bold text-fg-2">{avgRecent ?? '-'}</p>
           <p className="text-xs text-fg-4">Avg flow (last {recentLogs.length})</p>
         </div>
         <div className="bg-surface rounded-xl border border-edge p-3 text-center">
-          <p className="text-lg font-bold text-fg-2">{inZoneRate != null ? `${inZoneRate}%` : '—'}</p>
+          <p className="text-lg font-bold text-fg-2">{inZoneRate != null ? `${inZoneRate}%` : '-'}</p>
           <p className="text-xs text-fg-4">In the zone</p>
         </div>
         <div className="bg-surface rounded-xl border border-edge p-3 text-center">

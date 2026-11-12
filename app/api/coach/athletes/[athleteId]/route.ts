@@ -2,12 +2,14 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { isUUID } from '@/lib/validate'
 
 // Unlink an athlete from this coach. The athlete's account is untouched.
 export async function DELETE(_req: Request, props: { params: Promise<{ athleteId: string }> }) {
   const params = await props.params;
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
+  if (!isUUID(params.athleteId)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
 
   const admin = createAdminClient()
   const { error } = await admin

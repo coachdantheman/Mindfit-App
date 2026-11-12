@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
-import { clampNumber, isISODate, optionalString, requireString } from '@/lib/validate'
+import { clampNumber, isISODate, isPlainObject, isUUID, oneOf, optionalString, requireString } from '@/lib/validate'
 import { MEALS, caloriesFromMacros, groupEntriesByDay, localDateISO, scaleFood, shiftDate } from '@/lib/nutrition'
 
 const MAX_SPAN_DAYS = 190
@@ -52,10 +52,11 @@ export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json()
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const food_name = requireString(body.food_name, 120)
   if (!food_name) return NextResponse.json({ error: 'Food name required' }, { status: 400 })
-  const meal_name = (MEALS as readonly string[]).includes(body.meal_name) ? body.meal_name : 'Snack'
+  const meal_name = oneOf(body.meal_name, MEALS) ?? 'Snack'
   const entry_date = isISODate(body.entry_date) ? body.entry_date : localDateISO(new Date())
   const servings = clampNumber(body.servings ?? 1, 0.1, 50) ?? 1
 
@@ -69,7 +70,7 @@ export async function POST(req: Request) {
     fat_g: clampNumber(body.fat_g ?? 0, 0, 2000) ?? 0,
   }
 
-  if (typeof body.food_id === 'string' && body.food_id) {
+  if (isUUID(body.food_id)) {
     const { data: food } = await admin
       .from('foods')
       .select('id, serving_size, calories, protein_g, carbs_g, fat_g, user_id')
@@ -104,8 +105,8 @@ export async function PATCH(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json()
-  if (typeof body.id !== 'string') return NextResponse.json({ error: 'id required' }, { status: 400 })
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body) || !isUUID(body.id)) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
   const admin = createAdminClient()
   const { data: existing } = await admin
@@ -117,7 +118,8 @@ export async function PATCH(req: Request) {
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const updates: Record<string, unknown> = {}
-  if ((MEALS as readonly string[]).includes(body.meal_name)) updates.meal_name = body.meal_name
+  const meal_name = oneOf(body.meal_name, MEALS)
+  if (meal_name) updates.meal_name = meal_name
   const food_name = optionalString(body.food_name, 120)
   if (food_name) updates.food_name = food_name
 
@@ -155,13 +157,13 @@ export async function DELETE(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const { id } = await req.json()
-  if (typeof id !== 'string') return NextResponse.json({ error: 'id required' }, { status: 400 })
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body) || !isUUID(body.id)) return NextResponse.json({ error: 'id required' }, { status: 400 })
   const admin = createAdminClient()
   const { error } = await admin
     .from('food_entries')
     .delete()
-    .eq('id', id)
+    .eq('id', body.id)
     .eq('user_id', auth.userId)
 
   if (error) return dbError(error)

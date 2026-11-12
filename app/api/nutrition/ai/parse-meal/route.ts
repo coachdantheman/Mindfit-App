@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { verifyApiUser } from '@/lib/api-auth'
 import { aiQuota } from '@/lib/rate-limit'
-import { optionalString, requireString } from '@/lib/validate'
+import { isPlainObject, optionalString, requireString } from '@/lib/validate'
 import { extractJson, sanitizeEstimate } from '@/lib/ai-json'
 import { consentFlags } from '@/lib/consent-flags'
 import { requireAiConsent } from '@/lib/ai-consent'
@@ -29,7 +29,8 @@ export async function POST(req: Request) {
   const noConsent = await requireAiConsent(createAdminClient(), auth.userId)
   if (noConsent) return noConsent
 
-  const body = await req.json()
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const text = requireString(body.text, 600)
   if (!text) return NextResponse.json({ error: 'Describe what you ate first.' }, { status: 400 })
   const meal = optionalString(body.meal_name, 20) ?? 'meal'

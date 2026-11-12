@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { getQuoteById, getQuoteOfTheDay } from '@/lib/data/quotes'
+import { getShareableQuote, getQuoteOfTheDay } from '@/lib/data/quotes'
 import ShareBar from './ShareBar'
 
 export const dynamic = 'force-dynamic'
@@ -8,14 +8,14 @@ export const dynamic = 'force-dynamic'
 type Props = { searchParams: Promise<{ id?: string }> }
 
 function resolve(id?: string) {
-  return (id && getQuoteById(id)) || getQuoteOfTheDay()
+  return (id && getShareableQuote(id)) || { ...getQuoteOfTheDay(), vault: false }
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const searchParams = await props.searchParams;
   const q = resolve(searchParams.id)
   const title = 'MindFit | Quote of the Day'
-  const description = `“${q.text}” — ${q.author}`
+  const description = `“${q.text}” ${q.author}`
   const image = `/api/quote/image?id=${q.id}`
   return {
     title,
@@ -40,11 +40,11 @@ export default async function QuotePage(props: Props) {
         </div>
 
         <div className="flex flex-col gap-6">
-          <p className="text-xs uppercase tracking-[0.3em]" style={{ color: '#9A8B00' }}>Quote of the day</p>
+          <p className="text-xs uppercase tracking-[0.3em]" style={{ color: '#9A8B00' }}>{q.vault ? 'From the Quote Vault' : 'Quote of the day'}</p>
           <blockquote className={`font-display leading-tight ${size}`} style={{ color: '#F3F4F6' }}>
             {'“'}{q.text}{'”'}
           </blockquote>
-          <p className="text-lg" style={{ color: '#9CA3AF' }}>{'—'} {q.author}</p>
+          <p className="text-lg" style={{ color: '#9CA3AF' }}>{q.author}</p>
         </div>
 
         <p className="text-xs tracking-[0.15em] uppercase" style={{ color: '#6B7280' }}>

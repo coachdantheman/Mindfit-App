@@ -3,6 +3,7 @@ import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { perServingFromEntry } from '@/lib/nutrition'
+import { isPlainObject, isUUID } from '@/lib/validate'
 
 export async function GET() {
   const auth = await verifyApiUser()
@@ -28,10 +29,11 @@ export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json()
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const admin = createAdminClient()
 
-  if (typeof body.entry_id === 'string' && body.entry_id) {
+  if (isUUID(body.entry_id)) {
     const { data: entry } = await admin
       .from('food_entries')
       .select('*')
@@ -73,8 +75,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, food, created, entry_id: entry.id }, { status: 201 })
   }
 
-  const { food_id } = body
-  if (typeof food_id !== 'string') return NextResponse.json({ error: 'food_id or entry_id required' }, { status: 400 })
+  const food_id = body.food_id
+  if (!isUUID(food_id)) return NextResponse.json({ error: 'food_id or entry_id required' }, { status: 400 })
 
   const { error } = await admin
     .from('food_favorites')
@@ -88,8 +90,9 @@ export async function DELETE(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const { food_id } = await req.json()
-  if (typeof food_id !== 'string') return NextResponse.json({ error: 'food_id required' }, { status: 400 })
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body) || !isUUID(body.food_id)) return NextResponse.json({ error: 'food_id required' }, { status: 400 })
+  const food_id = body.food_id
 
   const admin = createAdminClient()
   const { error } = await admin

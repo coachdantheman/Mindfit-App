@@ -51,7 +51,7 @@ export default function GoalSummaryCard({ goal, onRetake }: { goal: NutritionGoa
           {why && (
             <ul className="mt-2 text-xs text-fg-3 space-y-1.5 list-disc pl-4">
               <li>Calories are {body ? 'based on your height, age, weight and training' : 'based on your weight and training'}. Maintenance ≈ {maintenance.toLocaleString()} kcal at {ACTIVITY_LABEL[al]} activity.</li>
-              <li>{gt === 'maintain' ? 'Maintain: no surplus or deficit.' : gt === 'gain' ? 'Build muscle: a moderate +350 kcal surplus — enough to grow, not enough to add much fat.' : `Lean out: a −400 kcal deficit, never below ${CALORIE_FLOOR.toLocaleString()} kcal. Growing athletes should not cut harder than this.`}</li>
+              <li>{gt === 'maintain' ? 'Maintain: no surplus or deficit.' : gt === 'gain' ? 'Build muscle: a moderate +350 kcal surplus (enough to grow, not enough to add much fat).' : `Lean out: a −400 kcal deficit, never below ${CALORIE_FLOOR.toLocaleString()} kcal. Growing athletes should not cut harder than this.`}</li>
               <li>{goal.protein_level ? `Protein ${PROTEIN_PER_LB[protein]} g per lb of your ${gt === 'maintain' ? 'current' : 'target'} weight.` : `Protein ${Math.round(Number(goal.protein_g))} g a day.`}</li>
               <li>Fat ≈ {FAT_PCT}% of calories for hormones and recovery; carbs fill the rest to fuel practice and games.</li>
               <li>Weight-class or appearance sport? Talk this through with a parent or coach before cutting.</li>

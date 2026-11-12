@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
-import { clampNumber, isISODate } from '@/lib/validate'
+import { clampNumber, isISODate, isPlainObject, optionalString, oneOf } from '@/lib/validate'
 
 export async function GET(req: Request) {
   const auth = await verifyApiUser()
@@ -29,7 +29,8 @@ export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json()
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const admin = createAdminClient()
 
   if (!isISODate(body.week_date)) {
@@ -49,7 +50,7 @@ export async function POST(req: Request) {
     scores[d] = v
   }
 
-  const assessment_type = body.assessment_type === 'baseline' ? 'baseline' : 'weekly'
+  const assessment_type = oneOf(body.assessment_type, ['baseline', 'weekly'] as const) ?? 'weekly'
 
   const { data, error } = await admin
     .from('weekly_assessments')
@@ -57,7 +58,7 @@ export async function POST(req: Request) {
       user_id: auth.userId,
       week_date: body.week_date,
       ...scores,
-      notes: body.notes || null,
+      notes: optionalString(body.notes, 4000),
       assessment_type,
     }, { onConflict: 'user_id,week_date,assessment_type' })
     .select()

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { clampNumber, intOrNull, isPlainObject, isUUID, optionalString, requireString } from '@/lib/validate'
 
 export async function GET(req: Request) {
   const auth = await verifyApiUser()
@@ -32,27 +33,34 @@ export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json()
-  const logs = Array.isArray(body) ? body : [body]
+  const body = await req.json().catch(() => null)
+  const logs: unknown[] = (Array.isArray(body) ? body : [body]).slice(0, 100)
+  if (logs.length === 0 || !logs.every(isPlainObject)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
+
+  const rows = []
+  for (const l of logs) {
+    const exercise_name = requireString(l.exercise_name, 120)
+    const set_number = intOrNull(l.set_number, 1, 99)
+    if (!exercise_name || set_number === null) return NextResponse.json({ error: 'Exercise name and set number required.' }, { status: 400 })
+    rows.push({
+      user_id: auth.userId,
+      workout_log_id: isUUID(l.workout_log_id) ? l.workout_log_id : null,
+      exercise_name,
+      set_number,
+      reps: intOrNull(l.reps, 0, 9999),
+      weight: l.weight != null ? clampNumber(l.weight, 0, 5000) : null,
+      rpe: l.rpe != null ? clampNumber(l.rpe, 1, 10) : null,
+      notes: optionalString(l.notes, 4000),
+    })
+  }
 
   const admin = createAdminClient()
-  const logIds = [...new Set(logs.map(l => l.workout_log_id).filter(Boolean))]
+  const logIds = [...new Set(rows.map(r => r.workout_log_id).filter((id): id is string => !!id))]
   if (logIds.length) {
     const { data: owned, error: ownErr } = await admin.from('workout_logs').select('id').in('id', logIds).eq('user_id', auth.userId)
     if (ownErr) return dbError(ownErr)
     if ((owned ?? []).length !== logIds.length) return NextResponse.json({ error: 'Workout not found' }, { status: 404 })
   }
-
-  const rows = logs.map(l => ({
-    user_id: auth.userId,
-    workout_log_id: l.workout_log_id || null,
-    exercise_name: l.exercise_name,
-    set_number: l.set_number,
-    reps: l.reps ?? null,
-    weight: l.weight ?? null,
-    rpe: l.rpe ?? null,
-    notes: l.notes || null,
-  }))
 
   const { data, error } = await admin
     .from('exercise_logs')

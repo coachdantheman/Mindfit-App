@@ -5,6 +5,7 @@ import { rateLimit } from '@/lib/rate-limit'
 import { sendCoachInviteEmail } from '@/lib/email'
 import { extractEmails, extractNames, MAX_BULK } from '@/lib/links'
 import { createInvitedAccount, signInLinkFor } from '@/lib/invites'
+import { isPlainObject } from '@/lib/validate'
 import type { ClaimResult } from '@/types'
 
 // Admin invite: one email or a pasted roster. Every new address gets an
@@ -15,8 +16,8 @@ export async function POST(req: Request) {
   const limited = await rateLimit(`admin-invite:${auth.userId}`, 30, 3600)
   if (limited) return limited
 
-  const body = await req.json().catch(() => ({}))
-  const text: string = typeof body.text === 'string' ? body.text : ''
+  const body = await req.json().catch(() => null)
+  const text: string = isPlainObject(body) && typeof body.text === 'string' ? body.text.slice(0, 20000) : ''
   const emails = extractEmails(text)
   const names = extractNames(text)
   if (emails.length === 0) return NextResponse.json({ error: 'No email addresses found.' }, { status: 400 })

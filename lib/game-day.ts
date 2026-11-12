@@ -135,7 +135,7 @@ export function gameDayGuide(phase: Exclude<GameDayPhase, 'none'>, bodyWeightLb?
   const t = targets(bodyWeightLb)
   if (phase === 'night_before') {
     return {
-      title: 'Tomorrow is game day — fuel tonight',
+      title: 'Tomorrow is game day. Fuel tonight',
       summary: 'Tonight is where most of tomorrow’s energy gets stored. Nothing new, nothing heavy, plenty of carbs.',
       blocks: [
         { heading: 'Dinner (2–3 h before bed)', items: [
@@ -157,7 +157,7 @@ export function gameDayGuide(phase: Exclude<GameDayPhase, 'none'>, bodyWeightLb?
     }
   }
   return {
-    title: 'Game day — here’s the plan',
+    title: 'Game day: here’s the plan',
     summary: 'Eat on a schedule, not on nerves. Carbs power the engine, fluids keep it cool.',
     blocks: gameDayWindows(gameTime, bodyWeightLb).map(w => ({
       heading: `${w.title} · ${w.when}`,

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
-import { clampNumber, isISODate, optionalString } from '@/lib/validate'
+import { clampNumber, isISODate, isPlainObject, isUUID, optionalString } from '@/lib/validate'
 import { localDateISO, shiftDate } from '@/lib/nutrition'
 import { listUserPhotoObjects, removePhotoObjects } from '@/lib/account-delete'
 
@@ -32,7 +32,8 @@ export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json()
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const weight_lb = clampNumber(body.weight_lb, 50, 500)
   if (weight_lb == null) return NextResponse.json({ error: 'Weight must be between 50 and 500 lb' }, { status: 400 })
   const entry_date = isISODate(body.entry_date) ? body.entry_date : localDateISO(new Date())
@@ -73,8 +74,9 @@ export async function DELETE(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const { id } = await req.json()
-  if (typeof id !== 'string') return NextResponse.json({ error: 'id required' }, { status: 400 })
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body) || !isUUID(body.id)) return NextResponse.json({ error: 'id required' }, { status: 400 })
+  const id = body.id
 
   const admin = createAdminClient()
   const { error } = await admin

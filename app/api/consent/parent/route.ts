@@ -4,16 +4,18 @@ import { findConsentByToken, grantConsent } from '@/lib/consent'
 import { deleteUserCompletely } from '@/lib/account-delete'
 import { sendParentInviteEmail } from '@/lib/email'
 import { clientIp, rateLimit } from '@/lib/rate-limit'
+import { isPlainObject, oneOf } from '@/lib/validate'
 
 const RELATIONSHIPS = ['parent', 'legal_guardian'] as const
 
 // No session: the emailed token is the credential.
 export async function POST(req: Request) {
-  const limited = await rateLimit(`consent:ip:${clientIp(req)}`, 20, 3600)
+  const limited = await rateLimit(`consent:ip:${clientIp(req)}`, 20, 3600, { failClosed: true })
   if (limited) return limited
-  const body = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const admin = createAdminClient()
-  const row = await findConsentByToken(admin, typeof body.token === 'string' ? body.token : '')
+  const row = await findConsentByToken(admin, typeof body.token === 'string' && body.token.length <= 200 ? body.token : '')
   if (!row || row.status === 'superseded') {
     return NextResponse.json({ error: 'This link is no longer valid.' }, { status: 404 })
   }
@@ -32,7 +34,8 @@ export async function POST(req: Request) {
   if (signature.toLowerCase() !== parentName.toLowerCase()) {
     return NextResponse.json({ error: 'Type your full name to sign. It must match the name above.' }, { status: 400 })
   }
-  if (!RELATIONSHIPS.includes(body.relationship)) {
+  const relationship = oneOf(body.relationship, RELATIONSHIPS)
+  if (!relationship) {
     return NextResponse.json({ error: 'Choose parent or legal guardian.' }, { status: 400 })
   }
   if (typeof body.shareCoaches !== 'boolean' || typeof body.ai !== 'boolean' || typeof body.leaderboard !== 'boolean') {
@@ -46,7 +49,7 @@ export async function POST(req: Request) {
     admin,
     row,
     { shareCoaches: body.shareCoaches, ai: body.ai, leaderboard: body.leaderboard },
-    { parentName, relationship: body.relationship, ip, userAgent }
+    { parentName, relationship, ip, userAgent }
   )
   if (firstTime) void sendParentInviteEmail(row.parent_email, row.athlete.full_name)
   return NextResponse.json({ ok: true, firstTime })

@@ -3,7 +3,7 @@ import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { sendWelcomeEmail } from '@/lib/email'
-import { isEmail } from '@/lib/validate'
+import { isEmail, isPlainObject, isUUID, optionalString } from '@/lib/validate'
 
 export async function GET() {
   const auth = await verifyApiUser('admin', 'coach')
@@ -33,7 +33,9 @@ export async function POST(req: Request) {
   const auth = await verifyApiUser('admin', 'coach')
   if (auth instanceof NextResponse) return auth
 
-  const { email, notes } = await req.json()
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
+  const email = body.email
   if (!isEmail(email)) return NextResponse.json({ error: 'A valid email is required' }, { status: 400 })
 
   const admin = createAdminClient()
@@ -41,7 +43,7 @@ export async function POST(req: Request) {
     .from('approved_emails')
     .insert({
       email: email.toLowerCase().trim(),
-      notes: notes || null,
+      notes: optionalString(body.notes, 280),
       added_by: auth.userId,
     })
     .select()
@@ -63,7 +65,9 @@ export async function DELETE(req: Request) {
   const auth = await verifyApiUser('admin', 'coach')
   if (auth instanceof NextResponse) return auth
 
-  const { id } = await req.json()
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body) || !isUUID(body.id)) return NextResponse.json({ error: 'id required' }, { status: 400 })
+  const id = body.id
   const admin = createAdminClient()
 
   if (auth.role === 'coach') {

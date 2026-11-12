@@ -5,7 +5,7 @@ import Skeleton from '@/components/shared/Skeleton'
 import BulkClaimForm from '@/components/coach/BulkClaimForm'
 import TeamChallenge from '@/components/coach/TeamChallenge'
 import { useToast } from '@/components/shared/Toast'
-import { ENCOURAGEMENT, type EncouragementKey } from '@/lib/notify-copy'
+import { ENCOURAGEMENT, ENCOURAGEMENT_VARIANTS, type EncouragementKey } from '@/lib/notify-copy'
 
 type Target = { athlete_id: string } | { team_id: string }
 
@@ -43,7 +43,8 @@ export function EncourageControl({ target, label, className, disabled = false }:
         <div className="flex flex-col gap-0.5 border border-edge rounded-xl p-1 w-64 max-w-full text-left whitespace-normal">
           {(Object.entries(ENCOURAGEMENT) as [EncouragementKey, string][]).map(([key, text]) => (
             <button key={key} type="button" onClick={() => send(key)} className="text-xs text-fg-2 hover:text-cta hover:bg-surface-2/60 rounded-lg px-2 py-1.5 text-left">
-              {text}
+              <span className="block font-semibold">{text}</span>
+              <span className="block text-fg-4">e.g. &ldquo;{ENCOURAGEMENT_VARIANTS[key][0]}&rdquo; ({ENCOURAGEMENT_VARIANTS[key].length} rotating lines)</span>
             </button>
           ))}
         </div>

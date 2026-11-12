@@ -115,7 +115,7 @@ const STRENGTH_LOWER: WorkoutExercise[] = [
 ]
 
 const POWER_EXPLOSIVE: WorkoutExercise[] = [
-  { name: 'Box Jumps', sets: 4, reps: '5', notes: 'Land softly, step down — max effort' },
+  { name: 'Box Jumps', sets: 4, reps: '5', notes: 'Land softly, step down: max effort' },
   { name: 'Power Clean', sets: 4, reps: '3-5', notes: 'Explosive hip extension' },
   { name: 'Medicine Ball Slams', sets: 3, reps: '8', notes: 'Full extension, slam hard' },
   { name: 'Broad Jumps', sets: 3, reps: '5', notes: 'Full arm swing, stick the landing' },
@@ -124,7 +124,7 @@ const POWER_EXPLOSIVE: WorkoutExercise[] = [
 ]
 
 const SPEED_AGILITY: WorkoutExercise[] = [
-  { name: '40-Yard Sprint', sets: 6, reps: '1', notes: '90 sec rest between — full recovery' },
+  { name: '40-Yard Sprint', sets: 6, reps: '1', notes: '90 sec rest between: full recovery' },
   { name: 'Pro Agility (5-10-5)', sets: 4, reps: '1', notes: 'Low hips, explosive cuts' },
   { name: 'Ladder Drills', sets: 3, reps: '2 lengths', notes: 'Quick feet, stay light' },
   { name: 'Cone Drills (T-Drill)', sets: 4, reps: '1', notes: 'Touch each cone, sprint back' },
@@ -229,22 +229,22 @@ const BB_DAYS: Record<string, { title: string; description: string; moves: Hyper
 // Foundation/Build/Peak/Taper reused as accumulation → intensification → deload.
 const BB_PHASES = [
   {
-    label: 'Foundation — Accumulation',
+    label: 'Foundation: Accumulation',
     focus: 'Technique first: learn every lift with a full range and a 2-second lowering. Each week add 1 rep per set; once every set hits the top of the range, add the smallest weight jump. Eat enough and sleep 8+ hours, or the muscle has nothing to grow from.',
     compound: { sets: 3, reps: '10-12' }, iso: { sets: 3, reps: '12-15' }, rest: '60 s', effort: 'Stop 2-3 reps short of failure',
   },
   {
-    label: 'Build — Intensification',
+    label: 'Build: Intensification',
     focus: 'Heavier and more sets. Each week beat last week: one more rep or a little more weight with the same clean form. Stay 1-2 reps short of failure.',
     compound: { sets: 4, reps: '8-10' }, iso: { sets: 3, reps: '10-12' }, rest: '90 s', effort: 'Stop 1-2 reps short of failure',
   },
   {
-    label: 'Peak — Intensification',
+    label: 'Peak: Intensification',
     focus: 'Highest volume of the plan. Keep adding a rep or a little weight each week. If a lift stalls two weeks in a row, hold the weight and clean up the reps.',
     compound: { sets: 4, reps: '8-12' }, iso: { sets: 4, reps: '10-15' }, rest: '75-90 s', effort: 'Stop 1-2 reps short of failure',
   },
   {
-    label: 'Taper — Deload',
+    label: 'Taper: Deload',
     focus: 'Deload: fewer sets, same exercises, easy effort. Recovery is when the muscle is built. Keep eating and sleeping well.',
     compound: { sets: 2, reps: '8-10' }, iso: { sets: 2, reps: '10-12' }, rest: '60-90 s', effort: 'Easy: leave 3-4 reps in the tank',
   },

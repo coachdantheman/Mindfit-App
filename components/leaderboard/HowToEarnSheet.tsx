@@ -53,7 +53,24 @@ export default function HowToEarnSheet({ onClose }: { onClose: () => void }) {
               </li>
             ))}
           </ul>
-          <p className="text-sm text-fg-2 mt-3">Every 7 days in a row earns a streak freeze, up to 2. Miss a day and a freeze keeps your streak and its bonus.</p>
+        </div>
+        <div className="rounded-xl border border-sky-400/30 bg-sky-400/[0.06] p-3">
+          <p className="text-xs uppercase tracking-wide text-sky-300 mb-1.5">🧊 Streak freeze: freeze your streak, keep your flame</p>
+          <ul className="text-sm text-fg-2 space-y-1 list-disc pl-5">
+            <li>Every 7 days in a row earns 1 freeze. You can hold up to 2.</li>
+            <li>Miss a day and a freeze is used for you automatically. Your streak and its point bonus stay alive.</li>
+            <li>Miss a day with no freeze left and the streak starts over.</li>
+          </ul>
+        </div>
+        <div>
+          <p className="text-xs uppercase tracking-wide text-fg-4 mb-1.5">🏆 Weekly leagues</p>
+          <ul className="text-sm text-fg-2 space-y-1 list-disc pl-5">
+            <li>Each week (Monday to Sunday) you are placed in a group of about 30 athletes in your league.</li>
+            <li>Six leagues, low to high: {LEVELS.map(l => l.name).join(', ')}.</li>
+            <li>Finish in the top 5 of your group to move up a league. The bottom 5 move down.</li>
+            <li>Groups smaller than 10 stay put. Miss a whole week and you drop one league.</li>
+            <li>Week points count the same way as the month board.</li>
+          </ul>
         </div>
         <div>
           <p className="text-xs uppercase tracking-wide text-fg-4 mb-1.5">⭐ Clutch Day</p>

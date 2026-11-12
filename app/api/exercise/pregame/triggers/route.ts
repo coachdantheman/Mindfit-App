@@ -3,11 +3,13 @@ import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { cleanTrigger } from '@/lib/pregame'
+import { isPlainObject } from '@/lib/validate'
 
 export async function PUT(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
-  const body = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
 
   const admin = createAdminClient()
   const { data, error } = await admin.from('pregame_triggers')

@@ -36,10 +36,11 @@ export type LinkOutcome = 'linked' | 'already_linked' | 'requested' | 'invited' 
 // it for the signup trigger. Coach: requester is the coach, the email is
 // the athlete, and an existing athlete gets a request to accept (v33) —
 // a coach never sees an existing account's data without the athlete's OK.
-// Parent: requester is the athlete, the email is the parent.
+// Parent: requester is the athlete, the email is the parent; an existing
+// parent account gets a request to accept (v50).
 export async function linkOrQueue(
   admin: SupabaseClient,
-  { email, requesterId, kind, teamId = null }: { email: string; requesterId: string; kind: LinkKind; teamId?: string | null }
+  { email, requesterId, kind, teamId = null, direct = false }: { email: string; requesterId: string; kind: LinkKind; teamId?: string | null; direct?: boolean }
 ): Promise<{ outcome: LinkOutcome; userId: string | null }> {
   // An under-13 athlete's parent is linked through the consent flow
   // (grantConsent); letting the child add more "parents" would bypass the
@@ -66,9 +67,20 @@ export async function linkOrQueue(
       if (error) throw error
       return { outcome: 'requested', userId: profile.id }
     }
-    const { error } = await admin.from('parent_athletes').insert({ parent_id: profile.id, athlete_id: requesterId })
-    if (error && error.code !== '23505') throw error
-    return { outcome: error ? 'already_linked' : 'linked', userId: profile.id }
+    // The parent already acted (signed the consent form): link straight away.
+    if (direct) {
+      const { error } = await admin.from('parent_athletes').insert({ parent_id: profile.id, athlete_id: requesterId })
+      if (error && error.code !== '23505') throw error
+      return { outcome: error ? 'already_linked' : 'linked', userId: profile.id }
+    }
+    // Parent with an account: they accept in the app before seeing anything (v50).
+    const { data: link } = await admin.from('parent_athletes').select('id')
+      .eq('parent_id', profile.id).eq('athlete_id', requesterId).maybeSingle()
+    if (link) return { outcome: 'already_linked', userId: profile.id }
+    const { error } = await admin.from('parent_link_requests')
+      .upsert({ parent_id: profile.id, athlete_id: requesterId }, { onConflict: 'parent_id,athlete_id' })
+    if (error) throw error
+    return { outcome: 'requested', userId: profile.id }
   }
 
   const { error } = await admin.from('pending_links').insert({ email, requester_id: requesterId, kind })

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { verifyApiUser } from '@/lib/api-auth'
 import { createAdminClient } from '@/lib/supabase-server'
-import { clampNumber, optionalString, requireString } from '@/lib/validate'
+import { clampNumber, isPlainObject, isUUID, optionalString, requireString } from '@/lib/validate'
 import { insertBlocks, loadPrograms } from '@/lib/program-store'
 import { currentWeek, isoDayOfWeek } from '@/lib/programs'
 import { chunk, fetchAll } from '@/lib/fetch-all'
@@ -59,10 +59,11 @@ export async function POST(req: Request) {
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
   const admin = createAdminClient()
-  const body = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
 
   // Duplicate an existing library plan.
-  if (typeof body.duplicate_of === 'string') {
+  if (isUUID(body.duplicate_of)) {
     const [src] = await loadPrograms(admin, [body.duplicate_of])
     if (!src || src.created_by !== auth.userId) return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
     const { data: copy, error } = await admin.from('training_programs').insert({
@@ -79,13 +80,13 @@ export async function POST(req: Request) {
 
   const title = requireString(body.title, 120)
   if (!title) return NextResponse.json({ error: 'Give the plan a name.' }, { status: 400 })
-  const blocks: any[] = Array.isArray(body.blocks) ? body.blocks : []
+  const blocks: any[] = Array.isArray(body.blocks) ? body.blocks.slice(0, 200).filter(isPlainObject) : []
   if (blocks.length === 0) return NextResponse.json({ error: 'Add at least one training day.' }, { status: 400 })
 
   const { data: program, error } = await admin.from('training_programs').insert({
     user_id: auth.userId, created_by: auth.userId, title,
     description: optionalString(body.description, 600), sport: optionalString(body.sport, 60),
-    goals: Array.isArray(body.goals) ? body.goals.slice(0, 10) : [],
+    goals: Array.isArray(body.goals) ? body.goals.filter((g: unknown): g is string => typeof g === 'string').slice(0, 10).map((g: string) => g.slice(0, 120)) : [],
     duration_weeks: clampNumber(body.duration_weeks, 1, 52) ?? 4, is_active: false, source: 'coach',
   }).select().single()
   if (error || !program) return NextResponse.json({ error: error?.message ?? 'Could not save the plan' }, { status: 500 })
@@ -93,7 +94,7 @@ export async function POST(req: Request) {
   const failure = await insertBlocks(admin, program.id, blocks)
   if (failure) {
     await admin.from('training_programs').delete().eq('id', program.id)
-    return NextResponse.json({ error: "Couldn't save the plan. Nothing was saved — try again." }, { status: 500 })
+    return NextResponse.json({ error: "Couldn't save the plan. Nothing was saved. Try again." }, { status: 500 })
   }
   const [full] = await loadPrograms(admin, [program.id])
   return NextResponse.json({ ...full, athletes: [] }, { status: 201 })
@@ -104,8 +105,8 @@ export async function PUT(req: Request) {
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
   const admin = createAdminClient()
-  const body = await req.json().catch(() => ({}))
-  if (typeof body.id !== 'string') return NextResponse.json({ error: 'id required' }, { status: 400 })
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body) || !isUUID(body.id)) return NextResponse.json({ error: 'id required' }, { status: 400 })
   const { data: owned } = await admin.from('training_programs').select('id').eq('id', body.id).eq('created_by', auth.userId).eq('source', 'coach').maybeSingle()
   if (!owned) return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
 
@@ -113,14 +114,14 @@ export async function PUT(req: Request) {
   if (!title) return NextResponse.json({ error: 'Give the plan a name.' }, { status: 400 })
   const { error } = await admin.from('training_programs').update({
     title, description: optionalString(body.description, 600), sport: optionalString(body.sport, 60),
-    goals: Array.isArray(body.goals) ? body.goals.slice(0, 10) : [],
+    goals: Array.isArray(body.goals) ? body.goals.filter((g: unknown): g is string => typeof g === 'string').slice(0, 10).map((g: string) => g.slice(0, 120)) : [],
     duration_weeks: clampNumber(body.duration_weeks, 1, 52) ?? 4,
   }).eq('id', body.id)
   if (error) return dbError(error)
 
   if (Array.isArray(body.blocks)) {
     await admin.from('program_blocks').delete().eq('program_id', body.id)
-    const failure = await insertBlocks(admin, body.id, body.blocks)
+    const failure = await insertBlocks(admin, body.id, body.blocks.slice(0, 200).filter(isPlainObject))
     if (failure) return NextResponse.json({ error: "Couldn't save the schedule. Re-open the plan and try again." }, { status: 500 })
   }
   const [full] = await loadPrograms(admin, [body.id])
@@ -130,8 +131,9 @@ export async function PUT(req: Request) {
 export async function DELETE(req: Request) {
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
-  const { id } = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body) || !isUUID(body.id)) return NextResponse.json({ error: 'id required' }, { status: 400 })
   const admin = createAdminClient()
-  await admin.from('training_programs').delete().eq('id', id).eq('created_by', auth.userId).eq('source', 'coach')
+  await admin.from('training_programs').delete().eq('id', body.id).eq('created_by', auth.userId).eq('source', 'coach')
   return NextResponse.json({ success: true })
 }

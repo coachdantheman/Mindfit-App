@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Lesson } from '@/types'
-import { LOW_NOTE, MAX_ANSWER, NEED_LABELS, NEEDS, NeedScores, QUESTION_ORDER, QuizAnswers, RESULTS, SCALE, scoreQuiz } from '@/lib/quiz'
+import { LOW_NOTE, MAX_ANSWER, NEED_LABELS, NEEDS, Need, NeedScores, QUESTION_ORDER, QuizAnswers, RESULTS, SCALE, scoreQuiz } from '@/lib/quiz'
 
 type Stage = 'loading' | 'intro' | 'questions' | 'result'
 
@@ -162,6 +162,15 @@ export default function AthleteQuiz({ lessons }: { lessons: Lesson[] }) {
         <p className="text-sm text-fg-2 leading-relaxed">{result.paragraph}</p>
         {saveError && <p className="text-xs text-fg-4">{saveError}</p>}
 
+        <div className="grid sm:grid-cols-[200px_1fr] gap-5 items-center">
+          <NeedRadar scores={scores} prior={prior} max={NEED_MAX} />
+          <div className="rounded-xl border border-cta/30 bg-cta/[0.06] p-4">
+            <p className="text-xs uppercase tracking-wider text-cta font-mono">Your strength</p>
+            <p className="font-semibold text-fg-1 mt-1">{NEED_LABELS[ranked[ranked.length - 1]]}</p>
+            <p className="text-sm text-fg-3 mt-1">This is the area you already handle best. Lean on it while you train {NEED_LABELS[top_need].toLowerCase()}.</p>
+          </div>
+        </div>
+
         <div className="space-y-3">
           <p className="text-xs uppercase tracking-wider text-fg-4 font-mono">All five needs</p>
           {ranked.map(n => (
@@ -268,5 +277,36 @@ function NeedBar({ label, value, max, top }: { label: string; value: number; max
         />
       </div>
     </div>
+  )
+}
+
+// Pentagon profile: the further out a point, the bigger that need. The faint
+// outline is the last attempt, so change is visible at a glance.
+function NeedRadar({ scores, prior, max }: { scores: NeedScores; prior: NeedScores | null; max: number }) {
+  const cx = 100, cy = 100, R = 72
+  const pt = (i: number, v: number) => {
+    const a = -Math.PI / 2 + (i * 2 * Math.PI) / NEEDS.length
+    const r = R * (0.12 + 0.88 * (v / max))
+    return `${cx + r * Math.cos(a)},${cy + r * Math.sin(a)}`
+  }
+  const ring = (f: number) => NEEDS.map((_, i) => {
+    const a = -Math.PI / 2 + (i * 2 * Math.PI) / NEEDS.length
+    return `${cx + R * f * Math.cos(a)},${cy + R * f * Math.sin(a)}`
+  }).join(' ')
+  const short: Record<Need, string> = { confidence: 'Confidence', focus: 'Focus', pressure: 'Pressure', motivation: 'Motivation', recovery: 'Recovery' }
+  return (
+    <svg viewBox="0 0 200 200" className="w-[200px] h-[200px] mx-auto" role="img" aria-label="Your five needs as a profile chart">
+      {[0.33, 0.66, 1].map(f => <polygon key={f} points={ring(f)} fill="none" stroke="var(--border-muted)" strokeWidth="1" />)}
+      {prior && <polygon points={NEEDS.map((n, i) => pt(i, prior[n])).join(' ')} fill="none" stroke="rgb(var(--cta-rgb) / 0.35)" strokeDasharray="3 3" strokeWidth="1.2" />}
+      <polygon points={NEEDS.map((n, i) => pt(i, scores[n])).join(' ')} fill="rgb(var(--cta-rgb) / 0.18)" stroke="rgb(var(--cta-rgb))" strokeWidth="1.6" strokeLinejoin="round" />
+      {NEEDS.map((n, i) => {
+        const a = -Math.PI / 2 + (i * 2 * Math.PI) / NEEDS.length
+        return (
+          <text key={n} x={cx + (R + 16) * Math.cos(a)} y={cy + (R + 16) * Math.sin(a) + 3} textAnchor="middle" fontSize="9" fill="currentColor" className="text-fg-4">
+            {short[n]}
+          </text>
+        )
+      })}
+    </svg>
   )
 }

@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { addToTeam } from '@/lib/teams'
 import { consentFlags } from '@/lib/consent-flags'
+import { isPlainObject, isUUID } from '@/lib/validate'
 
 // Coaches who asked to see this athlete's training. Nothing is shared
 // until the athlete accepts.
@@ -30,8 +31,8 @@ export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json().catch(() => ({}))
-  if (typeof body.id !== 'string' || typeof body.accept !== 'boolean') {
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body) || !isUUID(body.id) || typeof body.accept !== 'boolean') {
     return NextResponse.json({ error: 'id and accept are required.' }, { status: 400 })
   }
 

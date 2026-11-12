@@ -233,7 +233,7 @@ function ThisWeekCard({ program, title, subtitle, accent, onStart, actions, game
           <p className="text-xs uppercase tracking-wider text-cta font-semibold">{dayKind === 'game' ? 'Game day' : 'Game tomorrow'}</p>
           <p className="text-sm text-fg-2">
             {dayKind === 'game'
-              ? 'Skip today’s lift. A 10-minute warm-up and activation is plenty — the game is the workout.'
+              ? 'Skip today’s lift. A 10-minute warm-up and activation is plenty. The game is the workout.'
               : 'Keep today light: mobility and a few fast, crisp reps. Nothing heavy, so your legs are fresh tomorrow.'}
           </p>
           <div className="flex items-center justify-between gap-2">
@@ -256,7 +256,7 @@ function ThisWeekCard({ program, title, subtitle, accent, onStart, actions, game
             <p className="text-xs uppercase tracking-wider text-fg-4 font-semibold">
               {status === 'active' ? 'Rest day · next up' : 'First up'}
             </p>
-            <p className="text-sm font-semibold text-fg-1 truncate">{DAY_NAMES[next.workout.day_of_week]} — {next.workout.name}</p>
+            <p className="text-sm font-semibold text-fg-1 truncate">{DAY_NAMES[next.workout.day_of_week]}: {next.workout.name}</p>
             <p className="text-xs text-fg-4">{(next.workout.exercises as WorkoutExercise[]).length} exercises{next.week !== week ? ` · week ${next.week}` : ''}</p>
           </div>
           <button type="button" onClick={() => onStart(next.workout)} className="btn-secondary shrink-0">Start early</button>

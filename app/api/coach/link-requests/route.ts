@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { isPlainObject, isUUID } from '@/lib/validate'
 
 // Athletes this coach invited who haven't accepted yet.
 export async function GET() {
@@ -27,8 +28,9 @@ export async function GET() {
 export async function DELETE(req: Request) {
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
-  const { id } = await req.json().catch(() => ({}))
-  if (typeof id !== 'string') return NextResponse.json({ error: 'id required' }, { status: 400 })
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body) || !isUUID(body.id)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
+  const id = body.id
   const { error } = await createAdminClient().from('coach_link_requests').delete().eq('id', id).eq('coach_id', auth.userId)
   if (error) return dbError(error)
   return NextResponse.json({ ok: true })

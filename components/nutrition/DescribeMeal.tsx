@@ -74,7 +74,7 @@ export default function DescribeMeal({ meal, onAddMany, busy }: Props) {
               )}
             </div>
           ))}
-          <p className="text-xs text-fg-4">AI estimates — edit servings or uncheck anything that's off.</p>
+          <p className="text-xs text-fg-4">AI estimates. Edit servings or uncheck anything that's off.</p>
           <button
             type="button"
             disabled={busy || chosen.length === 0}

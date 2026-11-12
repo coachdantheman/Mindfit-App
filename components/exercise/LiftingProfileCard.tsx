@@ -26,7 +26,7 @@ export default function LiftingProfileCard({ profile, suggestedBodyweight, onSav
     setError('')
     const b = parseFloat(bw)
     const a = parseInt(age, 10)
-    if (!sex) { setError('Pick male or female — standards differ.'); return }
+    if (!sex) { setError('Pick male or female. Standards differ.'); return }
     if (!(b >= 50 && b <= 500)) { setError('Bodyweight should be 50–500 lb.'); return }
     if (!(a >= 10 && a <= 80)) { setError('Age should be 10–80.'); return }
     setSaving(true)

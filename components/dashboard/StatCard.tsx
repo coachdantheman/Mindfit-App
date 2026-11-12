@@ -50,7 +50,7 @@ export default function StatCard({
                 : 'bg-surface-2/60 text-fg-3'
             }`}
           >
-            {delta.direction === 'up' ? '▲' : delta.direction === 'down' ? '▼' : '—'}{' '}
+            {delta.direction === 'up' ? '▲' : delta.direction === 'down' ? '▼' : '-'}{' '}
             {delta.value}
           </span>
         )}

@@ -152,7 +152,7 @@ export function needsAttention(
     orderedCheckins.length >= 3 &&
     orderedCheckins.slice(0, 3).every(c => c.stage === 'struggle')
   ) {
-    reasons.push('Stuck in Struggle — 3+ recent check-ins')
+    reasons.push('Stuck in Struggle: 3+ recent check-ins')
   } else {
     const orderedByLogged = [...logs].sort(
       (a, b) => new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime(),
@@ -244,7 +244,7 @@ export function calcFlowReadiness(
   )
 
   const verdict =
-    score >= 80 ? 'Locked in — peak flow access.' :
+    score >= 80 ? 'Locked in. Peak flow access.' :
     score >= 65 ? 'Strong. Keep the rhythm.' :
     score >= 50 ? 'Building. Refine the ritual.' :
     score >= 30 ? 'Drifting. Re-ground with a full 5A.' :
@@ -340,7 +340,7 @@ export function generateRecommendation(logs: FlowLog[], sessions: FlowSession[])
     stagedLogs.length >= 3 &&
     stagedLogs.slice(0, 3).every(l => l.ending_stage === 'struggle')
   ) {
-    return "You're not completing the cycle. Build in a Release step — 90 seconds of deliberate walk-away before the next rep."
+    return "You're not completing the cycle. Build in a Release step: 90 seconds of deliberate walk-away before the next rep."
   }
 
   const activateSkips = sessions.filter(s => (s.skipped_steps || []).includes('A3')).length
@@ -350,7 +350,7 @@ export function generateRecommendation(logs: FlowLog[], sessions: FlowSession[])
 
   const flowOnes = logs.filter(l => l.ending_stage === 'flow').length
   if (logs.length > 0 && flowOnes / logs.length >= 0.5) {
-    return 'Flow is firing. Keep your identity statement and cue word locked — consistency compounds.'
+    return 'Flow is firing. Keep your identity statement and cue word locked. Consistency compounds.'
   }
 
   return 'Run the stack before every game or big moment. Same ritual, same identity, every time.'

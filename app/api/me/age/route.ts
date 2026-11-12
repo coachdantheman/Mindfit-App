@@ -4,13 +4,14 @@ import { verifyLockedApiUser } from '@/lib/api-auth'
 import { AGE_BLOCK_COOKIE, isUnder13, validBirth } from '@/lib/age'
 import { deleteUserCompletely } from '@/lib/account-delete'
 import { recordBirth } from '@/lib/consent'
+import { isPlainObject } from '@/lib/validate'
 
 export async function POST(req: Request) {
   const auth = await verifyLockedApiUser('member')
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json().catch(() => ({}))
-  const birth = validBirth(body.year, body.month)
+  const body = await req.json().catch(() => null)
+  const birth = isPlainObject(body) ? validBirth(body.year, body.month) : null
   if (!birth) return NextResponse.json({ error: 'Pick a valid month and year.' }, { status: 400 })
 
   const admin = createAdminClient()

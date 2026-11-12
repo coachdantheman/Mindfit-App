@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { isISODate, isPlainObject } from '@/lib/validate'
 
 const FIELDS = ['full_name', 'primary_sport', 'secondary_sport', 'next_competition_at', 'next_competition_time', 'terms_accepted_at', 'default_bedtime', 'default_wake_time'] as const
 const TIME_FIELDS = ['next_competition_time', 'default_bedtime', 'default_wake_time'] as const
@@ -35,15 +36,21 @@ export async function PATCH(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json()
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const updates: Record<string, unknown> = {}
   for (const key of FIELDS) {
-    if (body[key] !== undefined) {
-      updates[key] = typeof body[key] === 'string'
-        ? (body[key].trim() || null)
-        : body[key]
+    const v = body[key]
+    if (v === undefined) continue
+    if (key === 'terms_accepted_at') continue
+    if (v !== null && typeof v !== 'string') return NextResponse.json({ error: `${key} is invalid` }, { status: 400 })
+    const value = typeof v === 'string' ? (v.trim().slice(0, 120) || null) : null
+    if (key === 'next_competition_at' && value !== null && !isISODate(value)) {
+      return NextResponse.json({ error: 'next_competition_at must be YYYY-MM-DD' }, { status: 400 })
     }
+    updates[key] = value
   }
+  if (body.terms_accepted_at !== undefined) updates.terms_accepted_at = true
 
   if (typeof updates.full_name === 'string' && updates.full_name.length > 120) {
     return NextResponse.json({ error: 'Name is too long.' }, { status: 400 })
@@ -90,7 +97,7 @@ export async function PATCH(req: Request) {
     if (isSchemaCacheError(error)) {
       return NextResponse.json({
         error:
-          "Supabase's schema cache is stale — it doesn't see a new column/function yet. " +
+          "Supabase's schema cache is stale. It doesn't see a new column/function yet. " +
           "Fix: in Supabase Dashboard → Project Settings → API, click 'Restart server'. " +
           "Or run `NOTIFY pgrst, 'reload schema';` in the SQL editor. " +
           `(Raw error: ${error.message})`,

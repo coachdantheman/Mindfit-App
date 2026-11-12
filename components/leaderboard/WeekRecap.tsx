@@ -71,9 +71,9 @@ export default function WeekRecap() {
 
   const stats = [
     { label: 'Points', value: data.points.toLocaleString('en-US') },
-    { label: 'League', value: data.league ? `${ordinal(data.league.rank)} of ${data.league.size}` : '—' },
+    { label: 'League', value: data.league ? `${ordinal(data.league.rank)} of ${data.league.size}` : '-' },
     { label: 'Clutch Days', value: String(data.clutchDays) },
-    { label: 'Streak', value: data.streak > 0 ? `${data.streak} day${data.streak === 1 ? '' : 's'}` : '—' },
+    { label: 'Streak', value: data.streak > 0 ? `${data.streak} day${data.streak === 1 ? '' : 's'}` : '-' },
   ]
 
   return (

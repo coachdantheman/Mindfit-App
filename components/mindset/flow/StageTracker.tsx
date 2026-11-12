@@ -66,7 +66,7 @@ export default function StageTracker() {
         <h3 className="font-semibold text-fg-1">What stage are you in right now?</h3>
       </div>
       <p className="text-sm text-fg-4 mb-4">
-        Track the 4-stage cycle — Struggle → Release → Flow → Recovery → Struggle. Tap the one you're in.
+        Track the 4-stage cycle: Struggle → Release → Flow → Recovery → Struggle. Tap the one you're in.
       </p>
 
       {!loading && latest && (
@@ -87,7 +87,7 @@ export default function StageTracker() {
             <p className="text-xs text-fg-4">
               Next in the cycle:{' '}
               <span className="text-cta font-semibold">{STAGE_META[suggest].label}</span>
-              {latest.stage === 'flow' && <span className="text-fg-4"> — always transition through Recovery</span>}
+              {latest.stage === 'flow' && <span className="text-fg-4"> (always transition through Recovery)</span>}
             </p>
           )}
         </div>

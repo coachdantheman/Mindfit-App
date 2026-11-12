@@ -164,11 +164,11 @@ export default function FlowStateTab() {
         {showStats && (
           <div className="px-5 pb-5 space-y-5">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <StatCard label="Competition streak" value={streak > 0 ? `${streak}` : '—'}
+              <StatCard label="Competition streak" value={streak > 0 ? `${streak}` : '-'}
                 suffix={streak > 0 ? (streak === 1 ? 'competition' : 'competitions') : 'run stack next comp'} gold />
               <StatCard label="Competitions" value={logs.length.toString()} />
               <StatCard label="5A sessions" value={sessions.length.toString()} />
-              <StatCard label="Top trigger" value={top ? TRIGGER_LABEL[top] : '—'} small />
+              <StatCard label="Top trigger" value={top ? TRIGGER_LABEL[top] : '-'} small />
             </div>
             <FlowBarChart logs={logs} />
             <StageTracker />
@@ -195,7 +195,7 @@ function gameRoutine(game: UpcomingGame | null, now = new Date()): Routine | nul
       label: 'Game tomorrow',
       headline: `Tomorrow${vs}${start !== null ? ` at ${formatClock(start)}` : ''}. Set up flow tonight.`,
       steps: [
-        'Visualize your first three plays going right — two minutes, eyes closed.',
+        'Visualize your first three plays going right. Two minutes, eyes closed.',
         'Pick the cue word you’ll use when it gets loud.',
         'Lights out on time. Sleep is the strongest flow trigger you control.',
       ],

@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { prefsFor, DEFAULT_PREFS } from '@/lib/notify'
 import { isValidTimeZone } from '@/lib/leaderboard'
+import { isPlainObject } from '@/lib/validate'
 
 const BOOL_KEYS = ['push_daily_quote', 'push_reminders', 'push_progress', 'push_coach', 'email_progress', 'email_weekly', 'email_coach'] as const
 
@@ -17,10 +18,12 @@ export async function GET() {
 export async function PUT(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
-  const body = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const update: Record<string, unknown> = {}
   for (const k of BOOL_KEYS) if (typeof body[k] === 'boolean') update[k] = body[k]
-  if (Number.isInteger(body.reminder_hour) && body.reminder_hour >= 6 && body.reminder_hour <= 21) update.reminder_hour = body.reminder_hour
+  const hour = body.reminder_hour
+  if (Number.isInteger(hour) && (hour as number) >= 6 && (hour as number) <= 21) update.reminder_hour = hour
   if (typeof body.timezone === 'string' && isValidTimeZone(body.timezone)) update.timezone = body.timezone
   if (Object.keys(update).length === 0) return NextResponse.json({ error: 'Nothing to update.' }, { status: 400 })
 

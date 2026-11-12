@@ -18,7 +18,7 @@ export default function FlowBarChart({ logs, title = 'Flow Log' }: Props) {
       label: format(parseISO(l.logged_at), 'M/d'),
       score: l.flow_score,
       stage: l.ending_stage,
-      sport: l.sport || '—',
+      sport: l.sport || '-',
     }))
 
   return (
@@ -47,7 +47,7 @@ export default function FlowBarChart({ logs, title = 'Flow Log' }: Props) {
                 color: 'rgb(var(--fg-1))',
                 fontSize: 13,
               }}
-              formatter={(v) => (v == null ? '—' : String(v))}
+              formatter={(v) => (v == null ? '-' : String(v))}
             />
             <Bar dataKey="score" fill="var(--cta)" radius={[4, 4, 0, 0]} />
           </BarChart>

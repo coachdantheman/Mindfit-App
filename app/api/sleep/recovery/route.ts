@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { intOrNull, isISODate, isPlainObject, optionalString } from '@/lib/validate'
 
 export async function GET(req: Request) {
   const auth = await verifyApiUser()
@@ -28,7 +29,16 @@ export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json()
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
+  if (body.entry_date && !isISODate(body.entry_date)) return NextResponse.json({ error: 'Invalid date.' }, { status: 400 })
+  const activities = Array.isArray(body.activities)
+    ? body.activities.slice(0, 50).flatMap(a => {
+        if (!isPlainObject(a)) return []
+        const type = optionalString(a.type, 40)
+        return type ? [{ type, duration_min: intOrNull(a.duration_min, 0, 600) ?? 0 }] : []
+      })
+    : []
   const admin = createAdminClient()
 
   const { data, error } = await admin
@@ -36,9 +46,9 @@ export async function POST(req: Request) {
     .upsert({
       user_id: auth.userId,
       entry_date: body.entry_date || new Date().toISOString().split('T')[0],
-      is_rest_day: body.is_rest_day || false,
-      activities: body.activities || [],
-      notes: body.notes || null,
+      is_rest_day: body.is_rest_day === true,
+      activities,
+      notes: optionalString(body.notes, 4000),
     }, { onConflict: 'user_id,entry_date' })
     .select()
     .single()

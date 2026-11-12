@@ -9,6 +9,7 @@ import Skeleton from '@/components/shared/Skeleton'
 import Link from 'next/link'
 import { Habit, HabitCheck } from '@/lib/habits'
 import { localDateISO } from '@/lib/dates'
+import GoalTracker from '@/components/mindset/GoalTracker'
 
 const GOAL_LABELS: Record<GoalType, string> = {
   weekly: 'Weekly Goals',
@@ -20,12 +21,14 @@ interface GoalFieldsProps {
   type: GoalType
   title: string
   desc: string
+  endDate: string
   onType: (t: GoalType) => void
   onTitle: (v: string) => void
   onDesc: (v: string) => void
+  onEndDate: (v: string) => void
 }
 
-function GoalFields({ type, title, desc, onType, onTitle, onDesc }: GoalFieldsProps) {
+function GoalFields({ type, title, desc, endDate, onType, onTitle, onDesc, onEndDate }: GoalFieldsProps) {
   return (
     <>
       <div className="flex gap-2">
@@ -50,11 +53,23 @@ function GoalFields({ type, title, desc, onType, onTitle, onDesc }: GoalFieldsPr
       <textarea
         value={desc}
         onChange={e => onDesc(e.target.value)}
-        aria-label="Goal description"
-        placeholder="Description (optional)"
+        aria-label="Why this goal matters"
+        placeholder="Why does this matter to who you are becoming? (optional)"
         rows={2}
+        maxLength={500}
         className="textarea-field"
       />
+      <label className="flex items-center justify-between gap-3 text-sm text-fg-3">
+        <span>End date <span className="text-fg-4">(optional)</span></span>
+        <input
+          type="date"
+          value={endDate}
+          min={localDateISO()}
+          onChange={e => onEndDate(e.target.value)}
+          aria-label="Goal end date"
+          className="input-field !w-auto"
+        />
+      </label>
     </>
   )
 }
@@ -67,6 +82,7 @@ export default function GoalsSection() {
   const [formType, setFormType] = useState<GoalType>('weekly')
   const [formTitle, setFormTitle] = useState('')
   const [formDesc, setFormDesc] = useState('')
+  const [formEnd, setFormEnd] = useState('')
   const [formActions, setFormActions] = useState<string[]>([''])
   const [habits, setHabits] = useState<Habit[]>([])
   const [checks, setChecks] = useState<HabitCheck[]>([])
@@ -75,6 +91,7 @@ export default function GoalsSection() {
   const [editType, setEditType] = useState<GoalType>('weekly')
   const [editTitle, setEditTitle] = useState('')
   const [editDesc, setEditDesc] = useState('')
+  const [editEnd, setEditEnd] = useState('')
   const [editSaving, setEditSaving] = useState(false)
   const progressTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>())
   const confirmedProgress = useRef(new Map<string, number>())
@@ -97,13 +114,14 @@ export default function GoalsSection() {
       const res = await fetch('/api/mindset/goals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ goal_type: formType, title: formTitle, description: formDesc || null }),
+        body: JSON.stringify({ goal_type: formType, title: formTitle, description: formDesc || null, target_date: formEnd || null }),
       })
       if (res.ok) {
         const data = await res.json()
         setGoals(prev => [data, ...prev])
         setFormTitle('')
         setFormDesc('')
+        setFormEnd('')
         setFormActions([''])
         setShowForm(false)
         const created: Habit[] = []
@@ -166,6 +184,7 @@ export default function GoalsSection() {
     setEditType(g.goal_type)
     setEditTitle(g.title)
     setEditDesc(g.description ?? '')
+    setEditEnd(g.target_date ?? '')
   }
 
   const saveEdit = async (e: React.FormEvent) => {
@@ -174,14 +193,15 @@ export default function GoalsSection() {
     setEditSaving(true)
     const title = editTitle.trim()
     const description = editDesc.trim() || null
+    const target_date = editEnd || null
     try {
       const res = await fetch('/api/mindset/goals', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: editingId, title, description, goal_type: editType }),
+        body: JSON.stringify({ id: editingId, title, description, goal_type: editType, target_date }),
       })
       if (res.ok) {
-        setGoals(prev => prev.map(g => g.id === editingId ? { ...g, title, description, goal_type: editType } : g))
+        setGoals(prev => prev.map(g => g.id === editingId ? { ...g, title, description, goal_type: editType, target_date } : g))
         setEditingId(null)
         notify('Goal updated ✓')
       } else {
@@ -249,9 +269,11 @@ export default function GoalsSection() {
               type={formType}
               title={formTitle}
               desc={formDesc}
+              endDate={formEnd}
               onType={setFormType}
               onTitle={setFormTitle}
               onDesc={setFormDesc}
+              onEndDate={setFormEnd}
             />
             <div className="space-y-2">
               <p className="text-sm text-fg-2">What daily action will get you there?</p>
@@ -306,9 +328,11 @@ export default function GoalsSection() {
                       type={editType}
                       title={editTitle}
                       desc={editDesc}
+                      endDate={editEnd}
                       onType={setEditType}
                       onTitle={setEditTitle}
                       onDesc={setEditDesc}
+                      onEndDate={setEditEnd}
                     />
                     <div className="flex gap-2">
                       <SaveButton
@@ -329,7 +353,8 @@ export default function GoalsSection() {
                         <p className={`text-sm font-medium ${g.is_completed ? 'text-green-400 line-through' : 'text-fg-2'}`}>
                           {g.title}
                         </p>
-                        {g.description && <p className="text-xs text-fg-4 mt-0.5">{g.description}</p>}
+                        {g.description && <p className="text-xs text-fg-3 mt-0.5 italic">{g.description}</p>}
+                        {g.target_date && !g.is_completed && <DaysLeft date={g.target_date} />}
                         {habits.some(h => h.goal_id === g.id) && (
                           <div className="mt-2 space-y-1">
                             {habits.filter(h => h.goal_id === g.id).map(h => (
@@ -357,24 +382,7 @@ export default function GoalsSection() {
                         </button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 bg-surface-3 rounded-full h-2 overflow-hidden">
-                        <div
-                          className="h-full bg-cta rounded-full transition-[width]"
-                          style={{ width: `${g.progress}%` }}
-                        />
-                      </div>
-                      <span className="text-xs text-fg-3 w-8 text-right">{g.progress}%</span>
-                      <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        step={5}
-                        value={g.progress}
-                        onChange={e => updateProgress(g.id, parseInt(e.target.value))}
-                        className="w-20 accent-cta"
-                      />
-                    </div>
+                    <GoalTracker value={g.progress} label={g.title} onChange={v => updateProgress(g.id, v)} />
                   </div>
                 )} />
             </div>
@@ -383,4 +391,13 @@ export default function GoalsSection() {
       </div>
     </div>
   )
+}
+
+function DaysLeft({ date }: { date: string }) {
+  const today = new Date(`${localDateISO()}T00:00:00`)
+  const end = new Date(`${date}T00:00:00`)
+  const days = Math.round((end.getTime() - today.getTime()) / 86_400_000)
+  const text = days < 0 ? `Ended ${Math.abs(days)} day${days === -1 ? '' : 's'} ago` : days === 0 ? 'Ends today' : `${days} day${days === 1 ? '' : 's'} left`
+  const tone = days < 0 ? 'text-red-400 border-red-400/40' : days <= 7 ? 'text-amber-400 border-amber-400/40' : 'text-fg-3 border-edge'
+  return <span className={`inline-block mt-1.5 text-[11px] px-2 py-0.5 rounded-full border ${tone}`}>{text}</span>
 }

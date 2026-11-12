@@ -85,7 +85,7 @@ export default function TierResult({ result, label, onViewProgress }: Props) {
           </ul>
         )}
         {!result.reliable && (
-          <p className="text-xs text-amber-400">High-rep sets make the 1RM estimate rough — test a set of 1–5 reps for a better read.</p>
+          <p className="text-xs text-amber-400">High-rep sets make the 1RM estimate rough. Test a set of 1–5 reps for a better read.</p>
         )}
       </div>
 
@@ -94,7 +94,7 @@ export default function TierResult({ result, label, onViewProgress }: Props) {
           <p className="text-xs text-fg-3">
             Next: <span className="font-semibold text-fg-1">{TIER_LABEL[result.nextTier.tier]}</span> at {result.nextTier.value} {unit}
           </p>
-        ) : <p className="text-xs text-fg-3">Top tier — keep building.</p>}
+        ) : <p className="text-xs text-fg-3">Top tier. Keep building.</p>}
         {onViewProgress && (
           <button type="button" onClick={onViewProgress} className="text-xs text-cta font-medium min-h-[44px]">View progress →</button>
         )}

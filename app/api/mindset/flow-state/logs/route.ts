@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
-import { intOrNull } from '@/lib/validate'
+import { intOrNull, isDateTime, isPlainObject, isUUID, optionalString } from '@/lib/validate'
 
 export async function GET(req: Request) {
   const auth = await verifyApiUser()
@@ -36,22 +36,25 @@ export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json()
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const admin = createAdminClient()
 
   const { data, error } = await admin
     .from('flow_logs')
     .insert({
       user_id: auth.userId,
-      flow_session_id: body.flow_session_id || null,
-      logged_at: body.logged_at || new Date().toISOString(),
-      sport: body.sport || null,
+      flow_session_id: isUUID(body.flow_session_id) ? body.flow_session_id : null,
+      logged_at: isDateTime(body.logged_at) ? body.logged_at : new Date().toISOString(),
+      sport: optionalString(body.sport, 40),
       challenge_level: intOrNull(body.challenge_level, 1, 10),
       skill_level: intOrNull(body.skill_level, 1, 10),
       flow_score: intOrNull(body.flow_score, 1, 10),
-      ending_stage: body.ending_stage ?? null,
-      triggers_fired: body.triggers_fired || [],
-      journal_note: body.journal_note || null,
+      ending_stage: optionalString(body.ending_stage, 40),
+      triggers_fired: Array.isArray(body.triggers_fired)
+        ? body.triggers_fired.filter((t: unknown): t is string => typeof t === 'string').map(t => t.slice(0, 80)).slice(0, 20)
+        : [],
+      journal_note: optionalString(body.journal_note, 4000),
     })
     .select()
     .single()

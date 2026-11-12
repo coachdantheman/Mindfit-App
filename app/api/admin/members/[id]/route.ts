@@ -2,11 +2,13 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { deleteUserCompletely } from '@/lib/account-delete'
+import { isUUID } from '@/lib/validate'
 
 export async function DELETE(_req: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const auth = await verifyApiUser('admin')
   if (auth instanceof NextResponse) return auth
+  if (!isUUID(params.id)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   if (params.id === auth.userId) return NextResponse.json({ error: 'Delete your own account from Settings.' }, { status: 400 })
 
   const admin = createAdminClient()

@@ -3,6 +3,7 @@ import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { VAULT } from '@/lib/data/quote-vault'
+import { isPlainObject } from '@/lib/validate'
 
 const KINDS = ['fav_quote', 'pin_person'] as const
 type Kind = typeof KINDS[number]
@@ -38,6 +39,7 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
 
   const { kind, key, on } = body
   if (typeof kind !== 'string' || !(KINDS as readonly string[]).includes(kind)) {

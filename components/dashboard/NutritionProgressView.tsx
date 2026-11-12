@@ -87,7 +87,7 @@ export default function NutritionProgressView({ entries, goal }: Props) {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
           label="Avg Calories"
-          value={avgCal7 || '—'}
+          value={avgCal7 || '-'}
           unit={goal ? `/${goal.calories}` : 'kcal'}
           delta={logged30.length > 0 ? {
             value: `${dailyDelta > 0 ? '+' : ''}${dailyDelta}`,
@@ -99,7 +99,7 @@ export default function NutritionProgressView({ entries, goal }: Props) {
         />
         <StatCard
           label="Goal Adherence"
-          value={adherencePct != null ? adherencePct : '—'}
+          value={adherencePct != null ? adherencePct : '-'}
           unit={adherencePct != null ? '%' : ''}
           color="var(--chart-4)"
           context={goal ? 'Days within ±10% of calorie goal' : 'Set a calorie goal to track'}
@@ -137,7 +137,7 @@ export default function NutritionProgressView({ entries, goal }: Props) {
       {/* 30-day calorie chart with goal reference line */}
       <div className="card p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-fg-1 text-sm">Calories — Last 30 Days</h3>
+          <h3 className="font-semibold text-fg-1 text-sm">Calories: Last 30 Days</h3>
           {goal && <span className="text-xs text-fg-4">goal {goal.calories} kcal</span>}
         </div>
         <ResponsiveContainer width="100%" height={220}>

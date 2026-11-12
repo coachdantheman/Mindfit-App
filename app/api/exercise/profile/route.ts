@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
-import { clampNumber } from '@/lib/validate'
+import { clampNumber, isPlainObject } from '@/lib/validate'
 
 export async function GET() {
   const auth = await verifyApiUser()
@@ -26,7 +26,8 @@ export async function PUT(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const sex = body.sex === 'male' || body.sex === 'female' ? body.sex : null
   const bodyweight = clampNumber(body.bodyweight_lb, 50, 500)
   const age = clampNumber(body.age, 10, 80)

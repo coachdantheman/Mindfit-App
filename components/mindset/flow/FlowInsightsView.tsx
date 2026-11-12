@@ -29,7 +29,7 @@ export default function FlowInsightsView() {
         ← Back to Mindset
       </button>
       <div>
-        <h1 className="text-2xl font-bold text-fg-1">Flow insights — last 7 days</h1>
+        <h1 className="text-2xl font-bold text-fg-1">Flow insights: last 7 days</h1>
         <p className="text-sm text-fg-4 mt-1">
           {insights.sessions_7d} session{insights.sessions_7d === 1 ? '' : 's'} · {insights.logs_7d} log{insights.logs_7d === 1 ? '' : 's'}
         </p>
@@ -45,16 +45,16 @@ export default function FlowInsightsView() {
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        <BigStat label="Avg flow score" value={insights.avg_flow_score != null ? insights.avg_flow_score.toFixed(1) : '—'} gold />
-        <BigStat label="Flow % of sessions" value={insights.flow_pct != null ? `${insights.flow_pct}%` : '—'} />
+        <BigStat label="Avg flow score" value={insights.avg_flow_score != null ? insights.avg_flow_score.toFixed(1) : '-'} gold />
+        <BigStat label="Flow % of sessions" value={insights.flow_pct != null ? `${insights.flow_pct}%` : '-'} />
         <BigStat
           label="Most common stage"
-          value={insights.most_common_stage ? STAGE_META[insights.most_common_stage].label : '—'}
+          value={insights.most_common_stage ? STAGE_META[insights.most_common_stage].label : '-'}
           emoji={insights.most_common_stage ? STAGE_META[insights.most_common_stage].emoji : undefined}
         />
         <BigStat
           label="Top trigger"
-          value={insights.top_trigger ? TRIGGER_LABEL[insights.top_trigger] : '—'}
+          value={insights.top_trigger ? TRIGGER_LABEL[insights.top_trigger] : '-'}
           small
         />
       </div>

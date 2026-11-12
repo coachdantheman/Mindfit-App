@@ -386,7 +386,7 @@ export default function SleepPage() {
             <h3 className="font-semibold text-fg-1 mb-3">Sleep Better Tonight</h3>
             <ul className="space-y-3">
               {[
-                { title: 'Consistent schedule', desc: 'Go to bed and wake up at the same time every day — even weekends.' },
+                { title: 'Consistent schedule', desc: 'Go to bed and wake up at the same time every day, even weekends.' },
                 { title: 'Screen curfew', desc: 'Put your phone down 30–60 minutes before bed. Blue light suppresses melatonin.' },
                 { title: 'Cool & dark room', desc: 'Keep your room between 65–68°F. Use blackout curtains if possible.' },
                 { title: 'No caffeine after 2pm', desc: 'Caffeine has a half-life of 5–6 hours. That afternoon coffee is still in your system at midnight.' },
@@ -429,7 +429,7 @@ export default function SleepPage() {
             <h3 className="font-semibold text-cta mb-2">Rest = Growth</h3>
             <p className="text-sm text-fg-2">
               Muscle is broken down in training but built during rest. Memory consolidation happens during deep sleep.
-              Your body and brain need recovery to adapt and grow stronger. Rest days aren&apos;t lazy days — they&apos;re growth days.
+              Your body and brain need recovery to adapt and grow stronger. Rest days aren&apos;t lazy days. They&apos;re growth days.
             </p>
           </div>
         </div>

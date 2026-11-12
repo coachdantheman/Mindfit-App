@@ -137,13 +137,20 @@ export default function SettingsPage() {
     <div className="max-w-lg">
       <h1 className="page-title mb-6">Settings</h1>
 
-      <div className="space-y-4">
-        {/* Account */}
-        <div className="card p-5">
-          <h3 className="font-semibold text-fg-1 mb-1 text-sm">Account</h3>
-          <p className="text-sm text-fg-3 mb-4 break-all">{email}</p>
-
-          <div className="space-y-4">
+      <div className="space-y-8">
+        {/* Profile */}
+        <Section title="Profile">
+          <div className="card p-5">
+            <div className="flex items-center gap-3 mb-5">
+              <span className="w-12 h-12 rounded-full bg-cta/15 border border-cta/40 text-cta font-semibold flex items-center justify-center uppercase">
+                {(fullName || email || '?').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('')}
+              </span>
+              <div className="min-w-0">
+                <p className="font-semibold text-fg-1 truncate">{fullName || 'Your name'}</p>
+                <p className="text-sm text-fg-4 truncate">{email}</p>
+              </div>
+            </div>
+            <div className="space-y-4">
             <div>
               <label htmlFor="settings-name" className="block text-xs uppercase tracking-wide text-fg-4 mb-1">Name</label>
               <div className="flex flex-col sm:flex-row gap-2">
@@ -164,43 +171,13 @@ export default function SettingsPage() {
               <StatusLine s={nameStatus} />
             </div>
 
-            <form onSubmit={savePassword}>
-              <label htmlFor="settings-password" className="block text-xs uppercase tracking-wide text-fg-4 mb-1">Set or change password</label>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <input
-                  id="settings-password"
-                  type="password"
-                  autoComplete="new-password"
-                  minLength={8}
-                  required
-                  value={newPassword}
-                  onChange={e => setNewPassword(e.target.value)}
-                  placeholder="At least 8 characters"
-                  className="input-field"
-                />
-                <button type="submit" disabled={pwSaving || newPassword.length < 8} className="btn-secondary sm:shrink-0">
-                  {pwSaving ? 'Saving…' : 'Save'}
-                </button>
-              </div>
-              <p className="text-xs text-fg-4 mt-1">Signed in from an invite link? Set a password here so you can sign in next time.</p>
-              <StatusLine s={pwStatus} />
-            </form>
-
-            <button
-              onClick={signOut}
-              className="text-red-400 hover:text-red-300 text-sm font-medium transition-colors border border-red-400/20 hover:border-red-400/40 px-4 py-2 rounded-xl"
-            >
-              Sign out
-            </button>
+            </div>
           </div>
-        </div>
-
-        {/* Sports */}
-        <div className="card p-5">
-          <h3 className="font-semibold text-fg-1 mb-1 text-sm">Sports</h3>
-          <p className="text-sm text-fg-4 mb-4">
-            Used to autofill your Flow State sessions and logs. Your next game date drives the game-day fueling plan in Nutrition.
-          </p>
+          <div className="card p-5">
+            <h3 className="font-semibold text-fg-1 mb-1 text-sm">Sports and next game</h3>
+            <p className="text-sm text-fg-4 mb-4">
+              Used to autofill your Flow State sessions and logs. Your next game date drives the game-day fueling plan in Nutrition.
+            </p>
           <div className="space-y-3">
             <div>
               <label htmlFor="settings-primary-sport" className="block text-xs uppercase tracking-wide text-fg-4 mb-1">Primary sport</label>
@@ -262,13 +239,14 @@ export default function SettingsPage() {
               <StatusLine s={sportsStatus} />
             </div>
           </div>
-        </div>
+          </div>
+        </Section>
 
-        <SharingCard role={role} />
+        <Section title="My people">
+          <SharingCard role={role} />
+        </Section>
 
-        {role !== 'parent' && <LeaderboardCard />}
-
-        {/* Notifications */}
+        <Section title="Notifications">
         <div className="card p-5">
           <h3 className="font-semibold text-fg-1 mb-4 text-sm">Notifications</h3>
           <DailyQuoteToggle />
@@ -277,7 +255,14 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Appearance */}
+        </Section>
+
+        <Section title="Board and privacy">
+          {role !== 'parent' && <LeaderboardCard />}
+          <AiFeaturesCard />
+        </Section>
+
+        <Section title="Appearance">
         <div className="card p-5">
           <h3 className="font-semibold text-fg-1 mb-1 text-sm">Appearance</h3>
           <p className="text-sm text-fg-4 mb-4">Switch between dark and light mode.</p>
@@ -299,8 +284,11 @@ export default function SettingsPage() {
           </button>
         </div>
 
-        {/* Community */}
-        <div className="web-only card p-5">
+        </Section>
+
+        <div className="web-only">
+          <Section title="Community">
+        <div className="card p-5">
           <h3 className="font-semibold text-fg-1 mb-1 text-sm">MindFit Community</h3>
           <p className="text-sm text-fg-4 mb-4">Connect with other athletes, access courses, and get coached.</p>
           <a
@@ -313,9 +301,10 @@ export default function SettingsPage() {
           </a>
         </div>
 
-        <AiFeaturesCard />
+          </Section>
+        </div>
 
-        {/* Help and safety */}
+        <Section title="Help and legal">
         <div className="card p-5">
           <h3 className="font-semibold text-fg-1 mb-1 text-sm">Help &amp; safety</h3>
           <p className="text-sm text-fg-4 mb-3">
@@ -325,7 +314,6 @@ export default function SettingsPage() {
           <Link href="/support" className="text-sm text-cta hover:underline">Get help or contact support →</Link>
         </div>
 
-        {/* Legal */}
         <div className="card p-5">
           <h3 className="font-semibold text-fg-1 mb-3 text-sm">About</h3>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
@@ -336,8 +324,51 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <DeleteAccountCard />
+        </Section>
+
+        <Section title="Account">
+          <div className="card p-5 space-y-4">
+            <form onSubmit={savePassword}>
+              <label htmlFor="settings-password" className="block text-xs uppercase tracking-wide text-fg-4 mb-1">Set or change password</label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  id="settings-password"
+                  type="password"
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  placeholder="At least 8 characters"
+                  className="input-field"
+                />
+                <button type="submit" disabled={pwSaving || newPassword.length < 8} className="btn-secondary sm:shrink-0">
+                  {pwSaving ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+              <p className="text-xs text-fg-4 mt-1">Signed in from an invite link? Set a password here so you can sign in next time.</p>
+              <StatusLine s={pwStatus} />
+            </form>
+
+            <button
+              onClick={signOut}
+              className="text-red-400 hover:text-red-300 text-sm font-medium transition-colors border border-red-400/20 hover:border-red-400/40 px-4 py-2 rounded-xl"
+            >
+              Sign out
+            </button>
+          </div>
+          <DeleteAccountCard />
+        </Section>
       </div>
     </div>
+  )
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="space-y-3">
+      <h2 className="text-[11px] uppercase tracking-[0.22em] text-cta font-semibold px-1">{title}</h2>
+      {children}
+    </section>
   )
 }

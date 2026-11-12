@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
-import { isISODate } from '@/lib/validate'
+import { isISODate, isPlainObject, oneOf } from '@/lib/validate'
 import { MEALS } from '@/lib/nutrition'
 
 // Copy one meal (or the whole day) from one date to another.
@@ -10,11 +10,11 @@ export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json()
-  if (!isISODate(body.from_date) || !isISODate(body.to_date)) {
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body) || !isISODate(body.from_date) || !isISODate(body.to_date)) {
     return NextResponse.json({ error: 'from_date and to_date required' }, { status: 400 })
   }
-  const meal = (MEALS as readonly string[]).includes(body.meal_name) ? body.meal_name : null
+  const meal = oneOf(body.meal_name, MEALS)
 
   const admin = createAdminClient()
   let query = admin

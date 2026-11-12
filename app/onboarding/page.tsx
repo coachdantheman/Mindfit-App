@@ -93,7 +93,7 @@ export default function OnboardingPage() {
           </h1>
           <p className="text-fg-3 text-sm leading-relaxed mb-8">
             Before you start training your mind, we&rsquo;ll take a 2-minute baseline of your
-            mental game — your Mental Performance Index (MPI). Every week of training gets
+            mental game: your Mental Performance Index (MPI). Every week of training gets
             measured against today.
           </p>
 

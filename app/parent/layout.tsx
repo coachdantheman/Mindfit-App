@@ -9,9 +9,12 @@ export default async function ParentLayout({ children }: { children: React.React
   const user = await getAuthUserCached()
   if (!user) redirect('/')
   if (user.role !== 'parent' && user.role !== 'admin') {
-    const { count } = await createAdminClient()
-      .from('parent_athletes').select('id', { count: 'exact', head: true }).eq('parent_id', user.userId)
-    if (!count) redirect('/')
+    const admin = createAdminClient()
+    const [{ count }, { count: invites }] = await Promise.all([
+      admin.from('parent_athletes').select('id', { count: 'exact', head: true }).eq('parent_id', user.userId),
+      admin.from('parent_link_requests').select('id', { count: 'exact', head: true }).eq('parent_id', user.userId),
+    ])
+    if (!count && !invites) redirect('/')
   }
 
   return (

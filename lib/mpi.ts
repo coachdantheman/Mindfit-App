@@ -24,8 +24,8 @@ export function calcMPI(scores: Partial<Record<MpiKey, number>>): number {
 }
 
 export function mpiVerdict(mpi: number): string {
-  if (mpi >= 85) return 'Elite mental game — keep sharpening it.'
-  if (mpi >= 70) return 'Strong foundation — a few areas to level up.'
-  if (mpi >= 50) return 'Solid start — real gains are within reach.'
-  return 'Big upside — this is exactly what MindFit trains.'
+  if (mpi >= 85) return 'Elite mental game. Keep sharpening it.'
+  if (mpi >= 70) return 'Strong foundation. A few areas to level up.'
+  if (mpi >= 50) return 'Solid start. Real gains are within reach.'
+  return 'Big upside. This is exactly what MindFit trains.'
 }

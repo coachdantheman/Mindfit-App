@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { removeFromTeam } from '@/lib/teams'
+import { isPlainObject, isUUID } from '@/lib/validate'
 
 // Teams this athlete is on.
 export async function GET() {
@@ -20,8 +21,8 @@ export async function GET() {
 export async function DELETE(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
-  const body = await req.json().catch(() => ({}))
-  if (typeof body.team_id !== 'string') return NextResponse.json({ error: 'team_id required' }, { status: 400 })
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body) || !isUUID(body.team_id)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const admin = createAdminClient()
   const { data: team } = await admin.from('teams').select('id, coach_id').eq('id', body.team_id).maybeSingle()
   if (!team) return NextResponse.json({ error: 'Team not found' }, { status: 404 })

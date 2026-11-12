@@ -262,7 +262,7 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
         <SaveMealSheet
           meal={saveMeal}
           entries={entries.filter(e => e.meal_name === saveMeal)}
-          defaultName={`${saveMeal} – ${date}`}
+          defaultName={`${saveMeal}, ${date}`}
           onSave={saveMealAs}
           onClose={() => setSaveMeal(null)}
         />

@@ -15,7 +15,7 @@ export default function QuoteOfTheDay() {
 
   const share = async () => {
     if (!quote) return
-    const text = `“${quote.text}” — ${quote.author}`
+    const text = `“${quote.text}” ${quote.author}`
     const url = `${window.location.origin}/quote?id=${quote.id}`
     try {
       if (navigator.share) {
@@ -43,7 +43,7 @@ export default function QuoteOfTheDay() {
         “{quote.text}”
       </blockquote>
       <div className="mt-3 flex items-center justify-between gap-3">
-        <p className="text-sm text-fg-3">— {quote.author}</p>
+        <p className="text-sm text-fg-3">{quote.author}</p>
         <div className="flex items-center gap-1 shrink-0">
           <Link href={`/quote?id=${quote.id}`} className="btn-ghost">
             Card

@@ -231,6 +231,17 @@ html.light {
   .pt-safe {
     padding-top: env(safe-area-inset-top);
   }
+  /* Top bar: clear the notch / Dynamic Island with a little breathing room,
+     so the logo row never sits in the status-bar fade. */
+  .pt-safe-bar {
+    padding-top: max(env(safe-area-inset-top), 0px);
+  }
+  .native-app .pt-safe-bar {
+    padding-top: calc(env(safe-area-inset-top) + 6px);
+  }
+  @media (display-mode: standalone) {
+    .pt-safe-bar { padding-top: calc(env(safe-area-inset-top) + 6px); }
+  }
   .scrollbar-none { scrollbar-width: none; }
   .scrollbar-none::-webkit-scrollbar { display: none; }
 }
@@ -293,6 +304,13 @@ html.light .text-purple-300, html.light .text-purple-400 { color: #9333ea; }
 /* iPhone app vs website (see lib/platform.ts) */
 .native-app .web-only { display: none !important; }
 html:not(.native-app) .native-only { display: none !important; }
+
+/* Launch screen: iPhone app and home-screen installs only (LaunchSplash.tsx) */
+.mf-launch { display: none; }
+.native-app .mf-launch { display: block; }
+@media (display-mode: standalone) { .mf-launch { display: block; } }
+.mf-launch .mf-splash { z-index: 90; transition: opacity 0.45s ease; }
+.mf-launch-out .mf-splash { opacity: 0; pointer-events: none; }
 
 /* App-open splash (components/shared/Splash.tsx) */
 .mf-splash {

@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyUnsubscribe } from '@/lib/unsubscribe'
 import { DEFAULT_PREFS } from '@/lib/notify'
+import { clientIp, rateLimit } from '@/lib/rate-limit'
+import { isUUID, oneOf } from '@/lib/validate'
+
+const UNSUB_CATEGORIES = ['email_progress', 'email_weekly', 'email_coach', 'all'] as const
 
 // One-click unsubscribe from the link in every engagement email (GET) and
 // from mail apps using List-Unsubscribe-Post (POST). No sign-in needed:
@@ -11,7 +15,7 @@ async function unsubscribe(req: Request) {
   const u = url.searchParams.get('u') ?? ''
   const c = url.searchParams.get('c') ?? ''
   const t = url.searchParams.get('t') ?? ''
-  if (!/^[0-9a-f-]{36}$/i.test(u) || !verifyUnsubscribe(u, c, t)) return null
+  if (!isUUID(u) || !oneOf(c, UNSUB_CATEGORIES) || t.length > 200 || !verifyUnsubscribe(u, c, t)) return null
   const off = c === 'all' ? { email_progress: false, email_weekly: false, email_coach: false } : { [c]: false }
   const admin = createAdminClient()
   const { data: existing } = await admin.from('notification_prefs').select('user_id').eq('user_id', u).maybeSingle()
@@ -25,6 +29,8 @@ const LABEL: Record<string, string> = {
 }
 
 export async function GET(req: Request) {
+  const limited = await rateLimit(`unsubscribe:ip:${clientIp(req)}`, 30, 3600)
+  if (limited) return limited
   const c = await unsubscribe(req)
   const msg = c
     ? `You're unsubscribed from ${LABEL[c]}. You can turn them back on in Settings → Notifications.`
@@ -38,6 +44,8 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const limited = await rateLimit(`unsubscribe:ip:${clientIp(req)}`, 30, 3600)
+  if (limited) return limited
   const c = await unsubscribe(req)
   return NextResponse.json({ ok: !!c }, { status: c ? 200 : 400 })
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { sendSignInCode } from '@/lib/invites'
-import { isEmail } from '@/lib/validate'
+import { isEmail, isPlainObject } from '@/lib/validate'
 import { clientIp, rateLimit } from '@/lib/rate-limit'
 import { AGE_BLOCK_COOKIE } from '@/lib/age'
 
@@ -11,7 +11,9 @@ import { AGE_BLOCK_COOKIE } from '@/lib/age'
 // password (supabase.auth.updateUser). The response is the same whether or
 // not the email already has an account.
 export async function POST(req: Request) {
-  const { email, termsAccepted, next } = await req.json().catch(() => ({}))
+  const body: Record<string, unknown> = (await req.json().catch(() => null)) ?? {}
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
+  const { email, termsAccepted, next } = body
 
   if (!isEmail(email)) {
     return NextResponse.json({ error: 'A valid email is required.' }, { status: 400 })
@@ -24,8 +26,8 @@ export async function POST(req: Request) {
   }
   const normalized = email.toLowerCase().trim()
   const limited =
-    (await rateLimit(`signup:ip:${clientIp(req)}`, 20, 3600)) ??
-    (await rateLimit(`signup:email:${normalized}`, 10, 3600))
+    (await rateLimit(`signup:ip:${clientIp(req)}`, 20, 3600, { failClosed: true })) ??
+    (await rateLimit(`signup:email:${normalized}`, 10, 3600, { failClosed: true }))
   if (limited) return limited
 
   const sent = await sendSignInCode(createAdminClient(), normalized, next === '/start' ? '/start' : undefined)

@@ -121,7 +121,7 @@ export function computeGoalFromQuiz(q: QuizInput): GoalResult {
   let calories = Math.round(raw / 50) * 50
   if (calories < CALORIE_FLOOR) {
     calories = CALORIE_FLOOR
-    warnings.push(`Your deficit was reduced so you stay above ${CALORIE_FLOOR.toLocaleString()} kcal — growing athletes should not go lower.`)
+    warnings.push(`Your deficit was reduced so you stay above ${CALORIE_FLOOR.toLocaleString()} kcal. Growing athletes should not go lower.`)
   }
   if (calories > CALORIE_CEILING) calories = CALORIE_CEILING
   const adjustment = calories - maintenance
@@ -141,7 +141,7 @@ export function computeGoalFromQuiz(q: QuizInput): GoalResult {
     warnings.push('You chose "lean out" but your target weight is above your current weight.')
   }
   if (Math.abs(q.target_weight_lb - weight) > weight * 0.3) {
-    warnings.push('That target is a big change — talk it through with a parent or coach first.')
+    warnings.push('That target is a big change. Talk it through with a parent or coach first.')
   }
 
   return {

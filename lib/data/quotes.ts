@@ -1,3 +1,5 @@
+import { VAULT } from './quote-vault'
+
 export interface Quote {
   id: string
   text: string
@@ -193,4 +195,15 @@ export function getQuoteOfTheDay(date: Date = new Date()): Quote & { date: strin
 
 export function getQuoteById(id: string): Quote | undefined {
   return QUOTES.find(q => q.id === id)
+}
+
+// Daily quotes plus Quote Vault quotes (ids like "iroh-1"), for share cards.
+export function getShareableQuote(id: string): (Quote & { vault: boolean }) | undefined {
+  const q = getQuoteById(id)
+  if (q) return { ...q, vault: false }
+  for (const p of VAULT) {
+    const v = p.quotes.find(x => x.id === id)
+    if (v) return { id: v.id, text: v.text, author: p.name, vault: true }
+  }
+  return undefined
 }

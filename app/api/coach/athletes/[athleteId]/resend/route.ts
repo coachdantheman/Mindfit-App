@@ -4,11 +4,13 @@ import { verifyApiUser } from '@/lib/api-auth'
 import { rateLimit } from '@/lib/rate-limit'
 import { sendCoachInviteEmail } from '@/lib/email'
 import { signInLinkFor } from '@/lib/invites'
+import { isUUID } from '@/lib/validate'
 
 export async function POST(_req: Request, props: { params: Promise<{ athleteId: string }> }) {
   const params = await props.params;
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
+  if (!isUUID(params.athleteId)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const limited = await rateLimit(`invite-resend:${auth.userId}`, 30, 3600)
   if (limited) return limited
 

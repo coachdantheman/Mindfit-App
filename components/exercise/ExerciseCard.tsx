@@ -214,7 +214,7 @@ export default function ExerciseCard({ exercise, last, onChange, onRemove, onSet
         <div className="space-y-2 pt-1 border-t border-edge-muted">
           {timed && (
             <div>
-              <p className="text-xs text-fg-4 mb-1">Rest after each rep (sec) — starts the rest timer</p>
+              <p className="text-xs text-fg-4 mb-1">Rest after each rep (sec): starts the rest timer</p>
               <div className="flex flex-wrap gap-1.5">
                 {exercise.sets.map((s, i) => (
                   <input key={i} type="number" inputMode="numeric" min="0" value={s.rest}

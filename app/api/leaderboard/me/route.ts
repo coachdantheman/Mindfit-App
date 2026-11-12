@@ -5,6 +5,7 @@ import { verifyApiUser } from '@/lib/api-auth'
 import { isValidAlias } from '@/lib/leaderboard'
 import { consentFlags } from '@/lib/consent-flags'
 import { hasProfanity } from '@/lib/profanity'
+import { isPlainObject } from '@/lib/validate'
 
 // Leaderboard privacy settings. Kept apart from /api/profile because its
 // update_user_profile RPC whitelists columns and would drop these.
@@ -26,7 +27,8 @@ export async function PATCH(req: Request) {
   const auth = await verifyApiUser('member', 'coach', 'admin')
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const updates: Record<string, unknown> = {}
   if (typeof body.leaderboard_visible === 'boolean') updates.leaderboard_visible = body.leaderboard_visible
   if (body.leaderboard_alias !== undefined) {

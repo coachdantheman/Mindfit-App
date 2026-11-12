@@ -10,7 +10,7 @@ export function readinessScore(ratings: ReadinessRatings): number {
 }
 
 export function readinessVerdict(score: number): string {
-  return score >= 80 ? 'Locked in — peak window.' :
+  return score >= 80 ? 'Locked in: peak window.' :
     score >= 65 ? 'Solid. Execute with intent.' :
     score >= 50 ? 'Steady. Protect your focus.' :
     'Recover first. Identity over output.'

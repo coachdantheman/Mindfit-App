@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { addToTeam, normalizeCode } from '@/lib/teams'
 import { clientIp, rateLimit } from '@/lib/rate-limit'
+import { isPlainObject } from '@/lib/validate'
 
 async function findTeam(code: string) {
   const admin = createAdminClient()
@@ -34,7 +35,8 @@ export async function POST(req: Request) {
   const limited = await rateLimit(`join:${auth.userId}`, 20, 3600)
   if (limited) return limited
 
-  const body = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Team codes are 6 letters and numbers.' }, { status: 400 })
   const code = normalizeCode(body.code)
   if (!code) return NextResponse.json({ error: 'Team codes are 6 letters and numbers.' }, { status: 400 })
   const { admin, team, coachName } = await findTeam(code)

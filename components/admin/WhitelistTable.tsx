@@ -70,7 +70,7 @@ export default function WhitelistTable({ refreshKey = 0 }: { refreshKey?: number
                       {e.registered ? 'Has account' : 'No account yet'}
                     </span>
                   </td>
-                  <td className="py-2.5 pr-3 text-fg-4 hidden md:table-cell">{e.source === 'skool' ? 'Skool' : e.notes || '—'}</td>
+                  <td className="py-2.5 pr-3 text-fg-4 hidden md:table-cell">{e.source === 'skool' ? 'Skool' : e.notes || '-'}</td>
                   <td className="py-2.5 text-right">
                     <button
                       type="button"

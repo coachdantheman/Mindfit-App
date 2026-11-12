@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
-import { optionalString, requireString } from '@/lib/validate'
+import { isPlainObject, oneOf, optionalString, requireString } from '@/lib/validate'
 import { matchExercise } from '@/lib/exercise-library'
 import type { ExerciseLibraryRow } from '@/types/exercise'
 
@@ -32,11 +32,12 @@ export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const name = requireString(body.name, 80)
   if (!name) return NextResponse.json({ error: 'Exercise name is required.' }, { status: 400 })
-  const muscle_group = MUSCLE_GROUPS.includes(body.muscle_group) ? body.muscle_group : 'full_body'
-  const measure = MEASURES.includes(body.measure) ? body.measure : 'weight_reps'
+  const muscle_group = oneOf(body.muscle_group, MUSCLE_GROUPS) ?? 'full_body'
+  const measure = oneOf(body.measure, MEASURES) ?? 'weight_reps'
   const equipment = optionalString(body.equipment, 40) ?? 'none'
 
   const admin = createAdminClient()

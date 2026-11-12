@@ -11,6 +11,7 @@ import PreBuiltWorkouts from '@/components/exercise/PreBuiltWorkouts'
 import PracticeLog from '@/components/exercise/PracticeLog'
 import GameDay from '@/components/exercise/GameDay'
 import LessonLinks from '@/components/shared/LessonLinks'
+import PendingGameBanner from '@/components/shared/PendingGameBanner'
 import { cached } from '@/lib/api-cache'
 import { clearDraft, draftFromWorkout, draftStats, loadDraft, saveDraft, type WorkoutDraft } from '@/lib/workout-draft'
 
@@ -29,7 +30,7 @@ const TABS: { key: Tab; label: string }[] = [
 
 export default function ExercisePage() {
   const [tab, setTab] = useState<Tab>('plan')
-  // Deep links like /exercise?tab=practice&session=<id> from the Flow Stack.
+  // Deep links like /exercise?tab=gameday&session=<id> from the Flow Stack.
   useEffect(() => {
     const t = new URLSearchParams(window.location.search).get('tab')
     if (t && TABS.some(x => x.key === t)) setTab(t as Tab)
@@ -57,7 +58,10 @@ export default function ExercisePage() {
       setSuggestedBodyweight(d.suggested_bodyweight_lb ?? null)
     }).catch(() => {})
     const saved = loadDraft()
-    if (saved) { setSavedDraft(saved); setTab('track') }
+    if (saved) {
+      setSavedDraft(saved)
+      if (!new URLSearchParams(window.location.search).get('tab')) setTab('track')
+    }
   }, [])
 
   const pendingCreates = useRef(new Map<string, Promise<ExerciseLibraryRow | null>>())
@@ -107,6 +111,12 @@ export default function ExercisePage() {
         <h1 className="page-title">Exercise</h1>
         <p className="page-subtitle">Follow your plan, log sets fast, and see where your strength stands.</p>
       </div>
+
+      {tab !== 'gameday' && (
+        <PendingGameBanner onOpen={id => {
+          window.location.assign(`/exercise?tab=gameday&session=${id}`)
+        }} />
+      )}
 
       <TabBar
         label="Exercise sections"

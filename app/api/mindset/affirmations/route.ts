@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { intOrNull, isPlainObject, isUUID, requireString } from '@/lib/validate'
 
 export async function GET() {
   const auth = await verifyApiUser()
@@ -23,8 +24,9 @@ export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const { text } = await req.json()
-  if (!text?.trim()) return NextResponse.json({ error: 'Text required' }, { status: 400 })
+  const body = await req.json().catch(() => null)
+  const text = isPlainObject(body) ? requireString(body.text, 280) : null
+  if (!text) return NextResponse.json({ error: 'Text required' }, { status: 400 })
 
   const admin = createAdminClient()
 
@@ -39,7 +41,7 @@ export async function POST(req: Request) {
 
   const { data, error } = await admin
     .from('affirmations')
-    .insert({ user_id: auth.userId, text: text.trim(), sort_order: nextOrder })
+    .insert({ user_id: auth.userId, text, sort_order: nextOrder })
     .select()
     .single()
 
@@ -51,14 +53,15 @@ export async function PUT(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const { id, text } = await req.json()
-  if (!id || !text?.trim()) return NextResponse.json({ error: 'id and text required' }, { status: 400 })
+  const body = await req.json().catch(() => null)
+  const text = isPlainObject(body) ? requireString(body.text, 280) : null
+  if (!isPlainObject(body) || !isUUID(body.id) || !text) return NextResponse.json({ error: 'id and text required' }, { status: 400 })
 
   const admin = createAdminClient()
   const { error } = await admin
     .from('affirmations')
-    .update({ text: text.trim() })
-    .eq('id', id)
+    .update({ text })
+    .eq('id', body.id)
     .eq('user_id', auth.userId)
 
   if (error) return dbError(error)
@@ -69,12 +72,21 @@ export async function PATCH(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const { items } = await req.json()
-  if (!Array.isArray(items)) return NextResponse.json({ error: 'items array required' }, { status: 400 })
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body) || !Array.isArray(body.items) || body.items.length > 200) {
+    return NextResponse.json({ error: 'items array required' }, { status: 400 })
+  }
+  const items = body.items.map(i => ({
+    id: isPlainObject(i) ? i.id : null,
+    sort_order: isPlainObject(i) ? intOrNull(i.sort_order, 0, 10000) : null,
+  }))
+  if (!items.every(i => isUUID(i.id) && i.sort_order !== null)) {
+    return NextResponse.json({ error: 'Each item needs an id and sort_order.' }, { status: 400 })
+  }
 
   const admin = createAdminClient()
   await Promise.all(
-    items.map((item: { id: string; sort_order: number }) =>
+    items.map(item =>
       admin
         .from('affirmations')
         .update({ sort_order: item.sort_order })
@@ -90,12 +102,13 @@ export async function DELETE(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const { id } = await req.json()
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body) || !isUUID(body.id)) return NextResponse.json({ error: 'id required' }, { status: 400 })
   const admin = createAdminClient()
   const { error } = await admin
     .from('affirmations')
     .update({ is_active: false })
-    .eq('id', id)
+    .eq('id', body.id)
     .eq('user_id', auth.userId)
 
   if (error) return dbError(error)

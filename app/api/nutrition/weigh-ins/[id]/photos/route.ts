@@ -5,6 +5,7 @@ import { verifyApiUser } from '@/lib/api-auth'
 import { PHOTO_SLOTS, PhotoSlot } from '@/lib/images'
 import { rateLimit } from '@/lib/rate-limit'
 import { consentFlags } from '@/lib/consent-flags'
+import { isUUID } from '@/lib/validate'
 
 export const maxDuration = 30
 
@@ -46,6 +47,7 @@ export async function POST(req: Request, props: { params: Promise<{ id: string }
   const params = await props.params;
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
+  if (!isUUID(params.id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const limited = await rateLimit(`photo-upload:${auth.userId}`, 60, 3600)
   if (limited) return limited
 
@@ -89,7 +91,9 @@ export async function DELETE(req: Request, props: { params: Promise<{ id: string
   if (auth instanceof NextResponse) return auth
 
   const slot = new URL(req.url).searchParams.get('slot')
-  if (!slot) return NextResponse.json({ error: 'slot required' }, { status: 400 })
+  if (!isUUID(params.id) || !(PHOTO_SLOTS as readonly string[]).includes(slot ?? '')) {
+    return NextResponse.json({ error: 'slot must be front, side or back' }, { status: 400 })
+  }
 
   const admin = createAdminClient()
   const { data: row } = await admin

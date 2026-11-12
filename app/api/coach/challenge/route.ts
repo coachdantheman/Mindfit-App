@@ -4,18 +4,19 @@ import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { managedTeam } from '@/lib/teams'
-import { todayIn } from '@/lib/leaderboard'
+import { shiftDayBy, todayIn } from '@/lib/leaderboard'
 import { timezoneFor } from '@/lib/leaderboard-scores'
-import { weekStartOf } from '@/lib/leagues'
-import { challengeView, isChallengeKind, membersOf, type ChallengeRow } from '@/lib/team-challenge'
+import { GOAL_COLS, GOAL_DURATIONS, goalView, isChallengeKind, isGoalDuration, membersOf, type GoalDuration, type GoalRow } from '@/lib/team-challenge'
+import { isPlainObject, isUUID } from '@/lib/validate'
 
-const COLS = 'kind, target, week_start'
+const MAX_ACTIVE_GOALS = 3
+const UUID = /^[0-9a-f-]{36}$/i
 
 async function dayFor(admin: SupabaseClient, userId: string, tzHint: string | null): Promise<string> {
   return todayIn(await timezoneFor(admin, userId, tzHint))
 }
 
-// This week's goal for a team the coach manages, with its progress.
+// The active goals for a team the coach manages (ends today or later), newest first.
 export async function GET(req: Request) {
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
@@ -25,49 +26,89 @@ export async function GET(req: Request) {
   if (!team) return NextResponse.json({ error: 'Team not found' }, { status: 404 })
 
   const today = await dayFor(admin, auth.userId, url.searchParams.get('tz'))
-  const week = weekStartOf(today)
-  const { data, error } = await admin.from('team_challenges').select(COLS).eq('team_id', team.id).eq('week_start', week).maybeSingle()
+  const { data, error } = await admin.from('team_challenges')
+    .select(GOAL_COLS)
+    .eq('team_id', team.id)
+    .gte('ends_on', today)
+    .order('created_at', { ascending: false })
+    .limit(5)
   if (error) return dbError(error)
   const athletes = await membersOf(admin, team.id)
-  const challenge = data ? await challengeView(admin, data as ChallengeRow, athletes, today) : null
-  return NextResponse.json({ members: athletes.length, challenge })
+  const goals = await Promise.all((data ?? []).map(row => goalView(admin, row as GoalRow, athletes, today)))
+  return NextResponse.json({ members: athletes.length, goals })
 }
 
-// Sets this week's goal for a team (one per team per week).
-export async function PUT(req: Request) {
+// Starts a team goal today, running for the chosen duration.
+export async function POST(req: Request) {
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
-  const body = (await req.json().catch(() => null)) ?? {}
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const admin = createAdminClient()
-  const team = await managedTeam(admin, auth, typeof body.team_id === 'string' ? body.team_id : '')
+  const team = await managedTeam(admin, auth, isUUID(body.team_id) ? body.team_id : '')
   if (!team) return NextResponse.json({ error: 'Team not found' }, { status: 404 })
 
   if (!isChallengeKind(body.kind)) return NextResponse.json({ error: 'Pick a goal.' }, { status: 400 })
+  const rawDuration: unknown = body.duration
+  const duration: GoalDuration = isGoalDuration(rawDuration) ? rawDuration : '1w'
+
+  let title: string | null = null
+  if (body.kind === 'custom') {
+    const text = typeof body.title === 'string' ? body.title.trim() : ''
+    if (text.length < 1 || text.length > 80) {
+      return NextResponse.json({ error: 'Write a goal of 1 to 80 characters.' }, { status: 400 })
+    }
+    title = text
+  }
+
   const target = Number(body.target)
   if (!Number.isInteger(target) || target < 1 || target > 100000) {
     return NextResponse.json({ error: 'Set a target from 1 to 100,000.' }, { status: 400 })
   }
 
-  const today = await dayFor(admin, auth.userId, typeof body.tz === 'string' ? body.tz : null)
-  const week = weekStartOf(today)
+  const today = await dayFor(admin, auth.userId, typeof body.tz === 'string' ? body.tz.slice(0, 60) : null)
+  const { count, error: countErr } = await admin.from('team_challenges')
+    .select('id', { count: 'exact', head: true })
+    .eq('team_id', team.id)
+    .gte('ends_on', today)
+  if (countErr) return dbError(countErr)
+  if ((count ?? 0) >= MAX_ACTIVE_GOALS) {
+    return NextResponse.json({ error: `A team can run ${MAX_ACTIVE_GOALS} goals at once. End one first.` }, { status: 400 })
+  }
+
   const { data, error } = await admin.from('team_challenges')
-    .upsert({ team_id: team.id, week_start: week, kind: body.kind, target, created_by: auth.userId }, { onConflict: 'team_id,week_start' })
-    .select(COLS)
+    .insert({
+      team_id: team.id,
+      kind: body.kind,
+      title,
+      target,
+      week_start: today,
+      ends_on: shiftDayBy(today, GOAL_DURATIONS[duration] - 1),
+      created_by: auth.userId,
+    })
+    .select(GOAL_COLS)
     .single()
   if (error) return dbError(error)
   const athletes = await membersOf(admin, team.id)
-  return NextResponse.json({ members: athletes.length, challenge: await challengeView(admin, data as ChallengeRow, athletes, today) })
+  return NextResponse.json({ members: athletes.length, goal: await goalView(admin, data as GoalRow, athletes, today) })
 }
+
+// Older clients still call PUT; it starts a goal the same way.
+export const PUT = POST
 
 export async function DELETE(req: Request) {
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
-  const url = new URL(req.url)
+  const id = new URL(req.url).searchParams.get('id') ?? ''
   const admin = createAdminClient()
-  const team = await managedTeam(admin, auth, url.searchParams.get('team_id') ?? '')
-  if (!team) return NextResponse.json({ error: 'Team not found' }, { status: 404 })
-  const week = weekStartOf(await dayFor(admin, auth.userId, url.searchParams.get('tz')))
-  const { error } = await admin.from('team_challenges').delete().eq('team_id', team.id).eq('week_start', week)
+  const { data: goal, error } = UUID.test(id)
+    ? await admin.from('team_challenges').select('team_id').eq('id', id).maybeSingle()
+    : { data: null, error: null }
   if (error) return dbError(error)
+  const team = goal ? await managedTeam(admin, auth, goal.team_id as string) : null
+  if (!goal || !team) return NextResponse.json({ error: 'Goal not found' }, { status: 404 })
+
+  const { error: deleteErr } = await admin.from('team_challenges').delete().eq('id', id)
+  if (deleteErr) return dbError(deleteErr)
   return NextResponse.json({ ok: true })
 }

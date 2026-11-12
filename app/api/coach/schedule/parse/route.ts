@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { verifyApiUser } from '@/lib/api-auth'
 import { aiQuota } from '@/lib/rate-limit'
 import { requireAiConsent } from '@/lib/ai-consent'
+import { isISODate, isPlainObject } from '@/lib/validate'
 import { createAdminClient } from '@/lib/supabase-server'
 import { extractJson } from '@/lib/ai-json'
 import { cleanEvent } from '@/lib/schedule'
@@ -23,16 +24,18 @@ export async function POST(req: Request) {
   const noConsent = await requireAiConsent(createAdminClient(), auth.userId)
   if (noConsent) return noConsent
 
-  const body = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const text = typeof body.text === 'string' ? body.text.slice(0, 20000).trim() : ''
-  const file = body.file && typeof body.file.data === 'string' && typeof body.file.media_type === 'string' ? body.file : null
+  const rawFile = isPlainObject(body.file) ? body.file : null
+  const file: any = rawFile && typeof rawFile.data === 'string' && typeof rawFile.media_type === 'string' ? rawFile : null
   if (!text && !file) return NextResponse.json({ error: 'Paste the schedule or upload a screenshot or PDF.' }, { status: 400 })
   if (file && file.data.length > MAX_BASE64) return NextResponse.json({ error: 'That file is too big. Keep it under 4 MB.' }, { status: 400 })
   if (file && file.media_type !== 'application/pdf' && !IMAGE_TYPES.includes(file.media_type)) {
     return NextResponse.json({ error: 'Upload a PNG, JPG, WEBP or PDF.' }, { status: 400 })
   }
 
-  const today = typeof body.today === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(body.today) ? body.today : new Date().toISOString().slice(0, 10)
+  const today = isISODate(body.today) ? body.today : new Date().toISOString().slice(0, 10)
 
   const system = `You read high school sports schedules and return every game and practice as JSON.
 Return ONLY valid JSON, no markdown:

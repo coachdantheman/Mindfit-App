@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { isDateTime, isPlainObject, optionalString } from '@/lib/validate'
 
 export async function GET(req: Request) {
   const auth = await verifyApiUser()
@@ -36,21 +37,24 @@ export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json()
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const admin = createAdminClient()
 
   const { data, error } = await admin
     .from('flow_sessions')
     .insert({
       user_id: auth.userId,
-      started_at: body.started_at || new Date().toISOString(),
-      completed_at: body.completed_at || new Date().toISOString(),
-      identity_statement: body.identity_statement || null,
-      aim: body.aim || null,
-      cue_word: body.cue_word || null,
-      external_target: body.external_target || null,
-      sport: body.sport || null,
-      skipped_steps: body.skipped_steps || [],
+      started_at: isDateTime(body.started_at) ? body.started_at : new Date().toISOString(),
+      completed_at: isDateTime(body.completed_at) ? body.completed_at : new Date().toISOString(),
+      identity_statement: optionalString(body.identity_statement, 280),
+      aim: optionalString(body.aim, 280),
+      cue_word: optionalString(body.cue_word, 80),
+      external_target: optionalString(body.external_target, 280),
+      sport: optionalString(body.sport, 40),
+      skipped_steps: Array.isArray(body.skipped_steps)
+        ? body.skipped_steps.filter((s: unknown): s is string => typeof s === 'string').map(s => s.slice(0, 40)).slice(0, 50)
+        : [],
     })
     .select()
     .single()

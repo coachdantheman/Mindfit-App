@@ -37,7 +37,7 @@ export async function sendCoachInviteEmail(to: string, coachName?: string | null
           <h2 style="color:#f3f4f6;font-size:20px;font-weight:600;margin:0 0 16px;">${first ? `${first}, your` : 'Your'} account is ready</h2>
           <p style="color:#9ca3af;font-size:15px;line-height:1.6;margin:0 0 24px;">
             ${coach} added you to the MindFit athlete development platform.${signInUrl
-              ? ' Tap the button and you are in &mdash; no password needed.'
+              ? ' Tap the button and you are in, no password needed.'
               : ' Sign in with this email address to set your password, or use the emailed code.'}
           </p>
           <a href="${signInUrl || loginUrl}" style="display:inline-block;background:#C4B400;color:#0A0F1A;font-weight:700;padding:14px 28px;border-radius:12px;text-decoration:none;font-size:15px;margin-bottom:24px;">
@@ -83,6 +83,20 @@ export async function sendParentInviteEmail(to: string, athleteName?: string | n
           </a>`), 'parent invite email')
 }
 
+// A parent who already has an account: accept in the app first.
+export async function sendParentRequestEmail(to: string, athleteName?: string | null) {
+  const athleteText = athleteName?.trim() || 'Your athlete'
+  const athlete = escapeHtml(athleteText)
+  await send(to, `${athleteText} wants to share their MindFit progress with you`, emailShell(`
+          <h2 style="color:#f3f4f6;font-size:20px;font-weight:600;margin:0 0 16px;">${athlete} invited you</h2>
+          <p style="color:#9ca3af;font-size:15px;line-height:1.6;margin:0 0 24px;">
+            ${athlete} added you as a parent on MindFit. Sign in and tap Accept to see their progress, read-only. Nothing is shared until you accept.
+          </p>
+          <a href="${appUrlOf()}/parent" style="display:inline-block;background:#C4B400;color:#0A0F1A;font-weight:700;padding:14px 28px;border-radius:12px;text-decoration:none;font-size:15px;margin-bottom:32px;">
+            Review invite →
+          </a>`), 'parent request email')
+}
+
 export async function sendWelcomeEmail(to: string, name?: string) {
   if (!process.env.RESEND_API_KEY) {
     console.warn('sendWelcomeEmail skipped: RESEND_API_KEY is not set')
@@ -103,13 +117,13 @@ export async function sendWelcomeEmail(to: string, name?: string) {
     body: JSON.stringify({
       from: 'Daniel @ MindFit <daniel@mindfit.academy>',
       to,
-      subject: "You're in — welcome to MindFit",
+      subject: "You're in: welcome to MindFit",
       html: `
         <div style="background:#0A0F1A;color:#e5e7eb;font-family:sans-serif;max-width:480px;margin:0 auto;padding:40px 24px;border-radius:16px;">
           <h1 style="color:#C4B400;font-size:28px;letter-spacing:4px;font-weight:700;margin:0 0 24px;">MINDFIT</h1>
           <h2 style="color:#f3f4f6;font-size:20px;font-weight:600;margin:0 0 16px;">${firstName ? `${firstName}, you` : 'You'}&rsquo;re in</h2>
           <p style="color:#9ca3af;font-size:15px;line-height:1.6;margin:0 0 24px;">
-            You now have access to the MindFit athlete development platform. Sign in with this email address &mdash; no password needed, we&rsquo;ll send you a code.
+            You now have access to the MindFit athlete development platform. Sign in with this email address, no password needed, and we&rsquo;ll send you a code.
           </p>
           <a href="${appUrl}/login" style="display:inline-block;background:#C4B400;color:#0A0F1A;font-weight:700;padding:14px 28px;border-radius:12px;text-decoration:none;font-size:15px;margin-bottom:32px;">
             Sign In →

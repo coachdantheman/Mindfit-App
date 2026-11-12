@@ -67,7 +67,7 @@ function ReadinessRing({ score }: { score: number | null }) {
       </svg>
       <div className="absolute text-center">
         <div className="text-[34px] font-extrabold tracking-tight text-fg-1 leading-none tabular-nums">
-          {score ?? '—'}
+          {score ?? '-'}
         </div>
         <div className="text-[10px] text-cta uppercase tracking-[0.18em] font-semibold font-mono mt-1">
           Readiness
@@ -183,10 +183,12 @@ export default function TodayCard() {
               {allFour ? <span className="text-cta font-semibold uppercase tracking-[0.16em]">Clutch Day</span> : `${doneCount} of 4 today`}
             </p>
             {freezeInfo.freezes > 0 && (
-              <p className="text-xs text-center text-fg-4">{freezeInfo.freezes === 1 ? '1 freeze held' : `${freezeInfo.freezes} freezes held`}</p>
+              <p className="text-xs text-center text-sky-300" title="Miss a day and a freeze keeps your streak alive. Earn one every 7 days in a row, hold up to 2.">
+                {'🧊'.repeat(freezeInfo.freezes)} {freezeInfo.freezes === 1 ? '1 streak freeze ready' : `${freezeInfo.freezes} streak freezes ready`}
+              </p>
             )}
             {freezeInfo.savedYesterday && (
-              <p className="text-xs text-center text-cta">A freeze saved your streak yesterday.</p>
+              <p className="text-xs text-center text-cta">Freeze your streak, keep your flame. A freeze saved yours yesterday.</p>
             )}
           </div>
 

@@ -45,7 +45,7 @@ export async function POST(req: Request) {
 
     const systemPrompt = `You are a strength and conditioning coach designing a periodized training program for a high school athlete.
 
-Return ONLY valid JSON — no markdown, no code fences, no explanation. The JSON must match this exact schema:
+Return ONLY valid JSON, no markdown, no code fences, no explanation. The JSON must match this exact schema:
 {
   "title": "string",
   "description": "string",
@@ -82,7 +82,7 @@ Goals: ${goals.join(', ')}
 Days/week: ${days_per_week}
 Blocks: ${numBlocks} phases (~${Math.round(duration_weeks / numBlocks)} weeks each)
 
-Keep it concise — ${numBlocks} blocks, ${days_per_week} workouts per block, 5-7 exercises per workout. Output JSON only.`
+Keep it concise: ${numBlocks} blocks, ${days_per_week} workouts per block, 5-7 exercises per workout. Output JSON only.`
 
     const message = await anthropic.messages.create({
       model: 'claude-opus-5-5',

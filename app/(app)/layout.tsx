@@ -5,8 +5,10 @@ import ServiceWorkerRegistrar from '@/components/shared/ServiceWorkerRegistrar'
 import { ToastProvider } from '@/components/shared/Toast'
 import TermsBanner from '@/components/shared/TermsBanner'
 import CoachRequestsBanner from '@/components/shared/CoachRequestsBanner'
+import ParentRequestsBanner from '@/components/shared/ParentRequestsBanner'
 import PendingTeamJoin from '@/components/shared/PendingTeamJoin'
 import TimezoneSync from '@/components/shared/TimezoneSync'
+import BackToGameDay from '@/components/shared/BackToGameDay'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await getAuthUserCached()
@@ -26,8 +28,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <Navbar email={user.email} role={user.role} fullName={user.fullName} />
         <TermsBanner />
         <CoachRequestsBanner />
+        <ParentRequestsBanner />
         <TimezoneSync />
         <main id="main" tabIndex={-1} className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 py-8 pb-24 sm:pb-8">
+          <BackToGameDay />
           {children}
         </main>
       </div>

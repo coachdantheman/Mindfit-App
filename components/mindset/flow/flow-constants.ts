@@ -32,7 +32,7 @@ export const FIVE_A_STEPS: StepConfig[] = [
     title: 'ACTIVATE',
     label: 'A3 · Activate',
     durationSec: 60,
-    prompt: 'Box breathing — 4 in · 4 hold · 4 out · 4 hold.',
+    prompt: 'Box breathing: 4 in · 4 hold · 4 out · 4 hold.',
     subPrompt: 'Follow the square. Four full cycles.',
   },
   {
@@ -40,16 +40,16 @@ export const FIVE_A_STEPS: StepConfig[] = [
     title: 'ATTACH',
     label: 'A4 · Attach',
     durationSec: 30,
-    prompt: 'Lock your cue word to your external target.',
-    subPrompt: 'Pick your cue. Choose what your eyes will lock to.',
+    prompt: 'Lock your cue word to your physical trigger.',
+    subPrompt: 'Pick your cue word and the move that tells your body it is go time.',
   },
   {
     code: 'A5',
     title: 'AUTO-PILOT',
     label: 'A5 · Auto-Pilot',
     durationSec: 30,
-    prompt: 'Run your routine.',
-    subPrompt: 'Let it come.',
+    prompt: 'Release the tension. Trust the reps.',
+    subPrompt: 'Say it out loud or in a whisper: let it come.',
   },
 ]
 

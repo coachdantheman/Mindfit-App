@@ -19,7 +19,7 @@ export default function SleepEntriesList({ entries, avgSleep, avgSleepQuality }:
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <div className="card p-4 text-center">
-          <p className={`text-2xl font-bold ${avgSleep !== '—' && parseFloat(avgSleep) >= 7 ? 'text-green-400' : 'text-orange-400'}`}>{avgSleep}h</p>
+          <p className={`text-2xl font-bold ${avgSleep !== '-' && parseFloat(avgSleep) >= 7 ? 'text-green-400' : 'text-orange-400'}`}>{avgSleep}h</p>
           <p className="text-xs text-fg-4 mt-1">Avg Hours</p>
         </div>
         <div className="card p-4 text-center">
@@ -35,7 +35,7 @@ export default function SleepEntriesList({ entries, avgSleep, avgSleepQuality }:
               <div>
                 <p className="text-sm text-fg-2">{entry.entry_date}</p>
                 <p className="text-xs text-fg-4">
-                  {entry.hours_slept ? `${Number(entry.hours_slept).toFixed(1)}h` : '—'}
+                  {entry.hours_slept ? `${Number(entry.hours_slept).toFixed(1)}h` : '-'}
                   {entry.sleep_quality ? ` · Quality: ${entry.sleep_quality}/10` : ''}
                 </p>
               </div>

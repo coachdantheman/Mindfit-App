@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
-import { intOrNull, isISODate, optionalString } from '@/lib/validate'
+import { intOrNull, isISODate, isPlainObject, oneOf, optionalString } from '@/lib/validate'
 import { chunk } from '@/lib/fetch-all'
 import { TRIGGERS } from '@/components/mindset/flow/flow-constants'
 import type { FlowTrigger } from '@/types'
@@ -62,10 +62,10 @@ export async function POST(req: Request) {
   if (auth instanceof NextResponse) return auth
 
   const body = await req.json().catch(() => null)
-  if (!body || typeof body !== 'object') return NextResponse.json({ error: 'Bad request' }, { status: 400 })
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Bad request' }, { status: 400 })
 
   const log_date = isISODate(body.log_date) ? body.log_date : new Date().toISOString().slice(0, 10)
-  const kind = KINDS.includes(body.kind) ? body.kind as typeof KINDS[number] : 'practice'
+  const kind = oneOf(body.kind, KINDS) ?? 'practice'
   const difficulty = intOrNull(body.difficulty, 1, 10)
   const learned = optionalString(body.learned, 2000)
   const sport = optionalString(body.sport, 60)
@@ -84,7 +84,7 @@ export async function POST(req: Request) {
   }
   if (kind === 'game') {
     row.opponent = optionalString(body.opponent, 120)
-    row.result = RESULTS.includes(body.result) ? body.result : null
+    row.result = oneOf(body.result, RESULTS)
     row.score = optionalString(body.score, 40)
     row.performance = intOrNull(body.performance, 1, 10)
     row.went_well = optionalString(body.went_well, 2000)
@@ -103,7 +103,7 @@ export async function POST(req: Request) {
   row.journal_entry_id = journal?.id ?? null
 
   let flow_log_id: string | null = existing?.flow_log_id ?? null
-  const flow = body.flow && typeof body.flow === 'object' ? body.flow : null
+  const flow = isPlainObject(body.flow) ? body.flow : null
   // A pre-game 5-A Stack run links to the game's flow log.
   let flow_session_id: string | null = null
   if (typeof body.flow_session_id === 'string' && /^[0-9a-f-]{36}$/i.test(body.flow_session_id)) {
@@ -146,5 +146,9 @@ export async function POST(req: Request) {
     .select()
     .single()
   if (error) return dbError(error)
+  // The game after a pre-game stack is logged: stop the "log your game" reminder.
+  if (kind === 'game' && flow_session_id) {
+    await admin.from('flow_sessions').update({ game_logged_at: new Date().toISOString() }).eq('id', flow_session_id).eq('user_id', auth.userId)
+  }
   return NextResponse.json(data, { status: existing ? 200 : 201 })
 }

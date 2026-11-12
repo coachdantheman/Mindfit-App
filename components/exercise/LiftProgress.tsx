@@ -54,7 +54,7 @@ export default function LiftProgress({ exerciseId, name, onClose }: Props) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs uppercase tracking-wider text-fg-4">{metricLabel}</p>
-              <p className="text-2xl font-bold text-fg-1 tabular-nums">{data.best ? fmt(data.best) : '—'} <span className="text-sm text-fg-4 font-medium">{data.best ? unitLabel : ''}</span></p>
+              <p className="text-2xl font-bold text-fg-1 tabular-nums">{data.best ? fmt(data.best) : '-'} <span className="text-sm text-fg-4 font-medium">{data.best ? unitLabel : ''}</span></p>
             </div>
             {data.tier && <TierBadge tier={data.tier.tier} />}
           </div>
@@ -71,7 +71,7 @@ export default function LiftProgress({ exerciseId, name, onClose }: Props) {
             </ResponsiveContainer>
           ) : (
             <p className="text-sm text-fg-4 text-center py-4">
-              {chart.length === 0 ? 'No sessions logged yet.' : 'One session so far — log another to see a trend.'}
+              {chart.length === 0 ? 'No sessions logged yet.' : 'One session so far. Log another to see a trend.'}
             </p>
           )}
 

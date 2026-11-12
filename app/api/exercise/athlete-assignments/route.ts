@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { isPlainObject, isUUID } from '@/lib/validate'
 
 export async function GET() {
   const auth = await verifyApiUser()
@@ -23,13 +24,14 @@ export async function PUT(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const { id } = await req.json()
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body) || !isUUID(body.id)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const admin = createAdminClient()
 
   const { error } = await admin
     .from('coach_workouts')
     .update({ is_completed: true })
-    .eq('id', id)
+    .eq('id', body.id)
     .eq('athlete_id', auth.userId)
 
   if (error) return dbError(error)

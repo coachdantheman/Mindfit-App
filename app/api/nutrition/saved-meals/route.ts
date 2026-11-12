@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
-import { requireString, optionalString } from '@/lib/validate'
+import { isPlainObject, isUUID, requireString, optionalString } from '@/lib/validate'
 
 const ITEM_COLS = 'id, saved_meal_id, food_id, food_name, serving_size, servings, calories, protein_g, carbs_g, fat_g, sort_order'
 
@@ -45,11 +45,12 @@ export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json()
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const auto = body.auto === true
   const mealName = optionalString(body.meal_name, 40)
   const name = requireString(body.name, 80) ?? (auto && mealName ? `${mealName} · ${optionalString(body.entry_date, 10) ?? ''}`.trim() : null)
-  const ids: string[] = Array.isArray(body.entry_ids) ? body.entry_ids.filter((x: unknown) => typeof x === 'string').slice(0, 40) : []
+  const ids: string[] = Array.isArray(body.entry_ids) ? body.entry_ids.filter(isUUID).slice(0, 40) : []
   if (!name || ids.length === 0) return NextResponse.json({ error: 'name and entry_ids required' }, { status: 400 })
 
   const admin = createAdminClient()
@@ -95,11 +96,11 @@ export async function DELETE(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const { id } = await req.json()
-  if (typeof id !== 'string') return NextResponse.json({ error: 'id required' }, { status: 400 })
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body) || !isUUID(body.id)) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
   const admin = createAdminClient()
-  const { error } = await admin.from('saved_meals').delete().eq('id', id).eq('user_id', auth.userId)
+  const { error } = await admin.from('saved_meals').delete().eq('id', body.id).eq('user_id', auth.userId)
   if (error) return dbError(error)
   return NextResponse.json({ ok: true })
 }

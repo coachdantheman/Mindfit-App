@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
-import { isISODate } from '@/lib/validate'
+import { isISODate, isPlainObject, isUUID, oneOf } from '@/lib/validate'
 import { MEALS } from '@/lib/nutrition'
 
 // Log every item of a saved meal to a date + meal slot.
@@ -10,8 +10,8 @@ export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
 
-  const body = await req.json()
-  if (typeof body.saved_meal_id !== 'string' || !isISODate(body.entry_date) || !(MEALS as readonly string[]).includes(body.meal_name)) {
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body) || !isUUID(body.saved_meal_id) || !isISODate(body.entry_date) || !oneOf(body.meal_name, MEALS)) {
     return NextResponse.json({ error: 'saved_meal_id, entry_date and meal_name required' }, { status: 400 })
   }
 

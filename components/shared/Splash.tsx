@@ -1,3 +1,6 @@
+'use client'
+import { useEffect, useState } from 'react'
+
 const LINES = [
   'Lock in.',
   'Identity first. Performance follows.',
@@ -9,7 +12,9 @@ const LINES = [
 // App-open screen. The mark fills with gold on one slow breath, so the wait
 // reads as the first rep of the session instead of a spinner.
 export default function Splash() {
-  const line = LINES[Math.floor(Math.random() * LINES.length)]
+  // Picked after hydration so server and client HTML match.
+  const [line, setLine] = useState(LINES[0])
+  useEffect(() => { setLine(LINES[Math.floor(Math.random() * LINES.length)]) }, [])
   return (
     <div className="mf-splash" role="status" aria-label="Loading MindFit">
       <div className="mf-splash-mark" aria-hidden="true">

@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-client'
 import { createAdminClient } from '@/lib/supabase-server'
+import { clientIp, memoryLimit } from '@/lib/rate-limit'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
+  if (memoryLimit(`auth-callback:${clientIp(request)}`, 30, 600_000)) return NextResponse.redirect(`${origin}/login?error=auth_failed`)
   const code = searchParams.get('code')
 
   if (code) {

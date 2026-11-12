@@ -129,7 +129,7 @@ export default function WeeklyAssessment({ mode = 'weekly', onComplete }: Weekly
         </div>
         <p className="text-sm text-fg-4 mb-6">
           {isBaseline
-            ? 'Be honest — this is your starting point, and it’s how we measure your growth.'
+            ? 'Be honest. This is your starting point, and it’s how we measure your growth.'
             : 'This is where your MPI (Mental Performance Index) is scored. Drag each dot to rate the area 1–10.'}
         </p>
 

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { isPlainObject, isUUID } from '@/lib/validate'
 
 // In-app inbox: latest 50 plus the unread count for the bell.
 export async function GET() {
@@ -21,10 +22,10 @@ export async function GET() {
 export async function POST(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
-  const body = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => null)
   let q = createAdminClient().from('notifications').update({ read_at: new Date().toISOString() })
     .eq('user_id', auth.userId).is('read_at', null)
-  if (Array.isArray(body.ids)) q = q.in('id', body.ids.filter((x: unknown) => typeof x === 'string').slice(0, 100))
+  if (isPlainObject(body) && Array.isArray(body.ids)) q = q.in('id', body.ids.filter(isUUID).slice(0, 100))
   const { error } = await q
   if (error) return dbError(error)
   return NextResponse.json({ ok: true })

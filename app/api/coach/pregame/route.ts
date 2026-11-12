@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { managedTeam } from '@/lib/teams'
 import { cleanSteps } from '@/lib/pregame'
+import { isPlainObject } from '@/lib/validate'
 
 const COLS = 'id, team_id, name, steps'
 
@@ -23,7 +24,8 @@ export async function GET(req: Request) {
 export async function PUT(req: Request) {
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
-  const body = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const admin = createAdminClient()
   const team = await managedTeam(admin, auth, typeof body.team_id === 'string' ? body.team_id : '')
   if (!team) return NextResponse.json({ error: 'Team not found' }, { status: 404 })

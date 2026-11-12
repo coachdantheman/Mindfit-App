@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
-import { requireString, optionalString } from '@/lib/validate'
+import { isPlainObject, isUUID, requireString, optionalString } from '@/lib/validate'
 import { createTeam, TEAM_COLS, type TeamRow } from '@/lib/teams'
 import { hasProfanity } from '@/lib/profanity'
 import { chunk, fetchAll } from '@/lib/fetch-all'
@@ -44,7 +44,8 @@ export async function GET() {
 export async function POST(req: Request) {
   const auth = await verifyApiUser('coach', 'admin')
   if (auth instanceof NextResponse) return auth
-  const body = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const name = requireString(body.name, 80)
   if (!name) return NextResponse.json({ error: 'Team name is required.' }, { status: 400 })
   if (hasProfanity(name)) return NextResponse.json({ error: 'Pick a different name.' }, { status: 400 })
@@ -53,7 +54,7 @@ export async function POST(req: Request) {
   const admin = createAdminClient()
   // Admins create teams for a coach; coaches always own what they create.
   let coachId = auth.userId
-  if (auth.role === 'admin' && typeof body.coach_id === 'string') {
+  if (auth.role === 'admin' && isUUID(body.coach_id)) {
     const { data: coach } = await admin.from('profiles').select('id, role').eq('id', body.coach_id).maybeSingle()
     if (!coach || coach.role !== 'coach') return NextResponse.json({ error: 'Pick a coach for this team.' }, { status: 400 })
     coachId = coach.id

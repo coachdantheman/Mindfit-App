@@ -8,13 +8,14 @@ import { cached } from '@/lib/api-cache'
 
 import Skeleton from '@/components/shared/Skeleton'
 const AthleteQuiz = dynamic(() => import('@/components/learn/AthleteQuiz'))
+const DailyLesson = dynamic(() => import('@/components/learn/DailyLesson'))
 
-type Tab = 'lessons' | 'quiz'
+type Tab = 'daily' | 'lessons' | 'quiz'
 
 export default function LearnPage() {
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<Tab>('lessons')
+  const [tab, setTab] = useState<Tab>('daily')
   const [quizOpened, setQuizOpened] = useState(false)
 
   const selectTab = (t: Tab) => {
@@ -22,8 +23,8 @@ export default function LearnPage() {
     if (t === 'quiz') setQuizOpened(true)
   }
 
-  // The iPhone app has no outside lesson links, so Learn is the quiz there.
-  useEffect(() => { if (isNativeApp()) selectTab('quiz') }, [])
+  const [native, setNative] = useState(false)
+  useEffect(() => { setNative(isNativeApp()) }, [])
 
   useEffect(() => {
     cached('/api/lessons', (data: Lesson[]) => { if (Array.isArray(data)) { setLessons(data); setLoading(false) } })
@@ -47,13 +48,20 @@ export default function LearnPage() {
         </p>
       </div>
 
-      <div className="web-only">
       <TabBar
         label="Learn sections"
-        tabs={[{ key: 'lessons' as Tab, label: 'Lessons' }, { key: 'quiz' as Tab, label: 'Athlete Quiz' }]}
+        tabs={[
+          { key: 'daily' as Tab, label: 'Daily Lesson' },
+          { key: 'quiz' as Tab, label: 'Athlete Quiz' },
+          // The iPhone app has no outside lesson links.
+          ...(native ? [] : [{ key: 'lessons' as Tab, label: 'Full Course' }]),
+        ]}
         active={tab}
         onSelect={selectTab}
       />
+
+      <div className={tab === 'daily' ? '' : 'hidden'}>
+        <DailyLesson />
       </div>
 
       {quizOpened && (

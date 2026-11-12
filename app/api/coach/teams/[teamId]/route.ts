@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
-import { optionalString } from '@/lib/validate'
+import { isPlainObject, optionalString } from '@/lib/validate'
 import { managedTeam, newJoinCode } from '@/lib/teams'
 import { hasProfanity } from '@/lib/profanity'
 
@@ -15,7 +15,8 @@ export async function PATCH(req: Request, props: { params: Promise<{ teamId: str
   const team = await managedTeam(admin, auth, params.teamId)
   if (!team) return NextResponse.json({ error: 'Team not found' }, { status: 404 })
 
-  const body = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   const patch: Record<string, string | null> = {}
   const name = optionalString(body.name, 80)
   if (name && hasProfanity(name)) return NextResponse.json({ error: 'Pick a different name.' }, { status: 400 })

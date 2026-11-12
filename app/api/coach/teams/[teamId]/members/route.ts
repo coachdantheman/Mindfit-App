@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { addToTeam, managedTeam, removeFromTeam } from '@/lib/teams'
 import { chunk } from '@/lib/fetch-all'
+import { isPlainObject, isUUID } from '@/lib/validate'
 
 // Put existing athletes on a team. Coaches can only add their own roster;
 // admins can add anyone, which moves the athlete off the admin's old
@@ -15,8 +16,9 @@ export async function POST(req: Request, props: { params: Promise<{ teamId: stri
   const team = await managedTeam(admin, auth, params.teamId)
   if (!team) return NextResponse.json({ error: 'Team not found' }, { status: 404 })
 
-  const body = await req.json().catch(() => ({}))
-  let ids: string[] = Array.isArray(body.athlete_ids) ? body.athlete_ids.filter((x: unknown) => typeof x === 'string').slice(0, 200) : []
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
+  let ids: string[] = Array.isArray(body.athlete_ids) ? body.athlete_ids.filter(isUUID).slice(0, 200) : []
   if (ids.length === 0) return NextResponse.json({ error: 'Pick at least one athlete.' }, { status: 400 })
 
   if (auth.role === 'coach') {
@@ -49,8 +51,8 @@ export async function DELETE(req: Request, props: { params: Promise<{ teamId: st
   const admin = createAdminClient()
   const team = await managedTeam(admin, auth, params.teamId)
   if (!team) return NextResponse.json({ error: 'Team not found' }, { status: 404 })
-  const body = await req.json().catch(() => ({}))
-  if (typeof body.athlete_id !== 'string') return NextResponse.json({ error: 'athlete_id required' }, { status: 400 })
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body) || !isUUID(body.athlete_id)) return NextResponse.json({ error: 'athlete_id required' }, { status: 400 })
   await removeFromTeam(admin, team, body.athlete_id)
   return NextResponse.json({ ok: true })
 }

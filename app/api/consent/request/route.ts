@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyLockedApiUser } from '@/lib/api-auth'
-import { isEmail } from '@/lib/validate'
+import { isEmail, isPlainObject } from '@/lib/validate'
 import { consentExpired } from '@/lib/age'
 import { createConsentRequest, hashToken } from '@/lib/consent'
 import { deleteUserCompletely } from '@/lib/account-delete'
@@ -48,8 +48,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'This account does not need a parent to say yes.' }, { status: 409 })
   }
 
-  const body = await req.json().catch(() => ({}))
-  if (!isEmail(body.parentEmail)) return NextResponse.json({ error: 'Enter a valid email address.' }, { status: 400 })
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body) || !isEmail(body.parentEmail)) return NextResponse.json({ error: 'Enter a valid email address.' }, { status: 400 })
   const parentEmail = body.parentEmail.toLowerCase().trim()
   if (parentEmail === auth.email.toLowerCase()) {
     return NextResponse.json({ error: 'Enter your parent’s email, not your own.' }, { status: 400 })

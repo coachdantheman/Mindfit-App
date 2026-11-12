@@ -3,6 +3,7 @@ import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { DEFAULT_ROUTINE_NAME } from '@/lib/pregame'
+import { isPlainObject } from '@/lib/validate'
 
 const RUN_COLS = 'game_date, routine_id, routine_name, steps_done, total_steps, completed_at'
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
@@ -11,7 +12,8 @@ const UUID_RE = /^[0-9a-f-]{36}$/i
 export async function PUT(req: Request) {
   const auth = await verifyApiUser()
   if (auth instanceof NextResponse) return auth
-  const body = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
 
   const date = typeof body.game_date === 'string' ? body.game_date : ''
   if (!DATE_RE.test(date) || Number.isNaN(Date.parse(date))) {

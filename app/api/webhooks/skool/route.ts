@@ -3,7 +3,8 @@ import { dbError } from '@/lib/api-error'
 import { timingSafeEqual } from 'crypto'
 import { createAdminClient } from '@/lib/supabase-server'
 import { sendWelcomeEmail } from '@/lib/email'
-import { isEmail } from '@/lib/validate'
+import { isEmail, isPlainObject } from '@/lib/validate'
+import { clientIp, rateLimit } from '@/lib/rate-limit'
 
 // Called by Zapier when someone joins (or leaves) the MindFit Skool
 // community. Secured with a shared secret in the x-skool-secret header.
@@ -17,6 +18,8 @@ function secretMatches(provided: string | null): boolean {
 }
 
 export async function POST(req: Request) {
+  const limited = await rateLimit(`skool-webhook:ip:${clientIp(req)}`, 120, 3600)
+  if (limited) return limited
   if (!secretMatches(req.headers.get('x-skool-secret'))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -27,6 +30,7 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
 
   const event = body.event === 'member.left' ? 'member.left' : 'member.joined'
   if (!isEmail(body.email)) {
@@ -54,7 +58,8 @@ export async function POST(req: Request) {
       return dbError(error)
     }
 
-    await sendWelcomeEmail(email, name || undefined)
+    // One welcome email per address per day, so a replayed call can't spam anyone.
+    if (!(await rateLimit(`skool-welcome:${email}`, 1, 86_400))) await sendWelcomeEmail(email, name || undefined)
     console.log('skool webhook: member.joined', maskEmail(email))
     return NextResponse.json({ ok: true, action: 'whitelisted' })
   }
