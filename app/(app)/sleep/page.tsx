@@ -5,6 +5,7 @@ import { format, parseISO } from 'date-fns'
 import LessonLinks from '@/components/shared/LessonLinks'
 import PageSkeleton from '@/components/shared/PageSkeleton'
 import SaveButton from '@/components/shared/SaveButton'
+import Dial from '@/components/shared/Dial'
 import { useToast } from '@/components/shared/Toast'
 import { clearDraft, draftKey, readDraft, writeDraft } from '@/lib/useDraft'
 import { localDateISO } from '@/lib/dates'
@@ -277,21 +278,13 @@ export default function SleepPage() {
                 )}
               </div>
 
-              <div>
-                <label className="text-sm text-fg-3 block mb-2">Sleep Quality: <span className="text-fg-2 font-medium">{quality}/10</span></label>
-                <input
-                  type="range"
-                  min={1}
-                  max={10}
-                  value={quality}
-                  onChange={e => { setQuality(parseInt(e.target.value)); setSleepSaved(false) }}
-                  className="w-full accent-cta"
-                />
-                <div className="flex justify-between text-xs text-fg-4 mt-1">
-                  <span>Poor</span>
-                  <span>Great</span>
-                </div>
-              </div>
+              <Dial
+                label="Sleep quality"
+                value={quality}
+                onChange={v => { setQuality(v); setSleepSaved(false) }}
+                lowLabel="Rough"
+                highLabel="Great"
+              />
 
               <div>
                 <label htmlFor="sleep-notes" className="text-sm text-fg-3 block mb-1">Notes</label>

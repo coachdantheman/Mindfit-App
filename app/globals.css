@@ -331,6 +331,12 @@ html:not(.native-app) .native-only { display: none !important; }
 @keyframes mf-fade-in { from { opacity: 0; } }
 @keyframes mf-rise { from { opacity: 0; transform: translateY(10px); } }
 .mf-rise { animation: mf-rise 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) backwards; }
+@keyframes mf-pop { from { transform: scale(0.86); opacity: 0.6; } }
+.mf-pop { animation: mf-pop 0.18s cubic-bezier(0.2, 0.7, 0.2, 1) backwards; }
+@keyframes mf-bloom { from { transform: scale(0.4); opacity: 0.9; } to { transform: scale(2.6); opacity: 0; } }
+.mf-bloom { animation: mf-bloom 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; }
+.mf-bloom-late { animation-delay: 0.15s; opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .mf-pop, .mf-bloom { animation: none; } .mf-bloom { display: none; } }
 @keyframes mf-splash-slide { 0% { transform: translateX(-110%); } 100% { transform: translateX(260%); } }
 /* Placeholders fade in after a beat, so a fast load never flashes grey. */
 .mf-skeleton-page { animation: mf-fade-in 0.25s ease-out 0.12s backwards; }

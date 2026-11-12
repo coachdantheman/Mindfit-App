@@ -15,6 +15,7 @@ import InsightsCard from '@/components/dashboard/InsightsCard'
 import { progressInsights, type InsightData, type InsightSection } from '@/lib/insights'
 import { factFor } from '@/lib/data/research-facts'
 import { localDateISO } from '@/lib/dates'
+import { readinessScore, readinessVerdict } from '@/lib/readiness'
 
 import Link from 'next/link'
 import StatCard from '@/components/dashboard/StatCard'
@@ -220,16 +221,10 @@ export default function ProgressPage() {
               {(() => {
                 const latest = journalEntries[0]
                 const prev = journalEntries[1]
-                const readinessOf = (e: JournalEntry) =>
-                  Math.round(((e.rating_motivation + e.rating_focus + e.rating_confidence + (11 - e.rating_anxiety)) / 4) * 10)
-                const score = readinessOf(latest)
-                const prevScore = prev ? readinessOf(prev) : null
+                const score = readinessScore(latest)
+                const prevScore = prev ? readinessScore(prev) : null
                 const delta = prevScore !== null ? score - prevScore : null
-                const verdict =
-                  score >= 80 ? 'Locked in — peak window.' :
-                  score >= 65 ? 'Solid. Execute with intent.' :
-                  score >= 50 ? 'Steady. Protect your focus.' :
-                  'Recover first. Identity over output.'
+                const verdict = readinessVerdict(score)
                 const entryDate = new Date(latest.entry_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
                 const spark = (pick: (e: JournalEntry) => number) =>
                   [...journalEntries].slice(0, 7).reverse().map(e => pick(e) / 10)

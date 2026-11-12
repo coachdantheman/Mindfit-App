@@ -325,12 +325,12 @@ export default function PracticeLog({ notify, fixedKind }: Props) {
           </button>
           {form.flowOn && (
             <div className="px-4 pb-4 space-y-4 border-t border-cta/20 pt-4">
-              <Range label="Skill level today" value={form.skill} step={1} onChange={v => update({ skill: v })} display={String(form.skill)} />
+              <RatingSlider label="Skill level today" value={form.skill} onChange={v => update({ skill: v })} color="bg-cta" />
               <div className={`flex items-center justify-between rounded-xl border px-4 py-3 ${ZONE_COLOR[zone].tw}`}>
                 <span className="text-sm font-semibold">{ZONE_COLOR[zone].label}</span>
                 <span className="text-xs tabular-nums">challenge {form.difficulty} vs skill {form.skill} · {diff > 0 ? '+' : ''}{diff} (flow = within 1)</span>
               </div>
-              <Range label="Flow score — how in the zone were you?" value={form.flow} step={1} onChange={v => update({ flow: v })} display={String(form.flow)} />
+              <RatingSlider label="Flow score — how in the zone were you?" value={form.flow} onChange={v => update({ flow: v })} color="bg-cta" />
               <div>
                 <p className="text-sm text-fg-3 mb-2">Which triggers fired?</p>
                 <div className="flex flex-wrap gap-2">
@@ -441,15 +441,3 @@ function Area({ label, value, onChange, placeholder }: { label: string; value: s
   )
 }
 
-function Range({ label, value, step, onChange, display }: { label: string; value: number; step: number; onChange: (v: number) => void; display: string }) {
-  const id = useId()
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-1">
-        <label htmlFor={id} className="text-sm text-fg-3">{label}</label>
-        <span className="text-cta font-bold tabular-nums">{display}/10</span>
-      </div>
-      <input id={id} type="range" min={1} max={10} step={step} value={value} onChange={e => onChange(step === 1 ? parseInt(e.target.value, 10) : parseFloat(e.target.value))} className="w-full accent-cta" />
-    </div>
-  )
-}

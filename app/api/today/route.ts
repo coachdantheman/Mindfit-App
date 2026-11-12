@@ -1,0 +1,85 @@
+import { NextResponse } from 'next/server'
+import { dbError } from '@/lib/api-error'
+import { verifyApiUser } from '@/lib/api-auth'
+import { createAdminClient } from '@/lib/supabase-server'
+import { isISODate } from '@/lib/validate'
+
+function shiftDate(iso: string, days: number): string {
+  const d = new Date(`${iso}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
+function dayOfYear(iso: string): number {
+  const [y, m, d] = iso.split('-').map(Number)
+  return Math.floor((Date.UTC(y, m - 1, d) - Date.UTC(y, 0, 0)) / 86400000)
+}
+
+// GET /api/today?date=YYYY-MM-DD — the Today card: check-in, pillars, one affirmation
+export async function GET(req: Request) {
+  const auth = await verifyApiUser()
+  if (auth instanceof NextResponse) return auth
+
+  const date = new URL(req.url).searchParams.get('date')
+  if (!isISODate(date)) return NextResponse.json({ error: 'A valid date is required.' }, { status: 400 })
+
+  // The athlete's local day as UTC instants, for tables stamped with a time.
+  const params = new URL(req.url).searchParams
+  const instant = (v: string | null) => (v && !Number.isNaN(Date.parse(v)) ? new Date(v).toISOString() : null)
+  const dayStart = instant(params.get('from')) ?? `${date}T00:00:00Z`
+  const dayEnd = instant(params.get('to')) ?? `${shiftDate(date, 1)}T00:00:00Z`
+  const uid = auth.userId
+  const night = shiftDate(date, -1)
+  const exists = { head: true, count: 'exact' as const }
+  const admin = createAdminClient()
+
+  const [journal, sleep, gratitude, visualization, flow, workout, practice, food, recovery, affirmations] = await Promise.all([
+    admin.from('journal_entries')
+      .select('objective, action_step_1, strength_1, weakness, rating_motivation, rating_focus, rating_confidence, rating_anxiety')
+      .eq('user_id', uid).eq('entry_date', date).maybeSingle(),
+    admin.from('sleep_entries')
+      .select('hours_slept, sleep_quality, bedtime, wake_time, notes')
+      .eq('user_id', uid).eq('entry_date', night).maybeSingle(),
+    admin.from('gratitude_entries').select('id', exists).eq('user_id', uid).eq('entry_date', date).limit(1),
+    admin.from('visualization_entries').select('id', exists).eq('user_id', uid).eq('entry_date', date).limit(1),
+    admin.from('flow_logs').select('id', exists).eq('user_id', uid)
+      .gte('logged_at', dayStart).lt('logged_at', dayEnd).limit(1),
+    admin.from('workout_logs').select('id', exists).eq('user_id', uid).eq('log_date', date).limit(1),
+    admin.from('practice_logs').select('id', exists).eq('user_id', uid).eq('log_date', date).limit(1),
+    admin.from('food_entries').select('id', exists).eq('user_id', uid).eq('entry_date', date).limit(1),
+    admin.from('recovery_entries').select('id', exists).eq('user_id', uid).eq('entry_date', date).limit(1),
+    admin.from('affirmations').select('text').eq('user_id', uid).eq('is_active', true).order('sort_order', { ascending: true }),
+  ])
+
+  const failed = [journal, sleep, gratitude, visualization, flow, workout, practice, food, recovery, affirmations].find(r => r.error)
+  if (failed?.error) return dbError(failed.error)
+
+  const j = journal.data
+  const s = sleep.data
+  const list = affirmations.data ?? []
+
+  return NextResponse.json({
+    journal: j ? {
+      objective: j.objective,
+      rating_motivation: j.rating_motivation,
+      rating_focus: j.rating_focus,
+      rating_confidence: j.rating_confidence,
+      rating_anxiety: j.rating_anxiety,
+      quick: !j.action_step_1?.trim() && !j.strength_1?.trim() && !j.weakness?.trim(),
+    } : null,
+    sleep: s ? {
+      hours_slept: s.hours_slept,
+      sleep_quality: s.sleep_quality,
+      bedtime: s.bedtime,
+      wake_time: s.wake_time,
+      notes: s.notes,
+    } : null,
+    pillars: {
+      mind: !!j || (gratitude.count ?? 0) > 0 || (visualization.count ?? 0) > 0 || (flow.count ?? 0) > 0,
+      body: (workout.count ?? 0) > 0 || (practice.count ?? 0) > 0,
+      fuel: (food.count ?? 0) > 0,
+      rest: !!s || (recovery.count ?? 0) > 0,
+    },
+    affirmation: list.length ? list[dayOfYear(date) % list.length].text : null,
+  })
+}

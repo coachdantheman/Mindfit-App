@@ -28,13 +28,22 @@ export default function JournalTab() {
 
   if (loading) return <Skeleton />
 
+  // A quick check-in saves only the objective and ratings; the text fields are blank.
+  const quick = !!todayEntry &&
+    !todayEntry.action_step_1?.trim() && !todayEntry.strength_1?.trim() && !todayEntry.weakness?.trim()
+
   return (
     <div>
       <h2 className="text-base font-semibold text-fg-1">Daily Objective Journal</h2>
       <p className="text-fg-4 text-sm mb-4">
         {format(new Date(), 'EEEE, MMMM d, yyyy')}
       </p>
-      {todayEntry ? (
+      {quick && todayEntry ? (
+        <>
+          <p className="text-sm text-fg-3 mb-4">Your check-in is saved. Finish the full journal when you are ready.</p>
+          <JournalForm existing={todayEntry} onSaved={entry => setTimeout(() => setTodayEntry(entry), 1500)} />
+        </>
+      ) : todayEntry ? (
         <TodayEntry entry={todayEntry} />
       ) : (
         <JournalForm onSaved={entry => setTimeout(() => setTodayEntry(entry), 1500)} />

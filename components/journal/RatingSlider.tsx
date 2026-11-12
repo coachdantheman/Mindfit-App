@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { UseFormRegisterReturn } from 'react-hook-form'
+import { haptic } from '@/lib/haptics'
 
 interface RatingSliderProps {
   label: string
@@ -37,6 +38,13 @@ export default function RatingSlider({
 
   const pct = ((value - 1) / 9) * 100
 
+  // Haptic only on a real change from the athlete, never on mount or parent resets.
+  const commit = (next: number) => {
+    if (next === value) return
+    haptic.tick()
+    onChange(next)
+  }
+
   const fromClientX = (clientX: number): number => {
     const el = railRef.current
     if (!el) return value
@@ -48,20 +56,20 @@ export default function RatingSlider({
   const onPointerDown = (e: React.PointerEvent) => {
     const target = e.currentTarget as HTMLElement
     target.setPointerCapture(e.pointerId)
-    onChange(fromClientX(e.clientX))
+    commit(fromClientX(e.clientX))
   }
   const onPointerMove = (e: React.PointerEvent) => {
     if (!(e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) return
-    onChange(fromClientX(e.clientX))
+    commit(fromClientX(e.clientX))
   }
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     const k = e.key
-    if (k === 'ArrowRight' || k === 'ArrowUp') { e.preventDefault(); onChange(Math.min(10, value + 1)) }
-    else if (k === 'ArrowLeft' || k === 'ArrowDown') { e.preventDefault(); onChange(Math.max(1, value - 1)) }
-    else if (k === 'Home') { e.preventDefault(); onChange(1) }
-    else if (k === 'End') { e.preventDefault(); onChange(10) }
-    else if (/^[0-9]$/.test(k)) { e.preventDefault(); onChange(k === '0' ? 10 : Number(k)) }
+    if (k === 'ArrowRight' || k === 'ArrowUp') { e.preventDefault(); commit(Math.min(10, value + 1)) }
+    else if (k === 'ArrowLeft' || k === 'ArrowDown') { e.preventDefault(); commit(Math.max(1, value - 1)) }
+    else if (k === 'Home') { e.preventDefault(); commit(1) }
+    else if (k === 'End') { e.preventDefault(); commit(10) }
+    else if (/^[0-9]$/.test(k)) { e.preventDefault(); commit(k === '0' ? 10 : Number(k)) }
   }
 
   return (
@@ -106,7 +114,7 @@ export default function RatingSlider({
           <button
             key={n}
             type="button"
-            onClick={() => onChange(n)}
+            onClick={() => commit(n)}
             className={`text-xs tabular-nums min-w-[28px] min-h-[32px] sm:min-w-0 sm:min-h-0 px-1 rounded transition-colors ${
               n === value
                 ? 'text-fg-1 font-semibold'

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { cached } from '@/lib/api-cache'
 import SaveButton from '@/components/shared/SaveButton'
+import RatingSlider from '@/components/journal/RatingSlider'
 import { useToast } from '@/components/shared/Toast'
 import { clearDraft, draftKey, readDraft, writeDraft } from '@/lib/useDraft'
 import { WeeklyAssessment as WeeklyAssessmentType } from '@/types'
@@ -134,53 +135,17 @@ export default function WeeklyAssessment({ mode = 'weekly', onComplete }: Weekly
 
         <div className="space-y-4">
           {CATEGORIES.map(({ key, label, description }) => (
-            <div key={key}>
-              <div className="flex items-center justify-between mb-1.5">
-                <div>
-                  <span className="text-sm font-medium text-fg-2">{label}</span>
-                  <p className="text-xs text-fg-4">{description}</p>
-                </div>
-                <span className="text-lg font-bold text-cta tabular-nums w-8 text-right">{scores[key]}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-fg-4 w-3">1</span>
-                <div className="relative flex-1 h-8 flex items-center">
-                  <div className="absolute inset-y-0 left-0 right-0 flex items-center">
-                    <div className="w-full h-2 rounded-full bg-surface-2 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-[width] ${getScoreColor(scores[key])}`}
-                        style={{ width: `calc(10px + (100% - 20px) * ${(scores[key] - 1) / 9})` }}
-                      />
-                    </div>
-                  </div>
-                  {/* One dot per score, plus a handle at the current value, so it reads as draggable. */}
-                  {Array.from({ length: 10 }, (_, i) => (
-                    <span
-                      key={i}
-                      aria-hidden
-                      className={`absolute h-1.5 w-1.5 -translate-x-1/2 rounded-full ${i + 1 <= scores[key] ? 'bg-white/60' : 'bg-fg-4/50'}`}
-                      style={{ left: `calc(10px + (100% - 20px) * ${i / 9})` }}
-                    />
-                  ))}
-                  <span
-                    aria-hidden
-                    className={`pointer-events-none absolute h-5 w-5 -translate-x-1/2 rounded-full border-2 border-white shadow-md transition-[left] ${getScoreColor(scores[key])}`}
-                    style={{ left: `calc(10px + (100% - 20px) * ${(scores[key] - 1) / 9})` }}
-                  />
-                  <input
-                    type="range"
-                    min="1"
-                    max="10"
-                    value={scores[key]}
-                    onChange={e => {
-                      setScores(prev => ({ ...prev, [key]: parseInt(e.target.value) }))
-                      setSaved(false)
-                    }}
-                    className="absolute inset-0 w-full opacity-0 cursor-pointer"
-                  />
-                </div>
-                <span className="text-xs text-fg-4 w-4">10</span>
-              </div>
+            <div key={key} className="space-y-1">
+              <p className="text-xs text-fg-4">{description}</p>
+              <RatingSlider
+                label={label}
+                value={scores[key]}
+                color={getScoreColor(scores[key])}
+                onChange={v => {
+                  setScores(prev => ({ ...prev, [key]: v }))
+                  setSaved(false)
+                }}
+              />
             </div>
           ))}
         </div>

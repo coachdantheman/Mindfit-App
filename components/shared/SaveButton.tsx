@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { haptic } from '@/lib/haptics'
 
 export type SaveState = 'idle' | 'saving' | 'saved' | 'error'
 
@@ -24,6 +25,7 @@ export default function SaveButton({
   useEffect(() => {
     if (state !== 'saved') { setShowSaved(false); return }
     setShowSaved(true)
+    haptic.success()
     const t = setTimeout(() => setShowSaved(false), 2500)
     return () => clearTimeout(t)
   }, [state])

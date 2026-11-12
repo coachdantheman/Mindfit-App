@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { JournalEntry, JournalFormData } from '@/types'
 import RatingSlider from './RatingSlider'
 import SaveButton, { SaveState } from '@/components/shared/SaveButton'
+import CrisisNote from '@/components/shared/CrisisNote'
 import { useToast } from '@/components/shared/Toast'
 import { clearDraft, draftKey, readDraft, writeDraft } from '@/lib/useDraft'
 import { localDateISO } from '@/lib/dates'
@@ -18,33 +19,54 @@ const DEFAULTS: Partial<JournalFormData> = {
 interface Props {
   previewMode?: boolean
   onSaved?: (entry: JournalEntry) => void
+  /** Edit an existing entry (e.g. a quick check-in). Saves with PUT for that entry's date. */
+  existing?: JournalEntry
 }
 
-export default function JournalForm({ previewMode = false, onSaved }: Props) {
+export default function JournalForm({ previewMode = false, onSaved, existing }: Props) {
   const notify = useToast()
   const [state, setState] = useState<SaveState>('idle')
   const [error, setError] = useState('')
   const [restored, setRestored] = useState(false)
   const key = draftKey('journal')
 
+  const existingDefaults: Partial<JournalFormData> | undefined = existing && {
+    objective: existing.objective,
+    action_step_1: existing.action_step_1,
+    action_step_2: existing.action_step_2,
+    action_step_3: existing.action_step_3,
+    strength_1: existing.strength_1,
+    strength_2: existing.strength_2,
+    strength_3: existing.strength_3,
+    weakness: existing.weakness,
+    extra_notes: existing.extra_notes ?? '',
+    rating_motivation: existing.rating_motivation,
+    rating_focus: existing.rating_focus,
+    rating_confidence: existing.rating_confidence,
+    rating_anxiety: existing.rating_anxiety,
+  }
+
   const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<JournalFormData>({
-    defaultValues: DEFAULTS,
+    defaultValues: existingDefaults ?? DEFAULTS,
   })
 
   // Restore an unsent draft, then keep it updated as the athlete types.
+  // Editing an existing entry uses its saved values, so the draft is ignored.
   useEffect(() => {
+    if (existing) return
     const saved = readDraft<Partial<JournalFormData>>(key)
     if (saved) { reset({ ...DEFAULTS, ...saved }); setRestored(true) }
-  }, [key, reset])
+  }, [key, reset, existing])
 
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
   useEffect(() => {
+    if (existing) return
     const sub = watch(values => {
       clearTimeout(timer.current)
       timer.current = setTimeout(() => writeDraft(key, values), 300)
     })
     return () => { sub.unsubscribe(); clearTimeout(timer.current) }
-  }, [watch, key])
+  }, [watch, key, existing])
 
   const ratings = {
     motivation: watch('rating_motivation'),
@@ -60,9 +82,9 @@ export default function JournalForm({ previewMode = false, onSaved }: Props) {
     const today = localDateISO()
     try {
       const res = await fetch('/api/journal', {
-        method: 'POST',
+        method: existing ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, entry_date: today }),
+        body: JSON.stringify({ ...data, entry_date: existing ? existing.entry_date : today }),
       })
       const json = await res.json()
       if (!res.ok) {
@@ -218,11 +240,7 @@ export default function JournalForm({ previewMode = false, onSaved }: Props) {
           onChange={v => setValue('rating_anxiety', v)}
           color="bg-orange-500"
         />
-        {Number(ratings.anxiety) >= 8 && (
-          <p className="text-xs text-fg-3 bg-surface-2 rounded-lg px-3 py-2">
-            Carrying a lot right now? You don&rsquo;t have to handle it alone. Talk to a parent, coach or school counselor. In the US you can call or text 988 any time, free and confidential.
-          </p>
-        )}
+        {Number(ratings.anxiety) >= 8 && <CrisisNote />}
         {!previewMode && (
           <p className="text-xs text-fg-4">
             Need to talk to someone? <a href="/support#help" className="underline hover:text-fg-2">Find help here</a>.

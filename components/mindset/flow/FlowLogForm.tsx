@@ -1,7 +1,8 @@
 'use client'
-import { useId, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { FlowTrigger } from '@/types'
+import RatingSlider from '@/components/journal/RatingSlider'
 import { TRIGGERS } from '@/components/mindset/flow/flow-constants'
 import { flowZone, ZONE_COLOR } from '@/components/mindset/flow-logic'
 
@@ -107,8 +108,8 @@ export default function FlowLogForm() {
           />
         </div>
 
-        <IntSlider label="Challenge level" value={challenge} onChange={setChallenge} />
-        <IntSlider label="Skill level today" value={skill} onChange={setSkill} />
+        <RatingSlider label="Challenge level" value={challenge} onChange={setChallenge} color="bg-cta" />
+        <RatingSlider label="Skill level today" value={skill} onChange={setSkill} color="bg-cta" />
 
         <div className={`flex items-center justify-between rounded-xl border px-4 py-3 ${ZONE_COLOR[zone].tw}`}>
           <span className="text-sm font-semibold">{ZONE_COLOR[zone].label}</span>
@@ -117,7 +118,7 @@ export default function FlowLogForm() {
           </span>
         </div>
 
-        <IntSlider label="Flow score — how in the zone were you?" value={flow} onChange={setFlow} />
+        <RatingSlider label="Flow score — how in the zone were you?" value={flow} onChange={setFlow} color="bg-cta" />
 
         <div>
           <p className="text-sm text-fg-3 mb-2">Which triggers fired today?</p>
@@ -160,24 +161,3 @@ export default function FlowLogForm() {
   )
 }
 
-function IntSlider({ label, value, onChange }: { label: string; value: number; onChange: (n: number) => void }) {
-  const id = useId()
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-1">
-        <label htmlFor={id} className="text-sm text-fg-3">{label}</label>
-        <span className="text-cta font-bold tabular-nums">{value}/10</span>
-      </div>
-      <input
-        id={id}
-        type="range"
-        min={1}
-        max={10}
-        step={1}
-        value={value}
-        onChange={e => onChange(parseInt(e.target.value))}
-        className="w-full accent-cta"
-      />
-    </div>
-  )
-}

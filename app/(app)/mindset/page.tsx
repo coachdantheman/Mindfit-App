@@ -7,6 +7,7 @@ import LessonLinks from '@/components/shared/LessonLinks'
 import QuoteOfTheDay from '@/components/mindset/QuoteOfTheDay'
 import PushPrompt from '@/components/shared/PushPrompt'
 import { LessonSection } from '@/types'
+import TodayCard from '@/components/today/TodayCard'
 
 const JournalTab = dynamic(() => import('@/components/mindset/JournalTab'))
 const VisualizationForm = dynamic(() => import('@/components/mindset/VisualizationForm'))
@@ -78,6 +79,8 @@ function MindsetContent() {
         <h1 className="page-title">Mindset</h1>
         <p className="page-subtitle">Train your mind. Build your identity.</p>
       </div>
+
+      <TodayCard />
 
       <PushPrompt />
 
