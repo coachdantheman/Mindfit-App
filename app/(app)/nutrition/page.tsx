@@ -31,6 +31,11 @@ export default function NutritionPage() {
   }, [])
 
   useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get('tab')
+    if (t && TABS.some(x => x.key === t)) setTab(t as Tab)
+  }, [])
+
+  useEffect(() => {
     cached('/api/nutrition/goals', (g: NutritionGoal | null) => setGoal(g?.id ? g : null)).catch(() => {})
     cached('/api/nutrition/foods', (d: Food[]) => setFoods(Array.isArray(d) ? d : [])).catch(() => {})
     cached('/api/nutrition/favorites', (d: Food[]) => setFavorites(Array.isArray(d) ? d : [])).catch(() => {})

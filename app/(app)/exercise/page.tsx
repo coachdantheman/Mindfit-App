@@ -9,11 +9,12 @@ import TrackWorkout from '@/components/exercise/TrackWorkout'
 import StrengthStandards from '@/components/exercise/StrengthStandards'
 import PreBuiltWorkouts from '@/components/exercise/PreBuiltWorkouts'
 import PracticeLog from '@/components/exercise/PracticeLog'
+import GameDay from '@/components/exercise/GameDay'
 import LessonLinks from '@/components/shared/LessonLinks'
 import { cached } from '@/lib/api-cache'
 import { clearDraft, draftFromWorkout, draftStats, loadDraft, saveDraft, type WorkoutDraft } from '@/lib/workout-draft'
 
-type Tab = 'plan' | 'schedule' | 'track' | 'practice' | 'strength' | 'prebuilt'
+type Tab = 'plan' | 'schedule' | 'track' | 'practice' | 'gameday' | 'strength' | 'prebuilt'
 type ToastKind = 'success' | 'error'
 
 const TABS: { key: Tab; label: string }[] = [
@@ -21,6 +22,7 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'schedule', label: 'Schedule' },
   { key: 'track', label: 'Custom' },
   { key: 'practice', label: 'Practice' },
+  { key: 'gameday', label: 'Game Day' },
   { key: 'strength', label: 'Level' },
   { key: 'prebuilt', label: 'Pre-Built' },
 ]
@@ -141,7 +143,10 @@ export default function ExercisePage() {
         />
       </div>
       <div className={tab === 'practice' ? '' : 'hidden'}>
-        <PracticeLog notify={notify} />
+        <PracticeLog notify={notify} fixedKind="practice" />
+      </div>
+      <div className={tab === 'gameday' ? '' : 'hidden'}>
+        <GameDay notify={notify} onOpenSchedule={() => { setTab('schedule'); window.scrollTo({ top: 0 }) }} />
       </div>
       <div className={tab === 'strength' ? '' : 'hidden'}>
         <StrengthStandards

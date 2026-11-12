@@ -62,6 +62,7 @@ interface FlowRow { id: string; skill_level: number; flow_score: number; trigger
 
 interface Props {
   notify: (msg: string, kind?: 'success' | 'error') => void
+  fixedKind?: Kind
 }
 
 const EMPTY: Form = {
@@ -96,9 +97,9 @@ function fromEntry(e: Entry, flow: FlowRow | undefined, sport: string): Form {
 
 // Exercise → Practice. One practice and one game per day; the difficulty
 // score doubles as the flow challenge level when the flow thread is on.
-export default function PracticeLog({ notify }: Props) {
+export default function PracticeLog({ notify, fixedKind }: Props) {
   const today = localDateISO()
-  const [kind, setKind] = useState<Kind>('practice')
+  const [kind, setKind] = useState<Kind>(fixedKind ?? 'practice')
   const [forms, setForms] = useState<Record<Kind, Form>>({ practice: EMPTY, game: EMPTY })
   const [saved, setSaved] = useState<Record<Kind, boolean>>({ practice: false, game: false })
   const [state, setState] = useState<SaveState>('idle')
@@ -131,7 +132,7 @@ export default function PracticeLog({ notify }: Props) {
       const teamGame = schedule.find(e => e.kind === 'game' && e.event_date === today)
       const session = new URLSearchParams(window.location.search).get('session')
       if (session) setStackSession(session)
-      if (session || teamGame || profile?.next_competition_at?.slice(0, 10) === today) setKind('game')
+      if (!fixedKind && (session || teamGame || profile?.next_competition_at?.slice(0, 10) === today)) setKind('game')
 
       const entries: Entry[] = day?.entries ?? []
       const flows: FlowRow[] = day?.flows ?? []
@@ -155,7 +156,7 @@ export default function PracticeLog({ notify }: Props) {
       setLoading(false)
     })
     cached('/api/exercise/practice?days=14', (d: Entry[]) => { if (Array.isArray(d)) setRecent(d) }).catch(() => {})
-  }, [today])
+  }, [today, fixedKind])
 
   useEffect(() => {
     if (loading || saved[kind]) return
@@ -217,6 +218,7 @@ export default function PracticeLog({ notify }: Props) {
   const zone = flowZone(form.difficulty, form.skill)
   const diff = form.difficulty - form.skill
   const isGame = kind === 'game'
+  const shownRecent = fixedKind ? recent.filter(e => e.kind === fixedKind) : recent
 
   if (loading) return <Skeleton />
 
@@ -226,7 +228,8 @@ export default function PracticeLog({ notify }: Props) {
         <div>
           <div className="flex items-center justify-between gap-3 mb-1">
             <h3 className="font-semibold text-fg-1">{isGame ? 'Game day' : 'Sport practice'}</h3>
-            <div className="flex gap-1.5" role="tablist" aria-label="Log type">
+            {!fixedKind && (
+              <div className="flex gap-1.5" role="tablist" aria-label="Log type">
               {(['practice', 'game'] as Kind[]).map(k => (
                 <button key={k} type="button" role="tab" aria-selected={kind === k} onClick={() => { setKind(k); setState('idle') }}
                   className={kind === k ? 'tab-btn-active text-xs' : 'tab-btn text-xs'}>
@@ -235,6 +238,7 @@ export default function PracticeLog({ notify }: Props) {
                 </button>
               ))}
             </div>
+            )}
           </div>
           <p className="text-sm text-fg-4">
             {isGame
@@ -366,10 +370,10 @@ export default function PracticeLog({ notify }: Props) {
 
       <div>
         <h4 className="text-sm font-semibold text-fg-1 mb-3">Last 14 days</h4>
-        {recent.length === 0 ? (
-          <p className="text-sm text-fg-4 text-center py-6">Nothing logged yet. Your first practice goes above.</p>
+        {shownRecent.length === 0 ? (
+          <p className="text-sm text-fg-4 text-center py-6">Nothing logged yet. Your first {fixedKind === 'game' ? 'game' : 'practice'} goes above.</p>
         ) : (
-          <CollapsibleList className="space-y-2" items={recent} visible={3} noun="older logs" render={e => (
+          <CollapsibleList className="space-y-2" items={shownRecent} visible={3} noun="older logs" render={e => (
               <div key={e.id} className="bg-surface rounded-xl border border-edge p-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0 flex items-center gap-2">
