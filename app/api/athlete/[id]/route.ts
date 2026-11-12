@@ -5,6 +5,7 @@ import { loadOverview } from '@/lib/overview-server'
 import { boardStatusFor } from '@/lib/leaderboard-server'
 import { calcMPI, MPI_DIMENSIONS, type MpiKey } from '@/lib/mpi'
 import { bestE1rm, evaluateLift } from '@/lib/strength'
+import { chunk } from '@/lib/fetch-all'
 import type { AthleteProfile, ExerciseLibraryRow, StrengthTier } from '@/types/exercise'
 
 type Admin = ReturnType<typeof createAdminClient>
@@ -55,7 +56,7 @@ async function loadStrengthTiers(admin: Admin, athleteId: string): Promise<Stren
   if (ids.length === 0) return []
 
   const [{ data: lib }, { data: profile }, setResults] = await Promise.all([
-    admin.from('exercise_library').select('*').in('id', ids),
+    Promise.all(chunk(ids, 100).map(c => admin.from('exercise_library').select('*').in('id', c))).then(rs => ({ data: rs.flatMap(r => r.data ?? []) })),
     admin.from('athlete_profiles').select('*').eq('user_id', athleteId).maybeSingle(),
     Promise.all(ids.map(id =>
       admin.from('exercise_logs').select('reps, weight, created_at')

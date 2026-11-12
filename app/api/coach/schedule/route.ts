@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { managedTeam } from '@/lib/teams'
 import { cleanEvent } from '@/lib/schedule'
+import { chunk } from '@/lib/fetch-all'
 
 const COLS = 'id, team_id, kind, event_date, start_time, opponent, location, home_away, notes'
 
@@ -44,7 +45,9 @@ export async function DELETE(req: Request) {
   if (!team) return NextResponse.json({ error: 'Team not found' }, { status: 404 })
   const ids: string[] = Array.isArray(body.ids) ? body.ids.filter((x: unknown) => typeof x === 'string') : []
   if (ids.length === 0) return NextResponse.json({ error: 'ids required' }, { status: 400 })
-  const { error } = await admin.from('team_events').delete().eq('team_id', team.id).in('id', ids)
-  if (error) return dbError(error)
+  for (const c of chunk(ids, 100)) {
+    const { error } = await admin.from('team_events').delete().eq('team_id', team.id).in('id', c)
+    if (error) return dbError(error)
+  }
   return NextResponse.json({ ok: true })
 }

@@ -3,6 +3,7 @@ import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { intOrNull, isISODate, optionalString } from '@/lib/validate'
+import { chunk } from '@/lib/fetch-all'
 import { TRIGGERS } from '@/components/mindset/flow/flow-constants'
 import type { FlowTrigger } from '@/types'
 
@@ -28,9 +29,8 @@ export async function GET(req: Request) {
     ])
     if (error) return dbError(error)
     const flowIds = (entries ?? []).map(e => e.flow_log_id).filter((v): v is string => !!v)
-    const { data: flows } = flowIds.length
-      ? await admin.from('flow_logs').select('id, skill_level, flow_score, triggers_fired').in('id', flowIds)
-      : { data: [] as any[] }
+    const flows = (await Promise.all(chunk(flowIds, 100).map(c =>
+      admin.from('flow_logs').select('id, skill_level, flow_score, triggers_fired').in('id', c)))).flatMap(r => r.data ?? [])
     return NextResponse.json({ entries: entries ?? [], journal: journal ?? null, flows: flows ?? [] })
   }
 
@@ -48,9 +48,8 @@ export async function GET(req: Request) {
   if (error) return dbError(error)
 
   const flowIds = (data ?? []).map(e => e.flow_log_id).filter((v): v is string => !!v)
-  const { data: flows } = flowIds.length
-    ? await admin.from('flow_logs').select('id, flow_score').in('id', flowIds)
-    : { data: [] as any[] }
+  const flows = (await Promise.all(chunk(flowIds, 100).map(c =>
+    admin.from('flow_logs').select('id, flow_score').in('id', c)))).flatMap(r => r.data ?? [])
   const flowScore = new Map((flows ?? []).map(f => [f.id, f.flow_score]))
   return NextResponse.json((data ?? []).map(e => ({ ...e, flow_score: e.flow_log_id ? flowScore.get(e.flow_log_id) ?? null : null })))
 }

@@ -11,9 +11,22 @@ export default function CoachManager() {
   const [updating, setUpdating] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch('/api/admin/members')
-      .then(r => r.json())
-      .then(data => { setMembers(data); setLoading(false) })
+    const load = async () => {
+      try {
+        const first = await fetch('/api/admin/members').then(r => r.json())
+        if (!Array.isArray(first?.rows)) throw new Error('load')
+        const pages = Math.ceil((first.total || 0) / (first.pageSize || 50))
+        const rest = await Promise.all(Array.from({ length: Math.max(0, pages - 1) }, (_, i) =>
+          fetch(`/api/admin/members?page=${i + 2}`).then(r => r.json())
+        ))
+        setMembers([first, ...rest].flatMap(p => (Array.isArray(p?.rows) ? p.rows : [])))
+      } catch {
+        notify("Couldn't load members. Refresh to try again.", 'error')
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
   }, [])
 
   const toggleCoach = async (userId: string, currentRole: string) => {

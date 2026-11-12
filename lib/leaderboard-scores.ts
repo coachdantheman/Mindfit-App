@@ -77,6 +77,13 @@ export async function refreshScore(admin: SupabaseClient, userId: string, tz: st
   return built[0]
 }
 
+/** This month's row, rebuilt only if the stored one is older than `maxAgeMs`. Works across server instances. */
+export async function freshScore(admin: SupabaseClient, userId: string, tz: string, maxAgeMs = 60_000, now = new Date()): Promise<ScoreRow | null> {
+  const { data } = await admin.from('leaderboard_scores').select('*').eq('user_id', userId).eq('month', monthBounds(now, tz).month).maybeSingle()
+  if (data?.updated_at && now.getTime() - new Date(data.updated_at).getTime() < maxAgeMs) return data as ScoreRow
+  return refreshScore(admin, userId, tz, now)
+}
+
 const refreshed = new Map<string, number>()
 
 /** refreshScore at most once per `maxAgeMs` per athlete per server instance. */

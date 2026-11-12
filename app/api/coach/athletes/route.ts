@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { calcStreak } from '@/lib/streaks'
 import { latestOf } from '@/lib/last-seen'
+import { chunk, fetchAll } from '@/lib/fetch-all'
 
 interface OverviewRow {
   athlete_id: string
@@ -48,27 +49,40 @@ export async function GET() {
     return NextResponse.json([])
   }
 
-  let query = admin
-    .from('profiles')
-    .select('*, journal_entries(count)')
-    .order('created_at', { ascending: false })
+  const readProfiles = (ids?: string[]) => fetchAll(async (from, to) => {
+    let q = admin.from('profiles').select('*, journal_entries(count)')
+    if (ids) q = q.in('id', ids)
+    return q
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: true })
+      .range(from, to)
+  })
 
-  if (auth.role === 'coach') {
-    query = query.in('id', athleteIds)
+  let profileLists: any[][]
+  let overviewRows: any[]
+  try {
+    [profileLists, overviewRows] = await Promise.all([
+      auth.role === 'coach'
+        ? Promise.all(chunk(athleteIds, 100).map(ids => readProfiles(ids)))
+        : readProfiles().then(list => [list]),
+      // Streak and MPI extras are optional: the roster still loads without them.
+      fetchAll<any>(async (from, to) => admin
+        .rpc('get_coach_athlete_overview', {
+          p_coach_id: auth.role === 'coach' ? auth.userId : null,
+        })
+        .order('athlete_id', { ascending: true })
+        .range(from, to)).catch(() => []),
+    ])
+  } catch (e: any) {
+    return dbError({ message: e?.message })
   }
 
-  const [{ data: profiles, error }, overviewRes] = await Promise.all([
-    query,
-    admin.rpc('get_coach_athlete_overview', {
-      p_coach_id: auth.role === 'coach' ? auth.userId : null,
-    }),
-  ])
-
-  if (error) return dbError(error)
+  const profiles = profileLists.flat().sort((a: any, b: any) =>
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime() || a.id.localeCompare(b.id))
 
   // The RPC only exists after migration v13 — degrade gracefully without it.
   const overviewMap = new Map<string, OverviewRow>(
-    ((overviewRes.data as OverviewRow[]) ?? []).map(o => [o.athlete_id, o])
+    (overviewRows as OverviewRow[]).map(o => [o.athlete_id, o])
   )
 
   const athletes = (profiles ?? []).map((p: any) => {

@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { cronAuthorized } from '@/lib/cron-auth'
-import { notify, DEFAULT_PREFS, type Prefs, type Message } from '@/lib/notify'
+import { DEFAULT_PREFS, type Prefs, type Message } from '@/lib/notify'
+import { enqueue, drainQueue } from '@/lib/notify-queue'
+import { fetchAll } from '@/lib/fetch-all'
 import { copy } from '@/lib/notify-copy'
 import { scheduledKinds, localClock, shiftDate, inQuietHours } from '@/lib/notify-jobs'
 import { levelFor, titleFor, monthBounds, isValidTimeZone, displayNameFor } from '@/lib/leaderboard'
@@ -11,20 +13,11 @@ import { LEVELS } from '@/lib/leaderboard-config'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
-const PAGE = 1000
 const MAX_REFRESH_PER_RUN = 4000
 // last_seen_at is only stamped every 10 minutes, so allow for that gap.
 const SEEN_SLACK_MS = 15 * 60_000
-
-// PostgREST returns at most 1000 rows per request; read every page.
-async function fetchAll<T>(page: (from: number, to: number) => PromiseLike<{ data: T[] | null }>): Promise<T[]> {
-  const out: T[] = []
-  for (let from = 0; ; from += PAGE) {
-    const { data } = await page(from, from + PAGE - 1)
-    out.push(...(data ?? []))
-    if (!data || data.length < PAGE) return out
-  }
-}
+// Sending stops here so a slow last batch still ends inside maxDuration.
+const BUDGET_MS = 220_000
 
 // Runs once per UTC hour (24 daily entries in vercel.json; Hobby crons
 // fire anywhere inside their hour). Every send has a dedupe key, so an
@@ -35,6 +28,7 @@ export async function GET(req: Request) {
   const dryRun = new URL(req.url).searchParams.get('dryRun') === '1'
   const admin = createAdminClient()
   const now = new Date()
+  const deadline = now.getTime() + BUDGET_MS
 
   const [profiles, prefRows] = await Promise.all([
     fetchAll<{ id: string; full_name: string | null; role: string; birth_year: number | null; consent_status: string; last_seen_at: string | null }>((from, to) =>
@@ -63,7 +57,9 @@ export async function GET(req: Request) {
     const row = scoreOf.get(`${u.id}:${monthOf(u.id)}`)
     return row?.updated_at ? seen > new Date(row.updated_at).getTime() - SEEN_SLACK_MS : seen > recentCutoff
   }).slice(0, MAX_REFRESH_PER_RUN)
-  for (let i = 0; i < stale.length; i += 10) {
+  // Score refreshes get at most 40% of the run; reminders matter more.
+  const refreshBy = now.getTime() + BUDGET_MS * 0.4
+  for (let i = 0; i < stale.length && Date.now() < refreshBy; i += 10) {
     const fresh = await Promise.all(stale.slice(i, i + 10).map(u => refreshScore(admin, u.id, tzOf(u.id), now).catch(() => null)))
     for (const row of fresh) if (row) scoreOf.set(`${row.user_id}:${row.month}`, { ...row, updated_at: now.toISOString() })
   }
@@ -88,9 +84,14 @@ export async function GET(req: Request) {
     : []
 
   // Quiz taken 30 days ago.
-  const { data: quizzes } = await admin.from('quiz_results').select('id, user_id, created_at')
+  const quizzes = await fetchAll<any>((from, to) => admin.from('quiz_results').select('id, user_id, created_at')
     .gte('created_at', new Date(now.getTime() - 32 * 86_400_000).toISOString())
     .lte('created_at', new Date(now.getTime() - 29 * 86_400_000).toISOString())
+    .order('id').range(from, to))
+  const teamsOf = new Map<string, Set<string>>()
+  for (const m of gameMembers) teamsOf.set(m.athlete_id, (teamsOf.get(m.athlete_id) ?? new Set<string>()).add(m.team_id))
+  const quizzesOf = new Map<string, any[]>()
+  for (const q of quizzes) quizzesOf.set(q.user_id, [...(quizzesOf.get(q.user_id) ?? []), q])
 
   for (const u of users) {
     const tz = tzOf(u.id)
@@ -143,11 +144,11 @@ export async function GET(req: Request) {
 
       if (clock.hour === prefs.reminder_hour) {
         const tomorrow = shiftDate(clock.date, 1)
-        const myTeams = new Set((gameMembers ?? []).filter((m: any) => m.athlete_id === u.id).map((m: any) => m.team_id))
-        const game = (games ?? []).find((g: any) => g.event_date === tomorrow && myTeams.has(g.team_id))
+        const myTeams = teamsOf.get(u.id)
+        const game = myTeams ? (games ?? []).find((g: any) => g.event_date === tomorrow && myTeams.has(g.team_id)) : undefined
         if (game) send(u.id, { type: 'game_tomorrow', category: 'reminders', url: '/mindset', dedupeKey: `game:${u.id}:${tomorrow}`, ...copy.gameTomorrow(game.opponent) })
 
-        const quiz = (quizzes ?? []).find((q: any) => q.user_id === u.id && localClock(tz, new Date(q.created_at)).date === shiftDate(clock.date, -30))
+        const quiz = (quizzesOf.get(u.id) ?? []).find((q: any) => localClock(tz, new Date(q.created_at)).date === shiftDate(clock.date, -30))
         if (quiz) send(u.id, { type: 'quiz_retake', category: 'reminders', url: '/learn', dedupeKey: `quiz:${u.id}:${quiz.id}`, ...copy.quizRetake() })
       }
     }
@@ -175,12 +176,13 @@ export async function GET(req: Request) {
     return NextResponse.json({ dryRun: true, users: users.length, refreshed: stale.length, queued: queue.length, byType, snapshots: snapshotWrites.length })
   }
 
-  if (snapshotWrites.length) await admin.from('progress_snapshots').upsert(snapshotWrites, { onConflict: 'user_id,month' })
-  const results: Record<string, number> = {}
-  for (let i = 0; i < queue.length; i += 10) {
-    const batch = await Promise.all(queue.slice(i, i + 10).map(q => notify(admin, q.userId, q.msg).catch(() => 'skipped' as const)))
-    for (const r of batch) results[r] = (results[r] ?? 0) + 1
+  for (let i = 0; i < snapshotWrites.length; i += 500) {
+    await admin.from('progress_snapshots').upsert(snapshotWrites.slice(i, i + 500), { onConflict: 'user_id,month' })
   }
+  // Everything goes into the queue first. Whatever this run cannot send in
+  // time stays there for the half-hour drain run.
+  await enqueue(admin, queue, now)
   await admin.from('notification_log').delete().lt('sent_at', new Date(now.getTime() - 120 * 86_400_000).toISOString())
+  const results = await drainQueue(admin, deadline)
   return NextResponse.json({ ok: true, users: users.length, queued: queue.length, results })
 }

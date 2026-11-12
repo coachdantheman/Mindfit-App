@@ -2,12 +2,15 @@
 const supabaseHost = (() => {
   try { return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).host } catch { return '*.supabase.co' }
 })()
+const sentryHost = (() => {
+  try { return new URL(process.env.NEXT_PUBLIC_SENTRY_DSN).host } catch { return null }
+})()
 const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'production' ? '' : " 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob: https://${supabaseHost}`,
-  `connect-src 'self' https://${supabaseHost} wss://${supabaseHost}`,
+  `connect-src 'self' https://${supabaseHost} wss://${supabaseHost}${sentryHost ? ` https://${sentryHost}` : ''}`,
   "font-src 'self' data:",
   "media-src 'self' blob: mediastream:",
   "worker-src 'self' blob:",
@@ -42,4 +45,9 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfig
+const { withSentryConfig } = require('@sentry/nextjs/config')
+
+module.exports = withSentryConfig(nextConfig, {
+  silent: true,
+  sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
+})

@@ -3,10 +3,11 @@ import { dbError } from '@/lib/api-error'
 import { cronAuthorized } from '@/lib/cron-auth'
 import { createAdminClient } from '@/lib/supabase-server'
 import { getQuoteOfTheDay, QUOTE_TIMEZONE } from '@/lib/data/quotes'
-import { pushConfigured, sendPush } from '@/lib/push'
+import { pushConfigured, sendPush, type StoredSubscription } from '@/lib/push'
+import { fetchAll } from '@/lib/fetch-all'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 60
+export const maxDuration = 300
 
 const SEND_HOUR_CENTRAL = 7
 
@@ -33,13 +34,24 @@ export async function GET(req: Request) {
 
   const quote = getQuoteOfTheDay()
   const admin = createAdminClient()
-  const [{ data: allSubs, error }, { data: optedOut }] = await Promise.all([
-    admin.from('push_subscriptions').select('user_id, endpoint, p256dh, auth'),
-    admin.from('notification_prefs').select('user_id').eq('push_daily_quote', false),
-  ])
+  const { error } = await admin.from('push_subscriptions').select('endpoint').limit(1)
   if (error) return dbError(error)
-  const off = new Set((optedOut ?? []).map(r => r.user_id))
-  const subs = (allSubs ?? []).filter(s => !off.has(s.user_id))
+  let allSubs: (StoredSubscription & { user_id: string })[]
+  let optedOut: { user_id: string }[]
+  try {
+    [allSubs, optedOut] = await Promise.all([
+      fetchAll<StoredSubscription & { user_id: string }>((from, to) =>
+        admin.from('push_subscriptions').select('user_id, endpoint, p256dh, auth').order('endpoint').range(from, to)),
+      fetchAll<{ user_id: string }>((from, to) =>
+        admin.from('notification_prefs').select('user_id').eq('push_daily_quote', false).order('user_id').range(from, to)),
+    ])
+  } catch (e: any) {
+    // Better no quote today than a quote to people who turned it off.
+    return dbError({ message: e?.message ?? 'daily quote read failed' })
+  }
+  const off = new Set(optedOut.map(r => r.user_id))
+  const subs = allSubs.filter(s => !off.has(s.user_id))
+  const deadline = Date.now() + 250_000
 
   const payload = {
     title: 'MindFit — Quote of the Day',
@@ -51,8 +63,10 @@ export async function GET(req: Request) {
   let sent = 0
   let errors = 0
   const gone: string[] = []
-  const batchSize = 50
-  for (let i = 0; i < (subs ?? []).length; i += batchSize) {
+  const batchSize = 100
+  let reached = 0
+  for (let i = 0; i < subs.length && Date.now() < deadline; i += batchSize) {
+    reached = Math.min(subs.length, i + batchSize)
     const results = await Promise.all(subs!.slice(i, i + batchSize).map(s => sendPush(s, payload)))
     results.forEach((r, j) => {
       if (r === 'sent') sent++
@@ -60,7 +74,7 @@ export async function GET(req: Request) {
       else errors++
     })
   }
-  if (gone.length) await admin.from('push_subscriptions').delete().in('endpoint', gone)
+  for (let i = 0; i < gone.length; i += 20) await admin.from('push_subscriptions').delete().in('endpoint', gone.slice(i, i + 20))
 
-  return NextResponse.json({ ok: true, date: quote.date, quote: quote.id, sent, removed: gone.length, errors })
+  return NextResponse.json({ ok: true, date: quote.date, quote: quote.id, sent, removed: gone.length, errors, notReached: subs.length - reached })
 }

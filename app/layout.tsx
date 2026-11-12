@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter, Questrial, JetBrains_Mono } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import './globals.css'
 
 const inter = Inter({
@@ -60,6 +62,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen bg-page text-fg-1 antialiased font-sans">
         {children}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )

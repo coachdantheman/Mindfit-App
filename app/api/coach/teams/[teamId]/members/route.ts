@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { addToTeam, managedTeam, removeFromTeam } from '@/lib/teams'
+import { chunk } from '@/lib/fetch-all'
 
 // Put existing athletes on a team. Coaches can only add their own roster;
 // admins can add anyone, which moves the athlete off the admin's old
@@ -19,12 +20,14 @@ export async function POST(req: Request, props: { params: Promise<{ teamId: stri
   if (ids.length === 0) return NextResponse.json({ error: 'Pick at least one athlete.' }, { status: 400 })
 
   if (auth.role === 'coach') {
-    const { data: roster } = await admin.from('coach_athletes').select('athlete_id').eq('coach_id', auth.userId).in('athlete_id', ids)
-    const mine = new Set((roster ?? []).map(r => r.athlete_id))
+    const roster = (await Promise.all(chunk(ids, 100).map(c =>
+      admin.from('coach_athletes').select('athlete_id').eq('coach_id', auth.userId).in('athlete_id', c)))).flatMap(r => r.data ?? [])
+    const mine = new Set(roster.map(r => r.athlete_id))
     ids = ids.filter(id => mine.has(id))
   } else {
-    const { data: people } = await admin.from('profiles').select('id').in('id', ids).in('role', ['member', 'coach'])
-    const ok = new Set((people ?? []).map(p => p.id))
+    const people = (await Promise.all(chunk(ids, 100).map(c =>
+      admin.from('profiles').select('id').in('id', c).in('role', ['member', 'coach'])))).flatMap(r => r.data ?? [])
+    const ok = new Set(people.map(p => p.id))
     ids = ids.filter(id => ok.has(id))
   }
 
@@ -33,7 +36,8 @@ export async function POST(req: Request, props: { params: Promise<{ teamId: stri
     if ((await addToTeam(admin, team, id)) === 'joined') added++
   }
   if (auth.role === 'admin' && team.coach_id !== auth.userId && ids.length) {
-    await admin.from('coach_athletes').delete().eq('coach_id', auth.userId).in('athlete_id', ids)
+    await Promise.all(chunk(ids, 100).map(c =>
+      admin.from('coach_athletes').delete().eq('coach_id', auth.userId).in('athlete_id', c)))
   }
   return NextResponse.json({ added })
 }

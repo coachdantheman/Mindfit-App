@@ -6,7 +6,7 @@ import { verifyApiUser } from '@/lib/api-auth'
 import {
   titleFor, levelFor, nextLevel, levelProgress, displayNameFor, monthBounds, isValidTimeZone, todayIn, multiplierFor,
 } from '@/lib/leaderboard'
-import { refreshScore, timezoneFor, readBoardPage, pillarsOf, liveStreak } from '@/lib/leaderboard-scores'
+import { freshScore, timezoneFor, readBoardPage, pillarsOf, liveStreak } from '@/lib/leaderboard-scores'
 
 // Returns only display name, sport, title, level and points per person.
 // No ids, emails, MPI, ratings or logged content ever leave this route.
@@ -76,12 +76,13 @@ export async function GET(req: Request) {
 
   const mineIds = myTeamIds.size > 0 ? myTeamIds : undefined
 
-  // My own score is rebuilt from my activity on every view, so points I
-  // just earned show at once. Everyone else's comes from the stored table.
+  // My own score is rebuilt from my activity when the stored one is more than
+  // 15 seconds old, so points I just earned show almost at once while paging
+  // through the Board does not rebuild it on every tap. Everyone else's comes from the stored table.
   const today = todayIn(tz)
   const ranked = auth.role !== 'parent'
   const [myRow, { data: me }] = await Promise.all([
-    ranked ? refreshScore(admin, auth.userId, await timezoneFor(admin, auth.userId, tz)) : null,
+    ranked ? freshScore(admin, auth.userId, await timezoneFor(admin, auth.userId, tz), 15_000) : null,
     ranked
       ? admin.from('profiles').select('full_name, primary_sport, leaderboard_visible, leaderboard_alias').eq('id', auth.userId).maybeSingle()
       : { data: null },

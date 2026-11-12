@@ -5,6 +5,7 @@ import { verifyApiUser } from '@/lib/api-auth'
 import { requireString, optionalString } from '@/lib/validate'
 import { createTeam, TEAM_COLS, type TeamRow } from '@/lib/teams'
 import { hasProfanity } from '@/lib/profanity'
+import { chunk, fetchAll } from '@/lib/fetch-all'
 
 // A coach's teams with rosters. Admins get every team.
 export async function GET() {
@@ -19,16 +20,22 @@ export async function GET() {
   const list = (teams ?? []) as TeamRow[]
   if (list.length === 0) return NextResponse.json([])
 
-  const { data: members } = await admin.from('team_members')
-    .select('team_id, athlete_id, joined_at').in('team_id', list.map(t => t.id))
-  const peopleIds = [...new Set([...(members ?? []).map(m => m.athlete_id), ...list.map(t => t.coach_id)])]
-  const { data: people } = await admin.from('profiles').select('id, full_name, email').in('id', peopleIds)
-  const byId = new Map((people ?? []).map(p => [p.id, p]))
+  const members = (await Promise.all(chunk(list.map(t => t.id), 100).map(ids => fetchAll(async (from, to) => admin
+    .from('team_members')
+    .select('team_id, athlete_id, joined_at')
+    .in('team_id', ids)
+    .order('team_id', { ascending: true })
+    .order('athlete_id', { ascending: true })
+    .range(from, to))))).flat()
+  const peopleIds = [...new Set([...members.map(m => m.athlete_id), ...list.map(t => t.coach_id)])]
+  const people = (await Promise.all(chunk(peopleIds, 100).map(ids =>
+    admin.from('profiles').select('id, full_name, email').in('id', ids)))).flatMap(r => r.data ?? [])
+  const byId = new Map(people.map(p => [p.id, p]))
 
   return NextResponse.json(list.map(t => ({
     ...t,
     coach_name: byId.get(t.coach_id)?.full_name || byId.get(t.coach_id)?.email || null,
-    members: (members ?? []).filter(m => m.team_id === t.id)
+    members: members.filter(m => m.team_id === t.id)
       .map(m => ({ id: m.athlete_id, full_name: byId.get(m.athlete_id)?.full_name ?? null, email: byId.get(m.athlete_id)?.email ?? '', joined_at: m.joined_at }))
       .sort((a, b) => (a.full_name || a.email).localeCompare(b.full_name || b.email)),
   })))

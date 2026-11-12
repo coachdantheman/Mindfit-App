@@ -2,28 +2,38 @@ import { NextResponse } from 'next/server'
 import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
+import { fetchAll } from '@/lib/fetch-all'
 
 export async function GET() {
   const auth = await verifyApiUser('admin')
   if (auth instanceof NextResponse) return auth
 
   const admin = createAdminClient()
-  const { data, error } = await admin
-    .from('profiles')
-    .select('id, email, full_name, role, created_at')
-    .eq('role', 'coach')
-    .order('created_at', { ascending: false })
+  let error: { message?: string } | null = null
+  const data = await fetchAll(async (from, to) => {
+    const res = await admin
+      .from('profiles')
+      .select('id, email, full_name, role, created_at')
+      .eq('role', 'coach')
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: true })
+      .range(from, to)
+    if (res.error) error = res.error
+    return res
+  })
 
   if (error) return dbError(error)
 
-  const ids = (data ?? []).map(c => c.id)
-  const { data: links } = ids.length
-    ? await admin.from('coach_athletes').select('coach_id').in('coach_id', ids)
-    : { data: [] as { coach_id: string }[] }
+  const links = await fetchAll(async (from, to) => admin
+    .from('coach_athletes')
+    .select('coach_id')
+    .order('coach_id', { ascending: true })
+    .order('athlete_id', { ascending: true })
+    .range(from, to))
   const counts = new Map<string, number>()
-  for (const l of links ?? []) counts.set(l.coach_id, (counts.get(l.coach_id) ?? 0) + 1)
+  for (const l of links) counts.set(l.coach_id, (counts.get(l.coach_id) ?? 0) + 1)
 
-  return NextResponse.json((data ?? []).map(c => ({ ...c, athlete_count: counts.get(c.id) ?? 0 })))
+  return NextResponse.json(data.map(c => ({ ...c, athlete_count: counts.get(c.id) ?? 0 })))
 }
 
 export async function POST(req: Request) {

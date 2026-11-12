@@ -82,3 +82,77 @@ export async function notify(admin: SupabaseClient, userId: string, msg: Message
   }
   return 'sent'
 }
+
+export type NotifyCounts = Record<'sent' | 'duplicate' | 'skipped', number>
+
+// Same rules as notify(), for many messages at once: a fixed handful of
+// database calls per batch instead of five per message. Keep batches
+// small so the id lists fit in one request. Throws if it cannot read
+// profiles or prefs or write the send log, before anything is sent, so
+// the caller can keep the messages and try again.
+export async function notifyMany(admin: SupabaseClient, items: { userId: string; msg: Message }[]): Promise<NotifyCounts> {
+  const counts: NotifyCounts = { sent: 0, duplicate: 0, skipped: 0 }
+  const seen = new Set<string>()
+  const unique = items.filter(i => (seen.has(i.msg.dedupeKey) ? (counts.duplicate++, false) : (seen.add(i.msg.dedupeKey), true)))
+  if (unique.length === 0) return counts
+
+  const ids = [...new Set(unique.map(i => i.userId))]
+  const [{ data: profiles, error: profileErr }, { data: prefRows, error: prefErr }] = await Promise.all([
+    admin.from('profiles').select('id, email, role, birth_year, consent_status').in('id', ids),
+    admin.from('notification_prefs').select('*').in('user_id', ids),
+  ])
+  // Without prefs we cannot tell who opted out, so nothing goes out.
+  if (profileErr || prefErr) throw new Error(`notify read failed: ${(profileErr ?? prefErr)!.message}`)
+  const profileOf = new Map((profiles ?? []).map((p: any) => [p.id, p]))
+  const prefsOf = new Map<string, Prefs>((prefRows ?? []).map((p: any) => [p.user_id, { ...DEFAULT_PREFS, ...p }]))
+
+  const allowed = unique.filter(i => {
+    const p = profileOf.get(i.userId)
+    const ok = !!p && !(p.role === 'member' && (p.birth_year == null || p.consent_status === 'pending'))
+    if (!ok) counts.skipped++
+    return ok
+  })
+  if (allowed.length === 0) return counts
+
+  // Only keys that were not logged before come back, so a repeat run sends nothing twice.
+  const { data: logged, error } = await admin.from('notification_log')
+    .upsert(allowed.map(i => ({ dedupe_key: i.msg.dedupeKey, user_id: i.userId })), { onConflict: 'dedupe_key', ignoreDuplicates: true })
+    .select('dedupe_key')
+  if (error) throw new Error(`notify log failed: ${error.message}`)
+  const isNew = new Set((logged ?? []).map((r: any) => r.dedupe_key))
+  const fresh = allowed.filter(i => isNew.has(i.msg.dedupeKey))
+  counts.duplicate += allowed.length - fresh.length
+  counts.sent += fresh.length
+  if (fresh.length === 0) return counts
+
+  const inbox = fresh.filter(i => i.msg.inbox !== false)
+  if (inbox.length) {
+    await admin.from('notifications').insert(inbox.map(i => ({ user_id: i.userId, type: i.msg.type, title: i.msg.title, body: i.msg.body, url: i.msg.url ?? null })))
+  }
+
+  const wantsPush = fresh.filter(i => (prefsOf.get(i.userId) ?? DEFAULT_PREFS)[PUSH_KEY[i.msg.category]])
+  if (wantsPush.length && pushConfigured()) {
+    const { data: subs } = await admin.from('push_subscriptions').select('user_id, endpoint, p256dh, auth').in('user_id', [...new Set(wantsPush.map(i => i.userId))])
+    const subsOf = new Map<string, { endpoint: string; p256dh: string; auth: string }[]>()
+    for (const s of subs ?? []) subsOf.set(s.user_id, [...(subsOf.get(s.user_id) ?? []), s])
+    const gone: string[] = []
+    await Promise.all(wantsPush.flatMap(i => (subsOf.get(i.userId) ?? []).map(async s => {
+      const r = await sendPush(s, { title: i.msg.title, body: i.msg.body, url: i.msg.url ?? '/mindset', tag: i.msg.type })
+      if (r === 'gone') gone.push(s.endpoint)
+    })))
+    for (let n = 0; n < gone.length; n += 20) await admin.from('push_subscriptions').delete().in('endpoint', gone.slice(n, n + 20))
+  }
+
+  const emails = fresh.flatMap(i => {
+    const emailKey = EMAIL_KEY[i.msg.category]
+    const p = profileOf.get(i.userId)
+    const emailAllowed = (p.consent_status ?? 'not_required') === 'not_required'
+    return i.msg.email && emailKey && (prefsOf.get(i.userId) ?? DEFAULT_PREFS)[emailKey] && emailAllowed && p.email
+      ? [{ to: p.email as string, email: i.msg.email, unsub: unsubscribeUrl(i.userId, emailKey) }]
+      : []
+  })
+  for (let n = 0; n < emails.length; n += 10) {
+    await Promise.all(emails.slice(n, n + 10).map(e => sendEngagementEmail(e.to, e.email.subject, e.email.html, e.unsub).catch(() => {})))
+  }
+  return counts
+}

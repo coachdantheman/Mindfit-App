@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { randomInt } from 'crypto'
 import { consentFlags } from '@/lib/consent-flags'
+import { chunk, fetchAll } from '@/lib/fetch-all'
 
 // No 0/O or 1/I so codes read cleanly off a whiteboard.
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -91,20 +92,28 @@ export async function resolveAssignees(
   const out = new Set<string>()
 
   if (teams.length) {
-    let q = admin.from('teams').select('id').in('id', teams)
-    if (user.role !== 'admin') q = q.eq('coach_id', user.userId)
-    const { data: ok } = await q
-    const okIds = (ok ?? []).map(t => t.id)
+    const okIds = (await Promise.all(chunk(teams, 100).map(c => {
+      let q = admin.from('teams').select('id').in('id', c)
+      if (user.role !== 'admin') q = q.eq('coach_id', user.userId)
+      return q
+    }))).flatMap(r => (r.data ?? []).map(t => t.id))
     if (okIds.length) {
-      const { data: members } = await admin.from('team_members').select('athlete_id').in('team_id', okIds)
-      for (const m of members ?? []) out.add(m.athlete_id)
+      const members = (await Promise.all(chunk(okIds, 100).map(c => fetchAll(async (from, to) => admin
+        .from('team_members')
+        .select('athlete_id')
+        .in('team_id', c)
+        .order('team_id', { ascending: true })
+        .order('athlete_id', { ascending: true })
+        .range(from, to))))).flat()
+      for (const m of members) out.add(m.athlete_id)
     }
   }
   if (picked.length) {
     if (user.role === 'admin') picked.forEach(id => out.add(id))
     else {
-      const { data: roster } = await admin.from('coach_athletes').select('athlete_id').eq('coach_id', user.userId).in('athlete_id', picked)
-      for (const r of roster ?? []) out.add(r.athlete_id)
+      const roster = (await Promise.all(chunk(picked, 100).map(c =>
+        admin.from('coach_athletes').select('athlete_id').eq('coach_id', user.userId).in('athlete_id', c)))).flatMap(r => r.data ?? [])
+      for (const r of roster) out.add(r.athlete_id)
     }
   }
   out.delete(user.userId)

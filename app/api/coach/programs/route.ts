@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { clampNumber, optionalString, requireString } from '@/lib/validate'
 import { insertBlocks, loadPrograms } from '@/lib/program-store'
 import { currentWeek, isoDayOfWeek } from '@/lib/programs'
+import { chunk, fetchAll } from '@/lib/fetch-all'
 
 // The coach's plan library: every plan they built, who it's assigned to,
 // and how far each athlete is (plan workouts logged vs. scheduled so far).
@@ -22,11 +23,16 @@ export async function GET() {
     .select('program_id, athlete_id, start_date, assigned_at').in('program_id', programs.map(p => p.id))
   const athleteIds = [...new Set((assignments ?? []).map(a => a.athlete_id))]
   const workoutIds = programs.flatMap(p => p.blocks.flatMap((b: any) => b.workouts.map((w: any) => w.id)))
-  const [{ data: people }, { data: logs }] = await Promise.all([
-    athleteIds.length ? admin.from('profiles').select('id, full_name, email').in('id', athleteIds) : Promise.resolve({ data: [] as any[] }),
-    athleteIds.length && workoutIds.length
-      ? admin.from('workout_logs').select('user_id, program_workout_id').in('user_id', athleteIds).in('program_workout_id', workoutIds)
-      : Promise.resolve({ data: [] as any[] }),
+  const [people, logs] = await Promise.all([
+    Promise.all(chunk(athleteIds, 100).map(c => admin.from('profiles').select('id, full_name, email').in('id', c)))
+      .then(rs => rs.flatMap(r => r.data ?? [])),
+    Promise.all(chunk(athleteIds, 100).flatMap(a => chunk(workoutIds, 100).map(w => fetchAll(async (from, to) => admin
+      .from('workout_logs')
+      .select('user_id, program_workout_id')
+      .in('user_id', a)
+      .in('program_workout_id', w)
+      .order('id', { ascending: true })
+      .range(from, to))))).then(rs => rs.flat()),
   ])
   const person = new Map((people ?? []).map(p => [p.id, p]))
   const today = new Date()
