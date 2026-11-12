@@ -10,6 +10,8 @@ interface RatingSliderProps {
   onChange: (val: number) => void
   /** Tailwind bg color class, e.g. 'bg-blue-500' */
   color: string
+  /** Hides the 1–10 tick row; rail and value chip stay. */
+  compact?: boolean
 }
 
 /**
@@ -26,6 +28,7 @@ export default function RatingSlider({
   registration,
   onChange,
   color,
+  compact = false,
 }: RatingSliderProps) {
   const railRef = useRef<HTMLDivElement>(null)
   const [pulse, setPulse] = useState(false)
@@ -109,23 +112,25 @@ export default function RatingSlider({
       </div>
 
       {/* Numeric ticks — click to jump */}
-      <div className="flex justify-between px-0.5">
-        {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
-          <button
-            key={n}
-            type="button"
-            onClick={() => commit(n)}
-            className={`text-xs tabular-nums min-w-[28px] min-h-[32px] sm:min-w-0 sm:min-h-0 px-1 rounded transition-colors ${
-              n === value
-                ? 'text-fg-1 font-semibold'
-                : 'text-fg-4 hover:text-fg-2'
-            }`}
-            tabIndex={-1}
-          >
-            {n}
-          </button>
-        ))}
-      </div>
+      {!compact && (
+        <div className="flex justify-between px-0.5">
+          {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => commit(n)}
+              className={`text-xs tabular-nums min-w-[28px] min-h-[32px] sm:min-w-0 sm:min-h-0 px-1 rounded transition-colors ${
+                n === value
+                  ? 'text-fg-1 font-semibold'
+                  : 'text-fg-4 hover:text-fg-2'
+              }`}
+              tabIndex={-1}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Hidden input keeps react-hook-form registration intact */}
       {registration && (

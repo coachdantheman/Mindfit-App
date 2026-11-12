@@ -3,6 +3,8 @@ import { dbError } from '@/lib/api-error'
 import { verifyApiUser } from '@/lib/api-auth'
 import { createAdminClient } from '@/lib/supabase-server'
 import { isISODate } from '@/lib/validate'
+import { MPI_DIMENSIONS } from '@/lib/mpi'
+import { DAILY_FOCUS, MPI_TO_NEED, NEED_LABELS, NEEDS, type Need } from '@/lib/quiz'
 
 function shiftDate(iso: string, days: number): string {
   const d = new Date(`${iso}T00:00:00Z`)
@@ -13,6 +15,20 @@ function shiftDate(iso: string, days: number): string {
 function dayOfYear(iso: string): number {
   const [y, m, d] = iso.split('-').map(Number)
   return Math.floor((Date.UTC(y, m - 1, d) - Date.UTC(y, 0, 0)) / 86400000)
+}
+
+const DIM_COLS = MPI_DIMENSIONS.map(d => d.key).join(', ')
+
+// Quiz need first; otherwise the lowest MPI dimension of the latest assessment.
+function focusNeed(quizNeed: string | null | undefined, weekly: Record<string, number | null> | null): { need: Need; from: 'quiz' | 'mpi' } | null {
+  if (quizNeed && (NEEDS as string[]).includes(quizNeed)) return { need: quizNeed as Need, from: 'quiz' }
+  let low: { key: string; value: number } | null = null
+  for (const d of MPI_DIMENSIONS) {
+    const v = weekly?.[d.key]
+    if (typeof v === 'number' && (!low || v < low.value)) low = { key: d.key, value: v }
+  }
+  const need = low ? MPI_TO_NEED[low.key] : undefined
+  return need ? { need, from: 'mpi' } : null
 }
 
 // GET /api/today?date=YYYY-MM-DD — the Today card: check-in, pillars, one affirmation
@@ -33,7 +49,7 @@ export async function GET(req: Request) {
   const exists = { head: true, count: 'exact' as const }
   const admin = createAdminClient()
 
-  const [journal, sleep, gratitude, visualization, flow, workout, practice, food, recovery, affirmations] = await Promise.all([
+  const [journal, sleep, gratitude, visualization, flow, workout, practice, food, recovery, affirmations, quizResult, weeklyResult] = await Promise.all([
     admin.from('journal_entries')
       .select('objective, action_step_1, strength_1, weakness, rating_motivation, rating_focus, rating_confidence, rating_anxiety')
       .eq('user_id', uid).eq('entry_date', date).maybeSingle(),
@@ -49,14 +65,23 @@ export async function GET(req: Request) {
     admin.from('food_entries').select('id', exists).eq('user_id', uid).eq('entry_date', date).limit(1),
     admin.from('recovery_entries').select('id', exists).eq('user_id', uid).eq('entry_date', date).limit(1),
     admin.from('affirmations').select('text').eq('user_id', uid).eq('is_active', true).order('sort_order', { ascending: true }),
+    admin.from('quiz_results').select('top_need').eq('user_id', uid).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+    admin.from('weekly_assessments').select(DIM_COLS).eq('user_id', uid).order('week_date', { ascending: false }).limit(1).maybeSingle(),
   ])
 
-  const failed = [journal, sleep, gratitude, visualization, flow, workout, practice, food, recovery, affirmations].find(r => r.error)
+  const failed = [journal, sleep, gratitude, visualization, flow, workout, practice, food, recovery, affirmations, quizResult, weeklyResult].find(r => r.error)
   if (failed?.error) return dbError(failed.error)
 
   const j = journal.data
   const s = sleep.data
   const list = affirmations.data ?? []
+  const picked = focusNeed(quizResult.data?.top_need, weeklyResult.data as Record<string, number | null> | null)
+  const focus = picked ? {
+    need: picked.need,
+    label: NEED_LABELS[picked.need],
+    action: DAILY_FOCUS[picked.need][dayOfYear(date) % 5],
+    from: picked.from,
+  } : null
 
   return NextResponse.json({
     journal: j ? {
@@ -81,5 +106,6 @@ export async function GET(req: Request) {
       rest: !!s || (recovery.count ?? 0) > 0,
     },
     affirmation: list.length ? list[dayOfYear(date) % list.length].text : null,
+    focus,
   })
 }

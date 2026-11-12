@@ -108,14 +108,17 @@ export default function FlowLogForm() {
           />
         </div>
 
-        <RatingSlider label="Challenge level" value={challenge} onChange={setChallenge} color="bg-cta" />
-        <RatingSlider label="Skill level today" value={skill} onChange={setSkill} color="bg-cta" />
-
-        <div className={`flex items-center justify-between rounded-xl border px-4 py-3 ${ZONE_COLOR[zone].tw}`}>
-          <span className="text-sm font-semibold">{ZONE_COLOR[zone].label}</span>
-          <span className="text-xs tabular-nums">
-            challenge {challenge} vs skill {skill} · {diff > 0 ? '+' : ''}{diff} (flow = within 1)
-          </span>
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <RatingSlider label="Challenge" value={challenge} onChange={setChallenge} color="bg-cta" compact />
+            <RatingSlider label="Skill level today" value={skill} onChange={setSkill} color="bg-cta" compact />
+          </div>
+          <div className={`flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-xl border px-4 py-3 text-center ${ZONE_COLOR[zone].tw}`}>
+            <span className="text-sm font-semibold">{ZONE_COLOR[zone].label}</span>
+            <span className="text-xs tabular-nums">
+              challenge {challenge} vs skill {skill} · {diff > 0 ? '+' : ''}{diff} (flow = within 1)
+            </span>
+          </div>
         </div>
 
         <RatingSlider label="Flow score: how in the zone were you?" value={flow} onChange={setFlow} color="bg-cta" />

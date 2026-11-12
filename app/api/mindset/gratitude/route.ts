@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { isISODate, isPlainObject, optionalString, requireString } from '@/lib/validate'
 
-const COLS = 'id, entry_date, item_1, item_2, item_3'
+const COLS = 'id, entry_date, item_1, item_2, item_3, item_4, prompt_4'
 
 // Recent gratitude entries, newest first (or one day with ?date=).
 export async function GET(req: Request) {
@@ -27,11 +27,13 @@ export async function POST(req: Request) {
   const items = [body.item_1, body.item_2, body.item_3].map(v => optionalString(v, 300)).filter((v): v is string => !!v)
   const first = requireString(items[0], 300)
   if (!first) return NextResponse.json({ error: 'Write at least one thing you’re grateful for.' }, { status: 400 })
+  const item4 = optionalString(body.item_4, 300)
+  const prompt4 = item4 ? optionalString(body.prompt_4, 300) : null
 
   const admin = createAdminClient()
   const { data, error } = await admin.from('gratitude_entries').upsert({
     user_id: auth.userId, entry_date: body.entry_date,
-    item_1: first, item_2: items[1] ?? null, item_3: items[2] ?? null, updated_at: new Date().toISOString(),
+    item_1: first, item_2: items[1] ?? null, item_3: items[2] ?? null, item_4: item4, prompt_4: prompt4, updated_at: new Date().toISOString(),
   }, { onConflict: 'user_id,entry_date' }).select(COLS).single()
   if (error) return dbError(error)
   return NextResponse.json(data)

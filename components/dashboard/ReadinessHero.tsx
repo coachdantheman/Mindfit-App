@@ -9,6 +9,8 @@ interface ReadinessHeroProps {
   pills?: { label: string; value: string; delta?: string }[]
   // Minimized state is remembered per card per day, so it returns tomorrow.
   storageKey?: string
+  // Starts minimized until the user expands it today.
+  defaultMin?: boolean
 }
 
 export default function ReadinessHero({
@@ -18,16 +20,23 @@ export default function ReadinessHero({
   date = 'Today',
   pills = [],
   storageKey = 'readiness',
+  defaultMin = false,
 }: ReadinessHeroProps) {
   const [min, setMin] = useState(false)
   const key = `mf-hero-min:${storageKey}`
+  const openKey = `mf-hero-open:${storageKey}`
   const today = new Date().toLocaleDateString('en-CA')
   useEffect(() => {
-    try { setMin(localStorage.getItem(key) === today) } catch {}
-  }, [key, today])
+    try {
+      setMin(defaultMin ? localStorage.getItem(openKey) !== today : localStorage.getItem(key) === today)
+    } catch {}
+  }, [key, openKey, today, defaultMin])
   const toggle = (next: boolean) => {
     setMin(next)
-    try { next ? localStorage.setItem(key, today) : localStorage.removeItem(key) } catch {}
+    try {
+      if (defaultMin) next ? localStorage.removeItem(openKey) : localStorage.setItem(openKey, today)
+      else next ? localStorage.setItem(key, today) : localStorage.removeItem(key)
+    } catch {}
   }
   const r = 82
   const c = 2 * Math.PI * r

@@ -25,7 +25,8 @@ export function useKeyboardInset() {
       clearTimeout(timer)
       timer = setTimeout(() => {
         if (document.activeElement !== t) return
-        t.scrollIntoView({ block: 'center', behavior: 'smooth' })
+        const inSheet = !!t.closest('.bottom-sheet')
+        t.scrollIntoView({ block: inSheet ? 'nearest' : 'center', behavior: 'smooth' })
       }, 350)
     }
 

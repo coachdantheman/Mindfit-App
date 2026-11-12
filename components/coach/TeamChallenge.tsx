@@ -2,7 +2,8 @@
 import { useEffect, useId, useState } from 'react'
 import SaveButton, { type SaveState } from '@/components/shared/SaveButton'
 import { useToast } from '@/components/shared/Toast'
-import { CHALLENGE_KINDS, CHALLENGE_LABELS, GOAL_DURATIONS, suggestedTarget, type ChallengeKind, type GoalDuration, type GoalView } from '@/lib/team-challenge'
+import { CHALLENGE_KINDS, CHALLENGE_LABELS, GOAL_DURATIONS, SEASON_MAX_DAYS, daysInclusive, suggestedTarget, type ChallengeKind, type GoalDuration, type GoalView } from '@/lib/team-challenge'
+import { localDateISO } from '@/lib/dates'
 
 const MAX_ACTIVE_GOALS = 3
 
@@ -25,6 +26,8 @@ const DURATIONS = Object.keys(GOAL_DURATIONS) as GoalDuration[]
 
 const tz = () => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone } catch { return '' } }
 
+const addDays = (n: number) => localDateISO(new Date(Date.now() + n * 86_400_000))
+
 const unitOf = (g: GoalView) => (g.kind === 'custom' ? 'check-ins' : g.label.toLowerCase())
 
 // Team goals the coach pushes to a team. Several can run at once, each for a set duration.
@@ -38,6 +41,8 @@ export default function TeamChallenge({ teamId }: { teamId: string }) {
   const [kind, setKind] = useState<ChallengeKind>('journal')
   const [title, setTitle] = useState('')
   const [duration, setDuration] = useState<GoalDuration>('1w')
+  const [seasonEnd, setSeasonEnd] = useState(() => addDays(GOAL_DURATIONS.season - 1))
+  const seasonEndId = useId()
   const [target, setTarget] = useState('')
   const [save, setSave] = useState<SaveState>('idle')
 
@@ -52,7 +57,8 @@ export default function TeamChallenge({ teamId }: { teamId: string }) {
       .catch(() => {})
   }, [teamId])
 
-  const suggest = (k: ChallengeKind, d: GoalDuration) => String(suggestedTarget(k, members, GOAL_DURATIONS[d]))
+  const suggest = (k: ChallengeKind, d: GoalDuration, end = seasonEnd) =>
+    String(suggestedTarget(k, members, d === 'season' ? daysInclusive(localDateISO(), end) : GOAL_DURATIONS[d]))
 
   const pickKind = (k: ChallengeKind) => {
     setKind(k)
@@ -64,10 +70,16 @@ export default function TeamChallenge({ teamId }: { teamId: string }) {
     setTarget(suggest(kind, d))
   }
 
+  const pickSeasonEnd = (end: string) => {
+    setSeasonEnd(end)
+    setTarget(suggest(kind, duration, end))
+  }
+
   const openForm = () => {
     setKind('journal')
     setTitle('')
     setDuration('1w')
+    setSeasonEnd(addDays(GOAL_DURATIONS.season - 1))
     setTarget(suggest('journal', '1w'))
     setSave('idle')
     setOpen(true)
@@ -77,11 +89,12 @@ export default function TeamChallenge({ teamId }: { teamId: string }) {
     const n = Number(target)
     if (!Number.isInteger(n) || n < 1 || n > 100000) { notify('Set a target from 1 to 100,000.', 'error'); return }
     if (kind === 'custom' && title.trim() === '') { notify('Write what the team is working on.', 'error'); return }
+    if (duration === 'season' && !seasonEnd) { notify('Pick the season end date.', 'error'); return }
     setSave('saving')
     try {
       const res = await fetch('/api/coach/challenge', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ team_id: teamId, kind, title: kind === 'custom' ? title.trim() : undefined, duration, target: n, tz: tz() }),
+        body: JSON.stringify({ team_id: teamId, kind, title: kind === 'custom' ? title.trim() : undefined, duration, target: n, tz: tz(), ends_on: duration === 'season' ? seasonEnd : undefined }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) { setSave('error'); notify(data.error || 'Could not start the goal', 'error'); return }
@@ -185,6 +198,20 @@ export default function TeamChallenge({ teamId }: { teamId: string }) {
                 </button>
               ))}
             </div>
+            {duration === 'season' && (
+              <div className="mt-3">
+                <label htmlFor={seasonEndId} className="text-xs uppercase tracking-wide text-fg-4 block mb-1">Season ends</label>
+                <input
+                  id={seasonEndId}
+                  type="date"
+                  min={addDays(1)}
+                  max={addDays(SEASON_MAX_DAYS)}
+                  value={seasonEnd}
+                  onChange={e => pickSeasonEnd(e.target.value)}
+                  className="input-field"
+                />
+              </div>
+            )}
           </div>
 
           <div>

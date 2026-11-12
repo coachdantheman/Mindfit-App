@@ -26,7 +26,7 @@ export default function BottomSheet({ title, onClose, children, header, footer }
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="bottom-sheet relative w-full sm:max-w-lg max-h-[92vh] sm:max-h-[85vh] bg-surface border border-edge rounded-t-3xl sm:rounded-3xl flex flex-col pb-safe"
+        className="bottom-sheet relative w-full sm:max-w-lg sm:max-h-[85vh] bg-surface border border-edge rounded-t-3xl sm:rounded-3xl flex flex-col pb-safe"
       >
         <div className="flex items-center justify-between px-5 pt-4 pb-2">
           <h3 id={titleId} className="font-semibold text-fg-1 min-w-0 truncate">{title}</h3>

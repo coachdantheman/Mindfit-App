@@ -1,15 +1,16 @@
 import type { Insight, InsightSection } from '@/lib/insights'
 import type { ResearchFact } from '@/lib/data/research-facts'
 
-export default function InsightsCard({ section, insights, fact }: {
-  section: InsightSection
+export default function InsightsCard({ section, insights, fact, title = 'Your patterns' }: {
+  section?: InsightSection
   insights: Insight[]
   fact: ResearchFact | null
+  title?: string
 }) {
-  const mine = insights.filter(i => i.section === section)
+  const mine = section ? insights.filter(i => i.section === section) : insights
   return (
     <div className="card p-5 space-y-4">
-      <h3 className="font-semibold text-fg-1 text-sm">Your patterns</h3>
+      <h3 className="font-semibold text-fg-1 text-sm">{title}</h3>
       {mine.length > 0 ? (
         <ul className="space-y-2.5">
           {mine.map((insight, i) => (

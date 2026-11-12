@@ -239,6 +239,7 @@ export default function ProgressPage() {
                 return (
                   <>
                     <ReadinessHero
+                      defaultMin
                       score={score}
                       verdict={verdict}
                       subtitle={avgSleep !== '-' ? `Sleep avg ${avgSleep}h · ${workoutLogs.length} workouts logged` : `${workoutLogs.length} workouts logged`}

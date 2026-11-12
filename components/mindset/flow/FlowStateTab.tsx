@@ -100,7 +100,7 @@ export default function FlowStateTab() {
         <div className="rounded-2xl border border-cta/40 bg-cta/10 p-4 space-y-2">
           <p className="text-xs uppercase tracking-wider font-semibold text-cta">After competition</p>
           <p className="text-sm text-fg-1">You ran your pre-game Flow Stack today. Once the game is over, log how it went. Your flow score links to the stack.</p>
-          <button type="button" onClick={() => router.push(`/exercise?tab=practice&session=${openStack.id}`)} className="btn-primary text-sm">Log today&apos;s game</button>
+          <button type="button" onClick={() => router.push(`/exercise?tab=gameday&session=${openStack.id}`)} className="btn-primary text-sm">Log today&apos;s game</button>
         </div>
       )}
 

@@ -24,7 +24,10 @@ export default function LearnPage() {
   }
 
   const [native, setNative] = useState(false)
-  useEffect(() => { setNative(isNativeApp()) }, [])
+  useEffect(() => {
+    setNative(isNativeApp())
+    if (new URLSearchParams(window.location.search).get('tab') === 'quiz') selectTab('quiz')
+  }, [])
 
   useEffect(() => {
     cached('/api/lessons', (data: Lesson[]) => { if (Array.isArray(data)) { setLessons(data); setLoading(false) } })

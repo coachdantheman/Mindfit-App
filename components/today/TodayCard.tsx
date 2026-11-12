@@ -26,6 +26,7 @@ export interface TodayData {
   } | null
   pillars: { mind: boolean; body: boolean; fuel: boolean; rest: boolean }
   affirmation: string | null
+  focus: { need: string; label: string; action: { text: string; href: string }; from: 'quiz' | 'mpi' } | null
 }
 
 type PillarKey = keyof TodayData['pillars']
@@ -190,6 +191,16 @@ export default function TodayCard() {
             {freezeInfo.savedYesterday && (
               <p className="text-xs text-center text-cta">Freeze your streak, keep your flame. A freeze saved yours yesterday.</p>
             )}
+            {data.focus ? (
+              <Link href={data.focus.action.href} className="block rounded-xl border border-edge px-4 py-3 hover:bg-surface-2 transition-colors">
+                <span className="block text-[11px] uppercase tracking-[0.16em] text-cta font-semibold">Your focus today · {data.focus.label}</span>
+                <span className="block mt-1 text-sm text-fg-1">{data.focus.action.text}</span>
+              </Link>
+            ) : (
+              <p className="text-xs text-center">
+                <Link href="/learn?tab=quiz" className="text-cta underline underline-offset-4">Take the 2-minute quiz to personalise this</Link>
+              </p>
+            )}
           </div>
 
           <div className="border-t border-edge pt-4">
@@ -204,6 +215,10 @@ export default function TodayCard() {
             ) : firstOpen ? (
               <Link href={firstOpen.href} className="btn-primary w-full py-3 text-center">
                 {firstOpen.action}
+              </Link>
+            ) : data.focus ? (
+              <Link href={data.focus.action.href} className="btn-primary w-full py-3 text-center">
+                {data.focus.action.text}
               </Link>
             ) : (
               <p className="text-sm text-center text-fg-2">Everything is logged. Recover well.</p>

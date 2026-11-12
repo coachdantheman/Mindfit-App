@@ -14,7 +14,7 @@ export function isPaceUnit(unit: DistanceUnit | null | undefined): boolean {
 // Sprints default to yards, runs to miles, erg to meters.
 export function defaultUnit(slug: string | null | undefined, name: string): DistanceUnit {
   const key = (slug ?? name).toLowerCase()
-  if (/sprint|shuttle|dash|fly|agility/.test(key)) return 'yd'
+  if (/sprint|shuttle|dash|fly|agility|swim/.test(key)) return 'yd'
   if (/row|erg/.test(key)) return 'm'
   return 'mi'
 }

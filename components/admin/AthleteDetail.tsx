@@ -27,6 +27,8 @@ import { formatDistanceToNow } from 'date-fns'
 import { localDateISO } from '@/lib/dates'
 import { FlameIcon } from '@/components/shared/icons'
 import SaveButton, { type SaveState } from '@/components/shared/SaveButton'
+import InsightsCard from '@/components/dashboard/InsightsCard'
+import { progressInsights, type InsightData } from '@/lib/insights'
 
 const RatingChart = dynamic(() => import('@/components/dashboard/RatingChart'), { ssr: false })
 const FlowBarChart = dynamic(() => import('@/components/mindset/flow/FlowBarChart'), { ssr: false })
@@ -71,6 +73,8 @@ interface AthleteData {
   flowStageCheckins: FlowStageCheckin[]
   flowCoachNote: string | null
   recentGames: { log_date: string; opponent: string | null; result: string | null; score: string | null; performance: number | null; flow_log_id: string | null }[]
+  games: InsightData['games']
+  routineDates: string[]
   upcoming: UpcomingItem[]
   overview: OverviewStats
   board: BoardStatus | null
@@ -141,9 +145,19 @@ export default function AthleteDetail({ athleteId, backHref, backLabel = 'Back',
   const {
     profile, journalEntries, foodEntries, nutritionTargets, workoutLogs, sleepEntries,
     visualizationEntries, goalCount, mpi, strengthTiers, tierUps, flowSessions, flowLogs, recentFlowLogs,
-    flowStageCheckins, flowCoachNote, recentGames, upcoming, overview, board,
+    flowStageCheckins, flowCoachNote, recentGames, games, routineDates, upcoming, overview, board,
   } = data
   const { avgSleep, avgSleepQuality } = calcSleepAverages(sleepEntries)
+  const firstName = (profile.full_name || '').trim().split(/\s+/)[0] || 'Athlete'
+  const insights = progressInsights({
+    journal: journalEntries,
+    sleep: sleepEntries,
+    workouts: workoutLogs.map(w => ({ log_date: w.log_date })),
+    food: foodEntries,
+    proteinGoal: nutritionTargets?.protein_g ?? null,
+    games,
+    routineDates,
+  }, 3, firstName)
 
   const todayStr = localDateISO()
   const byDay = new Map<string, DayTotals>()
@@ -211,6 +225,12 @@ export default function AthleteDetail({ athleteId, backHref, backLabel = 'Back',
       />
 
       <UpcomingCard items={upcoming} />
+
+      {insights.length > 0 && (
+        <div className="mb-6">
+          <InsightsCard title="Patterns" insights={insights} fact={null} />
+        </div>
+      )}
 
       <SectionTabs active={section} onSelect={setSection} />
 

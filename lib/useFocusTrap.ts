@@ -18,7 +18,7 @@ export function useFocusTrap<T extends HTMLElement>(onClose: () => void) {
     const prevOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
 
-    const first = el?.querySelector<HTMLElement>(FOCUSABLE)
+    const first = el?.querySelector<HTMLElement>('[autofocus], [data-autofocus]') ?? el?.querySelector<HTMLElement>(FOCUSABLE)
     ;(first ?? el)?.focus({ preventScroll: true })
 
     const onKey = (e: KeyboardEvent) => {

@@ -99,4 +99,59 @@ export const RESULTS: Record<Need, { paragraph: string; actions: QuizAction[] }>
   },
 }
 
+// One small action a day for the athlete's top need, rotated by day of year.
+export interface FocusAction { text: string; href: string }
+
+export const DAILY_FOCUS: Record<Need, FocusAction[]> = {
+  confidence: [
+    { text: 'Read your identity statement out loud twice', href: '/mindset?tab=Affirmations' },
+    { text: 'Journal 3 pieces of evidence you are the athlete you say you are', href: '/mindset?tab=Journal' },
+    { text: 'Visualize your best rep from the last week for 2 minutes', href: '/mindset?tab=Visualization' },
+    { text: 'Write one new affirmation in the present tense', href: '/mindset?tab=Affirmations' },
+    { text: 'Name one thing you did well today, before anything you missed', href: '/mindset?tab=Journal' },
+  ],
+  focus: [
+    { text: 'Pick a one-word cue for your reset and write it down', href: '/mindset?tab=Journal' },
+    { text: 'Run the Flow Stack before practice', href: '/mindset?tab=Flow%20State' },
+    { text: 'Visualize one play start to finish with no distractions', href: '/mindset?tab=Visualization' },
+    { text: 'Practice the breath-cue-next play reset 3 times today', href: '/mindset?tab=Flow%20State' },
+    { text: 'Journal one moment your mind drifted and what pulled it', href: '/mindset?tab=Journal' },
+  ],
+  pressure: [
+    { text: 'Visualize the biggest moment of your next game going right', href: '/mindset?tab=Visualization' },
+    { text: 'Run the Flow Stack and notice your nerves as energy', href: '/mindset?tab=Flow%20State' },
+    { text: 'Say: "I belong in big moments." Make it an affirmation', href: '/mindset?tab=Affirmations' },
+    { text: 'Rehearse your pre-game routine once today', href: '/mindset?tab=Visualization' },
+    { text: 'Journal how nerves showed up and what they were getting you ready for', href: '/mindset?tab=Journal' },
+  ],
+  motivation: [
+    { text: 'Check one goal and do one step toward it today', href: '/mindset?tab=Goals' },
+    { text: 'Write why you started playing your sport', href: '/mindset?tab=Journal' },
+    { text: 'Name 3 things you are grateful for in your sport', href: '/mindset?tab=Gratitude' },
+    { text: 'Finish one habit, even on a low-energy day', href: '/mindset?tab=Habits' },
+    { text: 'Journal one setback and what it is teaching you', href: '/mindset?tab=Journal' },
+  ],
+  recovery: [
+    { text: 'Set tonight’s bedtime and start wind-down 30 minutes before', href: '/sleep' },
+    { text: 'Log last night’s sleep', href: '/sleep' },
+    { text: 'Check off your daily habits', href: '/mindset?tab=Habits' },
+    { text: 'Write your 3-step pre-game routine', href: '/mindset?tab=Visualization' },
+    { text: 'Phones off 30 minutes before bed tonight', href: '/sleep' },
+  ],
+}
+
+// Lowest baseline MPI dimension → quiz need, for athletes who haven't taken the quiz.
+export const MPI_TO_NEED: Record<string, Need> = {
+  self_identity_clarity: 'confidence',
+  confidence: 'confidence',
+  focus_quality: 'focus',
+  mental_imagery: 'focus',
+  anxiety_management: 'pressure',
+  resilience: 'motivation',
+  motivation: 'motivation',
+  team_relationships: 'motivation',
+  vision_clarity: 'motivation',
+  routine_consistency: 'recovery',
+}
+
 export const LOW_NOTE = "Your answers are low across the board. That's a strong foundation. Here's the area to sharpen first."

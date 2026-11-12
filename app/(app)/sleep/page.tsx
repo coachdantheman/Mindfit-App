@@ -87,7 +87,7 @@ export default function SleepPage() {
         setBedtime(draft.bedtime); setWakeTime(draft.wakeTime); setQuality(draft.quality); setSleepNotes(draft.sleepNotes)
         setSleepSaved(false)
       } else {
-        setBedtime(u?.bedtime ?? ''); setWakeTime(u?.wakeTime ?? ''); setQuality(7); setSleepNotes('')
+        setBedtime(u?.bedtime ?? '22:30'); setWakeTime(u?.wakeTime ?? '06:30'); setQuality(7); setSleepNotes('')
         setSleepSaved(false)
       }
       const rDraft = isDefault ? readDraft<RecoveryDraft>(recoveryKey) : null
@@ -227,9 +227,6 @@ export default function SleepPage() {
       {/* Both tabs stay mounted so unsaved edits survive switching. */}
       {(
         <div className={`space-y-5 ${tab === 'track' ? '' : 'hidden'}`}>
-          <WindDown />
-          <SleepDebt nights={nights} />
-
           {/* Sleep Tracking */}
           <div className="card p-6">
             <div className="flex items-start justify-between gap-3 mb-1">
@@ -322,6 +319,9 @@ export default function SleepPage() {
               />
             </div>
           </div>
+
+          <SleepDebt nights={nights} />
+          <WindDown />
 
           {/* Recovery */}
           <div className="card p-6">

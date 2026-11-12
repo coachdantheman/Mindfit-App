@@ -71,5 +71,13 @@ export async function POST(req: Request) {
       { status: stale ? 503 : 400 },
     )
   }
+  if (data.flow_session_id) {
+    await admin
+      .from('flow_sessions')
+      .update({ game_logged_at: new Date().toISOString() })
+      .eq('id', data.flow_session_id)
+      .eq('user_id', auth.userId)
+      .is('game_logged_at', null)
+  }
   return NextResponse.json(data)
 }

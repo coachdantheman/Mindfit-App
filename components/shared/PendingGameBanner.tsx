@@ -9,10 +9,20 @@ export default function PendingGameBanner({ onOpen }: { onOpen?: (sessionId: str
   const [pending, setPending] = useState<{ session_id: string } | null>(null)
 
   useEffect(() => {
-    fetch('/api/mindset/flow-state/pending-game')
-      .then(r => (r.ok ? r.json() : null))
-      .then(d => { if (d?.session_id) setPending(d) })
-      .catch(() => {})
+    const load = () => {
+      fetch('/api/mindset/flow-state/pending-game')
+        .then(r => (r.ok ? r.json() : null))
+        .then(d => { if (d) setPending(d.session_id ? d : null) })
+        .catch(() => {})
+    }
+    load()
+    const onVisible = () => { if (document.visibilityState === 'visible') load() }
+    window.addEventListener('focus', onVisible)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('focus', onVisible)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [])
 
   if (!pending) return null

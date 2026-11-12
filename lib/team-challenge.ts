@@ -29,6 +29,11 @@ export const isChallengeKind = (v: unknown): v is ChallengeKind =>
 export const GOAL_DURATIONS = { '1w': 7, '2w': 14, '4w': 28, season: 84 } as const
 export type GoalDuration = keyof typeof GOAL_DURATIONS
 
+// A season goal can run up to a year, ending on a coach-picked date.
+export const SEASON_MAX_DAYS = 366
+
+export const daysInclusive = (from: string, to: string) => Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000) + 1
+
 export const isGoalDuration = (v: unknown): v is GoalDuration =>
   typeof v === 'string' && (Object.keys(GOAL_DURATIONS) as string[]).includes(v)
 

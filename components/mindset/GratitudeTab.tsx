@@ -5,8 +5,9 @@ import { format, parseISO, startOfWeek } from 'date-fns'
 import SaveButton from '@/components/shared/SaveButton'
 import { useToast } from '@/components/shared/Toast'
 import { localDateISO } from '@/lib/dates'
+import { rotatingPrompt } from '@/lib/data/gratitude-prompts'
 
-interface Entry { id: string; entry_date: string; item_1: string; item_2: string | null; item_3: string | null }
+interface Entry { id: string; entry_date: string; item_1: string; item_2: string | null; item_3: string | null; item_4: string | null; prompt_4: string | null }
 
 const PROMPTS = [
   'Someone who helped you get better',
@@ -19,7 +20,9 @@ const PROMPTS = [
 export default function GratitudeTab() {
   const notify = useToast()
   const today = localDateISO()
-  const [items, setItems] = useState(['', '', ''])
+  const rotating = rotatingPrompt()
+  const [items, setItems] = useState(['', '', '', ''])
+  const [prompt4, setPrompt4] = useState<string | null>(null)
   const [entries, setEntries] = useState<Entry[]>([])
   const [savedToday, setSavedToday] = useState(false)
   const [state, setState] = useState<'idle' | 'saving' | 'saved'>('idle')
@@ -30,7 +33,7 @@ export default function GratitudeTab() {
       if (!Array.isArray(list)) return
       setEntries(list)
       const t = list.find(e => e.entry_date === today)
-      if (t) { setItems([t.item_1, t.item_2 ?? '', t.item_3 ?? '']); setSavedToday(true) }
+      if (t) { setItems([t.item_1, t.item_2 ?? '', t.item_3 ?? '', t.item_4 ?? '']); setPrompt4(t.prompt_4); setSavedToday(true) }
     })
   }, [today])
 
@@ -39,11 +42,12 @@ export default function GratitudeTab() {
     try {
       const res = await fetch('/api/mindset/gratitude', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_date: today, item_1: items[0], item_2: items[1], item_3: items[2] }),
+        body: JSON.stringify({ entry_date: today, item_1: items[0], item_2: items[1], item_3: items[2], item_4: items[3], prompt_4: rotating }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) { setState('idle'); notify(data.error || 'Could not save', 'error'); return }
       setEntries(prev => [data, ...prev.filter(e => e.entry_date !== today)])
+      setPrompt4(data.prompt_4 ?? null)
       setSavedToday(true)
       setState('saved')
       notify('Gratitude saved')
@@ -82,7 +86,9 @@ export default function GratitudeTab() {
         <div className="space-y-3">
           {items.map((v, i) => (
             <div key={i}>
-              <label htmlFor={`gratitude-${i}`} className="text-xs text-fg-4 block mb-1">{i + 1}. {PROMPTS[i]}</label>
+              <label htmlFor={`gratitude-${i}`} className="text-xs text-fg-4 block mb-1">
+                {i + 1}. {i < 3 ? PROMPTS[i] : (prompt4 ?? rotating)}{i === 3 ? ' (optional)' : ''}
+              </label>
               <input id={`gratitude-${i}`} value={v} maxLength={300}
                 onChange={e => { setItems(prev => prev.map((x, j) => (j === i ? e.target.value : x))); setState('idle'); setSavedToday(false) }}
                 className="input-field" />
@@ -108,7 +114,7 @@ export default function GratitudeTab() {
               <li key={e.id} className="py-2.5">
                 <p className="text-xs text-fg-4 mb-1">{format(parseISO(e.entry_date), 'EEEE, MMM d')}</p>
                 <ul className="text-sm text-fg-2 space-y-0.5">
-                  {[e.item_1, e.item_2, e.item_3].filter(Boolean).map((t, i) => <li key={i}>· {t}</li>)}
+                  {[e.item_1, e.item_2, e.item_3, e.item_4].filter(Boolean).map((t, i) => <li key={i}>· {t}</li>)}
                 </ul>
               </li>
             ))}

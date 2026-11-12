@@ -146,9 +146,20 @@ export async function POST(req: Request) {
     .select()
     .single()
   if (error) return dbError(error)
-  // The game after a pre-game stack is logged: stop the "log your game" reminder.
-  if (kind === 'game' && flow_session_id) {
-    await admin.from('flow_sessions').update({ game_logged_at: new Date().toISOString() }).eq('id', flow_session_id).eq('user_id', auth.userId)
+  // The game is logged: stop the "log your game" reminder.
+  if (kind === 'game') {
+    const now = new Date().toISOString()
+    if (flow_session_id) {
+      await admin.from('flow_sessions').update({ game_logged_at: now }).eq('id', flow_session_id).eq('user_id', auth.userId)
+    } else {
+      await admin
+        .from('flow_sessions')
+        .update({ game_logged_at: now })
+        .eq('user_id', auth.userId)
+        .is('game_logged_at', null)
+        .not('completed_at', 'is', null)
+        .gte('completed_at', new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString())
+    }
   }
   return NextResponse.json(data, { status: existing ? 200 : 201 })
 }

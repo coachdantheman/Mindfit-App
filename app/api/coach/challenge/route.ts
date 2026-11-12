@@ -6,8 +6,8 @@ import { verifyApiUser } from '@/lib/api-auth'
 import { managedTeam } from '@/lib/teams'
 import { shiftDayBy, todayIn } from '@/lib/leaderboard'
 import { timezoneFor } from '@/lib/leaderboard-scores'
-import { GOAL_COLS, GOAL_DURATIONS, goalView, isChallengeKind, isGoalDuration, membersOf, type GoalDuration, type GoalRow } from '@/lib/team-challenge'
-import { isPlainObject, isUUID } from '@/lib/validate'
+import { GOAL_COLS, GOAL_DURATIONS, SEASON_MAX_DAYS, goalView, isChallengeKind, isGoalDuration, membersOf, type GoalDuration, type GoalRow } from '@/lib/team-challenge'
+import { isISODate, isPlainObject, isUUID } from '@/lib/validate'
 
 const MAX_ACTIVE_GOALS = 3
 const UUID = /^[0-9a-f-]{36}$/i
@@ -67,6 +67,15 @@ export async function POST(req: Request) {
   }
 
   const today = await dayFor(admin, auth.userId, typeof body.tz === 'string' ? body.tz.slice(0, 60) : null)
+  let endsOn = shiftDayBy(today, GOAL_DURATIONS[duration] - 1)
+  if (duration === 'season' && body.ends_on != null) {
+    const picked: unknown = body.ends_on
+    if (!isISODate(picked) || picked <= today || picked > shiftDayBy(today, SEASON_MAX_DAYS)) {
+      return NextResponse.json({ error: 'Pick a season end date from tomorrow, up to one year out.' }, { status: 400 })
+    }
+    endsOn = picked
+  }
+
   const { count, error: countErr } = await admin.from('team_challenges')
     .select('id', { count: 'exact', head: true })
     .eq('team_id', team.id)
@@ -83,7 +92,7 @@ export async function POST(req: Request) {
       title,
       target,
       week_start: today,
-      ends_on: shiftDayBy(today, GOAL_DURATIONS[duration] - 1),
+      ends_on: endsOn,
       created_by: auth.userId,
     })
     .select(GOAL_COLS)

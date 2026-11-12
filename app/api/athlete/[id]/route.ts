@@ -193,6 +193,8 @@ export async function GET(req: Request, props: { params: Promise<{ id: string }>
     upcoming,
     overview,
     board,
+    { data: practiceGames },
+    { data: pregameRuns },
   ] = await Promise.all([
     admin.from('journal_entries').select('*').eq('user_id', athleteId).order('entry_date', { ascending: false }).limit(90),
     admin.from('food_entries').select('entry_date, calories, protein_g, carbs_g, fat_g')
@@ -217,6 +219,10 @@ export async function GET(req: Request, props: { params: Promise<{ id: string }>
     loadUpcoming(admin, athleteId, today, addDays(today, 13)),
     loadOverview(admin, athleteId),
     boardStatusFor(admin, athleteId, tz),
+    admin.from('practice_logs').select('log_date, performance').eq('user_id', athleteId).eq('kind', 'game')
+      .gte('log_date', addDays(today, -120)).order('log_date', { ascending: false }).limit(200),
+    admin.from('pregame_runs').select('game_date, completed_at').eq('user_id', athleteId)
+      .order('game_date', { ascending: false }).limit(20),
   ])
 
   const flowLogList = flowLogs ?? []
@@ -250,6 +256,8 @@ export async function GET(req: Request, props: { params: Promise<{ id: string }>
     upcoming,
     overview,
     board,
+    games: (practiceGames ?? []).map(g => ({ log_date: g.log_date, performance: g.performance == null ? null : Number(g.performance) })),
+    routineDates: (pregameRuns ?? []).filter(r => r.completed_at).map(r => r.game_date),
     readOnly: viewer === 'parent',
   })
 }

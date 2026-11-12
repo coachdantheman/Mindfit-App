@@ -182,6 +182,7 @@ export default function DailyCheckIn({ today, data, onClose, onSaved }: Props) {
               id="checkin-objective"
               type="text"
               autoFocus
+              data-autofocus
               maxLength={200}
               value={objective}
               onChange={e => setObjective(e.target.value)}
@@ -198,7 +199,7 @@ export default function DailyCheckIn({ today, data, onClose, onSaved }: Props) {
             ) : (
               <>
                 <p className="text-2xl font-semibold leading-snug tracking-tight text-fg-1">I act from my identity, not my mood.</p>
-                <Link href="/mindset?tab=Affirmations" className="text-sm text-cta hover:underline">Add your own →</Link>
+                <Link href="/mindset?tab=Affirmations" onClick={onClose} className="text-sm text-cta hover:underline">Add your own →</Link>
               </>
             )}
           </div>

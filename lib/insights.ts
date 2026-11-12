@@ -25,7 +25,7 @@ function addDay(iso: string, n: number): string {
 }
 const dow = (iso: string) => { const [y, m, d] = iso.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d)).getUTCDay() }
 
-export function progressInsights(data: InsightData, min = 3): Insight[] {
+export function progressInsights(data: InsightData, min = 3, who?: string): Insight[] {
   const out: (Insight & { gap: number })[] = []
   const journalByDay = new Map(data.journal.map(j => [j.entry_date, j]))
 
@@ -37,7 +37,9 @@ export function progressInsights(data: InsightData, min = 3): Insight[] {
     if (j) (Number(s.hours_slept) >= 8 ? long : short).push(j.rating_confidence)
   }
   if (long.length >= min && short.length >= min && avg(long) - avg(short) >= 0.5) {
-    out.push({ section: 'sleep', gap: avg(long) - avg(short), text: `After 8+ hours of sleep your confidence averages ${one(avg(long))}. On less sleep: ${one(avg(short))}.` })
+    out.push({ section: 'sleep', gap: avg(long) - avg(short), text: who
+      ? `After 8+ hours of sleep, ${who}'s confidence averages ${one(avg(long))}. On less sleep: ${one(avg(short))}.`
+      : `After 8+ hours of sleep your confidence averages ${one(avg(long))}. On less sleep: ${one(avg(short))}.` })
   }
 
   // Training days vs focus that day.
@@ -46,7 +48,10 @@ export function progressInsights(data: InsightData, min = 3): Insight[] {
   const offDays = data.journal.filter(j => !trained.has(j.entry_date)).map(j => j.rating_focus)
   if (onDays.length >= min && offDays.length >= min && Math.abs(avg(onDays) - avg(offDays)) >= 0.5) {
     const up = avg(onDays) > avg(offDays)
-    out.push({ section: 'exercise', gap: Math.abs(avg(onDays) - avg(offDays)), text: `On days you train your focus averages ${one(avg(onDays))}. On days off: ${one(avg(offDays))}.${up ? '' : ' Rest days are sharpening you.'}` })
+    const text = who
+      ? `On days ${who} trains, focus averages ${one(avg(onDays))}. On days off: ${one(avg(offDays))}.${up ? '' : ` Rest days are sharpening ${who}.`}`
+      : `On days you train your focus averages ${one(avg(onDays))}. On days off: ${one(avg(offDays))}.${up ? '' : ' Rest days are sharpening you.'}`
+    out.push({ section: 'exercise', gap: Math.abs(avg(onDays) - avg(offDays)), text })
   }
 
   // Strongest day of the week across motivation, focus and confidence.
@@ -56,7 +61,11 @@ export function progressInsights(data: InsightData, min = 3): Insight[] {
   }
   const ranked = [...byDow.entries()].filter(([, v]) => v.length >= min).map(([d, v]) => ({ d, a: avg(v) })).sort((a, b) => b.a - a.a)
   if (ranked.length >= 3 && ranked[0].a - ranked[ranked.length - 1].a >= 1) {
-    out.push({ section: 'mindset', gap: ranked[0].a - ranked[ranked.length - 1].a, text: `${DAYS[ranked[0].d]} are your strongest day (${one(ranked[0].a)}). ${DAYS[ranked[ranked.length - 1].d]} are your toughest (${one(ranked[ranked.length - 1].a)}).` })
+    const best = `${DAYS[ranked[0].d]} (${one(ranked[0].a)})`
+    const worst = `${DAYS[ranked[ranked.length - 1].d]} (${one(ranked[ranked.length - 1].a)})`
+    out.push({ section: 'mindset', gap: ranked[0].a - ranked[ranked.length - 1].a, text: who
+      ? `${best} are ${who}'s strongest day. ${worst} are the toughest.`
+      : `${best} are your strongest day. ${worst} are your toughest.` })
   }
 
   // Protein target hit rate on logged days.
@@ -66,7 +75,9 @@ export function progressInsights(data: InsightData, min = 3): Insight[] {
     const days = [...perDay.values()]
     if (days.length >= Math.max(min, 5)) {
       const hit = days.filter(p => p >= data.proteinGoal! * 0.9).length
-      out.push({ section: 'nutrition', gap: 0.4, text: `You reached your protein target on ${hit} of your last ${days.length} logged days.` })
+      out.push({ section: 'nutrition', gap: 0.4, text: who
+        ? `${who} reached the protein target on ${hit} of the last ${days.length} logged days.`
+        : `You reached your protein target on ${hit} of your last ${days.length} logged days.` })
     }
   }
 
@@ -76,7 +87,9 @@ export function progressInsights(data: InsightData, min = 3): Insight[] {
   const withR = rated.filter(g => routine.has(g.log_date)).map(g => g.performance!)
   const without = rated.filter(g => !routine.has(g.log_date)).map(g => g.performance!)
   if (withR.length >= min && without.length >= min && Math.abs(avg(withR) - avg(without)) >= 0.5) {
-    out.push({ section: 'flow', gap: Math.abs(avg(withR) - avg(without)) + 1, text: `In games after your full pregame routine you rate your performance ${one(avg(withR))}. Without it: ${one(avg(without))}.` })
+    out.push({ section: 'flow', gap: Math.abs(avg(withR) - avg(without)) + 1, text: who
+      ? `In games after the full pregame routine, ${who} rates performance ${one(avg(withR))}. Without it: ${one(avg(without))}.`
+      : `In games after your full pregame routine you rate your performance ${one(avg(withR))}. Without it: ${one(avg(without))}.` })
   }
 
   return out.sort((a, b) => b.gap - a.gap).map(({ section, text }) => ({ section, text }))

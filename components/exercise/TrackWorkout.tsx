@@ -17,10 +17,23 @@ const ex = (name: string, sets: number, reps = '') => ({ name, sets, reps, notes
 // Each type opens a workout already set up for how that training is logged.
 // Exercise names match the library so the right inputs show (weight and
 // reps, distance and time, or a timed hold). Everything can be changed.
-const WORKOUT_TYPES: { label: string; sub: string; start: Omit<StartWorkoutInput, 'source'> }[] = [
+// Endurance opens these quick-adds instead of a single template.
+const ENDURANCE_QUICK: { label: string; name: string }[] = [
+  { label: 'Walk', name: 'Walk' },
+  { label: 'Zone 2 Run', name: 'Zone 2 Run' },
+  { label: 'Interval Run', name: 'Interval Run' },
+  { label: 'Tempo Run', name: 'Tempo Run' },
+  { label: 'Long Run', name: 'Long Run' },
+  { label: 'Hike', name: 'Hike' },
+  { label: 'Cycle', name: 'Cycle' },
+  { label: 'Swim', name: 'Swim' },
+  { label: 'Row', name: 'Rowing Machine' },
+]
+
+const WORKOUT_TYPES: { label: string; sub: string; start?: Omit<StartWorkoutInput, 'source'> }[] = [
   { label: 'Strength training', sub: 'Lifts logged by weight and reps', start: { name: '', categoryName: 'Strength', exercises: [] } },
   { label: 'Speed', sub: 'Sprints logged by distance and time', start: { name: 'Sprint session', categoryName: 'Speed', exercises: [ex('Sprint', 6, '40')] } },
-  { label: 'Endurance', sub: 'Runs logged by distance, time and pace', start: { name: 'Run', categoryName: 'Endurance', exercises: [ex('Easy Run', 1)] } },
+  { label: 'Endurance', sub: 'Runs, walks, rides and swims by distance and time' },
   { label: 'Flexibility', sub: 'Stretches and mobility, timed holds or reps', start: { name: 'Mobility session', categoryName: 'Flexibility', exercises: [ex("World's Greatest Stretch", 2, '5'), ex('Hip Flexor Stretch', 2), ex('Hamstring Stretch', 2), ex('Pigeon Pose', 2)] } },
   { label: 'Balance', sub: 'Single-leg holds and reaches', start: { name: 'Balance session', categoryName: 'Balance', exercises: [ex('Single-Leg Stand', 3), ex('Star Excursion', 3, '5')] } },
 ]
@@ -50,6 +63,7 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
   const [finished, setFinished] = useState<FinishResult | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [picking, setPicking] = useState(false)
+  const [enduranceOpen, setEnduranceOpen] = useState(false)
 
   const fetchHistory = useCallback(async () => {
     setLoading(true)
@@ -227,20 +241,41 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
         + Start a custom workout
       </button>
       {picking && (
-        <BottomSheet title="What type of workout?" onClose={() => setPicking(false)}>
-          <div className="space-y-2">
-            {WORKOUT_TYPES.map(t => (
-              <button
-                key={t.label}
-                type="button"
-                onClick={() => { setPicking(false); onStart({ ...t.start, source: 'custom' }) }}
-                className="card p-4 w-full text-left hover:border-cta/30 transition-colors"
-              >
-                <p className="font-semibold text-fg-1">{t.label}</p>
-                <p className="text-xs text-fg-4 mt-0.5">{t.sub}</p>
-              </button>
-            ))}
-          </div>
+        <BottomSheet title={enduranceOpen ? 'Endurance' : 'What type of workout?'} onClose={() => { setPicking(false); setEnduranceOpen(false) }}>
+          {enduranceOpen ? (
+            <div className="grid grid-cols-2 gap-2">
+              {ENDURANCE_QUICK.map(q => (
+                <button
+                  key={q.label}
+                  type="button"
+                  onClick={() => {
+                    setPicking(false); setEnduranceOpen(false)
+                    onStart({ name: q.name, categoryName: 'Endurance', exercises: [ex(q.name, 1)], source: 'custom' })
+                  }}
+                  className="card p-3 text-left font-semibold text-fg-1 hover:border-cta/30 transition-colors"
+                >
+                  {q.label}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {WORKOUT_TYPES.map(t => (
+                <button
+                  key={t.label}
+                  type="button"
+                  onClick={() => {
+                    if (!t.start) { setEnduranceOpen(true); return }
+                    setPicking(false); onStart({ ...t.start, source: 'custom' })
+                  }}
+                  className="card p-4 w-full text-left hover:border-cta/30 transition-colors"
+                >
+                  <p className="font-semibold text-fg-1">{t.label}</p>
+                  <p className="text-xs text-fg-4 mt-0.5">{t.sub}</p>
+                </button>
+              ))}
+            </div>
+          )}
         </BottomSheet>
       )}
 

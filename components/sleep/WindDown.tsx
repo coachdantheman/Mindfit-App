@@ -2,8 +2,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-const KEY = 'mf-bedtime'
-const DEFAULT_BEDTIME = '22:00'
+const DEFAULT_BEDTIME = '22:30'
 const TOTAL_SEC = 30 * 60
 const RING_R = 110
 const RING_C = 2 * Math.PI * RING_R
@@ -15,15 +14,6 @@ const CUES = [
   { at: 600, text: 'Think of three things that went well today.' },
   { at: 300, text: 'Slow breathing: 4 seconds in, 6 seconds out.' },
 ]
-
-function readBedtime(): string {
-  try {
-    const v = localStorage.getItem(KEY)
-    return v && /^\d{2}:\d{2}$/.test(v) ? v : DEFAULT_BEDTIME
-  } catch {
-    return DEFAULT_BEDTIME
-  }
-}
 
 function clockLabel(mins: number): string {
   const m = ((mins % 1440) + 1440) % 1440
@@ -39,11 +29,23 @@ function cueFor(remaining: number): string {
 
 export default function WindDown() {
   const [bedtime, setBedtime] = useState(DEFAULT_BEDTIME)
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(DEFAULT_BEDTIME)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState(false)
   const [open, setOpen] = useState(false)
   const [startedAt, setStartedAt] = useState(0)
   const [now, setNow] = useState(0)
 
-  useEffect(() => { setBedtime(readBedtime()) }, [])
+  useEffect(() => {
+    fetch('/api/profile')
+      .then(r => (r.ok ? r.json() : null))
+      .then(p => {
+        const v = typeof p?.default_bedtime === 'string' ? p.default_bedtime.slice(0, 5) : ''
+        if (/^\d{2}:\d{2}$/.test(v)) setBedtime(v)
+      })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (!open) return
@@ -51,10 +53,24 @@ export default function WindDown() {
     return () => clearInterval(id)
   }, [open])
 
-  const onBedtime = (v: string) => {
-    if (!v) return
-    setBedtime(v)
-    try { localStorage.setItem(KEY, v) } catch {}
+  const saveBedtime = async () => {
+    if (!draft) return
+    setSaving(true)
+    setSaveError(false)
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ default_bedtime: draft }),
+      })
+      if (!res.ok) throw new Error('save failed')
+      setBedtime(draft)
+      setEditing(false)
+    } catch {
+      setSaveError(true)
+    } finally {
+      setSaving(false)
+    }
   }
 
   const start = () => {
@@ -75,14 +91,39 @@ export default function WindDown() {
       <h3 className="font-semibold text-fg-1 mb-1">Wind-down</h3>
       <p className="text-sm text-fg-4 mb-5">Start your wind-down at {windDownAt}</p>
       <div className="flex flex-wrap items-center gap-3">
-        <label htmlFor="wind-down-bedtime" className="text-sm text-fg-3">Bedtime</label>
-        <input
-          id="wind-down-bedtime"
-          type="time"
-          value={bedtime}
-          onChange={e => onBedtime(e.target.value)}
-          className="bg-surface-2 border border-edge rounded-xl px-4 py-2.5 text-sm text-fg-1 focus:ring-2 focus:ring-cta/50"
-        />
+        <span className="text-sm text-fg-3">Bedtime</span>
+        {editing ? (
+          <>
+            <label htmlFor="wind-down-bedtime" className="sr-only">Bedtime</label>
+            <input
+              id="wind-down-bedtime"
+              type="time"
+              value={draft}
+              onChange={e => setDraft(e.target.value)}
+              className="bg-surface-2 border border-edge rounded-xl px-4 py-2.5 text-sm text-fg-1 focus:ring-2 focus:ring-cta/50"
+            />
+            <button
+              type="button"
+              onClick={saveBedtime}
+              disabled={saving || !draft}
+              className="text-sm text-cta hover:underline disabled:opacity-50"
+            >
+              {saving ? 'Saving…' : 'Save'}
+            </button>
+          </>
+        ) : (
+          <>
+            <span className="text-sm text-fg-1 tabular-nums">{clockLabel(h * 60 + m)}</span>
+            <button
+              type="button"
+              onClick={() => { setDraft(bedtime); setSaveError(false); setEditing(true) }}
+              className="text-sm text-cta hover:underline"
+            >
+              Edit
+            </button>
+          </>
+        )}
+        {saveError && <span className="text-xs text-red-400">Could not save. Try again.</span>}
       </div>
       <button
         type="button"

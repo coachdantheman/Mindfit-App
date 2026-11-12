@@ -293,7 +293,20 @@ export default function PracticeLog({ notify, fixedKind }: Props) {
               </div>
             </div>
             <RatingSlider label="Performance: how well did you play?" value={form.performance} onChange={v => update({ performance: v })} color="bg-cta" />
-            <RatingSlider label="Difficulty: how hard was the opponent / moment?" value={form.difficulty} onChange={v => update({ difficulty: v })} color="bg-cta" />
+            {form.flowOn ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <RatingSlider label="Challenge" value={form.difficulty} onChange={v => update({ difficulty: v })} color="bg-cta" compact />
+                  <RatingSlider label="Skill" value={form.skill} onChange={v => update({ skill: v })} color="bg-cta" compact />
+                </div>
+                <div className={`flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-xl border px-4 py-3 text-center ${ZONE_COLOR[zone].tw}`}>
+                  <span className="text-sm font-semibold">{ZONE_COLOR[zone].label}</span>
+                  <span className="text-xs tabular-nums">challenge {form.difficulty} vs skill {form.skill} · {diff > 0 ? '+' : ''}{diff} (flow = within 1)</span>
+                </div>
+              </div>
+            ) : (
+              <RatingSlider label="Difficulty: how hard was the opponent / moment?" value={form.difficulty} onChange={v => update({ difficulty: v })} color="bg-cta" />
+            )}
             <Area label="What went well?" value={form.wentWell} onChange={v => update({ wentWell: v })} placeholder="The plays, decisions or moments you want more of." />
             <Area label="What will you improve?" value={form.toImprove} onChange={v => update({ toImprove: v })} placeholder="One or two things to take into the next practice." />
             <Area label="What did you learn about yourself?" value={form.learned} onChange={v => update({ learned: v })} placeholder="How did you respond under pressure? Who showed up?" />
@@ -326,11 +339,6 @@ export default function PracticeLog({ notify, fixedKind }: Props) {
           </button>
           {form.flowOn && (
             <div className="px-4 pb-4 space-y-4 border-t border-cta/20 pt-4">
-              <RatingSlider label="Skill level today" value={form.skill} onChange={v => update({ skill: v })} color="bg-cta" />
-              <div className={`flex items-center justify-between rounded-xl border px-4 py-3 ${ZONE_COLOR[zone].tw}`}>
-                <span className="text-sm font-semibold">{ZONE_COLOR[zone].label}</span>
-                <span className="text-xs tabular-nums">challenge {form.difficulty} vs skill {form.skill} · {diff > 0 ? '+' : ''}{diff} (flow = within 1)</span>
-              </div>
               <RatingSlider label="Flow score: how in the zone were you?" value={form.flow} onChange={v => update({ flow: v })} color="bg-cta" />
               <div>
                 <p className="text-sm text-fg-3 mb-2">Which triggers fired?</p>

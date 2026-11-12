@@ -107,9 +107,10 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
 
   return (
     <>
+      <div aria-hidden="true" className="fixed inset-x-0 top-0 h-[env(safe-area-inset-top)] bg-surface z-50 pointer-events-none" />
       <nav className="sticky top-0 z-40 bg-surface border-b border-edge pt-safe-bar">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between h-14">
+          <div className="flex items-center justify-between h-14 min-w-0">
             {/* Logo lockup: vector mark (crisp at any size) + thin wordmark */}
             <Link href="/mindset" aria-label="MindFit home" className="flex items-center gap-2.5 min-h-[44px]">
               <svg viewBox="168 86 176 340" className="h-8 w-auto shrink-0" aria-hidden="true">
@@ -117,7 +118,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
                 <rect x="203" y="247" width="106" height="11" fill="#9A8B00" />
                 <path d="M203 330 H309 V341 H214 V416 H203 Z" fill="#9A8B00" />
               </svg>
-              <span className="font-display text-[15px] tracking-[0.32em] uppercase text-fg-1 leading-none pt-px">
+              <span className="hidden sm:block font-display text-[15px] tracking-[0.32em] uppercase text-fg-1 leading-none pt-px">
                 Mind<span className="text-cta">fit</span>
               </span>
             </Link>
@@ -160,7 +161,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
             </div>
 
             {/* Right cluster */}
-            <div className="flex items-center gap-1 sm:gap-2">
+            <div className="flex items-center gap-0.5 sm:gap-2">
               <NotificationBell />
               <StreakChip pathname={pathname} />
               <Link
@@ -180,14 +181,14 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
                 <Link
                   href={roleLink.href}
                   aria-current={isActive(roleLink.href) ? 'page' : undefined}
-                  className={`sm:hidden flex items-center gap-1 min-h-[40px] pl-2 pr-2.5 rounded-full border text-xs font-semibold whitespace-nowrap transition-colors ${
+                  className={`sm:hidden flex items-center justify-center gap-1 min-h-[40px] min-w-[40px] px-2 rounded-full border text-xs font-semibold whitespace-nowrap transition-colors ${
                     isActive(roleLink.href)
                       ? 'text-cta bg-cta/10 border-cta/50'
                       : 'text-cta border-cta/30 hover:bg-cta/10'
                   }`}
                 >
                   <ShieldIcon className="w-4 h-4" />
-                  {roleLink.short}
+                  <span className="sr-only">{roleLink.short}</span>
                 </Link>
               )}
               <Link

@@ -130,9 +130,14 @@ const ROWS: Row[] = [
   ['jumping-jacks', 'Jumping Jacks', 'conditioning', 'bodyweight', 'reps', ['Jumping Jack', 'Star Jumps']],
   ['jump-rope', 'Jump Rope', 'conditioning', 'jump rope', 'time_sec', ['Skipping', 'Skip Rope']],
   ['tempo-run', 'Tempo Run', 'conditioning', 'none', 'distance_time', ['Tempo Runs', 'Threshold Run']],
-  ['easy-run', 'Easy Run', 'conditioning', 'none', 'distance_time', ['Run', 'Distance Run', 'Long Run', 'Recovery Run', 'Jog']],
-  ['interval-run', 'Intervals', 'conditioning', 'none', 'distance_time', ['Interval Run', 'Repeats', '400s', '800s', 'Fartlek', 'Track Intervals']],
+  ['walk', 'Walk', 'conditioning', 'none', 'distance_time', ['Walking', 'Brisk Walk']],
+  ['easy-run', 'Zone 2 Run', 'conditioning', 'none', 'distance_time', ['Easy Run', 'Run', 'Distance Run', 'Recovery Run', 'Jog']],
+  ['long-run', 'Long Run', 'conditioning', 'none', 'distance_time', ['Long Runs', 'Long Distance Run']],
+  ['interval-run', 'Interval Run', 'conditioning', 'none', 'distance_time', ['Intervals', 'Repeats', '400s', '800s', 'Fartlek', 'Track Intervals']],
   ['rowing-machine', 'Rowing Machine', 'conditioning', 'machine', 'distance_time', ['Rower', 'Erg', 'Row Erg']],
+  ['hike', 'Hike', 'conditioning', 'none', 'distance_time', ['Hiking', 'Trail Hike']],
+  ['cycle', 'Cycle', 'conditioning', 'bike', 'distance_time', ['Bike', 'Cycling', 'Spin']],
+  ['swim', 'Swim', 'conditioning', 'pool', 'distance_time', ['Swimming', 'Lap Swim']],
 
   // ─── mobility ──────────────────────────────────────────────────────────
   ['hip-flexor-stretch', 'Hip Flexor Stretch', 'mobility', 'none', 'time_sec', ['Couch Stretch', 'Kneeling Hip Flexor Stretch']],
