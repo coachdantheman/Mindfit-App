@@ -11,6 +11,10 @@ import JournalRatingsGrid from '@/components/shared/JournalRatingsGrid'
 import LessonLinks from '@/components/shared/LessonLinks'
 import WorkoutLogList from '@/components/shared/WorkoutLogList'
 import SleepEntriesList from '@/components/shared/SleepEntriesList'
+import InsightsCard from '@/components/dashboard/InsightsCard'
+import { progressInsights, type InsightData, type InsightSection } from '@/lib/insights'
+import { factFor } from '@/lib/data/research-facts'
+import { localDateISO } from '@/lib/dates'
 
 import Link from 'next/link'
 import StatCard from '@/components/dashboard/StatCard'
@@ -53,6 +57,8 @@ export default function ProgressPage() {
   const [assessments, setAssessments] = useState<WeeklyAssessment[]>([])
   const [overview, setOverview] = useState<{ streak: number; latestMpi: number | null; baselineMpi: number | null } | null>(null)
   const [board, setBoard] = useState<MyStatus | null>(null)
+  const [games, setGames] = useState<InsightData['games']>([])
+  const [routineDates, setRoutineDates] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -97,9 +103,30 @@ export default function ProgressPage() {
     try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone } catch {}
     cached(`/api/leaderboard?tz=${encodeURIComponent(tz)}`, (d: { me?: MyStatus }) => { if (d?.me) setBoard(d.me) })
       .catch(() => {})
+    cached('/api/exercise/practice?days=120', (rows: { kind: string; log_date: string; performance: number | null }[]) => {
+      if (Array.isArray(rows)) setGames(rows.filter(r => r.kind === 'game').map(r => ({ log_date: r.log_date, performance: r.performance })))
+    }).catch(() => {})
+    cached(`/api/exercise/pregame?date=${localDateISO()}`, (d: { runs?: { game_date: string; completed_at: string | null }[] }) => {
+      if (Array.isArray(d?.runs)) setRoutineDates(d.runs.filter(r => r.completed_at).map(r => r.game_date))
+    }).catch(() => {})
   }, [])
 
   const { avgSleep, avgSleepQuality } = calcSleepAverages(sleepEntries)
+
+  const insightData: InsightData = {
+    journal: journalEntries,
+    sleep: sleepEntries,
+    workouts: workoutLogs.map(w => ({ log_date: w.log_date })),
+    food: foodEntries,
+    proteinGoal: nutritionGoal?.protein_g ?? null,
+    games,
+    routineDates,
+  }
+  const insights = progressInsights(insightData)
+  const today = localDateISO()
+  const insightCard = (section: InsightSection) => (
+    <InsightsCard section={section} insights={insights} fact={factFor(section, today)} />
+  )
 
   if (loading) return <PageSkeleton variant="progress" title="Progress" />
 
@@ -165,6 +192,7 @@ export default function ProgressPage() {
 
       {section === 'mindset' && (
         <div className="space-y-6">
+          {insightCard('mindset')}
           {journalEntries.length === 0 ? (
             <div className="text-center py-12 text-fg-3">
               <p className="font-medium">No journal data yet</p>
@@ -274,16 +302,32 @@ export default function ProgressPage() {
         </div>
       )}
 
-      {section === 'flow' && <FlowProgressView />}
-
-      {section === 'nutrition' && (
-        <NutritionProgressView entries={foodEntries} goal={nutritionGoal} />
+      {section === 'flow' && (
+        <div className="space-y-6">
+          {insightCard('flow')}
+          <FlowProgressView />
+        </div>
       )}
 
-      {section === 'exercise' && <WorkoutLogList logs={workoutLogs} />}
+      {section === 'nutrition' && (
+        <div className="space-y-6">
+          {insightCard('nutrition')}
+          <NutritionProgressView entries={foodEntries} goal={nutritionGoal} />
+        </div>
+      )}
+
+      {section === 'exercise' && (
+        <div className="space-y-6">
+          {insightCard('exercise')}
+          <WorkoutLogList logs={workoutLogs} />
+        </div>
+      )}
 
       {section === 'sleep' && (
-        <SleepEntriesList entries={sleepEntries} avgSleep={avgSleep} avgSleepQuality={avgSleepQuality} />
+        <div className="space-y-6">
+          {insightCard('sleep')}
+          <SleepEntriesList entries={sleepEntries} avgSleep={avgSleep} avgSleepQuality={avgSleepQuality} />
+        </div>
       )}
     </div>
   )

@@ -13,11 +13,12 @@ export async function GET() {
     .select('id, answers, scores, top_need, created_at')
     .eq('user_id', auth.userId)
     .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+    .limit(2)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+  const [latest, previous] = data ?? []
+  if (!latest) return NextResponse.json(null)
+  return NextResponse.json({ ...latest, previous: previous ?? null })
 }
 
 export async function POST(req: Request) {

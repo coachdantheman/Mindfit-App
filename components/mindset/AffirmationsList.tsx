@@ -2,7 +2,9 @@
 import { useState, useEffect } from 'react'
 import { cached } from '@/lib/api-cache'
 import { useToast } from '@/components/shared/Toast'
-import { Affirmation } from '@/types'
+import { Affirmation, FlowSession } from '@/types'
+import { Collapsible } from '@/components/shared/CollapsibleList'
+import { DEFAULT_AFFIRMATIONS } from '@/lib/data/affirmations'
 import {
   DndContext,
   closestCenter,
@@ -115,6 +117,7 @@ export default function AffirmationsList() {
   const [adding, setAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editText, setEditText] = useState('')
+  const [flowStatements, setFlowStatements] = useState<string[]>([])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -123,7 +126,46 @@ export default function AffirmationsList() {
 
   useEffect(() => {
     cached('/api/mindset/affirmations', (data: Affirmation[]) => { setAffirmations(data); setLoading(false) })
+    fetch('/api/mindset/flow-state/sessions?days=90')
+      .then(r => (r.ok ? r.json() : []))
+      .then((rows: FlowSession[]) => {
+        if (!Array.isArray(rows)) return
+        const seen = new Set<string>()
+        const list: string[] = []
+        for (const row of rows) {
+          const text = typeof row.identity_statement === 'string' ? row.identity_statement.trim() : ''
+          if (!text || seen.has(text.toLowerCase())) continue
+          seen.add(text.toLowerCase())
+          list.push(text)
+          if (list.length === 3) break
+        }
+        setFlowStatements(list)
+      })
+      .catch(() => {})
   }, [])
+
+  const addStarter = async (text: string) => {
+    if (adding) return
+    setAdding(true)
+    try {
+      const res = await fetch('/api/mindset/affirmations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setAffirmations(prev => [...prev, data])
+        notify('Affirmation added ✓')
+      } else {
+        notify('Could not add it. Please try again.', 'error')
+      }
+    } catch {
+      notify('Could not add it. Please try again.', 'error')
+    } finally {
+      setAdding(false)
+    }
+  }
 
   const addAffirmation = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -205,6 +247,23 @@ export default function AffirmationsList() {
 
   if (loading) return <Skeleton />
 
+  const have = new Set(affirmations.map(a => a.text.trim().toLowerCase()))
+  const starterRow = (line: string, key: string) => {
+    const owned = have.has(line.trim().toLowerCase())
+    return (
+      <button
+        key={key}
+        type="button"
+        disabled={owned || adding}
+        onClick={() => addStarter(line)}
+        className="w-full flex items-center justify-between gap-3 text-left p-3 rounded-xl bg-surface-2/50 border border-edge-muted hover:border-cta/40 transition-colors disabled:opacity-60 disabled:hover:border-edge-muted"
+      >
+        <span className="text-sm text-fg-2 italic">&ldquo;{line}&rdquo;</span>
+        <span className={`shrink-0 text-sm ${owned ? 'text-cta' : 'text-fg-4'}`}>{owned ? '✓' : '+'}</span>
+      </button>
+    )
+  }
+
   return (
     <div className="space-y-5">
       <div className="card p-6">
@@ -232,6 +291,29 @@ export default function AffirmationsList() {
             </SortableContext>
           </DndContext>
         )}
+
+        <div className="mb-5">
+          <Collapsible title="Start with these" defaultOpen={affirmations.length === 0}>
+            <div className="space-y-5">
+              {flowStatements.length > 0 && (
+                <div>
+                  <p className="text-[11px] uppercase tracking-wider text-fg-4 font-medium mb-2">From your Flow Stack</p>
+                  <div className="space-y-2">
+                    {flowStatements.map((text, i) => starterRow(text, `flow-${i}`))}
+                  </div>
+                </div>
+              )}
+              {DEFAULT_AFFIRMATIONS.map(group => (
+                <div key={group.dimension}>
+                  <p className="text-[11px] uppercase tracking-wider text-fg-4 font-medium mb-2">{group.label}</p>
+                  <div className="space-y-2">
+                    {group.lines.map(line => starterRow(line, `${group.dimension}-${line}`))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Collapsible>
+        </div>
 
         <form onSubmit={addAffirmation} className="flex gap-2">
           <input

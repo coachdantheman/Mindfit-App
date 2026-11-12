@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { cached } from '@/lib/api-cache'
 import { useToast } from '@/components/shared/Toast'
-import { VAULT, VaultGroup, VaultPerson, vaultQuoteIndex } from '@/lib/data/quote-vault'
+import { VAULT, VaultGroup, VaultPerson, vaultQuoteIndex, vaultOrder } from '@/lib/data/quote-vault'
 import { localDateISO } from '@/lib/dates'
 
 type Kind = 'fav_quote' | 'pin_person'
@@ -67,10 +67,11 @@ export default function QuoteVault() {
   }
 
   const visiblePeople = (): VaultPerson[] => {
-    if (filter === 'pinned') return VAULT.filter(p => pinned.has(p.key))
-    if (filter === 'all') return [...VAULT].sort((a, b) => Number(pinned.has(b.key)) - Number(pinned.has(a.key)))
+    const ordered = vaultOrder(VAULT, today)
+    if (filter === 'pinned') return ordered.filter(p => pinned.has(p.key))
+    if (filter === 'all') return ordered.sort((a, b) => Number(pinned.has(b.key)) - Number(pinned.has(a.key)))
     if (filter === 'favorites') return []
-    return VAULT.filter(p => p.group === filter)
+    return ordered.filter(p => p.group === filter)
   }
 
   const savedQuotes = VAULT.flatMap(p =>

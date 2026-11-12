@@ -6,6 +6,9 @@ import SaveButton from '@/components/shared/SaveButton'
 import { useToast } from '@/components/shared/Toast'
 import { Goal, GoalType } from '@/types'
 import Skeleton from '@/components/shared/Skeleton'
+import Link from 'next/link'
+import { Habit, HabitCheck } from '@/lib/habits'
+import { localDateISO } from '@/lib/dates'
 
 const GOAL_LABELS: Record<GoalType, string> = {
   weekly: 'Weekly Goals',
@@ -64,6 +67,9 @@ export default function GoalsSection() {
   const [formType, setFormType] = useState<GoalType>('weekly')
   const [formTitle, setFormTitle] = useState('')
   const [formDesc, setFormDesc] = useState('')
+  const [formActions, setFormActions] = useState<string[]>([''])
+  const [habits, setHabits] = useState<Habit[]>([])
+  const [checks, setChecks] = useState<HabitCheck[]>([])
   const [saving, setSaving] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editType, setEditType] = useState<GoalType>('weekly')
@@ -76,12 +82,17 @@ export default function GoalsSection() {
 
   useEffect(() => {
     cached('/api/mindset/goals', (data: Goal[]) => { setGoals(data); setLoading(false) })
+    fetch('/api/mindset/habits')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d?.habits) { setHabits(d.habits); setChecks(d.checks ?? []) } })
+      .catch(() => {})
   }, [])
 
   const addGoal = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formTitle.trim() || saving) return
     setSaving(true)
+    const actions = formActions.map(a => a.trim()).filter(Boolean)
     try {
       const res = await fetch('/api/mindset/goals', {
         method: 'POST',
@@ -93,8 +104,27 @@ export default function GoalsSection() {
         setGoals(prev => [data, ...prev])
         setFormTitle('')
         setFormDesc('')
+        setFormActions([''])
         setShowForm(false)
-        notify('Goal added ✓')
+        const created: Habit[] = []
+        let failed = 0
+        for (const title of actions) {
+          try {
+            const hr = await fetch('/api/mindset/habits', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ title, frequency: 'daily', goal_id: data.id }),
+            })
+            if (hr.ok) created.push(await hr.json())
+            else failed++
+          } catch {
+            failed++
+          }
+        }
+        if (created.length) setHabits(prev => [...prev, ...created])
+        if (failed) notify("Goal saved, but a habit didn't. Add it in Habits.", 'error')
+        else if (created.length) notify(`Goal added with ${created.length} habit${created.length === 1 ? '' : 's'}`)
+        else notify('Goal added ✓')
       } else {
         notify('Could not add the goal. Please try again.', 'error')
       }
@@ -188,6 +218,13 @@ export default function GoalsSection() {
   }
   const grouped = { weekly: byType('weekly'), season: byType('season'), year: byType('year') }
 
+  const weekDays = new Set(Array.from({ length: 7 }, (_, i) => {
+    const d = new Date()
+    d.setDate(d.getDate() - i)
+    return localDateISO(d)
+  }))
+  const daysDone = (habitId: string) => checks.filter(c => c.habit_id === habitId && weekDays.has(c.check_date)).length
+
   return (
     <div className="space-y-5">
       <div className="card p-6">
@@ -216,6 +253,30 @@ export default function GoalsSection() {
               onTitle={setFormTitle}
               onDesc={setFormDesc}
             />
+            <div className="space-y-2">
+              <p className="text-sm text-fg-2">What daily action will get you there?</p>
+              <p className="text-xs text-fg-4">Each one becomes a habit you can check off.</p>
+              {formActions.map((action, i) => (
+                <input
+                  key={i}
+                  value={action}
+                  onChange={e => setFormActions(prev => prev.map((v, j) => j === i ? e.target.value : v))}
+                  aria-label={`Daily action ${i + 1}`}
+                  placeholder="Daily action"
+                  maxLength={80}
+                  className="input-field"
+                />
+              ))}
+              {formActions.length < 3 && (
+                <button
+                  type="button"
+                  onClick={() => setFormActions(prev => [...prev, ''])}
+                  className="text-xs text-cta"
+                >
+                  + Add another
+                </button>
+              )}
+            </div>
             <SaveButton
               state={saving ? 'saving' : 'idle'}
               idleLabel="Add Goal"
@@ -269,6 +330,17 @@ export default function GoalsSection() {
                           {g.title}
                         </p>
                         {g.description && <p className="text-xs text-fg-4 mt-0.5">{g.description}</p>}
+                        {habits.some(h => h.goal_id === g.id) && (
+                          <div className="mt-2 space-y-1">
+                            {habits.filter(h => h.goal_id === g.id).map(h => (
+                              <div key={h.id} className="flex items-center justify-between gap-3 text-xs">
+                                <span className="text-fg-3">{h.title}</span>
+                                <span className="text-fg-4 shrink-0">{daysDone(h.id)} of 7 days</span>
+                              </div>
+                            ))}
+                            <Link href="/mindset?tab=Habits" className="text-xs text-cta">Open Habits →</Link>
+                          </div>
+                        )}
                       </div>
                       <div className="flex shrink-0 -my-1 -mr-1">
                         <button
