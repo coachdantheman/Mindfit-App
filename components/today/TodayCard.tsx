@@ -209,15 +209,15 @@ export default function TodayCard() {
                 Start check-in
               </button>
             ) : game?.date === today ? (
-              <Link href="/exercise?tab=gameday" className="btn-primary w-full py-3 text-center">
+              <Link href="/exercise?tab=gameday" className="btn-primary block w-full py-3 text-center leading-snug">
                 Run your pregame routine
               </Link>
             ) : firstOpen ? (
-              <Link href={firstOpen.href} className="btn-primary w-full py-3 text-center">
+              <Link href={firstOpen.href} className="btn-primary block w-full py-3 text-center leading-snug">
                 {firstOpen.action}
               </Link>
             ) : data.focus ? (
-              <Link href={data.focus.action.href} className="btn-primary w-full py-3 text-center">
+              <Link href={data.focus.action.href} className="btn-primary block w-full py-3 text-center leading-snug">
                 {data.focus.action.text}
               </Link>
             ) : (
