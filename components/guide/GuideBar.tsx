@@ -12,7 +12,7 @@ export default function GuideBar() {
   const [data, setData] = useState<TodayData | null>(null)
 
   useEffect(() => {
-    cached('/api/profile', (p: { role?: string } | null) => setMember((p?.role ?? 'member') === 'member')).catch(() => {})
+    cached('/api/profile', (p: { role?: string } | null) => setMember(['member', 'admin'].includes(p?.role ?? 'member'))).catch(() => {})
     cached(todayQuery(localDateISO()), (d: TodayData | null) => { if (d?.pillars) setData(d) }).catch(() => {})
   }, [])
 

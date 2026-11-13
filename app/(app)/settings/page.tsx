@@ -299,7 +299,7 @@ export default function SettingsPage() {
             <span className="text-fg-2">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
           </button>
         </div>
-        {role === 'member' && (
+        {(role === 'member' || role === 'admin') && (
         <div className="card p-5 flex items-center gap-4">
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-fg-1 mb-1 text-sm">Daily Guidance</h3>
