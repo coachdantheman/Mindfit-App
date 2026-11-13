@@ -33,6 +33,7 @@ export async function sendCoachInviteEmail(to: string, coachName?: string | null
   const first = firstRaw ? escapeHtml(firstRaw) : firstRaw
   const coach = escapeHtml(coachName?.trim() || 'Your coach')
   const loginUrl = `${appUrlOf()}/login`
+  const signupUrl = `${appUrlOf()}/signup`
   await send(to, `${coachName?.trim() || 'Your coach'} added you to MindFit`, emailShell(`
           <h2 style="color:#f3f4f6;font-size:20px;font-weight:600;margin:0 0 16px;">${first ? `${first}, your` : 'Your'} account is ready</h2>
           <p style="color:#9ca3af;font-size:15px;line-height:1.6;margin:0 0 24px;">
@@ -45,7 +46,7 @@ export async function sendCoachInviteEmail(to: string, coachName?: string | null
           </a>
           ${signInUrl ? `
           <p style="color:#6b7280;font-size:13px;line-height:1.6;margin:0 0 8px;">
-            Link expired or not working? Go to <a href="${loginUrl}" style="color:#C4B400;">${loginUrl}</a> and create your account with this email address.
+            Link expired or not working? Go to <a href="${signupUrl}" style="color:#C4B400;">${signupUrl}</a> and create your account with this email address.
           </p>
           <p style="color:#6b7280;font-size:13px;line-height:1.6;margin:0;">
             Set a password any time under Settings so you can sign in without a link.
@@ -78,7 +79,7 @@ export async function sendParentInviteEmail(to: string, athleteName?: string | n
           <p style="color:#9ca3af;font-size:15px;line-height:1.6;margin:0 0 24px;">
             ${athlete} added you as a parent on MindFit. Create a free account with this email address and you will see their progress, read-only.
           </p>
-          <a href="${appUrlOf()}/login" style="display:inline-block;background:#C4B400;color:#0A0F1A;font-weight:700;padding:14px 28px;border-radius:12px;text-decoration:none;font-size:15px;margin-bottom:32px;">
+          <a href="${appUrlOf()}/login?mode=signup" style="display:inline-block;background:#C4B400;color:#0A0F1A;font-weight:700;padding:14px 28px;border-radius:12px;text-decoration:none;font-size:15px;margin-bottom:32px;">
             Create Account →
           </a>`), 'parent invite email')
 }

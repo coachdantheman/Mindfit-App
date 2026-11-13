@@ -28,7 +28,7 @@ function LoginForm() {
   const [codeSent, setCodeSent] = useState(false)
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [mode, setMode] = useState<Mode>('signin')
+  const [mode, setMode] = useState<Mode>(() => searchParams.get('mode') === 'signup' ? 'signup' : 'signin')
   const [error, setError] = useState(() => {
     const e = searchParams.get('error')
     return e === 'link_expired' ? LINK_EXPIRED_MSG : e ? AUTH_ERROR_MSG : ''
@@ -273,19 +273,35 @@ function LoginForm() {
           </form>
         )}
 
+        {!codeSent && (
+          <div className="pt-8 space-y-3">
+            <div className="flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-fg-4">
+              <span className="h-px flex-1 bg-edge" />New to MindFit?<span className="h-px flex-1 bg-edge" />
+            </div>
+            <Link
+              href="/start"
+              className="flex flex-col items-center justify-center w-full h-14 rounded-full border border-cta text-cta font-semibold tracking-wide hover:bg-cta/10 transition-colors"
+            >
+              Create a free athlete account
+            </Link>
+            <p className="text-xs text-center text-fg-4">Takes 2 minutes and starts with your free MPI score.</p>
+            {mode !== 'signup' ? (
+              <button type="button" onClick={() => switchMode('signup')} className="block w-full text-center text-sm text-fg-3 hover:text-fg-1 py-2">
+                Parent or coach? <span className="text-cta font-semibold">Create your account</span>
+              </button>
+            ) : (
+              <button type="button" onClick={() => switchMode('signin')} className="block w-full text-center text-sm text-fg-3 hover:text-fg-1 py-2">
+                Already have an account? <span className="text-cta font-semibold">Sign in</span>
+              </button>
+            )}
+          </div>
+        )}
+
         <div className="flex-1" />
 
         {!codeSent && (
-          <div className="pb-8 pt-10 space-y-3 text-center">
+          <div className="pb-8 pt-8 space-y-3 text-center">
             <div className="h-px bg-edge" />
-            <p className="text-sm text-fg-3 pt-3">
-              New athlete? <Link href="/start" className="text-cta font-semibold hover:underline">Get your free MPI score</Link>
-            </p>
-            {mode !== 'signup' && (
-              <button type="button" onClick={() => switchMode('signup')} className="text-sm text-fg-4 hover:text-fg-2">
-                Parent or coach? Create an account
-              </button>
-            )}
             <p className="web-only text-xs text-fg-4 pt-2">
               In the <a href="https://www.skool.com/mindfit" target="_blank" rel="noopener noreferrer" className="text-cta hover:underline">MindFit Skool community</a>? Use your Skool email and your coach is linked automatically.
             </p>
