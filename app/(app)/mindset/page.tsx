@@ -7,7 +7,7 @@ import LessonLinks from '@/components/shared/LessonLinks'
 import QuoteOfTheDay from '@/components/mindset/QuoteOfTheDay'
 import PushPrompt from '@/components/shared/PushPrompt'
 import { LessonSection } from '@/types'
-import TodayCard from '@/components/today/TodayCard'
+import GuideBar from '@/components/guide/GuideBar'
 import PendingGameBanner from '@/components/shared/PendingGameBanner'
 import InviteParentCard from '@/components/shared/InviteParentCard'
 
@@ -92,7 +92,7 @@ function MindsetContent() {
 
       <PendingGameBanner />
 
-      <TodayCard />
+      <GuideBar />
 
       <PushPrompt />
 

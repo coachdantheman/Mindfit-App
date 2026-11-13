@@ -36,7 +36,7 @@ export default function SettingsPage() {
   const [sportsSaving, setSportsSaving] = useState(false)
   const [sportsStatus, setSportsStatus] = useState<Status>(null)
   const units = useUnits()
-  const [showTodayCard, setShowTodayCard] = useState(true)
+  const [dailyGuidance, setDailyGuidance] = useState(true)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -54,7 +54,7 @@ export default function SettingsPage() {
           setSecondarySport(p.secondary_sport ?? '')
           setNextGame(p.next_competition_at?.slice(0, 10) ?? '')
           setNextGameTime(p.next_competition_time?.slice(0, 5) ?? '')
-          setShowTodayCard(p.show_today_card !== false)
+          setDailyGuidance(p.daily_guidance !== false)
         }
         setProfileLoaded(true)
       })
@@ -116,14 +116,14 @@ export default function SettingsPage() {
     }
   }
 
-  const toggleTodayCard = async () => {
-    const next = !showTodayCard
-    setShowTodayCard(next)
+  const toggleDailyGuidance = async () => {
+    const next = !dailyGuidance
+    setDailyGuidance(next)
     try {
-      await patchProfile({ show_today_card: next })
+      await patchProfile({ daily_guidance: next })
       clearApiCache('/api/profile')
     } catch {
-      setShowTodayCard(!next)
+      setDailyGuidance(!next)
     }
   }
 
@@ -299,22 +299,22 @@ export default function SettingsPage() {
             <span className="text-fg-2">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
           </button>
         </div>
-        {role !== 'parent' && (
+        {role === 'member' && (
         <div className="card p-5 flex items-center gap-4">
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-fg-1 mb-1 text-sm">Today card on Mindset</h3>
-            <p className="text-sm text-fg-4">Readiness score, your four rings and your next step at the top of Mindset.</p>
+            <h3 className="font-semibold text-fg-1 mb-1 text-sm">Daily Guidance</h3>
+            <p className="text-sm text-fg-4">Start each day with a guided screen: check in, see your readiness, then one next step at a time.</p>
           </div>
           <button
             type="button"
             role="switch"
-            aria-checked={showTodayCard}
-            aria-label="Show Today card on Mindset"
+            aria-checked={dailyGuidance}
+            aria-label="Daily Guidance"
             disabled={!profileLoaded}
-            onClick={() => { void toggleTodayCard() }}
-            className={`relative shrink-0 w-12 h-7 rounded-full transition-colors ${showTodayCard ? 'bg-cta' : 'bg-surface-3'}`}
+            onClick={() => { void toggleDailyGuidance() }}
+            className={`relative shrink-0 w-12 h-7 rounded-full transition-colors ${dailyGuidance ? 'bg-cta' : 'bg-surface-3'}`}
           >
-            <span className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white transition-transform ${showTodayCard ? 'translate-x-5' : ''}`} />
+            <span className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white transition-transform ${dailyGuidance ? 'translate-x-5' : ''}`} />
           </button>
         </div>
         )}

@@ -51,6 +51,10 @@ export async function PATCH(req: Request) {
     updates[key] = value
   }
   if (body.terms_accepted_at !== undefined) updates.terms_accepted_at = true
+  if (body.daily_guidance !== undefined) {
+    if (typeof body.daily_guidance !== 'boolean') return NextResponse.json({ error: 'daily_guidance is invalid' }, { status: 400 })
+    updates.daily_guidance = body.daily_guidance
+  }
   if (body.show_today_card !== undefined) {
     if (typeof body.show_today_card !== 'boolean') return NextResponse.json({ error: 'show_today_card is invalid' }, { status: 400 })
     updates.show_today_card = body.show_today_card

@@ -10,7 +10,7 @@ import SaveButton, { SaveState } from '@/components/shared/SaveButton'
 import { useToast } from '@/components/shared/Toast'
 import { haptic } from '@/lib/haptics'
 import { localDateISO } from '@/lib/dates'
-import type { TodayData } from './TodayCard'
+import type { TodayData } from '@/lib/guide'
 
 type Step = 'sleep' | 'feel' | 'objective' | 'lock'
 
@@ -19,13 +19,17 @@ interface Props {
   data: TodayData
   onClose: () => void
   onSaved: () => void
+  // Full-screen pages inside the Daily Guide instead of a bottom sheet.
+  inline?: boolean
 }
 
 type Ratings = { motivation: number; focus: number; confidence: number; anxiety: number }
 
 const SWIPE_PX = 60
 
-export default function DailyCheckIn({ today, data, onClose, onSaved }: Props) {
+const INLINE_TITLES: Record<Step, string> = { sleep: 'Last night', feel: 'Right now', objective: 'Today', lock: 'Lock it in' }
+
+export default function DailyCheckIn({ today, data, onClose, onSaved, inline = false }: Props) {
   const notify = useToast()
   const hasJournal = !!data.journal
   const steps: Step[] = hasJournal ? ['sleep', 'lock'] : ['sleep', 'feel', 'objective', 'lock']
@@ -124,30 +128,12 @@ export default function DailyCheckIn({ today, data, onClose, onSaved }: Props) {
     }
   }
 
-  return (
-    <BottomSheet
-      title="Daily check-in"
-      onClose={onClose}
-      header={
+  const progress = (
         <div className="h-1 rounded-full bg-surface-3 overflow-hidden" role="progressbar" aria-label="Check-in progress" aria-valuemin={1} aria-valuemax={steps.length} aria-valuenow={i + 1}>
           <div className="h-full bg-cta transition-[width] duration-300" style={{ width: `${((i + 1) / steps.length) * 100}%` }} />
         </div>
-      }
-      footer={
-        <div className="flex items-center gap-3">
-          <button type="button" onClick={() => go(-1)} disabled={i === 0 || state === 'saving'} className="btn-secondary px-5 py-3 shrink-0 disabled:opacity-40">
-            Back
-          </button>
-          {last ? (
-            <SaveButton state={state} idleLabel="Finish check-in" onClick={save} type="button" className="py-3" />
-          ) : (
-            <button type="button" onClick={() => go(1)} disabled={!canAdvance} className="btn-primary w-full py-3 disabled:opacity-40">
-              Next
-            </button>
-          )}
-        </div>
-      }
-    >
+  )
+  const content = (
       <div onPointerDown={onPointerDown} onPointerUp={onPointerUp} onPointerCancel={() => { swipe.current = null }} className="min-h-[300px]">
         {step === 'sleep' && (
           <div key="sleep" className="mf-rise space-y-8 pt-2">
@@ -205,6 +191,53 @@ export default function DailyCheckIn({ today, data, onClose, onSaved }: Props) {
           </div>
         )}
       </div>
+  )
+
+  if (inline) {
+    return (
+      <div className="flex-1 flex flex-col">
+        <div className="pt-2">{progress}</div>
+        <p className="mt-6 text-xs uppercase tracking-[0.24em] text-cta text-center">{INLINE_TITLES[step]}</p>
+        <div className="flex-1 mt-4">{content}</div>
+        <div className="pb-6 pt-4 flex items-center gap-3">
+          {i > 0 && (
+            <button type="button" onClick={() => go(-1)} disabled={state === 'saving'} className="h-14 px-6 rounded-full border border-edge text-fg-2 font-semibold shrink-0 disabled:opacity-40">
+              Back
+            </button>
+          )}
+          {last ? (
+            <SaveButton state={state} idleLabel="Lock in my day" onClick={save} type="button" className="h-14 rounded-full" />
+          ) : (
+            <button type="button" onClick={() => go(1)} disabled={!canAdvance} className="w-full h-14 rounded-full bg-cta text-fg-inverse font-semibold tracking-wide hover:bg-brand-600 transition-colors disabled:opacity-40">
+              Next
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <BottomSheet
+      title="Daily check-in"
+      onClose={onClose}
+      header={progress}
+      footer={
+        <div className="flex items-center gap-3">
+          <button type="button" onClick={() => go(-1)} disabled={i === 0 || state === 'saving'} className="btn-secondary px-5 py-3 shrink-0 disabled:opacity-40">
+            Back
+          </button>
+          {last ? (
+            <SaveButton state={state} idleLabel="Finish check-in" onClick={save} type="button" className="py-3" />
+          ) : (
+            <button type="button" onClick={() => go(1)} disabled={!canAdvance} className="btn-primary w-full py-3 disabled:opacity-40">
+              Next
+            </button>
+          )}
+        </div>
+      }
+    >
+      {content}
     </BottomSheet>
   )
 }
