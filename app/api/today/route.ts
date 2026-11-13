@@ -49,9 +49,9 @@ export async function GET(req: Request) {
   const exists = { head: true, count: 'exact' as const }
   const admin = createAdminClient()
 
-  const [journal, sleep, gratitude, visualization, flow, workout, practice, food, recovery, affirmations, quizResult, weeklyResult] = await Promise.all([
+  const [journal, sleep, gratitude, visualization, flow, workout, practice, food, recovery, affirmations, quizResult, weeklyResult, recentJournal, routineRows] = await Promise.all([
     admin.from('journal_entries')
-      .select('objective, action_step_1, strength_1, weakness, rating_motivation, rating_focus, rating_confidence, rating_anxiety')
+      .select('objective, objective_result, action_step_1, strength_1, weakness, rating_motivation, rating_focus, rating_confidence, rating_anxiety')
       .eq('user_id', uid).eq('entry_date', date).maybeSingle(),
     admin.from('sleep_entries')
       .select('hours_slept, sleep_quality, bedtime, wake_time, notes')
@@ -67,14 +67,28 @@ export async function GET(req: Request) {
     admin.from('affirmations').select('text').eq('user_id', uid).eq('is_active', true).order('sort_order', { ascending: true }),
     admin.from('quiz_results').select('top_need').eq('user_id', uid).order('created_at', { ascending: false }).limit(1).maybeSingle(),
     admin.from('weekly_assessments').select(DIM_COLS).eq('user_id', uid).order('week_date', { ascending: false }).limit(1).maybeSingle(),
+    admin.from('journal_entries')
+      .select('rating_motivation, rating_focus, rating_confidence, rating_anxiety')
+      .eq('user_id', uid).lt('entry_date', date).gte('entry_date', shiftDate(date, -14)).order('entry_date', { ascending: false }).limit(3),
+    admin.from('routine_logs').select('kind').eq('user_id', uid).eq('day', date),
   ])
 
-  const failed = [journal, sleep, gratitude, visualization, flow, workout, practice, food, recovery, affirmations, quizResult, weeklyResult].find(r => r.error)
+  const failed = [journal, sleep, gratitude, visualization, flow, workout, practice, food, recovery, affirmations, quizResult, weeklyResult, recentJournal, routineRows].find(r => r.error)
   if (failed?.error) return dbError(failed.error)
 
   const j = journal.data
   const s = sleep.data
   const list = affirmations.data ?? []
+  const earlier = recentJournal.data ?? []
+  const avg = (key: 'rating_motivation' | 'rating_focus' | 'rating_confidence' | 'rating_anxiety') =>
+    Math.round((earlier.reduce((sum, e) => sum + e[key], 0) / earlier.length) * 10) / 10
+  const recent = earlier.length ? {
+    motivation: avg('rating_motivation'),
+    focus: avg('rating_focus'),
+    confidence: avg('rating_confidence'),
+    anxiety: avg('rating_anxiety'),
+  } : null
+  const kinds = new Set((routineRows.data ?? []).map(r => r.kind))
   const picked = focusNeed(quizResult.data?.top_need, weeklyResult.data as Record<string, number | null> | null)
   const focus = picked ? {
     need: picked.need,
@@ -91,6 +105,7 @@ export async function GET(req: Request) {
       rating_confidence: j.rating_confidence,
       rating_anxiety: j.rating_anxiety,
       quick: !j.action_step_1?.trim() && !j.strength_1?.trim() && !j.weakness?.trim(),
+      objective_result: j.objective_result ?? null,
     } : null,
     sleep: s ? {
       hours_slept: s.hours_slept,
@@ -107,5 +122,7 @@ export async function GET(req: Request) {
     },
     affirmation: list.length ? list[dayOfYear(date) % list.length].text : null,
     focus,
+    recent,
+    routines: { morning: kinds.has('morning'), night: kinds.has('night') },
   })
 }

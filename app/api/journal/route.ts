@@ -124,3 +124,32 @@ export async function PUT(req: Request) {
   if (!data) return NextResponse.json({ error: 'No journal entry for that date.' }, { status: 404 })
   return NextResponse.json(data)
 }
+
+// PATCH /api/journal — set only the end-of-day objective result for entry_date
+export async function PATCH(req: Request) {
+  const auth = await verifyApiUser()
+  if (auth instanceof NextResponse) return auth
+
+  const body = await req.json().catch(() => null)
+  if (!isPlainObject(body)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
+  const { entry_date, objective_result } = body
+  if (!isISODate(entry_date) || !['yes', 'partly', 'no'].includes(objective_result as string)) {
+    return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
+  }
+
+  const recent = entry_date >= new Date(Date.now() - 36 * 3_600_000).toISOString().slice(0, 10)
+  if (!recent) return NextResponse.json({ error: 'That entry can no longer be changed.' }, { status: 400 })
+
+  const adminSupabase = createAdminClient()
+  const { data, error } = await adminSupabase
+    .from('journal_entries')
+    .update({ objective_result })
+    .eq('user_id', auth.userId)
+    .eq('entry_date', entry_date)
+    .select()
+    .maybeSingle()
+
+  if (error) return dbError(error)
+  if (!data) return NextResponse.json({ error: 'No journal entry for that date.' }, { status: 404 })
+  return NextResponse.json(data)
+}

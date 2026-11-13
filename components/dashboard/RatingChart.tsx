@@ -72,7 +72,7 @@ export default function RatingChart({ entries }: Props) {
             <Line type="monotone" dataKey="Motivation" stroke="var(--rating-motivation)" strokeWidth={2} dot={{ r: 3 }} />
             <Line type="monotone" dataKey="Focus" stroke="var(--rating-focus)" strokeWidth={2} dot={{ r: 3 }} />
             <Line type="monotone" dataKey="Confidence" stroke="var(--rating-confidence)" strokeWidth={2} dot={{ r: 3 }} />
-            <Line type="monotone" dataKey="Anxiety" stroke="var(--rating-anxiety)" strokeWidth={2} dot={{ r: 3 }} />
+            <Line type="monotone" dataKey="Anxiety" name="Anxiety (lower is better)" stroke="var(--rating-anxiety)" strokeWidth={2} dot={{ r: 3 }} />
           </LineChart>
         </ResponsiveContainer>
       )}

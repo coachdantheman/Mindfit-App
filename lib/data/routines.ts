@@ -32,3 +32,23 @@ export const ROUTINES: Routine[] = [
 
 /** Morning until 2 pm, night after. */
 export const routineFor = (hour: number): Routine['key'] => (hour < 14 ? 'morning' : 'night')
+
+export const routineByKey = (key: Routine['key']): Routine => ROUTINES.find(r => r.key === key)!
+
+// Which steps of a routine are checked off for a day, on this device. The
+// Routine tab and the Daily Guide both read and write these.
+export function readRoutineChecks(key: Routine['key'], day: string): string[] {
+  try {
+    const raw = localStorage.getItem(`mf-routine-${day}-${key}`)
+    const parsed: unknown = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+export function writeRoutineChecks(key: Routine['key'], day: string, ids: string[]) {
+  try {
+    localStorage.setItem(`mf-routine-${day}-${key}`, JSON.stringify(ids))
+  } catch {}
+}

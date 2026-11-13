@@ -366,3 +366,40 @@ html:not(.native-app) .native-only { display: none !important; }
 
 /* Phone browsers: size full-height screens to the visible area, not the area behind the toolbar. */
 @supports (min-height: 100dvh) { .min-h-screen { min-height: 100dvh; } }
+
+/* Guide characters (components/guide/art). Fills hide the lines behind each part. */
+.gc { --gc-surface: rgb(var(--bg)); overflow: visible; }
+.gc-face { overflow: hidden; border-radius: 9999px; }
+.gc * { vector-effect: non-scaling-stroke; }
+.gc-f { fill: var(--gc-surface); fill: color-mix(in srgb, rgb(var(--cta-rgb)) 7%, var(--gc-surface)); }
+.gc-t { fill: var(--gc-surface); fill: color-mix(in srgb, rgb(var(--cta-rgb)) 24%, var(--gc-surface)); }
+.gc-s { fill: currentColor; stroke: none; }
+.gc-h { fill: var(--gc-surface); stroke: none; }
+.gc-all, .gc-body, .gc-limb, .gc-tail { transform-box: view-box; }
+.gc-all { transform-origin: 50px 90px; }
+.gc-body { transform-origin: 50px 90px; animation: gc-breathe 3.6s ease-in-out infinite; }
+.gc-fish .gc-body { animation-name: gc-float; }
+.gc-tail { transform-origin: var(--gc-tail); animation: gc-wag 0.9s ease-in-out infinite alternate; }
+.gc-limb { transform-origin: var(--gc-limb); transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.gc-eye { transform-box: fill-box; transform-origin: center; animation: gc-blink 4.5s infinite; }
+.gc-mouth { transform-box: fill-box; transform-origin: center top; }
+.gc-eye-closed, .gc-spark, .gc-zzz { display: none; }
+.gc-talk .gc-mouth { animation: gc-talk 0.32s ease-in-out infinite alternate; }
+.gc-point .gc-limb, .gc-cheer .gc-limb { transform: rotate(var(--gc-point)); }
+.gc-point .gc-all { transform: rotate(var(--gc-lean)); }
+.gc-cheer .gc-all { animation: gc-hop 0.7s cubic-bezier(0.3, 0, 0.3, 1) infinite; }
+.gc-cheer .gc-tail { animation-duration: 0.3s; }
+.gc-cheer .gc-spark { display: inline; animation: gc-twinkle 0.7s ease-in-out infinite alternate; }
+.gc-steady .gc-body, .gc-sleep .gc-body { animation-duration: 6s; }
+.gc-steady .gc-tail, .gc-sleep .gc-tail { animation: none; }
+.gc-sleep .gc-eye { display: none; }
+.gc-sleep .gc-eye-closed { display: inline; }
+.gc-sleep .gc-zzz { display: inline; animation: gc-zzz 3s ease-in-out infinite; }
+@keyframes gc-breathe { 50% { transform: scaleY(1.03); } }
+@keyframes gc-float { 50% { transform: translateY(-2.5px); } }
+@keyframes gc-wag { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
+@keyframes gc-blink { 0%, 92%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.1); } }
+@keyframes gc-talk { to { transform: scaleY(0.5); } }
+@keyframes gc-hop { 50% { transform: translateY(-8px); } }
+@keyframes gc-twinkle { from { opacity: 0.2; } }
+@keyframes gc-zzz { from { opacity: 0; transform: translateY(4px); } 50% { opacity: 1; } to { opacity: 0; transform: translateY(-6px); } }

@@ -13,6 +13,8 @@ import Link from 'next/link'
 import type { UserRole } from '@/types'
 import { saveUnits, useUnits } from '@/lib/units'
 import { clearApiCache } from '@/lib/api-cache'
+import Character from '@/components/guide/art/Character'
+import { STARTERS, guideFor, type GuideKey } from '@/lib/guide-characters'
 
 type Status = { ok: boolean; msg: string } | null
 
@@ -37,6 +39,8 @@ export default function SettingsPage() {
   const [sportsStatus, setSportsStatus] = useState<Status>(null)
   const units = useUnits()
   const [dailyGuidance, setDailyGuidance] = useState(true)
+  const [guideKey, setGuideKey] = useState<GuideKey>('sparrow')
+  const [guideVisible, setGuideVisible] = useState(true)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -55,6 +59,8 @@ export default function SettingsPage() {
           setNextGame(p.next_competition_at?.slice(0, 10) ?? '')
           setNextGameTime(p.next_competition_time?.slice(0, 5) ?? '')
           setDailyGuidance(p.daily_guidance !== false)
+          setGuideKey(guideFor(p.guide_character).key)
+          setGuideVisible(p.guide_visible !== false)
         }
         setProfileLoaded(true)
       })
@@ -124,6 +130,29 @@ export default function SettingsPage() {
       clearApiCache('/api/profile')
     } catch {
       setDailyGuidance(!next)
+    }
+  }
+
+  const chooseGuide = async (key: GuideKey) => {
+    if (key === guideKey) return
+    const prev = guideKey
+    setGuideKey(key)
+    try {
+      await patchProfile({ guide_character: key })
+      clearApiCache('/api/profile')
+    } catch {
+      setGuideKey(prev)
+    }
+  }
+
+  const toggleGuideVisible = async () => {
+    const next = !guideVisible
+    setGuideVisible(next)
+    try {
+      await patchProfile({ guide_visible: next })
+      clearApiCache('/api/profile')
+    } catch {
+      setGuideVisible(!next)
     }
   }
 
@@ -278,6 +307,60 @@ export default function SettingsPage() {
           <AiFeaturesCard />
         </Section>
 
+        {(role === 'member' || role === 'admin') && (
+        <Section id="guide" title="Guide">
+        <div className="card p-5">
+          <h3 className="font-semibold text-fg-1 mb-1 text-sm">Your guide</h3>
+          <p className="text-sm text-fg-4 mb-4">The character that walks you through each day. Switch anytime.</p>
+          <div role="group" aria-label="Your guide" className="grid grid-cols-3 gap-2">
+            {STARTERS.map(g => (
+              <button key={g.key} type="button" aria-pressed={guideKey === g.key} disabled={!profileLoaded}
+                onClick={() => { void chooseGuide(g.key) }}
+                className={`rounded-2xl border p-3 flex flex-col items-center gap-1.5 transition-colors ${guideKey === g.key ? 'border-cta bg-cta/[0.06]' : 'border-edge hover:border-cta/40'}`}>
+                <Character species={g.key} size={56} />
+                <span className="text-sm font-medium text-fg-1">{g.name}</span>
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-fg-3 mt-3">{guideFor(guideKey).tagline}</p>
+        </div>
+        <div className="card p-5 flex items-center gap-4">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-fg-1 mb-1 text-sm">Show my guide</h3>
+            <p className="text-sm text-fg-4">Turn the character off and keep the guidance.</p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={guideVisible}
+            aria-label="Show my guide"
+            disabled={!profileLoaded}
+            onClick={() => { void toggleGuideVisible() }}
+            className={`relative shrink-0 w-12 h-7 rounded-full transition-colors ${guideVisible ? 'bg-cta' : 'bg-surface-3'}`}
+          >
+            <span className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white transition-transform ${guideVisible ? 'translate-x-5' : ''}`} />
+          </button>
+        </div>
+        <div className="card p-5 flex items-center gap-4">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-fg-1 mb-1 text-sm">Daily Guidance</h3>
+            <p className="text-sm text-fg-4">Start each day with a guided screen: check in, see your readiness, then one next step at a time.</p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={dailyGuidance}
+            aria-label="Daily Guidance"
+            disabled={!profileLoaded}
+            onClick={() => { void toggleDailyGuidance() }}
+            className={`relative shrink-0 w-12 h-7 rounded-full transition-colors ${dailyGuidance ? 'bg-cta' : 'bg-surface-3'}`}
+          >
+            <span className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white transition-transform ${dailyGuidance ? 'translate-x-5' : ''}`} />
+          </button>
+        </div>
+        </Section>
+        )}
+
         <Section id="appearance" title="Appearance">
         <div className="card p-5">
           <h3 className="font-semibold text-fg-1 mb-1 text-sm">Appearance</h3>
@@ -299,25 +382,6 @@ export default function SettingsPage() {
             <span className="text-fg-2">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
           </button>
         </div>
-        {(role === 'member' || role === 'admin') && (
-        <div className="card p-5 flex items-center gap-4">
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-fg-1 mb-1 text-sm">Daily Guidance</h3>
-            <p className="text-sm text-fg-4">Start each day with a guided screen: check in, see your readiness, then one next step at a time.</p>
-          </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={dailyGuidance}
-            aria-label="Daily Guidance"
-            disabled={!profileLoaded}
-            onClick={() => { void toggleDailyGuidance() }}
-            className={`relative shrink-0 w-12 h-7 rounded-full transition-colors ${dailyGuidance ? 'bg-cta' : 'bg-surface-3'}`}
-          >
-            <span className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white transition-transform ${dailyGuidance ? 'translate-x-5' : ''}`} />
-          </button>
-        </div>
-        )}
         <div className="card p-5">
           <h3 className="font-semibold text-fg-1 mb-1 text-sm">Units</h3>
           <p className="text-sm text-fg-4 mb-4">Weight, height and distance across workouts, nutrition and progress.</p>
@@ -424,6 +488,7 @@ const ICON_PATHS: Record<string, React.ReactNode> = {
   people: <><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6" /><path d="M16 4.6a3.5 3.5 0 010 6.8M18.5 14.2c2 .9 3 2.9 3 5.8" /></>,
   notifications: <><path d="M6 16V11a6 6 0 1112 0v5l1.5 2h-15z" /><path d="M10 20.5a2 2 0 004 0" /></>,
   board: <path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.2-7.5 9.5-4.3-1.3-7.5-4.9-7.5-9.5V6z" />,
+  guide: <><circle cx="12" cy="12" r="9" /><path d="M12 7l1.8 3.2L17 12l-3.2 1.8L12 17l-1.8-3.2L7 12l3.2-1.8z" /></>,
   appearance: <path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z" />,
   community: <path d="M4 5h16v11H9l-5 4z" />,
   help: <><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1.1-1.5 2.2" /><path d="M12 17v.01" /></>,

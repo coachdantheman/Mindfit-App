@@ -10,7 +10,7 @@ import { EMPTY_DRAFT, clearDraft, draftComplete, edgeAndGap, readDraft, saveDraf
 import { clearPendingTeamCode, joinTeam, readPendingTeamCode } from '@/lib/team-code'
 import Typewriter from '@/components/onboarding/Typewriter'
 import CodeInput from '@/components/onboarding/CodeInput'
-import GuideChoice from '@/components/guide/GuideChoice'
+import MeetYourGuide from '@/components/guide/MeetYourGuide'
 
 const SPORTS = [
   'Basketball', 'Football', 'Soccer', 'Baseball', 'Softball', 'Volleyball',
@@ -408,7 +408,7 @@ export default function StartPage() {
         )}
 
         {step === 'guide' && (
-          <GuideChoice onChosen={on => { router.push(on ? '/guide' : '/mindset'); router.refresh() }} />
+          <MeetYourGuide onDone={on => { router.push(on ? '/guide' : '/mindset'); router.refresh() }} />
         )}
 
         {step === 'saving' && (

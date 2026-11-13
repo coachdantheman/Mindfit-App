@@ -52,7 +52,7 @@ export default function EntryList({ entries, linked = true }: { entries: Journal
                 <span className="text-xs text-blue-400 font-medium bg-blue-500/10 px-2 py-1 rounded-full">M:{e.rating_motivation}</span>
                 <span className="text-xs text-purple-400 font-medium bg-purple-500/10 px-2 py-1 rounded-full">F:{e.rating_focus}</span>
                 <span className="text-xs text-green-400 font-medium bg-green-500/10 px-2 py-1 rounded-full">C:{e.rating_confidence}</span>
-                <span className="text-xs text-orange-400 font-medium bg-orange-500/10 px-2 py-1 rounded-full">A:{e.rating_anxiety}</span>
+                <span title="Anxiety, lower is better" aria-label={`Anxiety ${e.rating_anxiety}, lower is better`} className="text-xs text-orange-400 font-medium bg-orange-500/10 px-2 py-1 rounded-full">A:{e.rating_anxiety}</span>
               </div>
             </>
           )

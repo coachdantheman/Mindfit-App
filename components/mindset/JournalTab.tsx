@@ -7,6 +7,7 @@ import JournalForm from '@/components/journal/JournalForm'
 import TodayEntry from '@/components/journal/TodayEntry'
 import { JournalEntry } from '@/types'
 import Skeleton from '@/components/shared/Skeleton'
+import ObjectiveCheck from '@/components/journal/ObjectiveCheck'
 import { localDateISO } from '@/lib/dates'
 
 export default function JournalTab() {
@@ -39,6 +40,9 @@ export default function JournalTab() {
       <p className="text-fg-4 text-sm mb-4">
         {format(new Date(), 'EEEE, MMMM d, yyyy')}
       </p>
+      {todayEntry && (
+        <div className="mb-4"><ObjectiveCheck key={todayEntry.id} entry={todayEntry} onChange={r => setTodayEntry(e => (e ? { ...e, objective_result: r } : e))} /></div>
+      )}
       {quick && todayEntry ? (
         <>
           <p className="text-sm text-fg-3 mb-4">Your check-in is saved. Finish the full journal when you are ready.</p>

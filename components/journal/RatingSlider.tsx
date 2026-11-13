@@ -12,6 +12,7 @@ interface RatingSliderProps {
   color: string
   /** Hides the 1–10 tick row; rail and value chip stay. */
   compact?: boolean
+  hint?: string
 }
 
 /**
@@ -29,6 +30,7 @@ export default function RatingSlider({
   onChange,
   color,
   compact = false,
+  hint,
 }: RatingSliderProps) {
   const railRef = useRef<HTMLDivElement>(null)
   const [pulse, setPulse] = useState(false)
@@ -78,7 +80,7 @@ export default function RatingSlider({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-fg-2">{label}</label>
+        <label className="text-sm font-medium text-fg-2">{label}{hint && <span className="block text-[11px] font-normal text-fg-4">{hint}</span>}</label>
         <span
           className={`w-9 h-9 rounded-full flex items-center justify-center text-[#0A0F1A] font-bold text-sm tabular-nums ${color} transition-transform ${pulse ? 'scale-110' : 'scale-100'}`}
         >
@@ -88,10 +90,10 @@ export default function RatingSlider({
 
       {/* Draggable rail */}
       <div
-        className="relative py-3 cursor-pointer select-none touch-none"
+        className="relative py-[17px] cursor-pointer select-none touch-none"
         tabIndex={0}
         role="slider"
-        aria-label={label}
+        aria-label={hint ? `${label}, ${hint}` : label}
         aria-valuemin={1}
         aria-valuemax={10}
         aria-valuenow={value}

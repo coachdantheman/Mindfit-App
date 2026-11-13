@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { ROUTINES, routineFor, type Routine } from '@/lib/data/routines'
+import { ROUTINES, routineByKey, routineFor, readRoutineChecks, writeRoutineChecks, type Routine } from '@/lib/data/routines'
 import { haptic } from '@/lib/haptics'
 import { localDateISO } from '@/lib/dates'
 
@@ -10,22 +10,6 @@ type Key = Routine['key']
 const LABEL: Record<Key, string> = { morning: 'Morning', night: 'Night' }
 const RING_R = 9
 const RING_C = 2 * Math.PI * RING_R
-
-function readChecks(key: Key, day: string): string[] {
-  try {
-    const raw = localStorage.getItem(`mf-routine-${day}-${key}`)
-    const parsed: unknown = raw ? JSON.parse(raw) : []
-    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : []
-  } catch {
-    return []
-  }
-}
-
-function writeChecks(key: Key, day: string, ids: string[]) {
-  try {
-    localStorage.setItem(`mf-routine-${day}-${key}`, JSON.stringify(ids))
-  } catch {}
-}
 
 export default function DailyRoutine() {
   const [day] = useState(() => localDateISO())
@@ -41,15 +25,45 @@ export default function DailyRoutine() {
   const complete = doneCount === total
 
   useEffect(() => {
-    const ids = readChecks(key, day)
+    const ids = readRoutineChecks(key, day)
     doneRef.current = ids
     setDone(ids)
+    let active = true
+    fetch(`/api/mindset/routine?day=${day}`)
+      .then(r => (r.ok ? r.json() : null))
+      .then((data: { morning?: boolean; night?: boolean } | null) => {
+        if (!active || !data) return
+        const stepIds = routineByKey(key).steps.map(s => s.id)
+        const localDone = stepIds.every(id => doneRef.current.includes(id))
+        // Finished here but never saved (offline at the time): save it now.
+        if (!data[key]) { if (localDone) postRoutine(key); return }
+        if (!localDone) saveDone(key, stepIds)
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, day])
 
   const saveDone = (k: Key, next: string[]) => {
     doneRef.current = next
     setDone(next)
-    writeChecks(k, day, next)
+    writeRoutineChecks(k, day, next)
+  }
+
+  const allDone = (k: Key, ids: string[]) => routineByKey(k).steps.every(s => ids.includes(s.id))
+
+  const postRoutine = (k: Key) => {
+    fetch('/api/mindset/routine', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ day, kind: k }),
+    }).catch(() => {})
+  }
+
+  const deleteRoutine = (k: Key) => {
+    fetch(`/api/mindset/routine?day=${day}&kind=${k}`, { method: 'DELETE' }).catch(() => {})
   }
 
   const switchKey = (k: Key) => {
@@ -60,7 +74,11 @@ export default function DailyRoutine() {
   const toggle = (id: string) => {
     const isDone = doneRef.current.includes(id)
     const next = isDone ? doneRef.current.filter(x => x !== id) : [...doneRef.current, id]
+    const wasComplete = allDone(key, doneRef.current)
     saveDone(key, next)
+    const isComplete = allDone(key, next)
+    if (!wasComplete && isComplete) postRoutine(key)
+    else if (wasComplete && !isComplete) deleteRoutine(key)
     if (!isDone && next.length === total) haptic.success()
     else haptic.tick()
   }
@@ -84,6 +102,7 @@ export default function DailyRoutine() {
       if (ids.includes(running.id)) return
       const next = [...ids, running.id]
       saveDone(key, next)
+      if (allDone(key, next)) postRoutine(key)
       if (next.length === total) haptic.success()
       else haptic.tick()
     }, 250)

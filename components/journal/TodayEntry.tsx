@@ -7,13 +7,14 @@ const ratingColors: Record<string, string> = {
   anxiety: 'bg-orange-600',
 }
 
-function RatingBadge({ label, value, color }: { label: string; value: number; color: string }) {
+function RatingBadge({ label, value, color, hint }: { label: string; value: number; color: string; hint?: string }) {
   return (
     <div className="text-center">
       <div className={`w-12 h-12 rounded-full ${color} text-white font-bold text-lg flex items-center justify-center mx-auto`}>
         {value}
       </div>
       <p className="text-xs text-fg-4 mt-1">{label}</p>
+      {hint && <p className="text-[11px] text-fg-4">{hint}</p>}
     </div>
   )
 }
@@ -33,7 +34,7 @@ export default function TodayEntry({ entry }: { entry: JournalEntry }) {
           <RatingBadge label="Motivation" value={entry.rating_motivation} color={ratingColors.motivation} />
           <RatingBadge label="Focus" value={entry.rating_focus} color={ratingColors.focus} />
           <RatingBadge label="Confidence" value={entry.rating_confidence} color={ratingColors.confidence} />
-          <RatingBadge label="Anxiety" value={entry.rating_anxiety} color={ratingColors.anxiety} />
+          <RatingBadge label="Anxiety" value={entry.rating_anxiety} color={ratingColors.anxiety} hint="Lower is better" />
         </div>
       </div>
 
@@ -42,6 +43,11 @@ export default function TodayEntry({ entry }: { entry: JournalEntry }) {
         <div>
           <h4 className="text-xs font-semibold text-fg-4 uppercase tracking-wide mb-1">Objective</h4>
           <p className="text-fg-2">{entry.objective}</p>
+          {entry.objective_result && (
+            <p className="text-xs text-fg-4 mt-1">
+              {entry.objective_result === 'yes' ? 'Accomplished ✓' : entry.objective_result === 'partly' ? 'Partly done' : 'Not today'}
+            </p>
+          )}
         </div>
         <div>
           <h4 className="text-xs font-semibold text-fg-4 uppercase tracking-wide mb-1">Action Steps</h4>

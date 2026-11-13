@@ -6,9 +6,11 @@ import { JournalEntry, JournalFormData } from '@/types'
 import RatingSlider from './RatingSlider'
 import SaveButton, { SaveState } from '@/components/shared/SaveButton'
 import CrisisNote from '@/components/shared/CrisisNote'
+import LowScoreNote from '@/components/shared/LowScoreNote'
 import { useToast } from '@/components/shared/Toast'
 import { clearDraft, draftKey, readDraft, writeDraft } from '@/lib/useDraft'
 import { localDateISO } from '@/lib/dates'
+import { readNextObjective, saveNextObjective } from '@/lib/guide'
 
 const DEFAULTS: Partial<JournalFormData> = {
   rating_motivation: 5,
@@ -58,6 +60,8 @@ export default function JournalForm({ previewMode = false, onSaved, existing }: 
     if (existing) return
     const saved = readDraft<Partial<JournalFormData>>(key)
     if (saved) { reset({ ...DEFAULTS, ...saved }); setRestored(true) }
+    // An objective set ahead of time (last night, or on day one) starts the entry.
+    else if (!previewMode && readNextObjective()) setValue('objective', readNextObjective())
   }, [key, reset, existing])
 
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -96,6 +100,7 @@ export default function JournalForm({ previewMode = false, onSaved, existing }: 
       }
       clearTimeout(timer.current)
       clearDraft(key)
+      if (!existing) saveNextObjective('')
       setState('saved')
       notify('Journal saved. Streak kept 🔥')
       returnToGuide()
@@ -238,12 +243,14 @@ export default function JournalForm({ previewMode = false, onSaved, existing }: 
         />
         <RatingSlider
           label="Anxiety"
+          hint="Lower is better"
           value={ratings.anxiety}
           registration={register('rating_anxiety', { valueAsNumber: true })}
           onChange={v => setValue('rating_anxiety', v)}
           color="bg-orange-500"
         />
         {Number(ratings.anxiety) >= 8 && <CrisisNote />}
+        {!previewMode && <LowScoreNote ratings={{ motivation: Number(ratings.motivation), focus: Number(ratings.focus), confidence: Number(ratings.confidence), anxiety: Number(ratings.anxiety) }} />}
         {!previewMode && (
           <p className="text-xs text-fg-4">
             Need to talk to someone? <a href="/support#help" className="underline hover:text-fg-2">Find help here</a>.

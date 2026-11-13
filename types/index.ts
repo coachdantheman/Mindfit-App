@@ -26,6 +26,8 @@ export interface Profile {
   created_at: string
 }
 
+export type ObjectiveResult = 'yes' | 'partly' | 'no'
+
 export interface JournalEntry {
   id: string
   user_id: string
@@ -43,6 +45,7 @@ export interface JournalEntry {
   rating_focus: number        // 1–10
   rating_confidence: number   // 1–10
   rating_anxiety: number      // 1–10
+  objective_result?: ObjectiveResult | null   // end-of-day check, null until answered
   created_at: string
 }
 

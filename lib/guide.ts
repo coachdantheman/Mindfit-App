@@ -1,3 +1,6 @@
+import type { ObjectiveResult } from '@/types'
+import { localDateISO } from '@/lib/dates'
+
 export interface TodayData {
   journal: {
     objective: string
@@ -6,6 +9,7 @@ export interface TodayData {
     rating_confidence: number
     rating_anxiety: number
     quick: boolean
+    objective_result: ObjectiveResult | null
   } | null
   sleep: {
     hours_slept: number | null
@@ -17,6 +21,10 @@ export interface TodayData {
   pillars: { mind: boolean; body: boolean; fuel: boolean; rest: boolean }
   affirmation: string | null
   focus: { need: string; label: string; action: { text: string; href: string }; from: 'quiz' | 'mpi' } | null
+  // Average of the three entries before today; null with no earlier entries.
+  recent: { motivation: number; focus: number; confidence: number; anxiety: number } | null
+  // Routines finished today (routine_logs).
+  routines: { morning: boolean; night: boolean }
 }
 
 export type PillarKey = keyof TodayData['pillars']
@@ -28,7 +36,8 @@ export const PILLARS: { key: PillarKey; label: string; href: string }[] = [
   { key: 'rest', label: 'Rest', href: '/sleep' },
 ]
 
-export interface GuideStep { id: string; tag: string; text: string; why: string; href: string }
+// `inline` steps open inside the guide instead of linking out; their href is empty.
+export interface GuideStep { id: string; tag: string; text: string; why: string; href: string; inline?: boolean }
 
 function ringStep(key: PillarKey, hour: number): GuideStep {
   const meal = hour < 11 ? 'breakfast' : hour < 16 ? 'lunch' : 'dinner'
@@ -94,4 +103,48 @@ export async function saveGuideChoice(on: boolean): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+// Device-only notes for the guide. The mf:draft: prefix means sign-out clears
+// them with the other drafts (lib/useDraft.ts).
+const NEXT_OBJECTIVE_KEY = 'mf:draft:next-objective'
+const SKIPS_KEY = 'mf:draft:guide-skips'
+
+// An objective written ahead of time (the night before, or on day one); it
+// prefills the next check-in. `from` is the first day it applies to, so one
+// written tonight for tomorrow is not used up by tonight's entry.
+export function readNextObjective(today = localDateISO()): string {
+  try {
+    const saved = JSON.parse(localStorage.getItem(NEXT_OBJECTIVE_KEY) ?? 'null') as { text?: unknown; from?: unknown } | null
+    return saved && typeof saved.text === 'string' && typeof saved.from === 'string' && saved.from <= today ? saved.text : ''
+  } catch {
+    return ''
+  }
+}
+
+export function saveNextObjective(text: string, from = localDateISO()) {
+  const value = text.trim().slice(0, 200)
+  try {
+    if (value) localStorage.setItem(NEXT_OBJECTIVE_KEY, JSON.stringify({ text: value, from }))
+    else if (readNextObjective()) localStorage.removeItem(NEXT_OBJECTIVE_KEY)
+  } catch {}
+}
+
+// How many times in a row each step was put off.
+export function readSkips(): Record<string, number> {
+  try {
+    const raw: unknown = JSON.parse(localStorage.getItem(SKIPS_KEY) ?? '{}')
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
+    return Object.fromEntries(Object.entries(raw).filter(([, n]) => typeof n === 'number')) as Record<string, number>
+  } catch {
+    return {}
+  }
+}
+
+// skipped = the athlete put the step off; otherwise they did it, so the count resets.
+export function recordSkip(id: string, skipped: boolean) {
+  const skips = readSkips()
+  if (skipped) skips[id] = (skips[id] ?? 0) + 1
+  else delete skips[id]
+  try { localStorage.setItem(SKIPS_KEY, JSON.stringify(skips)) } catch {}
 }

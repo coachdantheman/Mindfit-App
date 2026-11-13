@@ -161,5 +161,10 @@ export async function POST(req: Request) {
         .gte('completed_at', new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString())
     }
   }
+  // A ticked box answers the journal's objective check when it is still open.
+  // An unticked box says nothing: the athlete may simply not be done yet.
+  if (body.objective_met === true && journal?.id) {
+    await admin.from('journal_entries').update({ objective_result: 'yes' }).eq('id', journal.id).is('objective_result', null)
+  }
   return NextResponse.json(data, { status: existing ? 200 : 201 })
 }

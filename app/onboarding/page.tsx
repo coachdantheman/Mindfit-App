@@ -5,7 +5,7 @@ import WeeklyAssessment from '@/components/mindset/WeeklyAssessment'
 import { mpiVerdict } from '@/lib/mpi'
 import { ACTIONS } from '@/lib/leaderboard-config'
 import { clearPendingTeamCode, joinTeam, readPendingTeamCode } from '@/lib/team-code'
-import GuideChoice from '@/components/guide/GuideChoice'
+import MeetYourGuide from '@/components/guide/MeetYourGuide'
 
 const SPORTS = [
   'Basketball', 'Football', 'Soccer', 'Baseball', 'Softball', 'Volleyball',
@@ -166,7 +166,7 @@ export default function OnboardingPage() {
 
       {step === 'guide' && (
         <div className="bg-surface rounded-2xl border border-edge p-6 sm:p-8 flex flex-col min-h-[560px]">
-          <GuideChoice onChosen={on => { router.push(on ? '/guide' : '/mindset'); router.refresh() }} />
+          <MeetYourGuide onDone={on => { router.push(on ? '/guide' : '/mindset'); router.refresh() }} />
         </div>
       )}
 

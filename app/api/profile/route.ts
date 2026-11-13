@@ -3,6 +3,7 @@ import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { isISODate, isPlainObject } from '@/lib/validate'
+import { isGuideKey } from '@/lib/guide-characters'
 
 const FIELDS = ['full_name', 'primary_sport', 'secondary_sport', 'next_competition_at', 'next_competition_time', 'terms_accepted_at', 'default_bedtime', 'default_wake_time', 'units'] as const
 const TIME_FIELDS = ['next_competition_time', 'default_bedtime', 'default_wake_time'] as const
@@ -54,6 +55,14 @@ export async function PATCH(req: Request) {
   if (body.daily_guidance !== undefined) {
     if (typeof body.daily_guidance !== 'boolean') return NextResponse.json({ error: 'daily_guidance is invalid' }, { status: 400 })
     updates.daily_guidance = body.daily_guidance
+  }
+  if (body.guide_character !== undefined) {
+    if (!isGuideKey(body.guide_character)) return NextResponse.json({ error: 'guide_character is invalid' }, { status: 400 })
+    updates.guide_character = body.guide_character
+  }
+  if (body.guide_visible !== undefined) {
+    if (typeof body.guide_visible !== 'boolean') return NextResponse.json({ error: 'guide_visible is invalid' }, { status: 400 })
+    updates.guide_visible = body.guide_visible
   }
   if (body.show_today_card !== undefined) {
     if (typeof body.show_today_card !== 'boolean') return NextResponse.json({ error: 'show_today_card is invalid' }, { status: 400 })

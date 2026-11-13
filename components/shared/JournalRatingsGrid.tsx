@@ -15,6 +15,7 @@ export default function JournalRatingsGrid({ entries }: { entries: JournalEntry[
         <div key={stat.label} className={`rounded-2xl p-4 text-center ${stat.color}`}>
           <p className="text-2xl font-bold">{stat.value}</p>
           <p className="text-xs mt-1 font-medium">{stat.label}</p>
+          {stat.label === 'Avg Anxiety' && <p className="text-[11px] opacity-80">Lower is better</p>}
         </div>
       ))}
     </div>
