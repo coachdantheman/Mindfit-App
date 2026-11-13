@@ -51,6 +51,10 @@ export async function PATCH(req: Request) {
     updates[key] = value
   }
   if (body.terms_accepted_at !== undefined) updates.terms_accepted_at = true
+  if (body.show_today_card !== undefined) {
+    if (typeof body.show_today_card !== 'boolean') return NextResponse.json({ error: 'show_today_card is invalid' }, { status: 400 })
+    updates.show_today_card = body.show_today_card
+  }
   if (updates.units !== undefined && updates.units !== 'imperial' && updates.units !== 'metric') {
     return NextResponse.json({ error: 'units must be imperial or metric' }, { status: 400 })
   }

@@ -31,12 +31,16 @@ export interface TodayData {
 
 type PillarKey = keyof TodayData['pillars']
 
-const PILLARS: { key: PillarKey; label: string; href: string; action: string }[] = [
-  { key: 'mind', label: 'Mind', href: '/mindset?tab=Journal', action: 'Open your journal' },
-  { key: 'body', label: 'Body', href: '/exercise', action: 'Log your training' },
-  { key: 'fuel', label: 'Fuel', href: '/nutrition', action: 'Log a meal' },
-  { key: 'rest', label: 'Rest', href: '/sleep', action: "Log last night's sleep" },
+const PILLARS: { key: PillarKey; label: string; href: string; action: string; why: string }[] = [
+  { key: 'mind', label: 'Mind', href: '/mindset?tab=Journal', action: "Write today's journal entry", why: 'One entry closes your Mind ring.' },
+  { key: 'body', label: 'Body', href: '/exercise', action: "Log today's training", why: 'Practice, lift or run. Any session closes your Body ring.' },
+  { key: 'fuel', label: 'Fuel', href: '/nutrition', action: 'Log a meal', why: 'One meal closes your Fuel ring.' },
+  { key: 'rest', label: 'Rest', href: '/sleep', action: "Log last night's sleep", why: 'Your sleep closes your Rest ring.' },
 ]
+
+const MIN_KEY = 'mf-today-card-min'
+
+type NextStep = { tag: string; text: string; why: string; href?: string } | null
 
 function ReadinessRing({ score }: { score: number | null }) {
   const [drawn, setDrawn] = useState(0)
@@ -78,11 +82,11 @@ function ReadinessRing({ score }: { score: number | null }) {
   )
 }
 
-function PillarRing({ label, href, done }: { label: string; href: string; done: boolean }) {
+function PillarRing({ label, done }: { label: string; done: boolean }) {
   const r = 19
   const c = 2 * Math.PI * r
   return (
-    <Link href={href} className="flex flex-col items-center gap-1.5 min-w-0" aria-label={`${label}, ${done ? 'complete' : 'not yet'}`}>
+    <div className="flex flex-col items-center gap-1.5 min-w-0" role="img" aria-label={`${label}, ${done ? 'complete' : 'not yet'}`}>
       <span className="relative w-11 h-11 flex items-center justify-center">
         <svg className="absolute inset-0 -rotate-90" width={44} height={44} viewBox="0 0 44 44" aria-hidden>
           <circle cx={22} cy={22} r={r} fill="none" stroke="var(--border-muted)" strokeWidth={3} />
@@ -97,7 +101,7 @@ function PillarRing({ label, href, done }: { label: string; href: string; done: 
         )}
       </span>
       <span className="text-[11px] uppercase tracking-[0.16em] text-fg-3 font-semibold">{label}</span>
-    </Link>
+    </div>
   )
 }
 
@@ -107,6 +111,8 @@ export default function TodayCard() {
   const [failed, setFailed] = useState(false)
   const [checkInOpen, setCheckInOpen] = useState(false)
   const [justCompleted, setJustCompleted] = useState(false)
+  const [hidden, setHidden] = useState(false)
+  const [min, setMin] = useState(false)
   const [freezeInfo, setFreezeInfo] = useState<{ freezes: number; savedYesterday: boolean }>({ freezes: 0, savedYesterday: false })
   // null until the first load, so a Clutch Day already complete on arrival does not celebrate.
   const wasAllFour = useRef<boolean | null>(null)
@@ -131,13 +137,20 @@ export default function TodayCard() {
 
   useEffect(() => {
     load()
+    try { setMin(localStorage.getItem(MIN_KEY) === '1') } catch {}
+    cached('/api/profile', (p: { show_today_card?: boolean } | null) => setHidden(p?.show_today_card === false)).catch(() => {})
     loadNextGame(localDateISO()).then(setGame).catch(() => setGame(null))
     cached('/api/stats/overview', (d: { freezes?: number; savedYesterday?: boolean }) => {
       if (d && typeof d.freezes === 'number') setFreezeInfo({ freezes: d.freezes, savedYesterday: d.savedYesterday === true })
     }).catch(() => {})
   }, [load])
 
-  if (!data && failed) return null
+  if ((!data && failed) || hidden) return null
+
+  const toggleMin = (next: boolean) => {
+    setMin(next)
+    try { next ? localStorage.setItem(MIN_KEY, '1') : localStorage.removeItem(MIN_KEY) } catch {}
+  }
 
   const today = localDateISO()
   const pillars = data?.pillars ?? { mind: false, body: false, fuel: false, rest: false }
@@ -146,8 +159,40 @@ export default function TodayCard() {
   const score = data?.journal ? readinessScore(data.journal) : null
   const firstOpen = PILLARS.find(p => !pillars[p.key])
 
+  const next: NextStep = !data ? null
+    : !data.journal ? { tag: 'Step 1 · Check in', text: "Start today's check-in", why: 'Rate how you feel to get your readiness score and today’s plan.' }
+    : game?.date === today ? { tag: 'Game day', text: 'Run your pregame routine', why: 'Lock in your 5A before you compete.', href: '/exercise?tab=gameday' }
+    : firstOpen ? { tag: `Next · ${firstOpen.label}`, text: firstOpen.action, why: firstOpen.why, href: firstOpen.href }
+    : data.focus ? { tag: `Your focus · ${data.focus.label}`, text: data.focus.action.text, why: 'All four rings closed. One more rep on your biggest need.', href: data.focus.action.href }
+    : { tag: 'Bonus', text: 'Take the 2-minute athlete quiz', why: 'All four rings closed. The quiz picks a daily focus for you.', href: '/learn?tab=quiz' }
+
+  const nextButton = (className: string) => !next ? null : next.href ? (
+    <Link href={next.href} className={className}>{next.text}</Link>
+  ) : (
+    <button type="button" onClick={() => setCheckInOpen(true)} className={className}>{next.text}</button>
+  )
+
+  if (min && data) {
+    return (
+      <section className="card mb-6 flex items-center gap-3 px-4 py-2 min-h-[56px]" aria-label="Today">
+        <button type="button" onClick={() => toggleMin(false)} aria-label="Expand Today card" className="flex items-center gap-3 min-w-0 flex-1 text-left min-h-[44px]">
+          <span className="text-lg font-bold text-fg-1 tabular-nums shrink-0">{score ?? '-'}</span>
+          <span className="text-xs text-fg-3 truncate">{allFour ? 'Clutch Day' : `${doneCount} of 4 today`}</span>
+          <span className="text-fg-4 shrink-0" aria-hidden>▾</span>
+        </button>
+        {next && nextButton('btn-primary shrink-0 px-3 py-2 text-xs max-w-[55%] truncate')}
+      </section>
+    )
+  }
+
   return (
-    <section className="card p-5 mb-6 min-h-[300px] space-y-5" aria-label="Today">
+    <section className="card relative p-5 mb-6 min-h-[300px] space-y-5" aria-label="Today">
+      {data && (
+        <button type="button" onClick={() => toggleMin(true)} aria-label="Collapse Today card" title="Collapse"
+          className="absolute top-2 right-2 z-10 w-11 h-11 inline-flex items-center justify-center rounded-full text-fg-4 hover:text-fg-1">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M6 15l6-6 6 6" /></svg>
+        </button>
+      )}
       {!data ? (
         <div className="space-y-5 animate-pulse" aria-hidden>
           <div className="flex items-center gap-5">
@@ -161,7 +206,7 @@ export default function TodayCard() {
         </div>
       ) : (
         <>
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-5 pr-8">
             <ReadinessRing score={score} />
             <div className="min-w-0">
               {score === null ? (
@@ -176,12 +221,12 @@ export default function TodayCard() {
             <Celebrate fire={allFour && justCompleted}>
               <div className="grid grid-cols-4 gap-2">
                 {PILLARS.map(p => (
-                  <PillarRing key={p.key} label={p.label} href={p.href} done={pillars[p.key]} />
+                  <PillarRing key={p.key} label={p.label} done={pillars[p.key]} />
                 ))}
               </div>
             </Celebrate>
             <p className="text-xs text-center text-fg-4">
-              {allFour ? <span className="text-cta font-semibold uppercase tracking-[0.16em]">Clutch Day</span> : `${doneCount} of 4 today`}
+              {allFour ? <span className="text-cta font-semibold uppercase tracking-[0.16em]">Clutch Day</span> : `${doneCount} of 4 rings closed today`}
             </p>
             {freezeInfo.freezes > 0 && (
               <p className="text-xs text-center text-sky-300" title="Miss a day and a freeze keeps your streak alive. Earn one every 7 days in a row, hold up to 2.">
@@ -191,39 +236,17 @@ export default function TodayCard() {
             {freezeInfo.savedYesterday && (
               <p className="text-xs text-center text-cta">Freeze your streak, keep your flame. A freeze saved yours yesterday.</p>
             )}
-            {data.focus ? (
-              <Link href={data.focus.action.href} className="block rounded-xl border border-edge px-4 py-3 hover:bg-surface-2 transition-colors">
-                <span className="block text-[11px] uppercase tracking-[0.16em] text-cta font-semibold">Your focus today · {data.focus.label}</span>
-                <span className="block mt-1 text-sm text-fg-1">{data.focus.action.text}</span>
-              </Link>
-            ) : (
-              <p className="text-xs text-center">
-                <Link href="/learn?tab=quiz" className="text-cta underline underline-offset-4">Take the 2-minute quiz to personalise this</Link>
-              </p>
-            )}
           </div>
 
-          <div className="border-t border-edge pt-4">
-            {!data.journal ? (
-              <button type="button" onClick={() => setCheckInOpen(true)} className="btn-primary w-full py-3">
-                Start check-in
-              </button>
-            ) : game?.date === today ? (
-              <Link href="/exercise?tab=gameday" className="btn-primary block w-full py-3 text-center leading-snug">
-                Run your pregame routine
-              </Link>
-            ) : firstOpen ? (
-              <Link href={firstOpen.href} className="btn-primary block w-full py-3 text-center leading-snug">
-                {firstOpen.action}
-              </Link>
-            ) : data.focus ? (
-              <Link href={data.focus.action.href} className="btn-primary block w-full py-3 text-center leading-snug">
-                {data.focus.action.text}
-              </Link>
-            ) : (
-              <p className="text-sm text-center text-fg-2">Everything is logged. Recover well.</p>
-            )}
-          </div>
+          {next && (
+            <div className="border-t border-edge pt-4 space-y-3">
+              <div>
+                <span className="block text-[11px] uppercase tracking-[0.16em] text-cta font-semibold">{next.tag}</span>
+                <span className="block mt-1 text-sm text-fg-2">{next.why}</span>
+              </div>
+              {nextButton('btn-primary block w-full py-3 text-center leading-snug')}
+            </div>
+          )}
         </>
       )}
 

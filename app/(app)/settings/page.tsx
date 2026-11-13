@@ -12,6 +12,7 @@ import DeleteAccountCard from '@/components/settings/DeleteAccountCard'
 import Link from 'next/link'
 import type { UserRole } from '@/types'
 import { saveUnits, useUnits } from '@/lib/units'
+import { clearApiCache } from '@/lib/api-cache'
 
 type Status = { ok: boolean; msg: string } | null
 
@@ -35,6 +36,7 @@ export default function SettingsPage() {
   const [sportsSaving, setSportsSaving] = useState(false)
   const [sportsStatus, setSportsStatus] = useState<Status>(null)
   const units = useUnits()
+  const [showTodayCard, setShowTodayCard] = useState(true)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -52,6 +54,7 @@ export default function SettingsPage() {
           setSecondarySport(p.secondary_sport ?? '')
           setNextGame(p.next_competition_at?.slice(0, 10) ?? '')
           setNextGameTime(p.next_competition_time?.slice(0, 5) ?? '')
+          setShowTodayCard(p.show_today_card !== false)
         }
         setProfileLoaded(true)
       })
@@ -110,6 +113,17 @@ export default function SettingsPage() {
       setSportsStatus({ ok: false, msg: e?.message || 'Could not save. Try again.' })
     } finally {
       setSportsSaving(false)
+    }
+  }
+
+  const toggleTodayCard = async () => {
+    const next = !showTodayCard
+    setShowTodayCard(next)
+    try {
+      await patchProfile({ show_today_card: next })
+      clearApiCache('/api/profile')
+    } catch {
+      setShowTodayCard(!next)
     }
   }
 
@@ -285,6 +299,25 @@ export default function SettingsPage() {
             <span className="text-fg-2">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
           </button>
         </div>
+        {role !== 'parent' && (
+        <div className="card p-5 flex items-center gap-4">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-fg-1 mb-1 text-sm">Today card on Mindset</h3>
+            <p className="text-sm text-fg-4">Readiness score, your four rings and your next step at the top of Mindset.</p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={showTodayCard}
+            aria-label="Show Today card on Mindset"
+            disabled={!profileLoaded}
+            onClick={() => { void toggleTodayCard() }}
+            className={`relative shrink-0 w-12 h-7 rounded-full transition-colors ${showTodayCard ? 'bg-cta' : 'bg-surface-3'}`}
+          >
+            <span className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white transition-transform ${showTodayCard ? 'translate-x-5' : ''}`} />
+          </button>
+        </div>
+        )}
         <div className="card p-5">
           <h3 className="font-semibold text-fg-1 mb-1 text-sm">Units</h3>
           <p className="text-sm text-fg-4 mb-4">Weight, height and distance across workouts, nutrition and progress.</p>

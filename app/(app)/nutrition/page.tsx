@@ -18,9 +18,13 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'goals', label: 'Goals' },
 ]
 
+const QUIZ_SKIP_KEY = 'mf-nutrition-quiz-skipped'
+
 export default function NutritionPage() {
   const [tab, setTab] = useState<Tab>('today')
   const [goal, setGoal] = useState<NutritionGoal | null>(null)
+  const [goalLoaded, setGoalLoaded] = useState(false)
+  const [quizSkipped, setQuizSkipped] = useState(true)
   const [foods, setFoods] = useState<Food[]>([])
   const [favorites, setFavorites] = useState<Food[]>([])
   const [toast, setToast] = useState<{ msg: string; kind: 'success' | 'error' } | null>(null)
@@ -36,7 +40,8 @@ export default function NutritionPage() {
   }, [])
 
   useEffect(() => {
-    cached('/api/nutrition/goals', (g: NutritionGoal | null) => setGoal(g?.id ? g : null)).catch(() => {})
+    try { setQuizSkipped(localStorage.getItem(QUIZ_SKIP_KEY) === '1') } catch { setQuizSkipped(false) }
+    cached('/api/nutrition/goals', (g: NutritionGoal | null) => { setGoal(g?.id ? g : null); setGoalLoaded(true) }).catch(() => {})
     cached('/api/nutrition/foods', (d: Food[]) => setFoods(Array.isArray(d) ? d : [])).catch(() => {})
     cached('/api/nutrition/favorites', (d: Food[]) => setFavorites(Array.isArray(d) ? d : [])).catch(() => {})
   }, [])
@@ -60,6 +65,12 @@ export default function NutritionPage() {
     setFavorites(prev => prev.some(f => f.id === food.id) ? prev : [food, ...prev])
   }, [])
 
+  const skipQuiz = () => {
+    setQuizSkipped(true)
+    try { localStorage.setItem(QUIZ_SKIP_KEY, '1') } catch {}
+  }
+  const showQuiz = goalLoaded && !quizSkipped && !goal?.quiz_completed_at
+
   return (
     <div>
       <div className="mb-6">
@@ -76,6 +87,18 @@ export default function NutritionPage() {
       )}
 
       <div className={tab === 'today' ? '' : 'hidden'}>
+        {showQuiz && (
+          <section className="mb-6 space-y-3" aria-label="Set your nutrition goal">
+            <div>
+              <h2 className="text-base font-semibold text-fg-1">Set your fuel goal</h2>
+              <p className="text-sm text-fg-3">Five quick questions and you get your calories and macros for today. You can change it anytime in Goals.</p>
+            </div>
+            <GoalsView goal={goal} onSaved={setGoal} notify={notify} />
+            <button type="button" onClick={skipQuiz} className="block mx-auto text-xs text-fg-4 underline underline-offset-4 min-h-[44px]">
+              Skip for now
+            </button>
+          </section>
+        )}
         <TodayView
           goal={goal}
           foods={foods}
