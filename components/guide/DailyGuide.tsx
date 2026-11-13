@@ -10,6 +10,9 @@ import Celebrate from '@/components/shared/Celebrate'
 import DailyCheckIn from '@/components/today/DailyCheckIn'
 import { PillarRings, ReadinessRing } from './Rings'
 import GuideChoice from './GuideChoice'
+import { clearTrip, markFromGuide, readTrip } from '@/lib/guide-return'
+import { useToast } from '@/components/shared/Toast'
+import { PILLARS } from '@/lib/guide'
 
 type Phase = 'loading' | 'failed' | 'greet' | 'checkin' | 'reveal' | 'choice' | 'step' | 'end'
 
@@ -34,6 +37,10 @@ export default function DailyGuide() {
   const [done, setDone] = useState<string[]>([])
   // null on the profile = never asked; existing athletes get the choice once.
   const [askChoice, setAskChoice] = useState(false)
+  // Rings as they were when the athlete left, so the one they just closed animates shut.
+  const [shownPillars, setShownPillars] = useState<TodayData['pillars'] | null>(null)
+  const [closedNow, setClosedNow] = useState(0)
+  const notify = useToast()
   const toSteps = () => setPhase(askChoice ? 'choice' : 'step')
 
   const load = useCallback(async (): Promise<TodayData | null> => {
@@ -51,6 +58,8 @@ export default function DailyGuide() {
   useEffect(() => {
     markGuideSeenToday()
     setDone(readDone(today))
+    const trip = readTrip()
+    clearTrip()
     Promise.all([
       load(),
       fetch('/api/profile').then(r => (r.ok ? r.json() : null)).catch(() => null),
@@ -59,6 +68,15 @@ export default function DailyGuide() {
       setAskChoice(ask)
       if (!json) return setPhase('failed')
       setPhase(json.journal ? (ask ? 'choice' : 'step') : 'greet')
+      if (!trip) return
+      const newly = PILLARS.filter(p => json.pillars[p.key] && !trip.pillars[p.key])
+      if (!newly.length) return
+      setShownPillars(trip.pillars)
+      setTimeout(() => {
+        setShownPillars(null)
+        setClosedNow(Date.now())
+        notify(`${newly.map(p => p.label).join(' and ')} ring closed`)
+      }, 450)
     })
     loadNextGame(today).then(setGame).catch(() => setGame(null))
     cached('/api/stats/overview', (s: { streak?: number; freezes?: number } | null) => {
@@ -157,7 +175,7 @@ export default function DailyGuide() {
                 <Meta stats={stats} gameLine={gameLine} className="mt-2" small />
               </div>
             </div>
-            <div className="mt-8"><PillarRings pillars={data.pillars} /></div>
+            <Celebrate fire={closedNow} className="mt-8"><PillarRings pillars={shownPillars ?? data.pillars} /></Celebrate>
 
             <div className="flex-1 flex flex-col justify-end pt-10">
               <div key={step.id} className="mf-rise rounded-3xl border border-cta/30 bg-surface/80 p-6">
@@ -168,7 +186,7 @@ export default function DailyGuide() {
               <div className="pb-2 pt-5">
                 <Link
                   href={step.href}
-                  onClick={() => { if (step.id === 'pregame' || step.id === 'focus') markDone(step.id) }}
+                  onClick={() => { markFromGuide(data.pillars); if (step.id === 'pregame' || step.id === 'focus') markDone(step.id) }}
                   className="w-full h-14 rounded-full bg-cta text-fg-inverse font-semibold tracking-wide hover:bg-brand-600 transition-colors flex items-center justify-center"
                 >
                   {step.text}
@@ -187,7 +205,7 @@ export default function DailyGuide() {
               {allClosed ? (
                 <>
                   <Celebrate fire={allClosed}>
-                    <div className="w-full"><PillarRings pillars={data.pillars} /></div>
+                    <div className="w-full"><PillarRings pillars={shownPillars ?? data.pillars} /></div>
                   </Celebrate>
                   <p className="mt-10 text-xs uppercase tracking-[0.24em] text-cta">Clutch Day</p>
                   <h1 className="mt-3 font-display text-3xl text-fg-1 text-balance">All four rings closed.</h1>

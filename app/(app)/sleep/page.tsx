@@ -1,4 +1,5 @@
 'use client'
+import { useReturnToGuide } from '@/lib/guide-return'
 import TabBar from '@/components/shared/TabBar'
 import { useState, useEffect } from 'react'
 import { format, parseISO } from 'date-fns'
@@ -25,6 +26,7 @@ const hhmm = (t: string | null | undefined) => (t ? t.slice(0, 5) : '')
 const clock = (t: string) => format(parseISO(`2000-01-01T${t}`), 'h:mm a')
 
 export default function SleepPage() {
+  const returnToGuide = useReturnToGuide()
   const [tab, setTab] = useState<Tab>('track')
   const today = localDateISO()
   // Athletes log in the morning, so the default is last night. Recovery
@@ -164,7 +166,7 @@ export default function SleepPage() {
           notes: sleepNotes || null,
         }),
       })
-      if (res.ok) { setSleepSaved(true); setJustSaved('sleep'); if (isDefault) clearDraft(sleepKey); notify('Sleep log saved') }
+      if (res.ok) { setSleepSaved(true); setJustSaved('sleep'); if (isDefault) clearDraft(sleepKey); notify('Sleep log saved'); returnToGuide() }
       else notify('Could not save your sleep log.', 'error')
       } catch {
       notify('Could not save your sleep log. Check your connection.', 'error')
@@ -186,7 +188,7 @@ export default function SleepPage() {
           notes: recoveryNotes || null,
         }),
       })
-      if (res.ok) { setRecoverySaved(true); setJustSaved('recovery'); if (isDefault) clearDraft(recoveryKey); notify('Recovery saved') }
+      if (res.ok) { setRecoverySaved(true); setJustSaved('recovery'); if (isDefault) clearDraft(recoveryKey); notify('Recovery saved'); returnToGuide() }
       else notify('Could not save your recovery log.', 'error')
       } catch {
       notify('Could not save your recovery log. Check your connection.', 'error')

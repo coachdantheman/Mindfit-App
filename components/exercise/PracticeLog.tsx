@@ -1,4 +1,5 @@
 'use client'
+import { useReturnToGuide } from '@/lib/guide-return'
 import CollapsibleList from '@/components/shared/CollapsibleList'
 import { useCallback, useEffect, useId, useMemo, useState } from 'react'
 import Link from 'next/link'
@@ -98,6 +99,7 @@ function fromEntry(e: Entry, flow: FlowRow | undefined, sport: string): Form {
 // Exercise → Practice. One practice and one game per day; the difficulty
 // score doubles as the flow challenge level when the flow thread is on.
 export default function PracticeLog({ notify, fixedKind }: Props) {
+  const returnToGuide = useReturnToGuide()
   const today = localDateISO()
   const [kind, setKind] = useState<Kind>(fixedKind ?? 'practice')
   const [forms, setForms] = useState<Record<Kind, Form>>({ practice: EMPTY, game: EMPTY })
@@ -204,6 +206,7 @@ export default function PracticeLog({ notify, fixedKind }: Props) {
         setState('saved')
         clearDraft(key)
         notify(kind === 'game' ? 'Game reflection saved' : 'Practice saved')
+        returnToGuide()
         fetchRecent()
       } else {
         setState('error')

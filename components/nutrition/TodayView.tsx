@@ -1,4 +1,5 @@
 'use client'
+import { useReturnToGuide } from '@/lib/guide-return'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Food, FoodEntry, NutritionGoal, RecentFood, SavedMeal } from '@/types'
 import { MEALS, MealName, localDateISO, shiftDate, sumEntries } from '@/lib/nutrition'
@@ -62,6 +63,7 @@ interface Props {
 }
 
 export default function TodayView({ goal, foods, favorites, onToggleFavorite, onFavoriteSaved, onFoodCreated, onSetGoal, onOpenGameDay, notify }: Props) {
+  const returnToGuide = useReturnToGuide()
   const [date, setDate] = useState(() => localDateISO(new Date()))
   const [entries, setEntries] = useState<FoodEntry[]>([])
   const [yesterdayMeals, setYesterdayMeals] = useState<Set<string>>(new Set())
@@ -154,6 +156,7 @@ export default function TodayView({ goal, foods, favorites, onToggleFavorite, on
       notify(`Added ${added.length === 1 ? added[0].food_name : `${added.length} items`} to ${sheetMeal}`)
       loadRecent()
       autoSaveMeal(sheetMeal)
+      returnToGuide()
     }
     if (failed) {
       notify(failed === items.length ? "Couldn't add those items. Try again." : `Couldn't add ${failed} of ${items.length} items. Try again.`, 'error')

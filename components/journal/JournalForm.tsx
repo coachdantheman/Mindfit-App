@@ -1,4 +1,5 @@
 'use client'
+import { useReturnToGuide } from '@/lib/guide-return'
 import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { JournalEntry, JournalFormData } from '@/types'
@@ -24,6 +25,7 @@ interface Props {
 }
 
 export default function JournalForm({ previewMode = false, onSaved, existing }: Props) {
+  const returnToGuide = useReturnToGuide()
   const notify = useToast()
   const [state, setState] = useState<SaveState>('idle')
   const [error, setError] = useState('')
@@ -96,6 +98,7 @@ export default function JournalForm({ previewMode = false, onSaved, existing }: 
       clearDraft(key)
       setState('saved')
       notify('Journal saved. Streak kept 🔥')
+      returnToGuide()
       onSaved?.(json)
     } catch {
       setError('Failed to save. Please try again.')

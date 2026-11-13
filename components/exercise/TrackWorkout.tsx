@@ -1,4 +1,5 @@
 'use client'
+import { useReturnToGuide } from '@/lib/guide-return'
 import { useCallback, useEffect, useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import type { CoachWorkout } from '@/types'
@@ -54,6 +55,7 @@ interface Props {
 }
 
 export default function TrackWorkout({ draft, savedDraft, library, onDraftChange, onResume, onDiscardSaved, onStart, onCreateExercise, notify, refreshKey, onAddBodyweight }: Props) {
+  const returnToGuide = useReturnToGuide()
   const [logs, setLogs] = useState<WorkoutLogRow[]>([])
   const [saved, setSaved] = useState<CustomWorkoutRow[]>([])
   const [historyOpen, setHistoryOpen] = useState(false)
@@ -222,7 +224,7 @@ export default function TrackWorkout({ draft, savedDraft, library, onDraftChange
 
   return (
     <div className="space-y-4">
-      {finished && <FinishSummary result={finished} onClose={() => setFinished(null)} onAddBodyweight={() => { setFinished(null); onAddBodyweight() }} />}
+      {finished && <FinishSummary result={finished} onClose={() => { setFinished(null); returnToGuide(0) }} onAddBodyweight={() => { setFinished(null); onAddBodyweight() }} />}
 
       {savedDraft && (
         <div className="card p-4 border-cta/40 flex items-center justify-between gap-3">
