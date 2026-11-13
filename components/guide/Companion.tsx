@@ -9,6 +9,7 @@ import { daySeed, greetKey, needFor, planSteps, stepLineKey } from '@/lib/guide-
 import { guideLine, type LineKey } from '@/lib/data/guide-lines'
 import { markFromGuide, readTrip } from '@/lib/guide-return'
 import { useGuide } from '@/lib/use-guide'
+import { guideFor } from '@/lib/guide-characters'
 import { haptic } from '@/lib/haptics'
 import Character from './art/Character'
 
@@ -37,6 +38,8 @@ export default function Companion() {
   const [typing, setTyping] = useState(false)
   // Sits higher while a "Back to..." pill shares the bottom of the screen.
   const [raised, setRaised] = useState(false)
+  // A character earned since the last look, announced once.
+  const [fresh, setFresh] = useState<string[]>([])
   const tap = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const active = g.eligible && g.show && !docked
 
@@ -87,6 +90,22 @@ export default function Companion() {
 
   useEffect(() => () => clearTimeout(tap.current), [])
 
+  useEffect(() => {
+    if (!g.eligible) return
+    fetch('/api/guide/collection').then(r => (r.ok ? r.json() : null)).then((c: { fresh?: string[] } | null) => {
+      if (!c?.fresh?.length) return
+      setFresh(c.fresh)
+      setOpen(true)
+      // Told once: mark it now so closing the bubble any way does not repeat it.
+      fetch('/api/guide/collection', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ seen: c.fresh }) }).catch(() => {})
+    }).catch(() => {})
+  }, [g.eligible])
+
+  const ackFresh = () => {
+    setFresh([])
+    setOpen(false)
+  }
+
   if (!active || typing) return null
 
   const today = localDateISO()
@@ -97,7 +116,10 @@ export default function Companion() {
 
   let line = ''
   let action: { href: string; label: string; trip: boolean } | null = null
-  if (tip) {
+  if (fresh.length) {
+    line = `${guideLine(voice, 'unlock.new')} (${fresh.map(k => guideFor(k).name).join(', ')})`
+    action = { href: '/settings#guide', label: 'See my guides', trip: false }
+  } else if (tip) {
     line = guideLine(voice, tip, { seed })
   } else if (data && !data.journal) {
     line = guideLine(voice, greetKey({ hour, streak: null, gameToday: false }), { name: g.first, seed })
@@ -110,7 +132,7 @@ export default function Companion() {
     action = { href: '/guide', label: 'Open my guide', trip: false }
   }
 
-  const dock = () => { haptic.tap(); setOpen(false); setTip(null); setCompanionDocked(true) }
+  const dock = () => { haptic.tap(); setOpen(false); setTip(null); setFresh([]); setCompanionDocked(true) }
 
   // One tap talks, two taps tuck it away.
   const onTap = () => {
@@ -136,9 +158,9 @@ export default function Companion() {
           <p className="text-sm leading-snug text-fg-1">{line}</p>
           <div className="mt-2.5 flex items-center justify-between gap-3">
             {tip ? (
-              <button type="button" onClick={() => { setOpen(false); setTip(null) }} className="min-h-[44px] px-4 rounded-full bg-cta text-fg-inverse text-sm font-semibold">Got it</button>
+              <button type="button" onClick={() => { setOpen(false); setTip(null); setFresh([]) }} className="min-h-[44px] px-4 rounded-full bg-cta text-fg-inverse text-sm font-semibold">Got it</button>
             ) : action ? (
-              <Link href={action.href} onClick={() => { if (action.trip && data) markFromGuide(data.pillars); setOpen(false) }}
+              <Link href={action.href} onClick={() => { if (fresh.length) ackFresh(); if (action.trip && data) markFromGuide(data.pillars); setOpen(false) }}
                 className="min-h-[44px] px-4 rounded-full bg-cta text-fg-inverse text-sm font-semibold inline-flex items-center">
                 {action.label}
               </Link>
@@ -154,7 +176,7 @@ export default function Companion() {
         aria-expanded={open && !!line}
         className="pointer-events-auto touch-manipulation rounded-full p-1 hover:bg-cta/10 transition-colors"
       >
-        <Character species={g.guide.key} stage={g.stage} size={56} state={asleep ? 'sleep' : tip ? 'point' : 'idle'} />
+        <Character species={g.guide.key} stage={g.stage} size={56} state={fresh.length ? 'cheer' : asleep ? 'sleep' : tip ? 'point' : 'idle'} />
       </button>
     </div>
   )

@@ -15,7 +15,7 @@ import { saveUnits, useUnits } from '@/lib/units'
 import { clearApiCache } from '@/lib/api-cache'
 import { guideChanged } from '@/lib/guide'
 import Character from '@/components/guide/art/Character'
-import { STARTERS, guideFor, stageFor, type GuideKey, type Stage } from '@/lib/guide-characters'
+import { ALL_GUIDES, STARTERS, guideFor, isStarter, stageFor, type GuideKey, type Stage } from '@/lib/guide-characters'
 
 type Status = { ok: boolean; msg: string } | null
 
@@ -43,6 +43,10 @@ export default function SettingsPage() {
   const [guideKey, setGuideKey] = useState<GuideKey>('sparrow')
   const [guideVisible, setGuideVisible] = useState(true)
   const [guideStage, setGuideStage] = useState<Stage>(1)
+  // null until loaded; until then only the starters look available.
+  const [owned, setOwned] = useState<GuideKey[] | null>(null)
+  const myStarter = owned?.find(isStarter)
+  const lockedStarters = STARTERS.map(g => g.key).filter(k => k !== myStarter)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -64,6 +68,9 @@ export default function SettingsPage() {
           setGuideKey(guideFor(p.guide_character).key)
           setGuideVisible(p.guide_visible !== false)
           setGuideStage(stageFor(p.best_streak))
+          if (p.role === 'member' || p.role === 'admin') {
+            fetch('/api/guide/collection').then(r => (r.ok ? r.json() : null)).then(c => { if (c?.owned) setOwned(c.owned) }).catch(() => {})
+          }
         }
         setProfileLoaded(true)
       })
@@ -318,16 +325,21 @@ export default function SettingsPage() {
           <h3 className="font-semibold text-fg-1 mb-1 text-sm">Your guide</h3>
           <p className="text-sm text-fg-4 mb-4">The character that walks you through each day. Switch anytime.</p>
           <div role="group" aria-label="Your guide" className="grid grid-cols-3 gap-2">
-            {STARTERS.map(g => (
-              <button key={g.key} type="button" aria-pressed={guideKey === g.key} disabled={!profileLoaded}
-                onClick={() => { void chooseGuide(g.key) }}
-                className={`rounded-2xl border p-3 flex flex-col items-center gap-1.5 transition-colors ${guideKey === g.key ? 'border-cta bg-cta/[0.06]' : 'border-edge hover:border-cta/40'}`}>
-                <Character species={g.key} stage={guideStage} size={56} />
-                <span className="text-sm font-medium text-fg-1">{g.name}</span>
-              </button>
-            ))}
+            {ALL_GUIDES.map(g => {
+              const mine = owned === null ? isStarter(g.key) : owned.includes(g.key) || (isStarter(g.key) && !myStarter)
+              return (
+                <button key={g.key} type="button" aria-pressed={guideKey === g.key} disabled={!profileLoaded || !mine}
+                  aria-label={mine ? g.name : `${g.name}, locked. ${g.earn ?? 'Earned later'}`}
+                  onClick={() => { void chooseGuide(g.key) }}
+                  className={`rounded-2xl border p-3 flex flex-col items-center gap-1.5 transition-colors ${guideKey === g.key ? 'border-cta bg-cta/[0.06]' : mine ? 'border-edge hover:border-cta/40' : 'border-edge'}`}>
+                  <Character species={g.key} stage={guideStage} size={56} className={mine ? '' : 'opacity-30'} />
+                  <span className={`text-sm font-medium ${mine ? 'text-fg-1' : 'text-fg-4'}`}>{g.name}</span>
+                  {!mine && <span className="text-[10px] leading-tight text-fg-4 text-center">{g.earn ?? (g.key === lockedStarters[0] ? 'Close all four rings in one day' : 'Reach a 14-day best streak')}</span>}
+                </button>
+              )
+            })}
           </div>
-          <p className="text-xs text-fg-3 mt-3">{guideFor(guideKey).tagline} {guideStage < 3 ? `Grows at a best streak of ${guideStage === 1 ? 7 : 30} days.` : ''}</p>
+          <p className="text-xs text-fg-3 mt-3">{guideFor(guideKey).tagline} {isStarter(guideKey) && guideStage < 3 ? `Grows at a best streak of ${guideStage === 1 ? 7 : 30} days.` : ''}</p>
         </div>
         <div className="card p-5 flex items-center gap-4">
           <div className="flex-1 min-w-0">

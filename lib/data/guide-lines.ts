@@ -677,6 +677,11 @@ export const LINES = {
     pack: ['This is The Board. Every log earns us points.'],
     deep: ['Points come from logging across all four rings. Balance earns the best titles.'],
   },
+  'unlock.new': {
+    sky: ['You earned a new guide. Take a look in Settings when you want.'],
+    pack: ['We unlocked a new guide. Want to go meet them in Settings?'],
+    deep: ['A new guide is yours. It shows up when the work adds up.'],
+  },
 } satisfies Record<string, Record<Voice, string[]>>
 
 export type LineKey = keyof typeof LINES

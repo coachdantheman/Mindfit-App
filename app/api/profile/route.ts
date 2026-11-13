@@ -3,7 +3,8 @@ import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { isISODate, isPlainObject } from '@/lib/validate'
-import { isGuideKey } from '@/lib/guide-characters'
+import { isGuideKey, isStarter } from '@/lib/guide-characters'
+import { loadCollection } from '@/lib/guide-unlocks'
 
 const FIELDS = ['full_name', 'primary_sport', 'secondary_sport', 'next_competition_at', 'next_competition_time', 'terms_accepted_at', 'default_bedtime', 'default_wake_time', 'units'] as const
 const TIME_FIELDS = ['next_competition_time', 'default_bedtime', 'default_wake_time'] as const
@@ -59,6 +60,13 @@ export async function PATCH(req: Request) {
   if (body.guide_character !== undefined) {
     if (!isGuideKey(body.guide_character)) return NextResponse.json({ error: 'guide_character is invalid' }, { status: 400 })
     updates.guide_character = body.guide_character
+    // The first pick is a free choice of starter; after that only owned characters.
+    const owned = (await loadCollection(createAdminClient(), auth.userId).catch(() => null))?.owned
+    const key = body.guide_character
+    const allowed = owned ? owned.includes(key) || (isStarter(key) && !owned.some(isStarter)) : isStarter(key)
+    if (!allowed) {
+      return NextResponse.json({ error: 'That guide is not unlocked yet.' }, { status: 403 })
+    }
   }
   if (body.guide_visible !== undefined) {
     if (typeof body.guide_visible !== 'boolean') return NextResponse.json({ error: 'guide_visible is invalid' }, { status: 400 })
