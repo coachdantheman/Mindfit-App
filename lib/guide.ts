@@ -72,3 +72,26 @@ export function todayQuery(day: string): string {
   const end = new Date(start.getTime() + 86_400_000)
   return `/api/today?date=${day}&from=${encodeURIComponent(start.toISOString())}&to=${encodeURIComponent(end.toISOString())}`
 }
+
+// Set when the guide opens; expires at the athlete's local midnight, so the
+// app layout sends them to /guide once per day.
+export const GUIDE_DAY_COOKIE = 'mf-guide-day'
+
+export function markGuideSeenToday() {
+  const midnight = new Date()
+  midnight.setHours(24, 0, 0, 0)
+  document.cookie = `${GUIDE_DAY_COOKIE}=1; path=/; expires=${midnight.toUTCString()}; SameSite=Lax`
+}
+
+export async function saveGuideChoice(on: boolean): Promise<boolean> {
+  try {
+    const res = await fetch('/api/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ daily_guidance: on }),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}

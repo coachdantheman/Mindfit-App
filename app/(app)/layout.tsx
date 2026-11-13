@@ -1,4 +1,7 @@
 import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
+import { createAdminClient } from '@/lib/supabase-server'
+import { GUIDE_DAY_COOKIE } from '@/lib/guide'
 import { getAuthUserCached } from '@/lib/auth'
 import Navbar from '@/components/layout/Navbar'
 import ServiceWorkerRegistrar from '@/components/shared/ServiceWorkerRegistrar'
@@ -16,6 +19,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (user.role === 'member' && user.birthYear == null) redirect('/age')
   if (user.role === 'member' && user.consentStatus === 'pending') redirect('/consent/waiting')
   if (user.role === 'member' && !user.onboardedAt) redirect('/onboarding')
+  // First open of the day goes to the Daily Guide unless the athlete turned it off.
+  if (user.role === 'member' && !(await cookies()).get(GUIDE_DAY_COOKIE)) {
+    const { data, error } = await createAdminClient().from('profiles').select('daily_guidance').eq('id', user.userId).maybeSingle()
+    if (!error && data && data.daily_guidance !== false) redirect('/guide')
+  }
 
   return (
     <ToastProvider>

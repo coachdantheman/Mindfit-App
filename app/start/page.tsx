@@ -10,6 +10,7 @@ import { EMPTY_DRAFT, clearDraft, draftComplete, edgeAndGap, readDraft, saveDraf
 import { clearPendingTeamCode, joinTeam, readPendingTeamCode } from '@/lib/team-code'
 import Typewriter from '@/components/onboarding/Typewriter'
 import CodeInput from '@/components/onboarding/CodeInput'
+import GuideChoice from '@/components/guide/GuideChoice'
 
 const SPORTS = [
   'Basketball', 'Football', 'Soccer', 'Baseball', 'Softball', 'Volleyball',
@@ -31,7 +32,7 @@ const SCALE = ['Struggling', 'Shaky', 'Okay', 'Strong', 'Locked in']
 
 const INTRO = ['Every athlete plays two games.', 'The one on the field.', 'And the one in their head.']
 
-type Step = 'intro' | 'name' | 'sport' | 'age' | 'young' | 'proof' | 'mpi' | 'score' | 'account' | 'code' | 'saving' | 'done'
+type Step = 'intro' | 'name' | 'sport' | 'age' | 'young' | 'proof' | 'mpi' | 'score' | 'account' | 'code' | 'saving' | 'done' | 'guide'
 const PROGRESS: Partial<Record<Step, number>> = { name: 1, sport: 2, age: 3, proof: 4, mpi: 5, score: 15 }
 const TOTAL = 15
 
@@ -190,8 +191,7 @@ export default function StartPage() {
         })
       } catch {}
     }
-    router.push('/mindset')
-    router.refresh()
+    go('guide')
   }
 
   const isTeen = d.birthYear != null && d.birthMonth != null && !isUnder13({ birth_year: d.birthYear, birth_month: d.birthMonth })
@@ -405,6 +405,10 @@ export default function StartPage() {
               </button>
             </div>
           </div>
+        )}
+
+        {step === 'guide' && (
+          <GuideChoice onChosen={on => { router.push(on ? '/guide' : '/mindset'); router.refresh() }} />
         )}
 
         {step === 'saving' && (

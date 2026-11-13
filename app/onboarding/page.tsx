@@ -5,6 +5,7 @@ import WeeklyAssessment from '@/components/mindset/WeeklyAssessment'
 import { mpiVerdict } from '@/lib/mpi'
 import { ACTIONS } from '@/lib/leaderboard-config'
 import { clearPendingTeamCode, joinTeam, readPendingTeamCode } from '@/lib/team-code'
+import GuideChoice from '@/components/guide/GuideChoice'
 
 const SPORTS = [
   'Basketball', 'Football', 'Soccer', 'Baseball', 'Softball', 'Volleyball',
@@ -12,7 +13,7 @@ const SPORTS = [
   'Lacrosse', 'Hockey', 'Gymnastics', 'Cheer', 'Other',
 ]
 
-type Step = 'welcome' | 'assessment' | 'result'
+type Step = 'welcome' | 'assessment' | 'result' | 'guide'
 
 export default function OnboardingPage() {
   const router = useRouter()
@@ -78,10 +79,7 @@ export default function OnboardingPage() {
     await completeOnboarding()
   }
 
-  const finish = () => {
-    router.push('/mindset')
-    router.refresh()
-  }
+  const finish = () => setStep('guide')
 
   return (
     <div className="max-w-xl mx-auto">
@@ -164,6 +162,12 @@ export default function OnboardingPage() {
 
       {step === 'assessment' && (
         <WeeklyAssessment mode="baseline" onComplete={handleAssessmentDone} />
+      )}
+
+      {step === 'guide' && (
+        <div className="bg-surface rounded-2xl border border-edge p-6 sm:p-8 flex flex-col min-h-[560px]">
+          <GuideChoice onChosen={on => { router.push(on ? '/guide' : '/mindset'); router.refresh() }} />
+        </div>
       )}
 
       {step === 'result' && mpi !== null && (

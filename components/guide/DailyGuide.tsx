@@ -5,12 +5,13 @@ import { cached } from '@/lib/api-cache'
 import { localDateISO } from '@/lib/dates'
 import { loadNextGame, type UpcomingGame } from '@/lib/team-schedule'
 import { readinessScore, readinessVerdict } from '@/lib/readiness'
-import { greeting, guideSteps, todayQuery, type GuideStep, type TodayData } from '@/lib/guide'
+import { greeting, guideSteps, markGuideSeenToday, todayQuery, type GuideStep, type TodayData } from '@/lib/guide'
 import Celebrate from '@/components/shared/Celebrate'
 import DailyCheckIn from '@/components/today/DailyCheckIn'
 import { PillarRings, ReadinessRing } from './Rings'
+import GuideChoice from './GuideChoice'
 
-type Phase = 'loading' | 'failed' | 'greet' | 'checkin' | 'reveal' | 'step' | 'end'
+type Phase = 'loading' | 'failed' | 'greet' | 'checkin' | 'reveal' | 'choice' | 'step' | 'end'
 
 const doneKey = (day: string) => `mf-guide-done:${day}`
 
@@ -31,6 +32,9 @@ export default function DailyGuide() {
   const [stats, setStats] = useState<{ streak: number; freezes: number } | null>(null)
   const [first, setFirst] = useState('')
   const [done, setDone] = useState<string[]>([])
+  // null on the profile = never asked; existing athletes get the choice once.
+  const [askChoice, setAskChoice] = useState(false)
+  const toSteps = () => setPhase(askChoice ? 'choice' : 'step')
 
   const load = useCallback(async (): Promise<TodayData | null> => {
     try {
@@ -45,11 +49,16 @@ export default function DailyGuide() {
   }, [today])
 
   useEffect(() => {
-    const d = readDone(today)
-    setDone(d)
-    load().then(json => {
+    markGuideSeenToday()
+    setDone(readDone(today))
+    Promise.all([
+      load(),
+      fetch('/api/profile').then(r => (r.ok ? r.json() : null)).catch(() => null),
+    ]).then(([json, profile]) => {
+      const ask = !!profile && profile.daily_guidance == null
+      setAskChoice(ask)
       if (!json) return setPhase('failed')
-      setPhase(json.journal ? 'step' : 'greet')
+      setPhase(json.journal ? (ask ? 'choice' : 'step') : 'greet')
     })
     loadNextGame(today).then(setGame).catch(() => setGame(null))
     cached('/api/stats/overview', (s: { streak?: number; freezes?: number } | null) => {
@@ -130,8 +139,12 @@ export default function DailyGuide() {
               {score != null && <h1 className="font-display text-2xl text-fg-1 text-balance">{readinessVerdict(score)}</h1>}
               <div className="w-full mt-10"><PillarRings pillars={data.pillars} /></div>
             </div>
-            <Primary onClick={() => setPhase('step')}>{steps.length ? 'See my next step' : 'Finish'}</Primary>
+            <Primary onClick={toSteps}>{steps.length ? 'See my next step' : 'Finish'}</Primary>
           </>
+        )}
+
+        {view === 'choice' && (
+          <GuideChoice onChosen={() => { setAskChoice(false); setPhase('step') }} />
         )}
 
         {view === 'step' && data && step && (
