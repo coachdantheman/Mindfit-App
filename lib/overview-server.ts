@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { activityStreakOf, localDateISO } from '@/lib/streaks'
 import { calcMPI } from '@/lib/mpi'
 
-export interface OverviewStats { streak: number; freezes: number; savedYesterday: boolean; latestMpi: number | null; baselineMpi: number | null }
+export interface OverviewStats { streak: number; freezes: number; savedYesterday: boolean; latestMpi: number | null; baselineMpi: number | null; bestStreak: number }
 
 // Activity streak (any log keeps it alive) + latest/baseline MPI for one user.
 export async function loadOverview(admin: SupabaseClient, userId: string): Promise<OverviewStats> {
@@ -10,9 +10,10 @@ export async function loadOverview(admin: SupabaseClient, userId: string): Promi
   since.setDate(since.getDate() - 60)
   const sinceDate = since.toISOString().split('T')[0]
 
-  const [days, assessments] = await Promise.all([
+  const [days, assessments, profile] = await Promise.all([
     admin.rpc('get_user_activity_dates', { p_user: userId, p_since: sinceDate }),
     admin.from('weekly_assessments').select('*').eq('user_id', userId).order('week_date', { ascending: false }),
+    admin.from('profiles').select('best_streak').eq('id', userId).maybeSingle(),
   ])
 
   const activeDays = new Set<string>()
@@ -24,6 +25,13 @@ export async function loadOverview(admin: SupabaseClient, userId: string): Promi
   }
   const { streak, freezes, savedYesterday } = activityStreakOf(activeDays)
 
+  // The best streak only ever goes up; guide characters grow from it.
+  let bestStreak = profile.data?.best_streak ?? 0
+  if (streak > bestStreak) {
+    bestStreak = streak
+    await admin.from('profiles').update({ best_streak: streak }).eq('id', userId).lt('best_streak', streak)
+  }
+
   const all = assessments.data ?? []
   const latest = all[0] ?? null
   const baseline = [...all].reverse().find(a => a.assessment_type === 'baseline') ?? null
@@ -34,5 +42,6 @@ export async function loadOverview(admin: SupabaseClient, userId: string): Promi
     savedYesterday,
     latestMpi: latest ? calcMPI(latest) : null,
     baselineMpi: baseline ? calcMPI(baseline) : null,
+    bestStreak,
   }
 }

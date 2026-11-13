@@ -21,7 +21,7 @@ export default function GuideBar() {
   const closed = data ? Object.values(data.pillars).filter(Boolean).length : 0
 
   return (
-    <Link href="/guide" className="card mb-6 flex items-center gap-4 px-4 min-h-[60px] hover:border-cta/40 transition-colors" aria-label="Open today's guide">
+    <Link href="/guide" data-guide="mindset" className="card mb-6 flex items-center gap-4 px-4 min-h-[60px] hover:border-cta/40 transition-colors" aria-label="Open today's guide">
       <span className="relative w-10 h-10 shrink-0 grid place-items-center rounded-full border-2 border-cta/70 text-sm font-bold text-fg-1 tabular-nums">
         {score ?? '-'}
       </span>

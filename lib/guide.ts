@@ -148,3 +148,64 @@ export function recordSkip(id: string, skipped: boolean) {
   else delete skips[id]
   try { localStorage.setItem(SKIPS_KEY, JSON.stringify(skips)) } catch {}
 }
+
+// True once each time a guide reaches a new form on this device, so the
+// evolution is celebrated one time. A first look at stage 1 is not news.
+export function takeEvolution(character: string, stage: number): boolean {
+  const key = `mf-guide-stage:${character}`
+  try {
+    const seen = Number(localStorage.getItem(key)) || 0
+    if (stage <= seen) return false
+    localStorage.setItem(key, String(stage))
+    return stage > 1
+  } catch {
+    return false
+  }
+}
+
+// The companion on app pages can be tucked into the top bar. Kept per device.
+const DOCKED_KEY = 'mf-companion-docked'
+const DOCKED_EVENT = 'mf-companion'
+
+export function companionDocked(): boolean {
+  try { return localStorage.getItem(DOCKED_KEY) === '1' } catch { return false }
+}
+
+export function setCompanionDocked(docked: boolean) {
+  try {
+    if (docked) localStorage.setItem(DOCKED_KEY, '1')
+    else localStorage.removeItem(DOCKED_KEY)
+  } catch {}
+  window.dispatchEvent(new Event(DOCKED_EVENT))
+}
+
+export function onCompanionChange(listener: () => void): () => void {
+  window.addEventListener(DOCKED_EVENT, listener)
+  window.addEventListener('storage', listener)
+  return () => {
+    window.removeEventListener(DOCKED_EVENT, listener)
+    window.removeEventListener('storage', listener)
+  }
+}
+
+// A screen's tip shows on the first two visits, then never again.
+export function takeTip(screen: string): boolean {
+  const key = `mf-guide-tip:${screen}`
+  try {
+    const seen = Number(localStorage.getItem(key)) || 0
+    if (seen >= 2) return false
+    localStorage.setItem(key, String(seen + 1))
+    return true
+  } catch {
+    return false
+  }
+}
+
+// Fired after the athlete picks, switches or hides their guide, so the
+// companion on the page updates without a reload.
+const GUIDE_EVENT = 'mf-guide-changed'
+export function guideChanged() { window.dispatchEvent(new Event(GUIDE_EVENT)) }
+export function onGuideChanged(listener: () => void): () => void {
+  window.addEventListener(GUIDE_EVENT, listener)
+  return () => window.removeEventListener(GUIDE_EVENT, listener)
+}

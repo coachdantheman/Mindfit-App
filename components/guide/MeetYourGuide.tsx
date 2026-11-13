@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { clearApiCache } from '@/lib/api-cache'
 import { localDateISO } from '@/lib/dates'
-import { saveGuideChoice, saveNextObjective, todayQuery } from '@/lib/guide'
+import { guideChanged, saveGuideChoice, saveNextObjective, todayQuery } from '@/lib/guide'
 import { STARTERS, guideFor, recommendedGuide, type GuideKey } from '@/lib/guide-characters'
 import { guideLine } from '@/lib/data/guide-lines'
 import Character from './art/Character'
@@ -65,6 +65,7 @@ export default function MeetYourGuide({ onDone, existing = false }: {
     setBusy(false)
     if (!ok) return setError("Couldn't save that. Try again.")
     clearApiCache('/api/profile')
+    guideChanged()
     go('tour')
   }
 

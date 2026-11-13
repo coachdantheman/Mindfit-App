@@ -34,7 +34,7 @@ interface Props {
   // Full-screen pages inside the Daily Guide instead of a bottom sheet.
   inline?: boolean
   mode?: Mode
-  speaker?: { character: Species; voice: Voice; show: boolean }
+  speaker?: { character: Species; voice: Voice; show: boolean; stage?: 1 | 2 | 3 }
 }
 
 type Ratings = { motivation: number; focus: number; confidence: number; anxiety: number }
@@ -208,7 +208,7 @@ export default function DailyCheckIn({ today, data, onClose, onSaved, inline = f
     }
   }
   const speakerNode = speaker ? (
-    <GuideSpeaker character={speaker.character} show={speaker.show} line={guideLine(speaker.voice, lineKey(), { seed: daySeed(today) })} />
+    <GuideSpeaker character={speaker.character} stage={speaker.stage} show={speaker.show} line={guideLine(speaker.voice, lineKey(), { seed: daySeed(today) })} />
   ) : undefined
 
   const routineStep = ROUTINE_PAGES.includes(step) ? routineByKey('morning').steps.find(s => s.id === step) : undefined

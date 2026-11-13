@@ -131,3 +131,12 @@ test('the daily seed is the day of the year', () => {
   assert.equal(daySeed('2026-01-01'), 1)
   assert.equal(daySeed('2026-11-13'), 317)
 })
+
+test('a guide grows at a best streak of 7 and 30', async () => {
+  const { stageFor } = await import('../lib/guide-characters')
+  assert.equal(stageFor(null), 1)
+  assert.equal(stageFor(6), 1)
+  assert.equal(stageFor(7), 2)
+  assert.equal(stageFor(29), 2)
+  assert.equal(stageFor(30), 3)
+})

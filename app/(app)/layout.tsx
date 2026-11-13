@@ -13,6 +13,7 @@ import PendingTeamJoin from '@/components/shared/PendingTeamJoin'
 import TimezoneSync from '@/components/shared/TimezoneSync'
 import BackToGameDay from '@/components/shared/BackToGameDay'
 import BackToGuide from '@/components/guide/BackToGuide'
+import Companion from '@/components/guide/Companion'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await getAuthUserCached()
@@ -42,6 +43,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <main id="main" tabIndex={-1} className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 py-8 pb-24 sm:pb-8">
           <BackToGameDay />
           <BackToGuide />
+          <Companion />
           {children}
         </main>
       </div>

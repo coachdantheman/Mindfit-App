@@ -13,8 +13,9 @@ import Link from 'next/link'
 import type { UserRole } from '@/types'
 import { saveUnits, useUnits } from '@/lib/units'
 import { clearApiCache } from '@/lib/api-cache'
+import { guideChanged } from '@/lib/guide'
 import Character from '@/components/guide/art/Character'
-import { STARTERS, guideFor, type GuideKey } from '@/lib/guide-characters'
+import { STARTERS, guideFor, stageFor, type GuideKey, type Stage } from '@/lib/guide-characters'
 
 type Status = { ok: boolean; msg: string } | null
 
@@ -41,6 +42,7 @@ export default function SettingsPage() {
   const [dailyGuidance, setDailyGuidance] = useState(true)
   const [guideKey, setGuideKey] = useState<GuideKey>('sparrow')
   const [guideVisible, setGuideVisible] = useState(true)
+  const [guideStage, setGuideStage] = useState<Stage>(1)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -61,6 +63,7 @@ export default function SettingsPage() {
           setDailyGuidance(p.daily_guidance !== false)
           setGuideKey(guideFor(p.guide_character).key)
           setGuideVisible(p.guide_visible !== false)
+          setGuideStage(stageFor(p.best_streak))
         }
         setProfileLoaded(true)
       })
@@ -140,6 +143,7 @@ export default function SettingsPage() {
     try {
       await patchProfile({ guide_character: key })
       clearApiCache('/api/profile')
+      guideChanged()
     } catch {
       setGuideKey(prev)
     }
@@ -151,6 +155,7 @@ export default function SettingsPage() {
     try {
       await patchProfile({ guide_visible: next })
       clearApiCache('/api/profile')
+      guideChanged()
     } catch {
       setGuideVisible(!next)
     }
@@ -317,12 +322,12 @@ export default function SettingsPage() {
               <button key={g.key} type="button" aria-pressed={guideKey === g.key} disabled={!profileLoaded}
                 onClick={() => { void chooseGuide(g.key) }}
                 className={`rounded-2xl border p-3 flex flex-col items-center gap-1.5 transition-colors ${guideKey === g.key ? 'border-cta bg-cta/[0.06]' : 'border-edge hover:border-cta/40'}`}>
-                <Character species={g.key} size={56} />
+                <Character species={g.key} stage={guideStage} size={56} />
                 <span className="text-sm font-medium text-fg-1">{g.name}</span>
               </button>
             ))}
           </div>
-          <p className="text-xs text-fg-3 mt-3">{guideFor(guideKey).tagline}</p>
+          <p className="text-xs text-fg-3 mt-3">{guideFor(guideKey).tagline} {guideStage < 3 ? `Grows at a best streak of ${guideStage === 1 ? 7 : 30} days.` : ''}</p>
         </div>
         <div className="card p-5 flex items-center gap-4">
           <div className="flex-1 min-w-0">

@@ -642,6 +642,41 @@ export const LINES = {
     pack: ["We're all set, {name}. Tomorrow morning we start for real. Today, go explore."],
     deep: ['All set, {name}. Tomorrow starts with sleep and a short routine. Today is for exploring.'],
   },
+  'evolve.new': {
+    sky: ['A new form, earned one day at a time. Same eyes on the target.'],
+    pack: ['Look at us. We grew, because we kept showing up together.'],
+    deep: ['This is what repeating something does. It changes you, a little each day.'],
+  },
+  'tip.mindset': {
+    sky: ['This is home base. The guide bar always holds your next step.'],
+    pack: ['Home base. Tap the guide bar and we pick up where we left off.'],
+    deep: ['Your journal and routine live here. The guide bar has your next step.'],
+  },
+  'tip.nutrition': {
+    sky: ['One meal logged closes your Fuel ring.'],
+    pack: ['Log one meal here and we close Fuel for the day.'],
+    deep: ['One logged meal closes the Fuel ring. Search or scan, whichever is quicker.'],
+  },
+  'tip.exercise': {
+    sky: ['Any training logged here closes the Body ring.'],
+    pack: ['Practice, lift or run. Log it here and Body is ours.'],
+    deep: ['Any session counts here. Logging it closes your Body ring.'],
+  },
+  'tip.sleep': {
+    sky: ["Last night's sleep goes here. It closes Rest."],
+    pack: ['Log last night here and we close Rest.'],
+    deep: ['Sleep and recovery both live here. Either one closes your Rest ring.'],
+  },
+  'tip.progress': {
+    sky: ['This is the long view. Your ratings and streak over time.'],
+    pack: ["Here's how far we've come. Worth a look now and then."],
+    deep: ['Trends show up here once you have a few entries. Patterns beat single days.'],
+  },
+  'tip.leaderboard': {
+    sky: ["The Board ranks this month's points. Your title shows what you train most."],
+    pack: ['This is The Board. Every log earns us points.'],
+    deep: ['Points come from logging across all four rings. Balance earns the best titles.'],
+  },
 } satisfies Record<string, Record<Voice, string[]>>
 
 export type LineKey = keyof typeof LINES

@@ -23,7 +23,7 @@ const TEXT = 'text-sm text-fg-4 hover:text-fg-2 min-h-[44px] px-4'
 interface Props {
   today: string
   data: TodayData
-  speaker: { character: Species; voice: Voice; show: boolean }
+  speaker: { character: Species; voice: Voice; show: boolean; stage?: 1 | 2 | 3 }
   check: boolean
   night: boolean
   onDone: (r: { checkSkipped: boolean; nightSkipped: boolean; nightDone: boolean }) => void
@@ -145,7 +145,7 @@ export default function EveningFlow({ today, data, speaker, check, night, onDone
       index={i}
       total={pages.length}
       title={title}
-      speaker={<GuideSpeaker character={speaker.character} show={speaker.show} state={pose} line={guideLine(speaker.voice, lineKey(), { seed })} />}
+      speaker={<GuideSpeaker character={speaker.character} stage={speaker.stage} show={speaker.show} state={pose} line={guideLine(speaker.voice, lineKey(), { seed })} />}
       onBack={i > 0 ? () => setI(i - 1) : undefined}
       primary={primary}
       secondary={secondary}

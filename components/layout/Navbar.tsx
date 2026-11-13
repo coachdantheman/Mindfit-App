@@ -9,6 +9,7 @@ import { useKeyboardInset } from '@/lib/useKeyboardInset'
 import { UserRole } from '@/types'
 import { FlameIcon } from '@/components/shared/icons'
 import NotificationBell from '@/components/layout/NotificationBell'
+import { CompanionChip } from '@/components/guide/Companion'
 import { useToast } from '@/components/shared/Toast'
 import { syncUnits, takeUnitsNote } from '@/lib/units'
 
@@ -174,6 +175,7 @@ export default function Navbar({ email, role, fullName }: NavbarProps) {
 
             {/* Right cluster */}
             <div className="flex items-center gap-0.5 sm:gap-2">
+              <CompanionChip />
               <NotificationBell />
               <StreakChip pathname={pathname} />
               <Link
