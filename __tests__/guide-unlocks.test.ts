@@ -30,3 +30,13 @@ test('a character already owned is not earned again', () => {
 test('with no starter picked yet, the other starters are not handed out', () => {
   assert.deepEqual(newlyEarned(facts({ owned: [], clutchDays: 3, bestStreak: 20 })), [])
 })
+
+test('free-text sports map to the sport we draw', async () => {
+  const { sportKey } = await import('../components/guide/art/Wear')
+  assert.equal(sportKey('Track & Field'), 'track')
+  assert.equal(sportKey('Cross Country'), 'crosscountry')
+  assert.equal(sportKey('Basketball'), 'basketball')
+  assert.equal(sportKey('Swimming'), 'swimming')
+  assert.equal(sportKey('Other'), null)
+  assert.equal(sportKey(null), null)
+})

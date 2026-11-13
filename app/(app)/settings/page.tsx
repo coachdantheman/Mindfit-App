@@ -14,6 +14,7 @@ import type { UserRole } from '@/types'
 import { saveUnits, useUnits } from '@/lib/units'
 import { clearApiCache } from '@/lib/api-cache'
 import { guideChanged } from '@/lib/guide'
+import { TITLES } from '@/lib/leaderboard-config'
 import Character from '@/components/guide/art/Character'
 import { ALL_GUIDES, STARTERS, guideFor, isStarter, stageFor, type GuideKey, type Stage } from '@/lib/guide-characters'
 
@@ -45,6 +46,10 @@ export default function SettingsPage() {
   const [guideStage, setGuideStage] = useState<Stage>(1)
   // null until loaded; until then only the starters look available.
   const [owned, setOwned] = useState<GuideKey[] | null>(null)
+  const [outfits, setOutfits] = useState<string[]>([])
+  const [monthTitle, setMonthTitle] = useState<string | null>(null)
+  // null = wear this month's title.
+  const [outfit, setOutfit] = useState<string | null>(null)
   const myStarter = owned?.find(isStarter)
   const lockedStarters = STARTERS.map(g => g.key).filter(k => k !== myStarter)
 
@@ -68,8 +73,9 @@ export default function SettingsPage() {
           setGuideKey(guideFor(p.guide_character).key)
           setGuideVisible(p.guide_visible !== false)
           setGuideStage(stageFor(p.best_streak))
+          setOutfit(p.guide_outfit ?? null)
           if (p.role === 'member' || p.role === 'admin') {
-            fetch('/api/guide/collection').then(r => (r.ok ? r.json() : null)).then(c => { if (c?.owned) setOwned(c.owned) }).catch(() => {})
+            fetch('/api/guide/collection').then(r => (r.ok ? r.json() : null)).then(c => { if (c?.owned) { setOwned(c.owned); setOutfits(c.outfits ?? []); setMonthTitle(c.title ?? null) } }).catch(() => {})
           }
         }
         setProfileLoaded(true)
@@ -153,6 +159,19 @@ export default function SettingsPage() {
       guideChanged()
     } catch {
       setGuideKey(prev)
+    }
+  }
+
+  const chooseOutfit = async (key: string | null) => {
+    if (key === outfit) return
+    const prev = outfit
+    setOutfit(key)
+    try {
+      await patchProfile({ guide_outfit: key })
+      clearApiCache('/api/profile')
+      guideChanged()
+    } catch {
+      setOutfit(prev)
     }
   }
 
@@ -332,7 +351,7 @@ export default function SettingsPage() {
                   aria-label={mine ? g.name : `${g.name}, locked. ${g.earn ?? 'Earned later'}`}
                   onClick={() => { void chooseGuide(g.key) }}
                   className={`rounded-2xl border p-3 flex flex-col items-center gap-1.5 transition-colors ${guideKey === g.key ? 'border-cta bg-cta/[0.06]' : mine ? 'border-edge hover:border-cta/40' : 'border-edge'}`}>
-                  <Character species={g.key} stage={guideStage} size={56} className={mine ? '' : 'opacity-30'} />
+                  <Character species={g.key} stage={guideStage} outfit={guideKey === g.key ? outfit ?? monthTitle : null} size={56} className={mine ? '' : 'opacity-30'} />
                   <span className={`text-sm font-medium ${mine ? 'text-fg-1' : 'text-fg-4'}`}>{g.name}</span>
                   {!mine && <span className="text-[10px] leading-tight text-fg-4 text-center">{g.earn ?? (g.key === lockedStarters[0] ? 'Close all four rings in one day' : 'Reach a 14-day best streak')}</span>}
                 </button>
@@ -340,6 +359,23 @@ export default function SettingsPage() {
             })}
           </div>
           <p className="text-xs text-fg-3 mt-3">{guideFor(guideKey).tagline} {isStarter(guideKey) && guideStage < 3 ? `Grows at a best streak of ${guideStage === 1 ? 7 : 30} days.` : ''}</p>
+        </div>
+        <div className="card p-5">
+          <h3 className="font-semibold text-fg-1 mb-1 text-sm">Wardrobe</h3>
+          <p className="text-sm text-fg-4 mb-4">Your guide dresses as your title. Every title you earn stays here.</p>
+          <div role="group" aria-label="Outfit" className="flex flex-wrap gap-2">
+            <button type="button" aria-pressed={outfit === null} disabled={!profileLoaded} onClick={() => { void chooseOutfit(null) }}
+              className={`min-h-[44px] px-4 rounded-full border text-sm transition-colors ${outfit === null ? 'border-cta bg-cta/[0.06] text-fg-1' : 'border-edge text-fg-3 hover:border-cta/40'}`}>
+              This month&apos;s title
+            </button>
+            {outfits.map(key => (
+              <button key={key} type="button" aria-pressed={outfit === key} disabled={!profileLoaded} onClick={() => { void chooseOutfit(key) }}
+                className={`min-h-[44px] px-4 rounded-full border text-sm transition-colors ${outfit === key ? 'border-cta bg-cta/[0.06] text-fg-1' : 'border-edge text-fg-3 hover:border-cta/40'}`}>
+                {TITLES.find(t => t.key === key)?.name ?? key}
+              </button>
+            ))}
+          </div>
+          {outfits.length === 0 && <p className="text-xs text-fg-4 mt-3">Earn a title on The Board and its outfit shows up here.</p>}
         </div>
         <div className="card p-5 flex items-center gap-4">
           <div className="flex-1 min-w-0">

@@ -44,7 +44,8 @@ export function newlyEarned(f: UnlockFacts): GuideKey[] {
   return earned
 }
 
-export interface Collection { owned: GuideKey[]; fresh: GuideKey[] }
+// outfits: every title the athlete has held (a wardrobe they keep). title: this month's.
+export interface Collection { owned: GuideKey[]; fresh: GuideKey[]; outfits: string[]; title: string | null }
 
 // Reads what the athlete owns, awards anything newly earned, and returns both.
 // `fresh` are characters they have not been told about yet.
@@ -55,7 +56,7 @@ export async function loadCollection(admin: SupabaseClient, userId: string): Pro
     admin.from('profiles').select('best_streak, guide_character').eq('id', userId).maybeSingle(),
     admin.from('leaderboard_scores').select('clutch_days').eq('user_id', userId),
     admin.from('league_members').select('tier').eq('user_id', userId).order('tier', { ascending: false }).limit(1),
-    admin.from('progress_snapshots').select('level, title').eq('user_id', userId),
+    admin.from('progress_snapshots').select('month, level, title').eq('user_id', userId).order('month', { ascending: false }),
     admin.from('workout_logs').select('id', { head: true, count: 'exact' }).eq('user_id', userId).gt('tier_ups', 0),
     admin.from('journal_entries').select('id', { head: true, count: 'exact' }).eq('user_id', userId),
     admin.from('weekly_assessments').select('*').eq('user_id', userId).order('week_date', { ascending: false }),
@@ -89,6 +90,8 @@ export async function loadCollection(admin: SupabaseClient, userId: string): Pro
     if (error) throw error
   }
   return {
+    outfits: [...new Set(facts.titles)],
+    title: snaps.data?.[0]?.title ?? null,
     owned: [...owned, ...add.map(a => a.key)],
     fresh: [...have.filter(r => !r.seen).map(r => r.key), ...add.filter(a => !a.seen).map(a => a.key)],
   }

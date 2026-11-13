@@ -1,4 +1,5 @@
 import type { GuideKey } from '@/lib/guide-characters'
+import { Outfit, SportProp, moveFor, type Anchors } from './Wear'
 
 export type Species = GuideKey
 type Body = 'sparrow' | 'falcon' | 'eagle' | 'dog' | 'wolf' | 'bear' | 'fish' | 'dolphin' | 'shark' | Unlock
@@ -10,15 +11,16 @@ const FORMS: Partial<Record<Species, [Body, Body, Body]>> = {
   dog: ['dog', 'wolf', 'bear'],
   fish: ['fish', 'dolphin', 'shark'],
 }
-export type CharacterState = 'idle' | 'talk' | 'point' | 'cheer' | 'steady' | 'sleep'
+export type CharacterState = 'idle' | 'talk' | 'point' | 'cheer' | 'steady' | 'sleep' | 'emote'
 
 // Line art on a 100×100 grid, painted back to front: gc-f (body) and gc-t (darker tone)
 // fills hide the lines behind them, gc-s is solid gold, gc-h an eye highlight.
 // Moving parts carry gc-* classes; the motion is in globals.css. `vars` holds the pivots
 // (grid units) and the angles of the point pose; `face` is the crop used for small icons.
-const BODIES: Record<Exclude<Body, Unlock>, { vars: Record<string, string>; face: string; art: React.ReactNode }> = {
+const BODIES: Record<Exclude<Body, Unlock>, { vars: Record<string, string>; face: string; at: Anchors; art: React.ReactNode }> = {
   sparrow: {
     face: '21 25 58 58',
+    at: { head: [50, 31, 20], neck: [50, 66, 19], waist: [50, 75, 22], hand: [88, 56, 7] },
     vars: { '--gc-limb': '72px 50px', '--gc-point': '-100deg', '--gc-lean': '4deg' },
     art: (
       <>
@@ -43,6 +45,7 @@ const BODIES: Record<Exclude<Body, Unlock>, { vars: Record<string, string>; face
   },
   falcon: {
     face: '22 24 56 56',
+    at: { head: [50, 30, 16], neck: [50, 66, 16], waist: [50, 75, 19], hand: [88, 54, 7] },
     vars: { '--gc-limb': '70px 46px', '--gc-point': '-95deg', '--gc-lean': '4deg' },
     art: (
       <>
@@ -64,6 +67,7 @@ const BODIES: Record<Exclude<Body, Unlock>, { vars: Record<string, string>; face
   },
   eagle: {
     face: '24 12 52 52',
+    at: { head: [50, 19, 15], neck: [50, 53, 15], waist: [50, 74, 22], hand: [91, 56, 7] },
     vars: { '--gc-limb': '73px 52px', '--gc-point': '-95deg', '--gc-lean': '4deg' },
     art: (
       <>
@@ -84,6 +88,7 @@ const BODIES: Record<Exclude<Body, Unlock>, { vars: Record<string, string>; face
   },
   wolf: {
     face: '20 8 60 60',
+    at: { head: [50, 24, 16], neck: [50, 61, 12], waist: [50, 77, 14], hand: [84, 62, 7] },
     vars: { '--gc-limb': '61px 63px', '--gc-point': '-72deg', '--gc-lean': '4deg', '--gc-tail': '37px 84px' },
     art: (
       <>
@@ -107,6 +112,7 @@ const BODIES: Record<Exclude<Body, Unlock>, { vars: Record<string, string>; face
   },
   bear: {
     face: '22 8 56 56',
+    at: { head: [50, 17, 17], neck: [50, 56, 14], waist: [50, 76, 24], hand: [90, 60, 7] },
     vars: { '--gc-limb': '72px 57px', '--gc-point': '-75deg', '--gc-lean': '3deg' },
     art: (
       <>
@@ -129,6 +135,7 @@ const BODIES: Record<Exclude<Body, Unlock>, { vars: Record<string, string>; face
   },
   dolphin: {
     face: '8 8 88 88',
+    at: { head: [70, 36, 9], neck: [64, 59, 9], waist: [44, 52, 12], hand: [90, 72, 6] },
     vars: { '--gc-limb': '54px 60px', '--gc-point': '-55deg', '--gc-lean': '-14deg', '--gc-tail': '17px 60px' },
     art: (
       <>
@@ -148,6 +155,7 @@ const BODIES: Record<Exclude<Body, Unlock>, { vars: Record<string, string>; face
   },
   shark: {
     face: '6 6 92 92',
+    at: { head: [76, 39, 9], neck: [66, 63, 9], waist: [42, 52, 12], hand: [90, 76, 6] },
     vars: { '--gc-limb': '50px 62px', '--gc-point': '-50deg', '--gc-lean': '-12deg', '--gc-tail': '13px 56px' },
     art: (
       <>
@@ -168,6 +176,7 @@ const BODIES: Record<Exclude<Body, Unlock>, { vars: Record<string, string>; face
   },
   dog: {
     face: '19 16 62 62',
+    at: { head: [50, 23, 17], neck: [50, 61, 12], waist: [50, 77, 14], hand: [84, 62, 7] },
     vars: { '--gc-limb': '61px 63px', '--gc-point': '-72deg', '--gc-lean': '4deg', '--gc-tail': '37px 82px' },
     art: (
       <>
@@ -192,6 +201,7 @@ const BODIES: Record<Exclude<Body, Unlock>, { vars: Record<string, string>; face
   },
   fish: {
     face: '8 8 80 80',
+    at: { head: [64, 36, 11], neck: [60, 63, 10], waist: [44, 54, 12], hand: [90, 70, 6] },
     vars: { '--gc-limb': '48px 58px', '--gc-point': '-55deg', '--gc-lean': '-14deg', '--gc-tail': '26px 52px' },
     art: (
       <>
@@ -214,7 +224,7 @@ const BODIES: Record<Exclude<Body, Unlock>, { vars: Record<string, string>; face
 }
 
 
-type Art = { vars: Record<string, string>; face: string; art: React.ReactNode }
+type Art = { vars: Record<string, string>; face: string; at: Anchors; art: React.ReactNode }
 
 const SIT = { '--gc-limb': '61px 63px', '--gc-point': '-72deg', '--gc-lean': '4deg', '--gc-tail': '37px 84px' }
 
@@ -248,7 +258,7 @@ function sitter(o: { back?: React.ReactNode; ears?: React.ReactNode; marks?: Rea
 
 const UNLOCKS: Record<Unlock, Art> = {
   fox: {
-    face: '20 6 60 60', vars: SIT,
+    face: '20 6 60 60', at: { head: [50, 24, 16], neck: [50, 61, 12], waist: [50, 77, 14], hand: [84, 62, 7] }, vars: SIT,
     art: sitter({
       tail: <><path className="gc-t" d="M38 86 Q16 90 12 68 Q24 74 35 72 Z" /><path className="gc-f" d="M12 68 Q13 76 20 80 Q19 73 21 72 Z" /></>,
       back: <path className="gc-t" d="M35 31 L29 8 L47 24 Z M65 31 L71 8 L53 24 Z" />,
@@ -256,7 +266,7 @@ const UNLOCKS: Record<Unlock, Art> = {
     }),
   },
   lion: {
-    face: '18 10 64 64', vars: SIT,
+    face: '18 10 64 64', at: { head: [50, 17, 16], neck: [50, 62, 12], waist: [50, 77, 14], hand: [84, 64, 7] }, vars: SIT,
     art: sitter({
       tail: <><path d="M37 84 Q22 84 20 70" /><path className="gc-t" d="M20 70 q-5 -3 -3 -9 q5 2 6 7 Z" /></>,
       back: <><circle className="gc-t" cx="50" cy="42" r="27" /><path d="M50 15 v5 M31 23 l3 4 M69 23 l-3 4 M23 42 h5 M77 42 h-5 M31 61 l3 -4 M69 61 l-3 -4" opacity="0.5" /></>,
@@ -264,7 +274,7 @@ const UNLOCKS: Record<Unlock, Art> = {
     }),
   },
   bull: {
-    face: '16 6 68 68', vars: SIT,
+    face: '16 6 68 68', at: { head: [50, 24, 16], neck: [50, 61, 12], waist: [50, 77, 14], hand: [84, 62, 7] }, vars: SIT,
     art: sitter({
       tail: <path d="M37 84 Q24 86 22 72 m0 0 l-3 -4 m3 4 l3 -4" />,
       back: <path className="gc-f" d="M34 30 Q18 26 20 8 Q28 20 40 24 Z M66 30 Q82 26 80 8 Q72 20 60 24 Z" />,
@@ -273,7 +283,7 @@ const UNLOCKS: Record<Unlock, Art> = {
     }),
   },
   raccoon: {
-    face: '22 12 56 56', vars: SIT,
+    face: '22 12 56 56', at: { head: [50, 24, 16], neck: [50, 61, 12], waist: [50, 77, 14], hand: [84, 62, 7] }, vars: SIT,
     art: sitter({
       tail: <><path className="gc-f" d="M38 86 Q18 88 15 68 Q25 72 35 72 Z" /><path d="M19 72 l8 2 M22 80 l8 -3 M29 86 l5 -6" /></>,
       back: <path className="gc-t" d="M36 29 Q30 18 38 16 Q44 20 44 26 Z M64 29 Q70 18 62 16 Q56 20 56 26 Z" />,
@@ -281,7 +291,7 @@ const UNLOCKS: Record<Unlock, Art> = {
     }),
   },
   tiger: {
-    face: '22 12 56 56', vars: SIT,
+    face: '22 12 56 56', at: { head: [50, 24, 16], neck: [50, 61, 12], waist: [50, 77, 14], hand: [84, 62, 7] }, vars: SIT,
     art: sitter({
       tail: <><path d="M37 84 Q20 86 20 68 Q20 60 26 60" /><path d="M21 76 l5 -1 M20 68 l5 1" opacity="0.7" /></>,
       back: <><circle className="gc-t" cx="35" cy="26" r="6.5" /><circle className="gc-t" cx="65" cy="26" r="6.5" /></>,
@@ -290,7 +300,7 @@ const UNLOCKS: Record<Unlock, Art> = {
     }),
   },
   stag: {
-    face: '14 0 72 72', vars: SIT,
+    face: '14 0 72 72', at: { head: [50, 24, 16], neck: [50, 61, 12], waist: [50, 77, 14], hand: [84, 62, 7] }, vars: SIT,
     art: sitter({
       tail: <path className="gc-f" d="M37 84 q-7 -1 -8 -7 q6 0 9 4 Z" />,
       back: <path d="M40 26 Q36 14 30 6 M36 17 L28 15 M33 11 L27 4 M60 26 Q64 14 70 6 M64 17 L72 15 M67 11 L73 4" />,
@@ -298,7 +308,7 @@ const UNLOCKS: Record<Unlock, Art> = {
     }),
   },
   ram: {
-    face: '14 10 72 72', vars: SIT,
+    face: '14 10 72 72', at: { head: [50, 24, 16], neck: [50, 61, 12], waist: [50, 77, 14], hand: [84, 62, 7] }, vars: SIT,
     art: sitter({
       tail: <path className="gc-f" d="M37 84 q-7 -1 -8 -7 q6 0 9 4 Z" />,
       back: <path d="M38 27 Q22 22 19 36 Q18 48 27 48 Q34 47 32 40 Q30 36 26 39 M40 31 Q28 28 25 37 M62 27 Q78 22 81 36 Q82 48 73 48 Q66 47 68 40 Q70 36 74 39 M60 31 Q72 28 75 37" />,
@@ -306,7 +316,7 @@ const UNLOCKS: Record<Unlock, Art> = {
     }),
   },
   beaver: {
-    face: '22 14 56 56', vars: SIT,
+    face: '22 14 56 56', at: { head: [50, 24, 16], neck: [50, 61, 12], waist: [50, 77, 14], hand: [84, 62, 7] }, vars: SIT,
     art: sitter({
       tail: <><ellipse className="gc-t" cx="22" cy="80" rx="13" ry="7" transform="rotate(-18 22 80)" /><path d="M14 80 l14 -5 M16 85 l14 -5" opacity="0.5" /></>,
       back: <><circle className="gc-t" cx="35" cy="27" r="5" /><circle className="gc-t" cx="65" cy="27" r="5" /></>,
@@ -314,7 +324,7 @@ const UNLOCKS: Record<Unlock, Art> = {
     }),
   },
   sloth: {
-    face: '22 16 56 56',
+    face: '22 16 56 56', at: { head: [50, 24, 16], neck: [50, 61, 13], waist: [50, 79, 15], hand: [86, 66, 7] },
     vars: { '--gc-limb': '63px 62px', '--gc-point': '-60deg', '--gc-lean': '3deg' },
     art: (
       <g className="gc-body">
@@ -335,7 +345,7 @@ const UNLOCKS: Record<Unlock, Art> = {
     ),
   },
   owl: {
-    face: '22 22 56 56',
+    face: '22 22 56 56', at: { head: [50, 30, 18], neck: [50, 66, 18], waist: [50, 75, 20], hand: [88, 56, 7] },
     vars: { '--gc-limb': '71px 50px', '--gc-point': '-95deg', '--gc-lean': '4deg' },
     art: (
       <>
@@ -358,7 +368,7 @@ const UNLOCKS: Record<Unlock, Art> = {
     ),
   },
   phoenix: {
-    face: '20 14 60 60',
+    face: '20 14 60 60', at: { head: [50, 32, 15], neck: [50, 65, 15], waist: [50, 73, 18], hand: [90, 48, 6] },
     vars: { '--gc-limb': '70px 52px', '--gc-point': '-100deg', '--gc-lean': '4deg' },
     art: (
       <>
@@ -379,7 +389,7 @@ const UNLOCKS: Record<Unlock, Art> = {
     ),
   },
   chameleon: {
-    face: '10 14 80 80',
+    face: '10 14 80 80', at: { head: [73, 35, 8], neck: [64, 57, 8], waist: [44, 56, 11], hand: [90, 72, 6] },
     vars: { '--gc-limb': '56px 62px', '--gc-point': '-40deg', '--gc-lean': '-6deg', '--gc-tail': '26px 62px' },
     art: (
       <g className="gc-body">
@@ -400,12 +410,16 @@ const UNLOCKS: Record<Unlock, Art> = {
 
 const ALL: Record<Body, Art> = { ...BODIES, ...UNLOCKS }
 
-export default function Character({ species, stage = 1, state = 'idle', size = 64, face = false, className = '' }: {
+export default function Character({ species, stage = 1, state = 'idle', size = 64, face = false, outfit, sport, className = '' }: {
   species: Species
   stage?: 1 | 2 | 3
   state?: CharacterState
   size?: number
   face?: boolean
+  // A title key (lib/leaderboard-config.ts TITLES) the character dresses as.
+  outfit?: string | null
+  // A sport key (Wear.tsx sportKey); its prop shows in the emote state.
+  sport?: string | null
   className?: string
 }) {
   // Starters have three forms; unlocked characters have one.
@@ -416,7 +430,7 @@ export default function Character({ species, stage = 1, state = 'idle', size = 6
       width={size}
       height={size}
       aria-hidden
-      className={`gc gc-${species} gc-${state} ${face ? 'gc-face' : ''} text-cta ${className}`}
+      className={`gc gc-${species} gc-${state} ${state === 'emote' ? `gc-move-${moveFor(sport ?? null) ?? 'hop'}` : ''} ${face ? 'gc-face' : ''} text-cta ${className}`}
       style={body.vars as React.CSSProperties}
       fill="none"
       stroke="currentColor"
@@ -426,6 +440,8 @@ export default function Character({ species, stage = 1, state = 'idle', size = 6
     >
       <g className="gc-all">
         {body.art}
+        {outfit && <Outfit outfit={outfit} anchors={body.at} />}
+        {state === 'emote' && sport && <SportProp sport={sport} anchors={body.at} />}
         <path className="gc-spark" d="M12 20 v8 M8 24 h8 M88 8 v6 M85 11 h6 M92 72 v6 M89 75 h6" />
         <g className="gc-zzz gc-s">
           <text x="74" y="26" fontSize="12">z</text><text x="83" y="16" fontSize="9">z</text>

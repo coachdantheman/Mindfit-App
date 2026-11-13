@@ -398,6 +398,16 @@ html:not(.native-app) .native-only { display: none !important; }
 .gc-sleep .gc-eye { display: none; }
 .gc-sleep .gc-eye-closed { display: inline; }
 .gc-sleep .gc-zzz { display: inline; animation: gc-zzz 3s ease-in-out infinite; }
+/* Sport emotes: the prop moves by sport, and the body joins in. */
+.gc-prop { transform-box: fill-box; transform-origin: center bottom; }
+.gc-move-toss .gc-prop { animation: gc-toss 0.8s cubic-bezier(0.3, 0, 0.3, 1) infinite; }
+.gc-move-swing .gc-prop { animation: gc-swing 0.9s ease-in-out infinite alternate; }
+.gc-move-hop .gc-all { animation: gc-hop 0.7s cubic-bezier(0.3, 0, 0.3, 1) infinite; }
+.gc-move-stance .gc-body { animation: gc-stance 1.2s ease-in-out infinite; }
+.gc-move-toss .gc-limb, .gc-move-swing .gc-limb { transform: rotate(var(--gc-point)); }
+@keyframes gc-toss { 50% { transform: translateY(-3.2px); } }
+@keyframes gc-swing { from { transform: rotate(-28deg); } to { transform: rotate(22deg); } }
+@keyframes gc-stance { 50% { transform: scaleY(0.9); } }
 @keyframes gc-breathe { 50% { transform: scaleY(1.03); } }
 @keyframes gc-float { 50% { transform: translateY(-2.5px); } }
 @keyframes gc-wag { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }

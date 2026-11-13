@@ -36,6 +36,7 @@ type Profile = {
   daily_guidance?: boolean | null
   guide_character?: unknown
   guide_visible?: boolean
+  guide_outfit?: string | null
   onboarded_at?: string | null
 } | null
 
@@ -54,6 +55,7 @@ export default function DailyGuide() {
   const [guide, setGuide] = useState<GuideCharacter>(() => guideFor(null))
   const [showGuide, setShowGuide] = useState(true)
   const [stage, setStage] = useState<Stage>(1)
+  const [outfit, setOutfit] = useState<string | null>(null)
   const [mode, setMode] = useState<'check-in' | 'morning'>('check-in')
   const [evening, setEvening] = useState({ check: false, night: false })
   const [afterChoice, setAfterChoice] = useState<Phase>('step')
@@ -70,7 +72,7 @@ export default function DailyGuide() {
   const [closedNow, setClosedNow] = useState(0)
   const notify = useToast()
   const toSteps = () => setPhase(askChoice ? 'choice' : 'step')
-  const speaker = { character: guide.key, voice: guide.voice, show: showGuide, stage }
+  const speaker = { character: guide.key, voice: guide.voice, show: showGuide, stage, outfit }
 
   const load = useCallback(async (): Promise<TodayData | null> => {
     try {
@@ -136,6 +138,14 @@ export default function DailyGuide() {
       soon,
     ]).then(([json, profile, extra]) => {
       profileRef.current = profile
+      // The outfit is decoration, so it never holds up the first screen.
+      if (profile?.guide_character != null) {
+        fetch('/api/guide/collection').then(r => (r.ok ? r.json() : null)).then((c: { outfits?: string[]; title?: string | null } | null) => {
+          if (!c) return
+          const picked = profile.guide_outfit && c.outfits?.includes(profile.guide_outfit) ? profile.guide_outfit : null
+          setOutfit(picked ?? c.title ?? null)
+        }).catch(() => {})
+      }
       setFirst(profile?.full_name?.trim().split(/\s+/)[0] ?? '')
       if (!json) return setPhase('failed')
       PILLARS.filter(p => json.pillars[p.key]).forEach(p => recordSkip(p.key, false))
@@ -232,7 +242,7 @@ export default function DailyGuide() {
         {view === 'dayone' && data && (
           <>
             <div className="flex-1 flex flex-col justify-center py-8">
-              <GuideSpeaker layout="hero" character={guide.key} stage={stage} show={showGuide} line={guideLine(guide.voice, 'dayone.done', { name: first })} />
+              <GuideSpeaker layout="hero" character={guide.key} stage={stage} outfit={outfit} show={showGuide} line={guideLine(guide.voice, 'dayone.done', { name: first })} />
               <div className="mt-8 space-y-3">
                 {data.affirmation && (
                   <div className="rounded-2xl border border-edge p-4">
@@ -268,6 +278,7 @@ export default function DailyGuide() {
               <GuideSpeaker
                 layout="hero"
                 stage={stage}
+                outfit={outfit}
                 character={guide.key}
                 show={showGuide}
                 line={guideLine(guide.voice, greet, { name: first, streak: stats?.streak, seed })}
@@ -304,6 +315,7 @@ export default function DailyGuide() {
                 <GuideSpeaker
                   className="mt-6 text-left"
                   stage={stage}
+                  outfit={outfit}
                   character={guide.key}
                   show={showGuide}
                   state={score >= 75 ? 'cheer' : score < 50 ? 'steady' : 'idle'}
@@ -333,7 +345,7 @@ export default function DailyGuide() {
             <Celebrate fire={closedNow} className="mt-8"><PillarRings pillars={shownPillars ?? data.pillars} /></Celebrate>
 
             <div className="flex-1 flex flex-col justify-end pt-10">
-              <GuideSpeaker className="mb-4" stage={stage} character={guide.key} show={showGuide} state="point" line={guideLine(guide.voice, stepLineKey(step, needFor(data)), { seed })} />
+              <GuideSpeaker className="mb-4" stage={stage} outfit={outfit} character={guide.key} show={showGuide} state="point" line={guideLine(guide.voice, stepLineKey(step, needFor(data)), { seed })} />
               <div key={step.id} className="mf-rise rounded-3xl border border-cta/30 bg-surface/80 p-6">
                 <p className="text-[11px] uppercase tracking-[0.2em] text-cta font-semibold">Next · {step.tag}</p>
                 <h1 className="mt-3 font-display text-[1.7rem] leading-tight text-fg-1 text-balance">{step.text}</h1>
@@ -393,7 +405,7 @@ export default function DailyGuide() {
             <div className="flex-1 flex flex-col justify-center items-center text-center py-10">
               {nightJustDone || (slotFor(hour) === 'evening' && data.routines.night) ? (
                 <>
-                  <GuideSpeaker layout="hero" state="sleep" stage={stage} character={guide.key} show={showGuide} line={guideLine(guide.voice, 'night.done', { seed })} />
+                  <GuideSpeaker layout="hero" state="sleep" stage={stage} outfit={outfit} character={guide.key} show={showGuide} line={guideLine(guide.voice, 'night.done', { seed })} />
                   <div className="w-full mt-10"><PillarRings pillars={data.pillars} /></div>
                 </>
               ) : allClosed ? (
@@ -402,13 +414,13 @@ export default function DailyGuide() {
                     <div className="w-full"><PillarRings pillars={shownPillars ?? data.pillars} /></div>
                   </Celebrate>
                   <p className="mt-10 text-xs uppercase tracking-[0.24em] text-cta">Clutch Day</p>
-                  <GuideSpeaker className="mt-6" layout="hero" state="cheer" stage={stage} character={guide.key} show={showGuide} line={guideLine(guide.voice, 'end.clutch', { seed })} />
+                  <GuideSpeaker className="mt-6" layout="hero" state="cheer" stage={stage} outfit={outfit} character={guide.key} show={showGuide} line={guideLine(guide.voice, 'end.clutch', { seed })} />
                 </>
               ) : (
                 <>
                   <PillarRings pillars={data.pillars} />
                   <p className="mt-10 text-xs uppercase tracking-[0.24em] text-cta">Your plan is set</p>
-                  <GuideSpeaker className="mt-6" layout="hero" stage={stage} character={guide.key} show={showGuide} line={guideLine(guide.voice, 'end.plan', { seed })} />
+                  <GuideSpeaker className="mt-6" layout="hero" stage={stage} outfit={outfit} character={guide.key} show={showGuide} line={guideLine(guide.voice, 'end.plan', { seed })} />
                   {done.length > 0 && (
                     <button type="button" onClick={() => { setDone([]); try { sessionStorage.removeItem(doneKey(today)) } catch {} }} className="mt-4 text-sm text-cta underline underline-offset-4 min-h-[44px]">
                       Show my steps again

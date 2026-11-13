@@ -68,6 +68,16 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: 'That guide is not unlocked yet.' }, { status: 403 })
     }
   }
+  if (body.guide_outfit !== undefined) {
+    // null goes back to wearing this month's title; otherwise a title they have held.
+    if (body.guide_outfit !== null) {
+      const outfits = (await loadCollection(createAdminClient(), auth.userId).catch(() => null))?.outfits ?? []
+      if (typeof body.guide_outfit !== 'string' || !outfits.includes(body.guide_outfit)) {
+        return NextResponse.json({ error: 'That outfit is not earned yet.' }, { status: 403 })
+      }
+    }
+    updates.guide_outfit = body.guide_outfit
+  }
   if (body.guide_visible !== undefined) {
     if (typeof body.guide_visible !== 'boolean') return NextResponse.json({ error: 'guide_visible is invalid' }, { status: 400 })
     updates.guide_visible = body.guide_visible

@@ -90,16 +90,25 @@ export default function Companion() {
 
   useEffect(() => () => clearTimeout(tap.current), [])
 
+  // Told once: mark it as soon as it shows, so closing the bubble any way does not repeat it.
   useEffect(() => {
-    if (!g.eligible) return
-    fetch('/api/guide/collection').then(r => (r.ok ? r.json() : null)).then((c: { fresh?: string[] } | null) => {
-      if (!c?.fresh?.length) return
-      setFresh(c.fresh)
-      setOpen(true)
-      // Told once: mark it now so closing the bubble any way does not repeat it.
-      fetch('/api/guide/collection', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ seen: c.fresh }) }).catch(() => {})
-    }).catch(() => {})
-  }, [g.eligible])
+    if (!g.fresh.length) return
+    setFresh(g.fresh)
+    setOpen(true)
+    fetch('/api/guide/collection', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ seen: g.fresh }) }).catch(() => {})
+  }, [g.fresh])
+
+  // Now and then, while nothing else is going on, the guide plays the athlete's sport for a moment.
+  const [emote, setEmote] = useState(false)
+  useEffect(() => {
+    if (!g.sport || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    let off: ReturnType<typeof setTimeout> | undefined
+    const every = setInterval(() => {
+      setEmote(true)
+      off = setTimeout(() => setEmote(false), 3200)
+    }, 45_000)
+    return () => { clearInterval(every); clearTimeout(off) }
+  }, [g.sport])
 
   const ackFresh = () => {
     setFresh([])
@@ -176,7 +185,7 @@ export default function Companion() {
         aria-expanded={open && !!line}
         className="pointer-events-auto touch-manipulation rounded-full p-1 hover:bg-cta/10 transition-colors"
       >
-        <Character species={g.guide.key} stage={g.stage} size={56} state={fresh.length ? 'cheer' : asleep ? 'sleep' : tip ? 'point' : 'idle'} />
+        <Character species={g.guide.key} stage={g.stage} outfit={g.outfit} sport={g.sport} size={56} state={fresh.length ? 'cheer' : asleep ? 'sleep' : tip ? 'point' : emote && !open ? 'emote' : 'idle'} />
       </button>
     </div>
   )
@@ -195,7 +204,7 @@ export function CompanionChip() {
       title={`Bring back ${g.guide.name}`}
       className="touch-manipulation min-h-[40px] min-w-[40px] grid place-items-center rounded-full hover:bg-cta/10 transition-colors"
     >
-      <span className="rounded-full border border-cta/40 p-0.5 flex"><Character species={g.guide.key} stage={g.stage} size={24} face /></span>
+      <span className="rounded-full border border-cta/40 p-0.5 flex"><Character species={g.guide.key} stage={g.stage} outfit={g.outfit} size={24} face /></span>
     </button>
   )
 }
