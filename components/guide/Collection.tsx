@@ -33,26 +33,31 @@ function Bar({ have, need }: { have: number; need: number }) {
   )
 }
 
-function Tile({ g, stage, owned, selected, fresh, earn, progress, disabled, onChoose }: {
+function Tile({ g, stage, owned, selected, fresh, earn, earned, progress, disabled, onChoose }: {
   g: GuideCharacter
   stage: Stage
   owned: boolean
   selected: boolean
   fresh: boolean
   earn: string
+  // How an owned character was earned.
+  earned: string
   progress?: [number, number]
   disabled: boolean
   onChoose: () => void
 }) {
   return (
     <button type="button" aria-pressed={selected} disabled={!owned || disabled} onClick={onChoose}
-      aria-label={owned ? `${g.name}${selected ? ', with you now' : ''}` : `${g.name}, locked. ${earn}${progress ? `. ${progress[0]} of ${progress[1]}` : ''}`}
+      aria-label={owned ? `${g.name}${selected ? ', with you now' : ''}. ${earned}` : `${g.name}, locked. ${earn}${progress ? `. ${progress[0]} of ${progress[1]}` : ''}`}
       className={`relative rounded-2xl border p-3 flex flex-col items-center gap-1.5 text-center transition-colors ${selected ? 'border-cta bg-cta/[0.06]' : owned ? 'border-edge hover:border-cta/40' : 'border-edge-muted'}`}>
       {fresh && <span className="absolute top-2 right-2 text-[10px] font-semibold uppercase tracking-wider text-cta">New</span>}
       <Character species={g.key} stage={stage} size={64} className={owned ? '' : 'opacity-25'} />
       <span className={`text-sm font-medium ${owned ? 'text-fg-1' : 'text-fg-4'}`}>{g.name}</span>
       {owned ? (
-        <span className={`text-[10px] ${selected ? 'text-cta' : 'text-fg-4'}`}>{selected ? 'With you now' : 'Tap to choose'}</span>
+        <>
+          <span className={`text-[10px] ${selected ? 'text-cta' : 'text-fg-4'}`}>{selected ? 'With you now' : 'Tap to choose'}</span>
+          <span className="text-[10px] leading-tight text-fg-4 break-words">{earned}</span>
+        </>
       ) : (
         <>
           <span className="text-[10px] leading-tight text-fg-4 break-words">{earn}</span>
@@ -230,7 +235,7 @@ export default function Collection() {
             <div role="group" aria-label={group.title} className="grid grid-cols-3 gap-2">
               {group.keys.map(key => (
                 <Tile key={key} g={guideFor(key)} stage={stage} owned={has(key)} selected={guideKey === key} fresh={data.fresh.includes(key)}
-                  earn={earnText(key, myStarter)} progress={data.progress[key]} disabled={busy} onChoose={() => choose(key)} />
+                  earn={earnText(key, myStarter)} earned={key === myStarter ? 'Your first pick' : `Earned: ${earnText(key, myStarter)}`} progress={data.progress[key]} disabled={busy} onChoose={() => choose(key)} />
               ))}
             </div>
           </section>
@@ -248,6 +253,7 @@ export default function Collection() {
               {hasDragon ? (
                 <>
                   <p className="text-sm text-fg-3 mt-0.5">{dragon.tagline}</p>
+                  <p className="text-xs text-fg-4 mt-1">How it is earned: {dragon.earn}.</p>
                   <ul className="mt-2 flex flex-wrap gap-1.5 empty:hidden">
                     {data.dragonMonths.map(m => (
                       <li key={m} className="text-xs text-cta border border-cta/40 rounded-full px-2.5 py-0.5">#1 athlete · {monthLabel(m)}</li>

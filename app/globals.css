@@ -368,14 +368,17 @@ html:not(.native-app) .native-only { display: none !important; }
 @supports (min-height: 100dvh) { .min-h-screen { min-height: 100dvh; } }
 
 /* Guide characters (components/guide/art). Fills hide the lines behind each part. */
-.gc { --gc-surface: rgb(var(--bg)); overflow: visible; }
-.gc-face { overflow: hidden; border-radius: 9999px; }
+/* One palette in both themes: a pale body with dark olive lines, as in light mode. */
+svg.gc { --gc-surface: rgb(241 240 238); --gc-ink: 107 98 0; color: rgb(var(--gc-ink)); overflow: visible; }
+.gc .gc-spark { stroke: rgb(var(--cta-rgb)); }
+.gc .gc-zzz { fill: rgb(var(--cta-rgb)); }
+svg.gc-face { overflow: hidden; border-radius: 9999px; }
 /* What the companion is pointing at. */
 .gc-ring { outline: 2px solid rgb(var(--cta-rgb)); outline-offset: 3px; border-radius: 1rem; animation: gc-ring 1.4s ease-in-out 3; }
 @keyframes gc-ring { 50% { outline-offset: 7px; } }
 .gc * { vector-effect: non-scaling-stroke; }
-.gc-f { fill: var(--gc-surface); fill: color-mix(in srgb, rgb(var(--cta-rgb)) 7%, var(--gc-surface)); }
-.gc-t { fill: var(--gc-surface); fill: color-mix(in srgb, rgb(var(--cta-rgb)) 24%, var(--gc-surface)); }
+.gc-f { fill: var(--gc-surface); fill: color-mix(in srgb, rgb(var(--gc-ink)) 7%, var(--gc-surface)); }
+.gc-t { fill: var(--gc-surface); fill: color-mix(in srgb, rgb(var(--gc-ink)) 24%, var(--gc-surface)); }
 .gc-s { fill: currentColor; stroke: none; }
 .gc-h { fill: var(--gc-surface); stroke: none; }
 .gc-all, .gc-body, .gc-limb, .gc-tail { transform-box: view-box; }
