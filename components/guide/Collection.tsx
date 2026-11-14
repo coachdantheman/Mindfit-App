@@ -6,7 +6,7 @@ import Skeleton from '@/components/shared/Skeleton'
 import { monthLabel } from '@/components/leaderboard/types'
 import { clearApiCache } from '@/lib/api-cache'
 import { guideChanged } from '@/lib/guide'
-import { ALL_GUIDES, EVOLVE_AT, earnText, guideFor, isGuideKey, isStarter, stageFor, type GuideCharacter, type GuideKey, type Stage } from '@/lib/guide-characters'
+import { ALL_GUIDES, EVOLVE_AT, earnText, guideFor, isGuideKey, isStarter, shownStage, stageFor, type GuideCharacter, type GuideKey, type Stage } from '@/lib/guide-characters'
 import type { Collection as CollectionData } from '@/lib/guide-unlocks'
 import { TITLES } from '@/lib/leaderboard-config'
 
@@ -76,6 +76,8 @@ export default function Collection() {
   const [guideKey, setGuideKey] = useState<GuideKey | null>(null)
   // null = wear this month's title.
   const [outfit, setOutfit] = useState<string | null>(null)
+  // The form of their starter they chose to wear. null = the newest one reached.
+  const [picked, setPicked] = useState<number | null>(null)
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
   const [busy, setBusy] = useState(false)
@@ -87,11 +89,12 @@ export default function Collection() {
     Promise.all([
       fetch('/api/profile').then(r => (r.ok ? r.json() : null)),
       fetch('/api/guide/collection').then(r => (r.ok ? r.json() : null)),
-    ]).then(([p, c]: [{ guide_character?: unknown; guide_outfit?: string | null } | null, CollectionData | null]) => {
+    ]).then(([p, c]: [{ guide_character?: unknown; guide_outfit?: string | null; guide_stage?: number | null } | null, CollectionData | null]) => {
       if (!live) return
       if (!p || !c?.owned) return setFailed(true)
       setGuideKey(isGuideKey(p.guide_character) ? p.guide_character : null)
       setOutfit(p.guide_outfit ?? null)
+      setPicked(p.guide_stage ?? null)
       setData({ ...c, fresh: c.fresh ?? [], outfits: c.outfits ?? [], progress: c.progress ?? {}, dragonMonths: c.dragonMonths ?? [], bestStreak: c.bestStreak ?? 0 })
       // Seeing them here counts as being told.
       if (c.fresh?.length) {
@@ -127,7 +130,8 @@ export default function Collection() {
   }
   if (!data) return <div className="max-w-lg"><Skeleton rows={5} /></div>
 
-  const stage = stageFor(data.bestStreak)
+  const reached = stageFor(data.bestStreak)
+  const stage = shownStage(data.bestStreak, picked)
   const myStarter = data.owned.find(isStarter)
   // Until a starter is picked, any of the three can be.
   const has = (key: GuideKey) => data.owned.includes(key) || (isStarter(key) && !myStarter)
@@ -143,6 +147,15 @@ export default function Collection() {
     setGuideKey(key)
     if (!data.owned.includes(key)) setData({ ...data, owned: [...data.owned, key] })
     void save({ guide_character: key }, () => { setGuideKey(prev); setData(before) })
+  }
+
+  const wearForm = (st: Stage) => {
+    if (st === stage || st > reached || busy) return
+    const prev = picked
+    // Choosing the newest form goes back to growing with the streak.
+    const next = st === reached ? null : st
+    setPicked(next)
+    void save({ guide_stage: next }, () => setPicked(prev))
   }
 
   const wear = (key: string | null) => {
@@ -175,22 +188,28 @@ export default function Collection() {
             </div>
             {isStarter(current.key) && (
               <div className="mt-4 pt-4 border-t border-edge-muted">
-                <ol className="grid grid-cols-3 gap-2">
-                  {([1, 2, 3] as const).map(st => (
-                    <li key={st} className="flex flex-col items-center text-center gap-1">
-                      <Character species={current.key} stage={st} state="steady" size={48} className={stage >= st ? '' : 'opacity-25'} />
-                      <span className={`text-xs font-medium ${stage >= st ? 'text-fg-1' : 'text-fg-4'}`}>{current.forms[st - 1]}</span>
-                      <span className="text-[10px] text-fg-4">{st === 1 ? 'Where you started' : `${EVOLVE_AT[st - 2]}-day best streak`}</span>
-                    </li>
-                  ))}
-                </ol>
-                {stage < 3 ? (
+                <div role="group" aria-label="Form" className="grid grid-cols-3 gap-2">
+                  {([1, 2, 3] as const).map(st => {
+                    const have = reached >= st
+                    const form = current.forms[st - 1]
+                    return (
+                      <button key={st} type="button" aria-pressed={stage === st} disabled={!have || busy} onClick={() => wearForm(st)}
+                        aria-label={have ? `${form}${stage === st ? ', showing now' : ''}` : `${form}, locked. Reach a ${EVOLVE_AT[st - 2]}-day best streak`}
+                        className={`rounded-xl border px-1 py-2 flex flex-col items-center text-center gap-1 transition-colors ${stage === st ? 'border-cta bg-cta/[0.06]' : have ? 'border-edge hover:border-cta/40' : 'border-transparent'}`}>
+                        <Character species={current.key} stage={st} state="steady" size={48} className={have ? '' : 'opacity-25'} />
+                        <span className={`text-xs font-medium ${have ? 'text-fg-1' : 'text-fg-4'}`}>{form}</span>
+                        <span className={`text-[10px] ${stage === st ? 'text-cta' : 'text-fg-4'}`}>{stage === st ? 'Showing now' : have ? 'Tap to wear' : `${EVOLVE_AT[st - 2]}-day best streak`}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+                {reached < 3 ? (
                   <div className="mt-3 space-y-1.5">
-                    <Bar have={data.bestStreak} need={EVOLVE_AT[stage - 1]} />
-                    <p className="text-xs text-fg-4 tabular-nums">Best streak {data.bestStreak} of {EVOLVE_AT[stage - 1]} days. A form you reach is yours to keep.</p>
+                    <Bar have={data.bestStreak} need={EVOLVE_AT[reached - 1]} />
+                    <p className="text-xs text-fg-4 tabular-nums">Best streak {data.bestStreak} of {EVOLVE_AT[reached - 1]} days. Every form you reach is yours to keep and wear.</p>
                   </div>
                 ) : (
-                  <p className="mt-3 text-xs text-fg-4">Fully grown. You earned every form.</p>
+                  <p className="mt-3 text-xs text-fg-4">Fully grown. Wear whichever form you like best.</p>
                 )}
               </div>
             )}

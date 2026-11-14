@@ -8,7 +8,7 @@ import { readinessScore, readinessVerdict } from '@/lib/readiness'
 import { greeting, markGuideSeenToday, todayQuery, type GuideStep, type TodayData, PILLARS, readSkips, recordSkip, readNextObjective, takeEvolution } from '@/lib/guide'
 import { flowFor, greetKey, revealKey, stepLineKey, needFor, planSteps, daySeed, slotFor, type Flow } from '@/lib/guide-brain'
 import { guideLine, type LineKey } from '@/lib/data/guide-lines'
-import { guideFor, stageFor, type GuideCharacter, type Stage } from '@/lib/guide-characters'
+import { guideFor, shownStage, stageFor, type GuideCharacter, type Stage } from '@/lib/guide-characters'
 import Celebrate from '@/components/shared/Celebrate'
 import DailyCheckIn from '@/components/today/DailyCheckIn'
 import { PillarRings, ReadinessRing } from './Rings'
@@ -37,6 +37,7 @@ type Profile = {
   guide_character?: unknown
   guide_visible?: boolean
   guide_outfit?: string | null
+  guide_stage?: number | null
   onboarded_at?: string | null
 } | null
 
@@ -55,6 +56,8 @@ export default function DailyGuide() {
   const [guide, setGuide] = useState<GuideCharacter>(() => guideFor(null))
   const [showGuide, setShowGuide] = useState(true)
   const [stage, setStage] = useState<Stage>(1)
+  // The newest form reached, for the moment it is celebrated; `stage` is the form worn.
+  const [grownTo, setGrownTo] = useState<Stage>(1)
   const [outfit, setOutfit] = useState<string | null>(null)
   const [mode, setMode] = useState<'check-in' | 'morning'>('check-in')
   const [evening, setEvening] = useState({ check: false, night: false })
@@ -97,7 +100,8 @@ export default function DailyGuide() {
     // Athletes who joined before guides existed meet them once, then carry on.
     if (profile && profile.guide_character == null && profile.guide_visible !== false) return setPhase('pick')
     const grown = stageFor(now.best)
-    setStage(grown)
+    setGrownTo(grown)
+    setStage(shownStage(now.best, profile?.guide_stage))
     // A guide that reached a new form gets one moment before the day starts.
     // Asked once per open: the answer is used up by asking.
     if (evolved.current == null) evolved.current = profile?.guide_visible !== false && takeEvolution(guideFor(profile?.guide_character).key, grown)
@@ -128,7 +132,7 @@ export default function DailyGuide() {
       cached('/api/stats/overview', (st: { streak?: number; freezes?: number; bestStreak?: number } | null) => {
         if (st && typeof st.streak === 'number') setStats({ streak: st.streak, freezes: st.freezes ?? 0 })
         // A slow answer still grows the guide once it lands.
-        if (st && typeof st.bestStreak === 'number') setStage(stageFor(st.bestStreak))
+        if (st && typeof st.bestStreak === 'number') setStage(shownStage(st.bestStreak, profileRef.current?.guide_stage))
       }).catch(() => null),
     ])
     const soon = Promise.race([extras, new Promise<null>(resolve => setTimeout(() => resolve(null), 700))])
@@ -230,10 +234,14 @@ export default function DailyGuide() {
         {view === 'evolved' && (
           <>
             <div className="flex-1 flex flex-col justify-center items-center text-center py-10">
-              <p className="text-xs uppercase tracking-[0.24em] text-cta">{guide.name} is now {/^[aeiou]/i.test(guide.forms[stage - 1]) ? 'an' : 'a'} {guide.forms[stage - 1].toLowerCase()}</p>
+              <p className="text-xs uppercase tracking-[0.24em] text-cta">{guide.name} is now {/^[aeiou]/i.test(guide.forms[grownTo - 1]) ? 'an' : 'a'} {guide.forms[grownTo - 1].toLowerCase()}</p>
               <Celebrate fire className="mt-8">
-                <GuideSpeaker layout="hero" state="cheer" character={guide.key} stage={stage} show line={guideLine(guide.voice, 'evolve.new')} />
+                <GuideSpeaker layout="hero" state="cheer" character={guide.key} stage={grownTo} show line={guideLine(guide.voice, 'evolve.new')} />
               </Celebrate>
+              <p className="mt-6 text-xs text-fg-4 text-balance">
+                {stage < grownTo ? `You are wearing the ${guide.forms[stage - 1].toLowerCase()} look. ` : 'Like the earlier look better? '}
+                You can wear any form you have reached in Your guides.
+              </p>
             </div>
             <Primary onClick={() => { evolved.current = false; const a = lastOpen.current; if (a) open(a.json, profileRef.current, a.doneList, a.now) }}>Keep going</Primary>
           </>

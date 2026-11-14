@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { cached } from '@/lib/api-cache'
 import { onGuideChanged } from '@/lib/guide'
-import { guideFor, stageFor, type GuideCharacter, type Stage } from '@/lib/guide-characters'
+import { guideFor, shownStage, type GuideCharacter, type Stage } from '@/lib/guide-characters'
 import { sportKey } from '@/components/guide/art/Wear'
 
 export interface GuideState {
@@ -31,10 +31,14 @@ export function useGuide(): GuideState {
   const [state, setState] = useState<GuideState>({ eligible: false, guide: guideFor(null), stage: 1, show: true, first: '', outfit: null, sport: null, fresh: [] })
 
   useEffect(() => {
+    // The form shown needs both answers: the best streak and the athlete's pick.
+    let best: number | undefined
+    let picked: unknown
     const load = (changed = false) => {
       if (changed) collection = null
-      cached('/api/profile', (p: { role?: string; guide_character?: unknown; guide_visible?: boolean; guide_outfit?: string | null; primary_sport?: string | null; full_name?: string | null } | null) => {
+      cached('/api/profile', (p: { role?: string; guide_character?: unknown; guide_visible?: boolean; guide_outfit?: string | null; guide_stage?: number | null; primary_sport?: string | null; full_name?: string | null } | null) => {
         if (!p?.role) return
+        picked = p.guide_stage
         const eligible = (p.role === 'member' || p.role === 'admin') && p.guide_character != null
         setState(prev => ({
           ...prev,
@@ -43,6 +47,7 @@ export function useGuide(): GuideState {
           show: p.guide_visible !== false,
           first: p.full_name?.trim().split(/\s+/)[0] ?? '',
           sport: sportKey(p.primary_sport),
+          stage: shownStage(best, picked),
         }))
         if (!eligible) return
         loadCollection().then(c => {
@@ -52,7 +57,9 @@ export function useGuide(): GuideState {
         })
       }).catch(() => {})
       cached('/api/stats/overview', (s: { bestStreak?: number } | null) => {
-        if (s) setState(prev => ({ ...prev, stage: stageFor(s.bestStreak) }))
+        if (!s) return
+        best = s.bestStreak
+        setState(prev => ({ ...prev, stage: shownStage(best, picked) }))
       }).catch(() => {})
     }
     load()

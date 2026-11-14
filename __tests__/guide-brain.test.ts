@@ -140,3 +140,15 @@ test('a guide grows at a best streak of 7 and 30', async () => {
   assert.equal(stageFor(29), 2)
   assert.equal(stageFor(30), 3)
 })
+
+test('an athlete can wear any form they have reached, and never one they have not', async () => {
+  const { shownStage } = await import('../lib/guide-characters')
+  assert.equal(shownStage(40, null), 3)
+  assert.equal(shownStage(40, 1), 1)
+  assert.equal(shownStage(40, 2), 2)
+  assert.equal(shownStage(9, 3), 2)
+  assert.equal(shownStage(9, 1), 1)
+  assert.equal(shownStage(0, 2), 1)
+  assert.equal(shownStage(40, 'eagle'), 3)
+  assert.equal(shownStage(null, undefined), 1)
+})

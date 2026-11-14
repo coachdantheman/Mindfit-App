@@ -15,7 +15,7 @@ import { saveUnits, useUnits } from '@/lib/units'
 import { clearApiCache } from '@/lib/api-cache'
 import { guideChanged } from '@/lib/guide'
 import Character from '@/components/guide/art/Character'
-import { guideFor, stageFor, type GuideKey, type Stage } from '@/lib/guide-characters'
+import { guideFor, shownStage, type GuideKey, type Stage } from '@/lib/guide-characters'
 
 type Status = { ok: boolean; msg: string } | null
 
@@ -63,7 +63,7 @@ export default function SettingsPage() {
           setDailyGuidance(p.daily_guidance !== false)
           setGuideKey(guideFor(p.guide_character).key)
           setGuideVisible(p.guide_visible !== false)
-          setGuideStage(stageFor(p.best_streak))
+          setGuideStage(shownStage(p.best_streak, p.guide_stage))
         }
         setProfileLoaded(true)
       })

@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { STARTERS, isGuideKey, isStarter, stageFor, type GuideIcon, type GuideKey } from '@/lib/guide-characters'
+import { STARTERS, isGuideKey, isStarter, shownStage, type GuideIcon, type GuideKey } from '@/lib/guide-characters'
 import { monthBounds } from '@/lib/leaderboard'
 import { refreshScore, timezoneFor } from '@/lib/leaderboard-scores'
 import { calcMPI } from '@/lib/mpi'
@@ -153,9 +153,9 @@ export async function awardDragon(admin: SupabaseClient, now = new Date()): Prom
 export async function guideIcons(admin: SupabaseClient, ids: string[]): Promise<Map<string, GuideIcon>> {
   const out = new Map<string, GuideIcon>()
   if (!ids.length) return out
-  const { data } = await admin.from('profiles').select('id, guide_character, guide_visible, best_streak').in('id', ids)
+  const { data } = await admin.from('profiles').select('id, guide_character, guide_visible, guide_stage, best_streak').in('id', ids)
   for (const p of data ?? []) {
-    if (isGuideKey(p.guide_character) && p.guide_visible !== false) out.set(p.id, { species: p.guide_character, stage: stageFor(p.best_streak) })
+    if (isGuideKey(p.guide_character) && p.guide_visible !== false) out.set(p.id, { species: p.guide_character, stage: shownStage(p.best_streak, p.guide_stage) })
   }
   return out
 }

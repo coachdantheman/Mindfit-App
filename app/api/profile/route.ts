@@ -3,7 +3,7 @@ import { dbError } from '@/lib/api-error'
 import { createAdminClient } from '@/lib/supabase-server'
 import { verifyApiUser } from '@/lib/api-auth'
 import { isISODate, isPlainObject } from '@/lib/validate'
-import { isGuideKey, isStarter } from '@/lib/guide-characters'
+import { isGuideKey, isStarter, stageFor } from '@/lib/guide-characters'
 import { loadCollection } from '@/lib/guide-unlocks'
 
 const FIELDS = ['full_name', 'primary_sport', 'secondary_sport', 'next_competition_at', 'next_competition_time', 'terms_accepted_at', 'default_bedtime', 'default_wake_time', 'units'] as const
@@ -79,6 +79,17 @@ export async function PATCH(req: Request) {
       }
     }
     updates.guide_outfit = body.guide_outfit
+  }
+  if (body.guide_stage !== undefined) {
+    // null follows the guide as it grows; a number wears a form already reached.
+    if (auth.role !== 'member' && auth.role !== 'admin') return NextResponse.json({ error: 'Guides are for athletes.' }, { status: 403 })
+    if (body.guide_stage !== null) {
+      if (body.guide_stage !== 1 && body.guide_stage !== 2 && body.guide_stage !== 3) return NextResponse.json({ error: 'guide_stage is invalid' }, { status: 400 })
+      const { data: me, error } = await createAdminClient().from('profiles').select('best_streak').eq('id', auth.userId).maybeSingle()
+      if (error || !me) return NextResponse.json({ error: 'Could not check your guide. Try again.' }, { status: 503 })
+      if (body.guide_stage > stageFor(me.best_streak)) return NextResponse.json({ error: 'That form is not reached yet.' }, { status: 403 })
+    }
+    updates.guide_stage = body.guide_stage
   }
   if (body.guide_visible !== undefined) {
     if (typeof body.guide_visible !== 'boolean') return NextResponse.json({ error: 'guide_visible is invalid' }, { status: 400 })

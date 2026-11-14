@@ -87,6 +87,13 @@ export function stageFor(bestStreak: number | null | undefined): Stage {
   return best >= EVOLVE_AT[1] ? 3 : best >= EVOLVE_AT[0] ? 2 : 1
 }
 
+// The form a starter shows: the athlete's pick among the forms they have
+// reached, else the newest one. A pick never shows a form not yet reached.
+export function shownStage(bestStreak: number | null | undefined, picked: unknown): Stage {
+  const reached = stageFor(bestStreak)
+  return picked === 1 || picked === 2 || picked === 3 ? (Math.min(picked, reached) as Stage) : reached
+}
+
 // What a locked character asks for. The two starters an athlete did not pick
 // come at the first Clutch Day and a 14-day best streak, in list order.
 export function earnText(key: GuideKey, myStarter: StarterKey | undefined): string {
