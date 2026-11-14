@@ -59,11 +59,13 @@ export async function PATCH(req: Request) {
   }
   if (body.guide_character !== undefined) {
     if (!isGuideKey(body.guide_character)) return NextResponse.json({ error: 'guide_character is invalid' }, { status: 400 })
+    if (auth.role !== 'member' && auth.role !== 'admin') return NextResponse.json({ error: 'Guides are for athletes.' }, { status: 403 })
     updates.guide_character = body.guide_character
     // The first pick is a free choice of starter; after that only owned characters.
     const owned = (await loadCollection(createAdminClient(), auth.userId).catch(() => null))?.owned
+    if (!owned) return NextResponse.json({ error: 'Could not check your guides. Try again.' }, { status: 503 })
     const key = body.guide_character
-    const allowed = owned ? owned.includes(key) || (isStarter(key) && !owned.some(isStarter)) : isStarter(key)
+    const allowed = owned.includes(key) || (isStarter(key) && !owned.some(isStarter))
     if (!allowed) {
       return NextResponse.json({ error: 'That guide is not unlocked yet.' }, { status: 403 })
     }

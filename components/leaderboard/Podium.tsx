@@ -1,5 +1,6 @@
 import { TitleBadge } from './Badges'
-import { initialsOf, monthLabel, type Entry } from './types'
+import Avatar from './Avatar'
+import { monthLabel, type Entry } from './types'
 import { FlameIcon, MedalIcon } from '@/components/shared/icons'
 import ReportButton from '@/components/shared/ReportButton'
 
@@ -21,9 +22,7 @@ export default function Podium({ podium, month, myRank, of }: { podium: Entry[];
           return (
             <div key={`${e.rank}-${e.displayName}`} className={`flex flex-col items-center text-center ${first ? 'w-28' : 'w-24'}`}>
               <span className={`mb-1 ${MEDAL_TONE[e.rank - 1] ?? 'text-fg-3'}`} role="img" aria-label={`Rank ${e.rank}`}><MedalIcon className={first ? 'w-8 h-8' : 'w-6 h-6'} /></span>
-              <span className={`${first ? 'w-14 h-14 text-base' : 'w-11 h-11 text-sm'} rounded-full bg-gradient-to-br from-cta to-brand-700 text-fg-inverse flex items-center justify-center font-bold`} aria-hidden>
-                {initialsOf(e.displayName)}
-              </span>
+              <Avatar name={e.displayName} guide={e.guide} size={first ? 56 : 44} className={first ? 'w-14 h-14 text-base' : 'w-11 h-11 text-sm'} />
               <p className="flex items-center justify-center gap-1 min-w-0 w-full text-sm font-semibold text-fg-1 mt-2">
                 <span className="truncate">{e.displayName}</span>
                 {e.streak > 0 && <span className="shrink-0 inline-flex items-center gap-0.5 text-xs font-medium text-fg-3 tabular-nums" title={`${e.streak}-day streak`}><FlameIcon className="w-3 h-3" />{e.streak}</span>}

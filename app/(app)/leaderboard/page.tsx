@@ -81,6 +81,7 @@ export default function LeaderboardPage() {
                 <h3 className="font-semibold text-fg-1 text-sm">This month</h3>
                 <span className="text-xs text-fg-4 tabular-nums">{data.thisMonth.of} ranked</span>
               </div>
+              <p className="px-2 mb-2 text-xs text-fg-4">The #1 athlete on the full Board when the month ends earns the Dragon guide, for keeps.</p>
               {data.thisMonth.of === 0 ? (
                 <EmptyState title="Nobody on the board yet" subtitle="Log a journal, workout, meal or sleep to claim the top spot." />
               ) : (

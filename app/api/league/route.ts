@@ -6,6 +6,7 @@ import { verifyApiUser } from '@/lib/api-auth'
 import { displayNameFor, shiftDayBy, todayIn } from '@/lib/leaderboard'
 import { freshScore, timezoneFor } from '@/lib/leaderboard-scores'
 import { daysLeftIn, leagueName, weekStartOf, zoneOf, type Zone } from '@/lib/leagues'
+import { guideIcons } from '@/lib/guide-unlocks'
 
 interface StandingRow { id: string; full_name: string | null; alias: string | null; sport: string | null; points: number; rank: number }
 interface Standings { tier: number; size: number; rows: StandingRow[] }
@@ -51,8 +52,10 @@ export async function GET(req: Request) {
   }
 
   const zoneFor = (rank: number, points: number): Zone => zoneOf(rank, now.size, points, now.tier)
+  const icons = await guideIcons(admin, now.rows.map(r => r.id))
   const rows = now.rows.map(r => ({
     id: sealId(r.id),
+    guide: icons.get(r.id) ?? null,
     rank: r.rank,
     displayName: displayNameFor(r.full_name, r.alias),
     sport: r.sport,

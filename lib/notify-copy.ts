@@ -25,6 +25,10 @@ export const copy = {
         p('Levels are not about the number. They are proof that you train your mind like you train your body. Keep stacking days.'),
     },
   }),
+  dragon: () => ({
+    title: 'You earned the Dragon',
+    body: 'You finished last month as the #1 athlete on The Board. Your new guide is waiting.',
+  }),
   newTitle: (title: string) => ({
     title: `New title: ${title}`,
     body: 'Your training this month earned it. Wear it.',

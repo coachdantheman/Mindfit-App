@@ -3,7 +3,7 @@ import { Outfit, SportProp, moveFor, type Anchors } from './Wear'
 
 export type Species = GuideKey
 type Body = 'sparrow' | 'falcon' | 'eagle' | 'dog' | 'wolf' | 'bear' | 'fish' | 'dolphin' | 'shark' | Unlock
-type Unlock = 'fox' | 'lion' | 'phoenix' | 'owl' | 'bull' | 'raccoon' | 'sloth' | 'tiger' | 'stag' | 'ram' | 'chameleon' | 'beaver'
+type Unlock = 'fox' | 'lion' | 'phoenix' | 'owl' | 'bull' | 'raccoon' | 'sloth' | 'tiger' | 'stag' | 'ram' | 'chameleon' | 'beaver' | 'dragon'
 
 // Each starter line grows through three forms (lib/guide-characters.ts stageFor).
 const FORMS: Partial<Record<Species, [Body, Body, Body]>> = {
@@ -229,10 +229,12 @@ type Art = { vars: Record<string, string>; face: string; at: Anchors; art: React
 const SIT = { '--gc-limb': '61px 63px', '--gc-point': '-72deg', '--gc-lean': '4deg', '--gc-tail': '37px 84px' }
 
 // The shared sitting body for four-legged characters: `back` paints behind the
-// head (mane, horns), `ears` over it, `marks` on the face under the eyes.
-function sitter(o: { back?: React.ReactNode; ears?: React.ReactNode; marks?: React.ReactNode; tail?: React.ReactNode; extra?: React.ReactNode }): React.ReactNode {
+// head (mane, horns), `ears` over it, `marks` on the face under the eyes,
+// `behind` behind everything (wings), and `muzzle` replaces the nose and mouth.
+function sitter(o: { behind?: React.ReactNode; muzzle?: React.ReactNode; back?: React.ReactNode; ears?: React.ReactNode; marks?: React.ReactNode; tail?: React.ReactNode; extra?: React.ReactNode }): React.ReactNode {
   return (
     <>
+      {o.behind}
       {o.tail && <g className="gc-tail">{o.tail}</g>}
       <g className="gc-body">
         <path className="gc-f" d="M37 60 Q30 86 40 88 H60 Q70 86 63 60 Z" />
@@ -247,9 +249,13 @@ function sitter(o: { back?: React.ReactNode; ears?: React.ReactNode; marks?: Rea
           <circle className="gc-h" cx="43.2" cy="39.8" r="1.1" /><circle className="gc-h" cx="59.2" cy="39.8" r="1.1" />
         </g>
         <path className="gc-eye-closed" d="M39 41 q3 3 6 0 M55 41 q3 3 6 0" />
-        <ellipse className="gc-f" cx="50" cy="51" rx="8" ry="6.5" />
-        <ellipse className="gc-s" cx="50" cy="48" rx="3.2" ry="2.3" />
-        <path className="gc-mouth" d="M50 50.3 v2.2 M50 52.5 q-3.5 3.5 -6 1 M50 52.5 q3.5 3.5 6 1" />
+        {o.muzzle ?? (
+          <>
+            <ellipse className="gc-f" cx="50" cy="51" rx="8" ry="6.5" />
+            <ellipse className="gc-s" cx="50" cy="48" rx="3.2" ry="2.3" />
+            <path className="gc-mouth" d="M50 50.3 v2.2 M50 52.5 q-3.5 3.5 -6 1 M50 52.5 q3.5 3.5 6 1" />
+          </>
+        )}
         {o.extra}
       </g>
     </>
@@ -321,6 +327,25 @@ const UNLOCKS: Record<Unlock, Art> = {
       tail: <><ellipse className="gc-t" cx="22" cy="80" rx="13" ry="7" transform="rotate(-18 22 80)" /><path d="M14 80 l14 -5 M16 85 l14 -5" opacity="0.5" /></>,
       back: <><circle className="gc-t" cx="35" cy="27" r="5" /><circle className="gc-t" cx="65" cy="27" r="5" /></>,
       extra: <path className="gc-h" stroke="currentColor" d="M47.5 55.5 h5 v4.5 h-5 Z M50 55.5 v4.5" />,
+    }),
+  },
+  dragon: {
+    face: '18 4 64 64', at: { head: [50, 24, 16], neck: [50, 61, 12], waist: [50, 77, 14], hand: [84, 62, 7] }, vars: SIT,
+    art: sitter({
+      behind: <path className="gc-t" d="M38 64 Q14 44 6 20 Q14 32 22 32 Q18 44 28 46 Q26 54 38 58 Z M62 64 Q86 44 94 20 Q86 32 78 32 Q82 44 72 46 Q74 54 62 58 Z" />,
+      tail: <><path d="M38 85 Q22 92 15 77" /><path className="gc-t" d="M15 77 L6 78 L12 66 L20 72 Z" /></>,
+      back: <path className="gc-f" d="M41 27 Q37 14 30 9 Q40 11 46 23 Z M59 27 Q63 14 70 9 Q60 11 54 23 Z" />,
+      ears: <path className="gc-t" d="M32 38 L22 33 L30 45 Z M68 38 L78 33 L70 45 Z" />,
+      marks: <path d="M37 34.5 l8 1.5 M63 34.5 l-8 1.5 M47 25 l3 -5 l3 5" />,
+      muzzle: (
+        <>
+          <path className="gc-f" d="M39 50 Q39 45 50 45 Q61 45 61 50 Q61 59 50 59 Q39 59 39 50 Z" />
+          <circle className="gc-s" cx="46" cy="49.5" r="1.2" /><circle className="gc-s" cx="54" cy="49.5" r="1.2" />
+          <path className="gc-mouth" d="M43 54 q7 3.5 14 0" />
+          <path className="gc-h" stroke="currentColor" d="M44 54.4 l1.4 3.6 l1.8 -3 Z M56 54.4 l-1.4 3.6 l-1.8 -3 Z" />
+        </>
+      ),
+      extra: <path d="M43 68 h14 M42 74 h16 M43 80 h14" opacity="0.5" />,
     }),
   },
   sloth: {

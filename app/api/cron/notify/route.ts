@@ -10,6 +10,7 @@ import { levelFor, titleFor, monthBounds, isValidTimeZone, displayNameFor } from
 import { refreshScore, liveStreak, pillarsOf, type ScoreRow } from '@/lib/leaderboard-scores'
 import { LEVELS } from '@/lib/leaderboard-config'
 import { LEAGUE_MIN_FOR_MOVES, leagueName, weekStartOf, zoneOf } from '@/lib/leagues'
+import { awardDragon } from '@/lib/guide-unlocks'
 
 // This member's zone and rank in this week's league, or null when there is
 // no league row or the group is too small for moves.
@@ -86,6 +87,14 @@ export async function GET(req: Request) {
   const queue: { userId: string; msg: Message }[] = []
   const send = (userId: string, msg: Message) => queue.push({ userId, msg })
   const snapshotWrites: { user_id: string; month: string; level: string; title: string | null }[] = []
+
+  // The Dragon, for last month's #1 member on The Board.
+  if (!dryRun) {
+    const dragon = await awardDragon(admin, now)
+    for (const id of dragon.winners) {
+      send(id, { type: 'dragon', category: 'progress', url: '/guides', dedupeKey: `dragon:${id}:${dragon.month}`, ...copy.dragon() })
+    }
+  }
 
   // Team games tomorrow, per athlete.
   const tomorrows = [...new Set(users.map(u => shiftDate(localClock(tzOf(u.id), now).date, 1)))]

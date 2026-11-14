@@ -4,12 +4,13 @@ import Link from 'next/link'
 import Skeleton from '@/components/shared/Skeleton'
 import ReportButton from '@/components/shared/ReportButton'
 import { cached } from '@/lib/api-cache'
-import { initialsOf } from './types'
+import Avatar from './Avatar'
+import type { GuideIcon } from '@/lib/guide-characters'
 import WeekResultSheet from './WeekResultSheet'
 
 type Zone = 'up' | 'down' | null
 
-export interface LeagueRow { id: string; rank: number; displayName: string; sport: string | null; points: number; isMe: boolean; zone: Zone }
+export interface LeagueRow { id: string; rank: number; displayName: string; sport: string | null; points: number; isMe: boolean; zone: Zone; guide?: GuideIcon | null }
 
 export interface LeagueResponse {
   week: string
@@ -54,9 +55,7 @@ function Row({ r }: { r: LeagueRow }) {
         {r.zone === 'up' && <span aria-hidden className="text-[10px] text-emerald-400">▲</span>}
         {r.zone === 'down' && <span aria-hidden className="text-[10px] text-red-400">▼</span>}
       </span>
-      <span className="w-9 h-9 rounded-full bg-gradient-to-br from-cta to-brand-700 text-fg-inverse flex items-center justify-center text-xs font-bold shrink-0" aria-hidden>
-        {initialsOf(r.displayName)}
-      </span>
+      <Avatar name={r.displayName} guide={r.guide} size={36} className="w-9 h-9 text-xs" />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-fg-1 truncate">
           {r.displayName}{r.isMe && <span className="text-fg-4 font-normal"> (you)</span>}

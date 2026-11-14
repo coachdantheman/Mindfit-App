@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { LINES, guideLine, type LineKey } from '../lib/data/guide-lines'
 
-const VOICES = ['sky', 'pack', 'deep'] as const
+const VOICES = ['sky', 'pack', 'deep', 'dragon'] as const
 const keys = Object.keys(LINES) as LineKey[]
 const all: { key: LineKey; voice: string; text: string }[] = keys.flatMap(key =>
   VOICES.flatMap(voice => (LINES[key][voice] as string[]).map(text => ({ key, voice, text }))))
@@ -44,10 +44,10 @@ test('offers, never orders or guilt', () => {
   for (const l of all) assert.ok(!banned.test(l.text), `${l.key} ${l.voice}: ${l.text}`)
 })
 
-test('the three voices never say the same thing at the same moment', () => {
+test('the voices never say the same thing at the same moment', () => {
   for (const key of keys) {
     const first = VOICES.map(v => (LINES[key][v] as string[])[0])
-    assert.equal(new Set(first).size, 3, key)
+    assert.equal(new Set(first).size, VOICES.length, key)
   }
 })
 

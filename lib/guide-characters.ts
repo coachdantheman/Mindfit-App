@@ -4,9 +4,9 @@ import type { Need } from '@/lib/quiz'
 // The guide characters an athlete can choose. Each has a voice (which lines
 // it speaks, lib/data/guide-lines.ts) and the rings it puts first in the day.
 export type StarterKey = 'sparrow' | 'dog' | 'fish'
-export type UnlockKey = 'fox' | 'lion' | 'phoenix' | 'owl' | 'bull' | 'raccoon' | 'sloth' | 'tiger' | 'stag' | 'ram' | 'chameleon' | 'beaver'
+export type UnlockKey = 'fox' | 'lion' | 'phoenix' | 'owl' | 'bull' | 'raccoon' | 'sloth' | 'tiger' | 'stag' | 'ram' | 'chameleon' | 'beaver' | 'dragon'
 export type GuideKey = StarterKey | UnlockKey
-export type Voice = 'sky' | 'pack' | 'deep'
+export type Voice = 'sky' | 'pack' | 'deep' | 'dragon'
 
 export interface GuideCharacter {
   key: GuideKey
@@ -42,6 +42,8 @@ export const UNLOCKS: GuideCharacter[] = [
   { key: 'ram', name: 'Ram', voice: 'pack', focus: ['body'], tagline: 'Puts its head down and moves the bar.', forms: one('Ram'), earn: 'Move up a strength tier' },
   { key: 'chameleon', name: 'Chameleon', voice: 'deep', focus: ['mind'], tagline: 'Proof that you can change.', forms: one('Chameleon'), earn: 'Raise your MPI 10 points from your baseline' },
   { key: 'beaver', name: 'Beaver', voice: 'pack', focus: ['mind'], tagline: 'Builds a little every single day.', forms: one('Beaver'), earn: 'Write 30 journal entries' },
+  // Awarded by the monthly job, never by the rules in lib/guide-unlocks.ts.
+  { key: 'dragon', name: 'Dragon', voice: 'dragon', focus: [], tagline: 'Old, calm, and only here for the one who finished a month on top.', forms: one('Dragon'), earn: 'Finish a month as the #1 athlete on The Board' },
 ]
 
 export const ALL_GUIDES: GuideCharacter[] = [...STARTERS, ...UNLOCKS]
@@ -77,7 +79,19 @@ export function recommendedGuide(need: Need | null | undefined): StarterKey | nu
 export const EVOLVE_AT = [7, 30] as const
 export type Stage = 1 | 2 | 3
 
+// What shows for an athlete on The Board and in leagues.
+export interface GuideIcon { species: GuideKey; stage: Stage }
+
 export function stageFor(bestStreak: number | null | undefined): Stage {
   const best = bestStreak ?? 0
   return best >= EVOLVE_AT[1] ? 3 : best >= EVOLVE_AT[0] ? 2 : 1
+}
+
+// What a locked character asks for. The two starters an athlete did not pick
+// come at the first Clutch Day and a 14-day best streak, in list order.
+export function earnText(key: GuideKey, myStarter: StarterKey | undefined): string {
+  const c = guideFor(key)
+  if (c.earn) return c.earn
+  const others = STARTERS.map(s => s.key).filter(k => k !== myStarter)
+  return key === others[0] ? 'Close all four rings in one day' : 'Reach a 14-day best streak'
 }

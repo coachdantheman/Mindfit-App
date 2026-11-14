@@ -7,8 +7,9 @@ import {
   titleFor, levelFor, nextLevel, levelProgress, displayNameFor, monthBounds, isValidTimeZone, todayIn, multiplierFor,
 } from '@/lib/leaderboard'
 import { freshScore, timezoneFor, readBoardPage, pillarsOf, liveStreak } from '@/lib/leaderboard-scores'
+import { guideIcons } from '@/lib/guide-unlocks'
 
-// Returns only display name, sport, title, level and points per person.
+// Returns only display name, sport, title, level, points and guide character per person.
 // No ids, emails, MPI, ratings or logged content ever leave this route.
 export async function GET(req: Request) {
   const auth = await verifyApiUser()
@@ -99,7 +100,8 @@ export async function GET(req: Request) {
     return dbError({ message: e?.message ?? 'leaderboard read failed' })
   }
   // Real ids stay on the server; rows carry a sealed id for the Report button.
-  const sealed = <T extends { id: string }>(list: T[]) => list.map(e => ({ ...e, id: sealId(e.id) }))
+  const icons = await guideIcons(admin, [...thisPage.entries, ...lastPage.entries].map(e => e.id))
+  const sealed = <T extends { id: string }>(list: T[]) => list.map(e => ({ ...e, guide: icons.get(e.id) ?? null, id: sealId(e.id) }))
 
   let meOut = null
   if (me) {

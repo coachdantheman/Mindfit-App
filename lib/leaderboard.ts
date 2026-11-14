@@ -5,6 +5,7 @@ import {
   type ActionKey, type Level, type Pillar, type Title,
 } from './leaderboard-config'
 import { withFreezes } from '@/lib/streak-freeze'
+import type { GuideIcon } from '@/lib/guide-characters'
 
 export type ActivityRow = { user_id: string; day: string; food: number } & Record<ActionKey, number>
 
@@ -35,6 +36,8 @@ export interface Entry {
   streak: number
   isMe: boolean
   isMine: boolean
+  // Their guide character, when they have one showing.
+  guide?: GuideIcon | null
 }
 
 const emptyPillars = (): PillarPoints => ({ mind: 0, body: 0, fuel: 0, rest: 0, bonus: 0 })

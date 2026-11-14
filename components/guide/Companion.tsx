@@ -91,8 +91,9 @@ export default function Companion() {
   useEffect(() => () => clearTimeout(tap.current), [])
 
   // Told once: mark it as soon as it shows, so closing the bubble any way does not repeat it.
+  // The collection screen marks its own new characters, so nothing is said there.
   useEffect(() => {
-    if (!g.fresh.length) return
+    if (!g.fresh.length || screen === 'guides') return
     setFresh(g.fresh)
     setOpen(true)
     fetch('/api/guide/collection', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ seen: g.fresh }) }).catch(() => {})
@@ -127,7 +128,7 @@ export default function Companion() {
   let action: { href: string; label: string; trip: boolean } | null = null
   if (fresh.length) {
     line = `${guideLine(voice, 'unlock.new')} (${fresh.map(k => guideFor(k).name).join(', ')})`
-    action = { href: '/settings#guide', label: 'See my guides', trip: false }
+    action = { href: '/guides', label: 'See my guides', trip: false }
   } else if (tip) {
     line = guideLine(voice, tip, { seed })
   } else if (data && !data.journal) {
@@ -176,6 +177,9 @@ export default function Companion() {
             ) : <span />}
             <button type="button" onClick={dock} className="min-h-[44px] px-2 text-xs text-fg-4 hover:text-fg-2">Tuck away</button>
           </div>
+          {!tip && !fresh.length && (
+            <Link href="/guides" onClick={() => setOpen(false)} className="-mb-2 min-h-[44px] inline-flex items-center text-xs text-fg-4 hover:text-fg-2">My guides</Link>
+          )}
         </div>
       )}
       <button

@@ -1,5 +1,6 @@
 import { LevelBadge, TitleBadge } from './Badges'
-import { initialsOf, type Entry } from './types'
+import Avatar from './Avatar'
+import type { Entry } from './types'
 import { FlameIcon, MedalIcon } from '@/components/shared/icons'
 import ReportButton from '@/components/shared/ReportButton'
 
@@ -11,9 +12,7 @@ function Row({ e }: { e: Entry }) {
       <span className="w-7 text-center text-sm font-bold tabular-nums text-fg-2 shrink-0">
         {e.rank <= 3 ? <span className={`inline-flex ${MEDAL_TONE[e.rank - 1]}`} role="img" aria-label={`Rank ${e.rank}`}><MedalIcon className="w-5 h-5" /></span> : e.rank}
       </span>
-      <span className="w-9 h-9 rounded-full bg-gradient-to-br from-cta to-brand-700 text-fg-inverse flex items-center justify-center text-xs font-bold shrink-0" aria-hidden>
-        {initialsOf(e.displayName)}
-      </span>
+      <Avatar name={e.displayName} guide={e.guide} size={36} className="w-9 h-9 text-xs" />
       <div className="min-w-0 flex-1">
         <p className="flex items-center gap-1.5 min-w-0 text-sm font-semibold text-fg-1">
           <span className="truncate">{e.displayName}{e.isMe && <span className="text-fg-4 font-normal"> (you)</span>}</span>

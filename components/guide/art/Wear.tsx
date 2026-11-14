@@ -90,7 +90,7 @@ export function sportKey(sport: string | null | undefined): string | null {
   const s = (sport ?? '').toLowerCase().replace(/[^a-z]/g, '')
   if (!s) return null
   if (s.includes('track')) return 'track'
-  if (s.includes('cross')) return 'crosscountry'
+  if (s === 'xc') return 'crosscountry'
   if (s.includes('swim') || s.includes('dive') || s.includes('waterpolo')) return 'swimming'
   if (s.includes('cheer') || s.includes('dance')) return 'cheer'
   if (s.includes('gymnast')) return 'gymnastics'
